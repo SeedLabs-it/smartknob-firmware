@@ -1,0 +1,31 @@
+{
+  "name": "root",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "npm": ">=8.19.2",
+    "node": ">=18.11.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "example-cli": "npm -w example-cli run main",
+    "example-webserial-basic": "npm -w example-webserial-basic run start",
+    "example-webserial-timeline": "npm -w example-webserial-timeline run start"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "//": "NOTE: Workspaces listed in dependency order; intentionally not alphabetical!",
+  "workspaces": [
+    "packages/smartknobjs-proto",
+    "packages/smartknobjs-core",
+    "packages/smartknobjs-node",
+    "packages/smartknobjs-webserial",
+    "packages/example-cli",
+    "packages/example-webserial-basic",
+    "packages/example-webserial-timeline"
+  ],
+  "devDependencies": {
+    "eslint-config-prettier": "^8.5.0"
+  }
+}
