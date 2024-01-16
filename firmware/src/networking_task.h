@@ -45,6 +45,7 @@ private:
     void setup_wifi();
     void publishState(const ConnectivityState &state);
     void reconnect_mqtt();
+    void mqtt_callback(char *topic, byte *payload, unsigned int length);
     PubSubClient mqttClient;
 };
 

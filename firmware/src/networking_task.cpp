@@ -79,6 +79,8 @@ void NetworkingTask::setup_wifi()
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setServer(mqtt_host, mqtt_port);
+    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
+                           { this->mqtt_callback(topic, payload, length); });
     // mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
     //                        { this->callback(topic, payload, length); });
 
@@ -87,14 +89,31 @@ void NetworkingTask::setup_wifi()
         reconnect_mqtt();
     }
     mqttClient.loop();
+
+    sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
+    mqttClient.subscribe(buf_);
+
     cJSON *json = cJSON_CreateObject();
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
     char *json_str = cJSON_PrintUnformatted(json);
     mqttClient.publish("smartknob/init", json_str);
-    // DynamicJsonDocument doc(32);
-    // doc["mac_address"] = WiFi.macAddress();
-    // serializeJson(doc, buf_);
-    // mqttClient.publish("smartknob/init", buf_);
+}
+
+void NetworkingTask::mqtt_callback(char *topic, byte *payload, unsigned int length)
+{
+    cJSON *json_root = cJSON_Parse((char *)payload);
+
+    cJSON *type = cJSON_GetObjectItem(json_root, "type");
+
+    if (strcmp(type->valuestring, "sync") == 0)
+    {
+        log("sync");
+        cJSON *apps = cJSON_GetObjectItem(json_root, "apps");
+        log("got apps");
+        log(cJSON_Print(apps));
+    }
+
+    cJSON_Delete(json_root);
 }
 
 void NetworkingTask::run()
