@@ -154,18 +154,18 @@ TFT_eSprite *PrinterChamberApp::render()
     spr_->drawBitmap(center_h - icon_size / 2, center_v - 74, lightning_50, icon_size, icon_size, power_icon_color, background);
 
     spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Thin_Bold_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     sprintf(buf_, "Chamber", wanted_temperature);
     spr_->drawString(buf_, center_h, footer_position + 18, 1);
 
     // draw wanted temperature
-    spr_->setFreeFont(&Roboto_Light_60);
+    spr_->setFreeFont(&Pixel62mr11pt7b);
     sprintf(buf_, "%d°C", wanted_temperature);
     spr_->drawString(buf_, center_h, center_v, 1);
 
     // draw current temperature
     spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     sprintf(buf_, "%d°C", current_temperature);
     spr_->drawString(buf_, center_h, center_v + 50, 1);
 
