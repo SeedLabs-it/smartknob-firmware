@@ -15,37 +15,37 @@
 
 class NetworkingTask : public Task<NetworkingTask>
 {
-  friend class Task<NetworkingTask>; // Allow base Task to invoke protected run()
+    friend class Task<NetworkingTask>; // Allow base Task to invoke protected run()
 
 public:
-  NetworkingTask(const uint8_t task_core);
-  ~NetworkingTask();
+    NetworkingTask(const uint8_t task_core);
+    ~NetworkingTask();
 
-  QueueHandle_t getEntityStateReceivedQueue();
+    QueueHandle_t getEntityStateReceivedQueue();
 
-  void enqueueEntityStateToSend(EntityStateUpdate);
+    void enqueueEntityStateToSend(EntityStateUpdate);
 
-  void setLogger(Logger *logger);
-  void addStateListener(QueueHandle_t queue);
+    void setLogger(Logger *logger);
+    void addStateListener(QueueHandle_t queue);
 
 protected:
-  void run();
+    void run();
 
 private:
-  QueueHandle_t entity_state_to_send_queue_;
-  QueueHandle_t entity_state_received_queue_;
+    QueueHandle_t entity_state_to_send_queue_;
+    QueueHandle_t entity_state_received_queue_;
 
-  std::vector<QueueHandle_t> state_listeners_;
+    std::vector<QueueHandle_t> state_listeners_;
 
-  PB_SmartKnobState state_;
-  SemaphoreHandle_t mutex_;
-  Logger *logger_;
-  void log(const char *msg);
-  WiFiClient wifi_client;
-  void setup_wifi();
-  void publishState(const ConnectivityState &state);
-  void reconnect_mqtt();
-  PubSubClient mqttClient;
+    PB_SmartKnobState state_;
+    SemaphoreHandle_t mutex_;
+    Logger *logger_;
+    void log(const char *msg);
+    WiFiClient wifi_client;
+    void setup_wifi();
+    void publishState(const ConnectivityState &state);
+    void reconnect_mqtt();
+    PubSubClient mqttClient;
 };
 
 #else
