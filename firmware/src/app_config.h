@@ -47,6 +47,7 @@ struct AppState
     ConnectivityState connectivity_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
+    cJSON *apps;
 };
 
 struct EntityStateUpdate

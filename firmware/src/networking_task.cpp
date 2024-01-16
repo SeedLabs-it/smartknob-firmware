@@ -6,12 +6,15 @@
 #include "util.h"
 #include "wifi_config.h"
 #include "cJSON.h"
+#include "app_task.h"
 
 static const char *MQTT_TAG = "MQTT";
 
 NetworkingTask::NetworkingTask(const uint8_t task_core) : Task{"Networking", 2048 * 2, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
+
+    mutex_app_sync_ = xSemaphoreCreateMutex();
 
     entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
@@ -23,6 +26,13 @@ NetworkingTask::~NetworkingTask()
     vQueueDelete(entity_state_to_send_queue_);
 
     vSemaphoreDelete(mutex_);
+    vSemaphoreDelete(mutex_app_sync_);
+}
+
+cJSON *NetworkingTask::getApps()
+{
+    lock();
+    return apps;
 }
 
 void NetworkingTask::enqueueEntityStateToSend(EntityStateUpdate state)
@@ -76,13 +86,12 @@ void NetworkingTask::setup_wifi()
 
     log("starting MQTT client");
     mqttClient.setClient(wifi_client);
+    // mqttClient.setBufferSize(256);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setServer(mqtt_host, mqtt_port);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
                            { this->mqtt_callback(topic, payload, length); });
-    // mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
-    //                        { this->callback(topic, payload, length); });
 
     if (!mqttClient.connected())
     {
@@ -97,22 +106,34 @@ void NetworkingTask::setup_wifi()
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
     char *json_str = cJSON_PrintUnformatted(json);
     mqttClient.publish("smartknob/init", json_str);
+
+    // PREVENTS MEMORY LEAK???
+    cJSON_Delete(json);
 }
 
 void NetworkingTask::mqtt_callback(char *topic, byte *payload, unsigned int length)
 {
     cJSON *json_root = cJSON_Parse((char *)payload);
 
+    log("got message");
+    log(cJSON_Print(json_root));
+
     cJSON *type = cJSON_GetObjectItem(json_root, "type");
 
     if (strcmp(type->valuestring, "sync") == 0)
     {
         log("sync");
-        cJSON *apps = cJSON_GetObjectItem(json_root, "apps");
-        log("got apps");
-        log(cJSON_Print(apps));
-    }
 
+        lock();
+        apps = cJSON_GetObjectItem(json_root, "apps");
+        unlock();
+
+        publishAppSync(apps);
+
+        // log("got apps");
+        // log(cJSON_Print(apps));
+        // xQueueSend(test_queue, &apps, portMAX_DELAY);
+    }
     cJSON_Delete(json_root);
 }
 
@@ -235,6 +256,19 @@ void NetworkingTask::publishState(const ConnectivityState &state)
     }
 }
 
+void NetworkingTask::addAppSyncListener(QueueHandle_t queue)
+{
+    app_sync_listeners_.push_back(queue);
+}
+
+void NetworkingTask::publishAppSync(const cJSON *state)
+{
+    for (auto listener : app_sync_listeners_)
+    {
+        xQueueSend(listener, state, portMAX_DELAY);
+    }
+}
+
 void NetworkingTask::setLogger(Logger *logger)
 {
     logger_ = logger;
@@ -246,6 +280,15 @@ void NetworkingTask::log(const char *msg)
     {
         logger_->log(msg);
     }
+}
+
+void NetworkingTask::lock()
+{
+    xSemaphoreTake(mutex_app_sync_, portMAX_DELAY);
+}
+void NetworkingTask::unlock()
+{
+    xSemaphoreGive(mutex_app_sync_);
 }
 
 #endif

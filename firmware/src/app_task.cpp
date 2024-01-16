@@ -38,6 +38,9 @@ AppTask::AppTask(
     assert(display_task != nullptr);
 #endif
 
+    app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
+    assert(app_sync_queue_ != NULL);
+
     log_queue_ = xQueueCreate(10, sizeof(std::string *));
     assert(log_queue_ != NULL);
 
@@ -187,6 +190,14 @@ void AppTask::run()
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
         {
             app_state.connectivity_state = latest_connectivity_state_;
+        }
+
+        if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
+        {
+            log("App sync requested");
+            log("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            apps->reload(networking_task_->getApps());
+            networking_task_->unlock();
         }
 
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
@@ -414,6 +425,11 @@ QueueHandle_t AppTask::getConnectivityStateQueue()
 QueueHandle_t AppTask::getSensorsStateQueue()
 {
     return sensors_status_queue_;
+}
+
+QueueHandle_t AppTask::getAppSyncQueue()
+{
+    return app_sync_queue_;
 }
 
 void AppTask::addListener(QueueHandle_t queue)
