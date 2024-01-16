@@ -33,7 +33,7 @@ void NetworkingTask::setup_wifi()
     const char *wifi_pass = WIFI_PASSWORD;
 
     const char *mqtt_host = MQTT_SERVER;
-    const uint16_t mqtt_port = 8040;
+    const uint16_t mqtt_port = MQTT_PORT;
     const char *mqtt_user = MQTT_USER;
     const char *mqtt_pass = MQTT_PASSWORD;
 
