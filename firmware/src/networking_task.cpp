@@ -75,7 +75,7 @@ void NetworkingTask::setup_wifi()
   log(buf_);
 
   log("starting MQTT client");
-  mqttClient = PubSubClient(wifi_client);
+  mqttClient.setClient(wifi_client);
   mqttClient.setKeepAlive(60);
   mqttClient.setSocketTimeout(60);
   mqttClient.setServer(mqtt_host, mqtt_port);
