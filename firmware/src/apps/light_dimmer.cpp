@@ -1,4 +1,5 @@
 #include "light_dimmer.h"
+#include "cJSON.h"
 
 LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
 {
@@ -58,14 +59,19 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     EntityStateUpdate new_state;
 
     new_state.app_id = "light_switch-light.virtual_light_1";
-    DynamicJsonDocument doc(128);
-    doc["brightness"] = int(current_position * 2.55);
-    doc["color_temp"] = 0;
-    JsonArray rgb_array = doc.createNestedArray("rgb_color");
-    rgb_array.add(255);
-    rgb_array.add(255);
-    rgb_array.add(255);
-    serializeJson(doc, new_state.state);
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
+    cJSON_AddNumberToObject(json, "color_temp", 0);
+    cJSON *rgb_array = cJSON_CreateArray();
+    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+
+    sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+
+    // PREVENTS MEMORY LEAK???
+    cJSON_Delete(json);
 
     if (last_position != current_position)
     {

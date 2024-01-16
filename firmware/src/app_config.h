@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include "configuration.h"
-#include "ArduinoJson.h"
+#include "cJSON.h"
 
 // TODO: move it into the app.h
 const uint32_t APP_ID_SETTINGS = 7;
