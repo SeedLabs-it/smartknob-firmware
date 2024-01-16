@@ -183,7 +183,7 @@ void NetworkingTask::run()
                     sprintf(buf_,
                             "{\"app_id\": \"%s\", \"state\": %s}",
                             entity_states_to_send[i.first].app_id.c_str(),
-                            cJSON_PrintUnformatted(entity_states_to_send[i.first].state));
+                            entity_states_to_send[i.first].state);
 
                     String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
                     mqttClient.publish(topic.c_str(), buf_);
