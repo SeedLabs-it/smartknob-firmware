@@ -63,8 +63,8 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.entity_name = entity_name;
-    new_state.new_value = wanted_temperature * 1.0;
+    // new_state.entity_name = entity_name;
+    // new_state.new_value = wanted_temperature * 1.0;
 
     if (last_wanted_temperature != wanted_temperature)
     {

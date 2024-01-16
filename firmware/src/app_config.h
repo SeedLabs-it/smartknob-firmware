@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include "configuration.h"
+#include "ArduinoJson.h"
 
 // TODO: move it into the app.h
 const uint32_t APP_ID_SETTINGS = 7;
@@ -12,11 +13,11 @@ struct ConnectivityState
     bool is_connected;
     int8_t signal_strength;
     /* *
-0 - Excellent
-1 - Good
-2 - Fair
-3 - Poor
-4 - No signal
+  0 - Excellent
+  1 - Good
+  2 - Fair
+  3 - Poor
+  4 - No signal
     */
     uint8_t signal_strenth_status;
     std::string ssid;
@@ -50,8 +51,8 @@ struct AppState
 
 struct EntityStateUpdate
 {
-    std::string entity_name;
-    float new_value = 0;
+    std::string app_id;
+    char state[128] = "";
     char app_slug[48] = "";
     bool changed = false;
     bool sent = false;

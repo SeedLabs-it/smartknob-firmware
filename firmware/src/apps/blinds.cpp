@@ -42,8 +42,8 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.entity_name = entity_name;
-    new_state.new_value = current_closed_position * 5.0; // 5 percent per position
+    // new_state.entity_name = entity_name;
+    // new_state.new_value = current_closed_position * 5.0; // 5 percent per position
 
     if (last_closed_position != current_closed_position)
     {

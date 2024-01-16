@@ -56,8 +56,8 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.entity_name = entity_name;
-    new_state.new_value = current_position * 1.0;
+    // new_state.entity_name = entity_name;
+    // new_state.new_value = current_position * 1.0;
 
     if (last_position != current_position)
     {

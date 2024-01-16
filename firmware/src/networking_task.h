@@ -44,11 +44,8 @@ private:
     WiFiClient wifi_client;
     void setup_wifi();
     void publishState(const ConnectivityState &state);
-    Mqtt *mqtt;
-
-    const char *mqtt_topic_integration = "smartknob/integration";
-    const char *mqtt_to_knob = "smartknob/to_knob";
-    const char *mqtt_to_hass = "smartknob/to_hass";
+    void reconnect_mqtt();
+    PubSubClient mqttClient;
 };
 
 #else

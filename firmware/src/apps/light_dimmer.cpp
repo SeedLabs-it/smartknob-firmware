@@ -57,8 +57,15 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.entity_name = entity_name;
-    new_state.new_value = current_position * 1.0;
+    new_state.app_id = "light_switch-light.virtual_light_1";
+    DynamicJsonDocument doc(128);
+    doc["brightness"] = int(current_position * 2.55);
+    doc["color_temp"] = 0;
+    JsonArray rgb_array = doc.createNestedArray("rgb_color");
+    rgb_array.add(255);
+    rgb_array.add(255);
+    rgb_array.add(255);
+    serializeJson(doc, new_state.state);
 
     if (last_position != current_position)
     {

@@ -5,6 +5,9 @@
 #include "semaphore_guard.h"
 #include "util.h"
 #include "wifi_config.h"
+#include "ArduinoJson.h"
+
+static const char *MQTT_TAG = "MQTT";
 
 NetworkingTask::NetworkingTask(const uint8_t task_core) : Task{"Networking", 2048 * 2, 1, task_core}
 {
@@ -25,6 +28,25 @@ NetworkingTask::~NetworkingTask()
 void NetworkingTask::enqueueEntityStateToSend(EntityStateUpdate state)
 {
     xQueueSendToBack(entity_state_to_send_queue_, &state, 0);
+}
+
+void NetworkingTask::reconnect_mqtt()
+{
+    while (!mqttClient.connected())
+    {
+        ESP_LOGI(MQTT_TAG, "Attempting connection %s %s %s", "smartknob", MQTT_USER, MQTT_PASSWORD);
+
+        if (mqttClient.connect("smartknob", MQTT_USER, MQTT_PASSWORD))
+        {
+            ESP_LOGI(MQTT_TAG, "Connected");
+        }
+        else
+        {
+            ESP_LOGE(MQTT_TAG, "Failed %d", mqttClient.state());
+
+            delay(5000);
+        }
+    }
 }
 
 void NetworkingTask::setup_wifi()
@@ -53,9 +75,22 @@ void NetworkingTask::setup_wifi()
     log(buf_);
 
     log("starting MQTT client");
-    mqtt = new Mqtt(mqtt_host, mqtt_port, "smartknob", mqtt_user, mqtt_pass);
-    // TODO - refine this init message
-    mqtt->publish(mqtt_topic_integration, "{\"message\": \"Hello from SmartKnob\"}");
+    mqttClient.setClient(wifi_client);
+    mqttClient.setKeepAlive(60);
+    mqttClient.setSocketTimeout(60);
+    mqttClient.setServer(mqtt_host, mqtt_port);
+    // mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
+    //                        { this->callback(topic, payload, length); });
+
+    if (!mqttClient.connected())
+    {
+        reconnect_mqtt();
+    }
+    mqttClient.loop();
+    DynamicJsonDocument doc(32);
+    doc["mac_address"] = WiFi.macAddress();
+    serializeJson(doc, buf_);
+    mqttClient.publish("smartknob/init", buf_);
 }
 
 void NetworkingTask::run()
@@ -79,7 +114,7 @@ void NetworkingTask::run()
     {
         if (millis() - mqtt_pull > 1000)
         {
-            mqtt->loop();
+            mqttClient.loop();
             mqtt_pull = millis();
         }
 
@@ -128,15 +163,7 @@ void NetworkingTask::run()
 
             if (entity_state_to_process_.changed)
             {
-                char buf_[128];
-                sprintf(buf_,
-                        "%s_%s",
-                        entity_state_to_process_.entity_name.c_str(),
-                        entity_state_to_process_.app_slug);
-
-                entity_states_to_send[buf_] = entity_state_to_process_;
-
-                // entity_states_to_send.insert(std::make_pair(buf_, entity_state_to_process_));
+                entity_states_to_send[entity_state_to_process_.app_id.c_str()] = entity_state_to_process_;
             }
         }
 
@@ -148,18 +175,20 @@ void NetworkingTask::run()
             {
                 if (!entity_states_to_send[i.first].sent)
                 {
+                    char buf_[128];
                     sprintf(buf_,
-                            "{\"entity_id\": \"%s\", \"app_slug\": \"%s\", \"new_value\": %.2f}",
-                            entity_states_to_send[i.first].entity_name.c_str(),
-                            entity_states_to_send[i.first].app_slug,
-                            entity_states_to_send[i.first].new_value);
+                            "{\"app_id\": \"%s\", \"state\": %s}",
+                            entity_states_to_send[i.first].app_id.c_str(),
+                            entity_states_to_send[i.first].state);
 
-                    mqtt->publish(mqtt_to_hass, buf_);
+                    String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
+                    mqttClient.publish(topic.c_str(), buf_);
 
-                    entity_states_to_send[i.first].sent = true;
+                    entity_states_to_send[i.first]
+                        .sent = true;
 
                     // sprintf(buf_, "%s -> %.2f", entity_state_to_send.entity_name.c_str(), entity_state_to_send.new_value);
-                    log(buf_);
+                    // log(output_buf);
                 }
             }
 
