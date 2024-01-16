@@ -5,7 +5,7 @@
 #include "semaphore_guard.h"
 #include "util.h"
 #include "wifi_config.h"
-#include "ArduinoJson.h"
+#include "cJSON.h"
 
 static const char *MQTT_TAG = "MQTT";
 
@@ -87,10 +87,14 @@ void NetworkingTask::setup_wifi()
         reconnect_mqtt();
     }
     mqttClient.loop();
-    DynamicJsonDocument doc(32);
-    doc["mac_address"] = WiFi.macAddress();
-    serializeJson(doc, buf_);
-    mqttClient.publish("smartknob/init", buf_);
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
+    char *json_str = cJSON_PrintUnformatted(json);
+    mqttClient.publish("smartknob/init", json_str);
+    // DynamicJsonDocument doc(32);
+    // doc["mac_address"] = WiFi.macAddress();
+    // serializeJson(doc, buf_);
+    // mqttClient.publish("smartknob/init", buf_);
 }
 
 void NetworkingTask::run()
@@ -179,7 +183,7 @@ void NetworkingTask::run()
                     sprintf(buf_,
                             "{\"app_id\": \"%s\", \"state\": %s}",
                             entity_states_to_send[i.first].app_id.c_str(),
-                            entity_states_to_send[i.first].state);
+                            cJSON_PrintUnformatted(entity_states_to_send[i.first].state));
 
                     String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
                     mqttClient.publish(topic.c_str(), buf_);

@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include "configuration.h"
-#include "ArduinoJson.h"
+#include "cJSON.h"
 
 // TODO: move it into the app.h
 const uint32_t APP_ID_SETTINGS = 7;
@@ -52,7 +52,7 @@ struct AppState
 struct EntityStateUpdate
 {
     std::string app_id;
-    char state[128] = "";
+    cJSON *state;
     char app_slug[48] = "";
     bool changed = false;
     bool sent = false;
