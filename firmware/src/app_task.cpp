@@ -195,10 +195,12 @@ void AppTask::run()
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
             ESP_LOGD("app_task", "App sync requested!");
+#if SK_NETWORKING // Should this be here??
             apps->reload(networking_task_->getApps());
 
             // SHOULD BE RELEASE LATER WHEN RELOAD IS DONE
             networking_task_->unlock();
+#endif
 
             // cJSON_Delete(apps_);
         }
