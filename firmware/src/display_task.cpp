@@ -86,7 +86,7 @@ void DisplayTask::run()
         app_position++;
     }
 
-    // cJSON_Delete(json_root);
+    cJSON_Delete(json_root);
 
     SettingsApp *settings_app = new SettingsApp(&spr_);
     apps.add(app_position, settings_app);
