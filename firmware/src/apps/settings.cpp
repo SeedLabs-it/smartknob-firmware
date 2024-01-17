@@ -10,7 +10,7 @@ SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
         0,
         0,
         0,
-        10,
+        5,
         90 * PI / 180,
         1,
         1,
@@ -69,8 +69,6 @@ void SettingsApp::updateStateFromSystem(AppState state)
 
     proximity_state = state.proximiti_state;
 
-    // current_volume = current_volume_position * 5;
-
     // // needed to next reload of App
     // motor_config.position_nonce = current_volume_position;
     // motor_config.position = current_volume_position;
@@ -101,14 +99,13 @@ TFT_eSprite *SettingsApp::render()
 
         spr_->setTextColor(TFT_WHITE);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString("Room", center_h, 20, 1);
+        spr_->drawString("Settings", center_h, 20, 1);
 
         spr_->setTextColor(TFT_WHITE);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(room, center_h, 50, 1);
 
         // draw line to separate title
-        spr_->fillRect(0, 70, TFT_WIDTH, 2, DISABLED_COLOR);
+        spr_->fillRect(0, 45, TFT_WIDTH, 2, DISABLED_COLOR);
 
         uint8_t wifi_icon_size = 40;
         uint32_t wifi_icon_color = TFT_WHITE;
@@ -242,6 +239,30 @@ TFT_eSprite *SettingsApp::render()
     else if (current_position == 2)
     {
 
+        // Loading Animation
+        uint32_t background_color = TFT_BLACK;
+        uint32_t text_color = TFT_WHITE;
+
+        startup_diff_ms = millis() - startup_ms;
+        uint32_t current_tick_time = startup_diff_ms / 24 % 120; // 120 ticks of 24ms each
+
+        // redraw canvas
+        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background_color);
+        spr_->setTextDatum(CC_DATUM);
+        spr_->setTextColor(text_color);
+        sprintf(buf_, "%s", "Loading");
+        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->drawString(buf_, center_h, center_v, 1); // string, xpos, ypos, font
+
+        // draw animation
+
+        spr_->drawCircle(center_h, center_v, current_tick_time, TFT_GREENYELLOW);
+
+        spr_->drawCircle(center_h, center_v, (current_tick_time + 60) % 120, TFT_GREENYELLOW); // concentric circle
+    }
+    else if (current_position == 3)
+    {
+
         // flip colors every second
         uint32_t background_color = TFT_BLACK;
         uint32_t text_color = TFT_WHITE;
@@ -255,11 +276,11 @@ TFT_eSprite *SettingsApp::render()
             text_color = TFT_WHITE;
             break;
         case 1:
-            background_color = TFT_RED;
+            background_color = TFT_ORANGE;
             text_color = TFT_WHITE;
             break;
         case 2:
-            background_color = TFT_GREEN;
+            background_color = TFT_DARKCYAN;
             text_color = TFT_WHITE;
             break;
 
@@ -268,15 +289,15 @@ TFT_eSprite *SettingsApp::render()
         }
 
         // screen tearing test
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background_color);
+        sprintf(buf_, "%s", "Screen test");
+        spr_->fillCircle(TFT_WIDTH / 2, TFT_HEIGHT / 2, TFT_WIDTH / 2, background_color);
 
         spr_->setTextDatum(CC_DATUM);
         spr_->setTextColor(text_color);
-        sprintf(buf_, "%s", "Screen test");
         spr_->setFreeFont(&Roboto_Thin_20);
         spr_->drawString(buf_, center_h, 25, 1);
     }
-    else if (current_position == 3)
+    else if (current_position == 4)
     {
         // ben10 easter egg
         uint32_t backroung_green = TFT_GREENYELLOW;
@@ -308,7 +329,7 @@ TFT_eSprite *SettingsApp::render()
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, backroung_green);
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, backroung_green);
     }
-    else
+    else if (current_position >= 5)
     {
         // ben10 easter egg
         uint32_t ben_10_green = TFT_GREENYELLOW;
@@ -361,5 +382,31 @@ TFT_eSprite *SettingsApp::render()
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, ben_10_green);
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, ben_10_green);
     }
+
+    // Draw navigation menu.
+    // num_position represents the total pages
+    // current_position is the index of the page, starting from 0.
+    uint32_t menu_item_color;
+    uint8_t menu_item_diameter = 6;
+    uint8_t position_circle_radius = screen_radius - menu_item_diameter; // the radius of the circle where you want the dots to lay.
+    float degree_per_item = 8 * PI / 180;                                // the degree (angle) between two points in radian
+    float center_point_degree = 270 * PI / 180;                          //
+    float menu_starting_angle = center_point_degree - ((num_positions * degree_per_item) / 2);
+
+    for (uint16_t i = 0; i <= num_positions; i++)
+    {
+        // draw a circle
+        if (current_position == i)
+        {
+            menu_item_color = TFT_GREENYELLOW;
+        }
+        else
+        {
+            menu_item_color = TFT_WHITE;
+        }
+        // polar coordinates
+        spr_->fillCircle(screen_radius + (position_circle_radius * cosf(menu_starting_angle + degree_per_item * i)), screen_radius - position_circle_radius * sinf(menu_starting_angle + degree_per_item * i), menu_item_diameter / 2, menu_item_color);
+    }
+
     return this->spr_;
 };
