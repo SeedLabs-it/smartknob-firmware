@@ -209,20 +209,18 @@ void NetworkingTask::run()
             {
                 if (!entity_states_to_send[i.first].sent)
                 {
-                    char buf_[128];
-                    sprintf(buf_,
-                            "{\"app_id\": \"%s\", \"state\": %s}",
-                            entity_states_to_send[i.first].app_id.c_str(),
-                            entity_states_to_send[i.first].state);
+                    cJSON *json = cJSON_CreateObject();
+                    cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id.c_str());
+                    cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
                     String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
-                    mqttClient.publish(topic.c_str(), buf_);
+
+                    mqttClient.publish(topic.c_str(), cJSON_PrintUnformatted(json));
 
                     entity_states_to_send[i.first]
                         .sent = true;
 
-                    // sprintf(buf_, "%s -> %.2f", entity_state_to_send.entity_name.c_str(), entity_state_to_send.new_value);
-                    // log(output_buf);
+                    cJSON_Delete(json);
                 }
             }
 
