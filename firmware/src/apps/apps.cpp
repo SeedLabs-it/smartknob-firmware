@@ -71,7 +71,7 @@ TFT_eSprite *Apps::renderActive()
     if (apps[buf_] == nullptr)
     {
         rendered_spr_ = spr_;
-        ESP_LOGE("apps.cpp", "null pointer instead of app");
+        ESP_LOGE("apps.cpp", "null pointer instead of apps");
         unlock();
         return rendered_spr_;
     }
