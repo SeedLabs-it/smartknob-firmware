@@ -1,11 +1,12 @@
 #include "light_dimmer.h"
 #include "cJSON.h"
 
-LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::string friendly_name) : App(spr_)
 {
     // sprintf(author, "%s", "Beethoven");
     // sprintf(track, "%s", "Moonlight Sonata");
-    this->entity_name = entity_name;
+    this->app_id = app_id;
+    this->friendly_name = friendly_name;
 
     motor_config = PB_SmartKnobConfig{
         0,
@@ -28,7 +29,6 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string entity_name) : App
 
     big_icon = light_top_80;
     small_icon = light_top_40;
-    friendly_name = "Lights";
 }
 
 uint8_t LightDimmerApp::navigationNext()
@@ -58,23 +58,22 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.app_id = "light_switch-light.virtual_light_1";
-    cJSON *json = cJSON_CreateObject();
-    cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
-    cJSON_AddNumberToObject(json, "color_temp", 0);
-    cJSON *rgb_array = cJSON_CreateArray();
-    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    cJSON_AddItemToObject(json, "rgb_color", rgb_array);
-
-    sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
-
-    // PREVENTS MEMORY LEAK???
-    cJSON_Delete(json);
-
     if (last_position != current_position)
     {
+        new_state.app_id = app_id;
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
+        cJSON_AddNumberToObject(json, "color_temp", 0);
+        cJSON *rgb_array = cJSON_CreateArray();
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+
+        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+
+        cJSON_Delete(json);
+
         last_position = current_position;
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
@@ -137,7 +136,7 @@ TFT_eSprite *LightDimmerApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_regular, icon_size, icon_size, off_lamp_color, off_background);
         spr_->setTextColor(off_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString("Workbench", center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
         spr_->drawString("off", center_h, center_v + icon_size / 2 + 60 - offset_vertical, 1);
 
         // draw dot movong path
@@ -152,7 +151,7 @@ TFT_eSprite *LightDimmerApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_solid, icon_size, icon_size, on_lamp_color, on_background);
         spr_->setTextColor(on_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString("Workbench", center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
         spr_->drawString(buf_, center_h, center_v + icon_size / 2 + 60 - offset_vertical, 1);
 
         // draw dot movong path

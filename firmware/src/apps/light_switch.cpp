@@ -1,10 +1,11 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, std::string entity_name, std::string friendly_name) : App(spr_)
 {
     // sprintf(author, "%s", "Beethoven");
     // sprintf(track, "%s", "Moonlight Sonata");
     this->entity_name = entity_name;
+    this->friendly_name = friendly_name;
 
     motor_config = PB_SmartKnobConfig{
         0,
@@ -22,8 +23,6 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, std::string entity_name) : App
         0,
         27,
     };
-
-    friendly_name = "Lights";
 
     big_icon = light_switch_80;
     small_icon = light_switch_40;
@@ -56,6 +55,9 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
+    ESP_LOGD("light_switch.cpp", "current_position: %d", current_position);
+
+    new_state.app_id = entity_name;
     // new_state.entity_name = entity_name;
     // new_state.new_value = current_position * 1.0;
 
@@ -105,7 +107,7 @@ TFT_eSprite *LightSwitchApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_regular, icon_size, icon_size, off_lamp_color, off_background);
         spr_->setTextColor(off_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString("Kitchen", center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
     }
     else
     {
@@ -113,7 +115,7 @@ TFT_eSprite *LightSwitchApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_solid, icon_size, icon_size, on_lamp_color, on_background);
         spr_->setTextColor(on_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString("Kitchen", center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
     }
 
     // set the moving dot color

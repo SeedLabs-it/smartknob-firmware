@@ -6,12 +6,15 @@
 #include "util.h"
 #include "wifi_config.h"
 #include "cJSON.h"
+#include "app_task.h"
 
 static const char *MQTT_TAG = "MQTT";
 
 NetworkingTask::NetworkingTask(const uint8_t task_core) : Task{"Networking", 2048 * 2, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
+
+    mutex_app_sync_ = xSemaphoreCreateMutex();
 
     entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
@@ -23,6 +26,13 @@ NetworkingTask::~NetworkingTask()
     vQueueDelete(entity_state_to_send_queue_);
 
     vSemaphoreDelete(mutex_);
+    vSemaphoreDelete(mutex_app_sync_);
+}
+
+cJSON *NetworkingTask::getApps()
+{
+    lock();
+    return apps;
 }
 
 void NetworkingTask::enqueueEntityStateToSend(EntityStateUpdate state)
@@ -76,25 +86,45 @@ void NetworkingTask::setup_wifi()
 
     log("starting MQTT client");
     mqttClient.setClient(wifi_client);
+    mqttClient.setBufferSize(512);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setServer(mqtt_host, mqtt_port);
-    // mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
-    //                        { this->callback(topic, payload, length); });
+    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
+                           { this->mqtt_callback(topic, payload, length); });
 
     if (!mqttClient.connected())
     {
         reconnect_mqtt();
     }
     mqttClient.loop();
+
+    sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
+    mqttClient.subscribe(buf_);
+
     cJSON *json = cJSON_CreateObject();
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
-    char *json_str = cJSON_PrintUnformatted(json);
-    mqttClient.publish("smartknob/init", json_str);
-    // DynamicJsonDocument doc(32);
-    // doc["mac_address"] = WiFi.macAddress();
-    // serializeJson(doc, buf_);
-    // mqttClient.publish("smartknob/init", buf_);
+    mqttClient.publish("smartknob/init", cJSON_PrintUnformatted(json));
+
+    // PREVENTS MEMORY LEAK???
+    cJSON_Delete(json);
+}
+
+void NetworkingTask::mqtt_callback(char *topic, byte *payload, unsigned int length)
+{
+    cJSON *json_root = cJSON_Parse((char *)payload);
+    cJSON *type = cJSON_GetObjectItem(json_root, "type");
+
+    if (strcmp(type->valuestring, "sync") == 0)
+    {
+        log("sync");
+
+        lock();
+        apps = cJSON_GetObjectItem(json_root, "apps");
+        unlock();
+
+        publishAppSync(apps);
+    }
 }
 
 void NetworkingTask::run()
@@ -179,20 +209,18 @@ void NetworkingTask::run()
             {
                 if (!entity_states_to_send[i.first].sent)
                 {
-                    char buf_[128];
-                    sprintf(buf_,
-                            "{\"app_id\": \"%s\", \"state\": %s}",
-                            entity_states_to_send[i.first].app_id.c_str(),
-                            entity_states_to_send[i.first].state);
+                    cJSON *json = cJSON_CreateObject();
+                    cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id.c_str());
+                    cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
                     String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
-                    mqttClient.publish(topic.c_str(), buf_);
+
+                    mqttClient.publish(topic.c_str(), cJSON_PrintUnformatted(json));
 
                     entity_states_to_send[i.first]
                         .sent = true;
 
-                    // sprintf(buf_, "%s -> %.2f", entity_state_to_send.entity_name.c_str(), entity_state_to_send.new_value);
-                    // log(output_buf);
+                    cJSON_Delete(json);
                 }
             }
 
@@ -216,6 +244,19 @@ void NetworkingTask::publishState(const ConnectivityState &state)
     }
 }
 
+void NetworkingTask::addAppSyncListener(QueueHandle_t queue)
+{
+    app_sync_listeners_.push_back(queue);
+}
+
+void NetworkingTask::publishAppSync(const cJSON *state)
+{
+    for (auto listener : app_sync_listeners_)
+    {
+        xQueueSend(listener, state, portMAX_DELAY);
+    }
+}
+
 void NetworkingTask::setLogger(Logger *logger)
 {
     logger_ = logger;
@@ -227,6 +268,15 @@ void NetworkingTask::log(const char *msg)
     {
         logger_->log(msg);
     }
+}
+
+void NetworkingTask::lock()
+{
+    xSemaphoreTake(mutex_app_sync_, portMAX_DELAY);
+}
+void NetworkingTask::unlock()
+{
+    xSemaphoreGive(mutex_app_sync_);
 }
 
 #endif

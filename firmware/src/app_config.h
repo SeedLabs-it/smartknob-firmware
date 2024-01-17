@@ -47,12 +47,13 @@ struct AppState
     ConnectivityState connectivity_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
+    cJSON *apps;
 };
 
 struct EntityStateUpdate
 {
     std::string app_id;
-    char state[128] = "";
+    char state[256] = "";
     char app_slug[48] = "";
     bool changed = false;
     bool sent = false;

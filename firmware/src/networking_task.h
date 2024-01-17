@@ -27,6 +27,11 @@ public:
 
     void setLogger(Logger *logger);
     void addStateListener(QueueHandle_t queue);
+    void addAppSyncListener(QueueHandle_t queue);
+
+    void unlock();
+
+    cJSON *getApps();
 
 protected:
     void run();
@@ -36,16 +41,24 @@ private:
     QueueHandle_t entity_state_received_queue_;
 
     std::vector<QueueHandle_t> state_listeners_;
+    std::vector<QueueHandle_t> app_sync_listeners_;
 
     PB_SmartKnobState state_;
     SemaphoreHandle_t mutex_;
+    SemaphoreHandle_t mutex_app_sync_;
     Logger *logger_;
     void log(const char *msg);
     WiFiClient wifi_client;
     void setup_wifi();
     void publishState(const ConnectivityState &state);
+    void publishAppSync(const cJSON *state);
     void reconnect_mqtt();
+    void mqtt_callback(char *topic, byte *payload, unsigned int length);
     PubSubClient mqttClient;
+
+    void lock();
+
+    cJSON *apps;
 };
 
 #else

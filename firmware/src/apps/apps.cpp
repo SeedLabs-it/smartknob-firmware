@@ -1,6 +1,7 @@
 #pragma once
 #include "apps.h"
 #include "menu.h"
+#include "settings.h"
 
 #include <typeinfo>
 #include <iterator>
@@ -103,6 +104,34 @@ void Apps::setActive(uint8_t id)
     }
 }
 
+void Apps::reload(cJSON *apps_)
+{
+    clear();
+
+    uint16_t app_position = 1;
+
+    cJSON *json_app = NULL;
+    cJSON_ArrayForEach(json_app, apps_)
+    {
+        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
+        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
+        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
+
+        // ESP_LOGD("apps.cpp", "%s", json_app_id->valuestring);
+
+        loadApp(app_position, std::string(json_app_slug->valuestring), json_app_id->valuestring, json_friendly_name->valuestring);
+
+        app_position++;
+    }
+
+    SettingsApp *settings_app = new SettingsApp(this->spr_);
+    add(app_position, settings_app);
+
+    updateMenu();
+    setActive(0);
+    cJSON_Delete(apps_);
+}
+
 void Apps::updateMenu()
 {
     // re - generate new menu based on loaded apps
@@ -133,56 +162,56 @@ void Apps::updateMenu()
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
-void Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, char entity_name[32])
+void Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name)
 {
     if (position < 1)
     {
-        ESP_LOGE("apps.cpp", "can't load app at %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGE("apps.cpp", "can't load app at %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return;
     }
 
-    ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+    ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(this->spr_, app_id);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
         BlindsApp *app = new BlindsApp(this->spr_, app_id);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id);
+        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id);
+        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), entity_name);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
     else
     {

@@ -18,6 +18,7 @@
 class AppTask : public Task<AppTask>,
                 public Logger
 {
+
     friend class Task<AppTask>; // Allow base Task to invoke protected run()
 
 public:
@@ -33,6 +34,7 @@ public:
 
     QueueHandle_t getConnectivityStateQueue();
     QueueHandle_t getSensorsStateQueue();
+    QueueHandle_t getAppSyncQueue();
 
 protected:
     void run();
@@ -72,11 +74,15 @@ private:
     ConnectivityState latest_connectivity_state_ = {};
     SensorsState latest_sensors_state_ = {};
 
+    cJSON *apps_ = NULL;
+
     QueueHandle_t log_queue_;
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;
     QueueHandle_t sensors_status_queue_;
+
+    QueueHandle_t app_sync_queue_;
 
     SerialProtocolPlaintext plaintext_protocol_;
     SerialProtocolProtobuf proto_protocol_;
