@@ -1,7 +1,7 @@
 #define WIFI_SSID "SSID"
 #define WIFI_PASSWORD "PASS"
 
-#define MQTT_USER "mosquitto"
-#define MQTT_PASSWORD "mosquitto"
+#define MQTT_USER "mosquittos"
+#define MQTT_PASSWORD "mosquittos"
 #define MQTT_PORT 1883
 #define MQTT_SERVER "10.0.0.42"
