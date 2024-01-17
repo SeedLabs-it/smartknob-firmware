@@ -86,7 +86,7 @@ void NetworkingTask::setup_wifi()
 
     log("starting MQTT client");
     mqttClient.setClient(wifi_client);
-    // mqttClient.setBufferSize(256);
+    mqttClient.setBufferSize(512);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setServer(mqtt_host, mqtt_port);
@@ -114,10 +114,6 @@ void NetworkingTask::setup_wifi()
 void NetworkingTask::mqtt_callback(char *topic, byte *payload, unsigned int length)
 {
     cJSON *json_root = cJSON_Parse((char *)payload);
-
-    log("got message");
-    log(cJSON_Print(json_root));
-
     cJSON *type = cJSON_GetObjectItem(json_root, "type");
 
     if (strcmp(type->valuestring, "sync") == 0)
@@ -129,12 +125,7 @@ void NetworkingTask::mqtt_callback(char *topic, byte *payload, unsigned int leng
         unlock();
 
         publishAppSync(apps);
-
-        // log("got apps");
-        // log(cJSON_Print(apps));
-        // xQueueSend(test_queue, &apps, portMAX_DELAY);
     }
-    cJSON_Delete(json_root);
 }
 
 void NetworkingTask::run()

@@ -31,7 +31,7 @@ public:
     void setSprite(TFT_eSprite *spr_);
     void loadApp(uint8_t position, std::string app_slug, std::string app_id, char entity_name[32]);
     void updateMenu();
-    void reload(cJSON *apps);
+    void reload(cJSON *apps_);
 
 private:
     QueueHandle_t mutex;

@@ -194,10 +194,13 @@ void AppTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            log("App sync requested");
-            log("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            ESP_LOGD("app_task", "App sync requested!");
             apps->reload(networking_task_->getApps());
+
+            // SHOULD BE RELEASE LATER WHEN RELOAD IS DONE
             networking_task_->unlock();
+
+            // cJSON_Delete(apps_);
         }
 
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)

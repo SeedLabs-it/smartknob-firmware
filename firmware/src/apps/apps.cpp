@@ -106,12 +106,6 @@ void Apps::setActive(uint8_t id)
 
 void Apps::reload(cJSON *apps_)
 {
-    ESP_LOGD("WTF", "%s", "TRYING TO RELOAD APPS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    if (apps_ == NULL)
-    {
-        ESP_LOGE("apps.cpp", "apps_ is null");
-        return;
-    }
     clear();
 
     uint16_t app_position = 1;
@@ -122,8 +116,6 @@ void Apps::reload(cJSON *apps_)
         cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
         cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-        ESP_LOGD("WTF", "fromJSON > app_slug=%s", json_app_slug->valuestring);
-        // ESP_LOGD("display_task.cpp", "%s", buf_);
 
         loadApp(app_position, std::string(json_app_slug->valuestring), std::string(json_app_id->valuestring), json_friendly_name->valuestring);
 
@@ -134,7 +126,6 @@ void Apps::reload(cJSON *apps_)
     add(app_position, settings_app);
 
     updateMenu();
-    ESP_LOGD("WTF", "%s", "reloaded apps!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 }
 
 void Apps::updateMenu()
