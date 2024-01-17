@@ -128,6 +128,7 @@ void Apps::reload(cJSON *apps_)
     add(app_position, settings_app);
 
     updateMenu();
+    setActive(0);
     cJSON_Delete(apps_);
 }
 
@@ -196,7 +197,7 @@ void Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id);
+        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     }
