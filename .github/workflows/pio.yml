@@ -47,12 +47,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
 
-    - name: Build Firmware (view)
+    - name: Build Firmware (seedlabs_devkit)
       # Run regardless of other build step failures, as long as setup steps completed
       if: always() && steps.pio_install.outcome == 'success'
       run: |
         pio run \
-          -e seedlabs_devkit
+          -e seedlabs_devkit_github_action
 
     # - name: Build Firmware (nanofoc)
     #   # Run regardless of other build step failures, as long as setup steps completed
