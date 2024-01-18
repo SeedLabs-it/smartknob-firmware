@@ -176,14 +176,46 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             3,
-            "",
             "WIFI",
+            "",
             spr_->color565(255, 255, 255),
-            wifi_40,
+            wifi_conn_80,
             spr_->color565(255, 255, 255),
             nullptr,
             spr_->color565(255, 255, 255),
             "PRESS TO CONFIGURE",
+        });
+
+    app_position++;
+
+    onboarding_app->add_item(
+        app_position,
+        OnboardingItem{
+            4,
+            "DEMO MODE",
+            "",
+            spr_->color565(255, 255, 255),
+            demo_80,
+            spr_->color565(255, 255, 255),
+            nullptr,
+            spr_->color565(255, 255, 255),
+            "PRESS TO START",
+        });
+
+    app_position++;
+
+    onboarding_app->add_item(
+        app_position,
+        OnboardingItem{
+            5,
+            "FIRMWARE: 0.1b",
+            "HARDWARE: DEVKIT V0.1",
+            spr_->color565(255, 255, 255),
+            nullptr,
+            spr_->color565(255, 255, 255),
+            nullptr,
+            spr_->color565(255, 255, 255),
+            "SEEDLABS.IT ®",
         });
 
     add(0, onboarding_app);
