@@ -60,7 +60,7 @@ void OnboardingApp::add_item(uint8_t id, OnboardingItem item)
 {
     items[id] = item;
     onboarding_items_count++;
-    motor_config.max_position = onboarding_items_count;
+    motor_config.max_position = onboarding_items_count - 1;
 }
 
 // TODO: add protection, could cause panic
@@ -93,10 +93,6 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current)
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
-
-    // spr_->fillRect(center_h - room_lable_w / 2, label_vertical_offset, room_lable_w, room_lable_h + 1, label_color); // +1 for height to draw circle right
-    // spr_->fillCircle(center_h - room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, label_color);
-    // spr_->fillCircle(center_h + room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, label_color);
 
     if (current.big_icon == nullptr)
     {
@@ -143,15 +139,4 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current)
         // polar coordinates
         spr_->fillCircle(screen_radius + (position_circle_radius * cosf(menu_starting_angle + degree_per_item * i)), screen_radius - position_circle_radius * sinf(menu_starting_angle + degree_per_item * i), menu_item_diameter / 2, menu_item_color);
     }
-
-    // spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);
-
-    // spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current.big_icon, icon_size_active, icon_size_active, color_active, background);
-    // ESP_LOGD("menu.cpp", "%s", current.screen_name);
-
-    // left one
-    // spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev.small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
-
-    // right one
-    // spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next.small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
 };
