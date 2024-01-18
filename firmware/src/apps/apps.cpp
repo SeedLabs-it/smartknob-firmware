@@ -281,6 +281,15 @@ void Apps::createOnboarding()
 
     add(0, onboarding_app);
 
+    SettingsApp *app0 = new SettingsApp(this->spr_);
+    add(1, app0);
+
+    StopwatchApp *app1 = new StopwatchApp(this->spr_, "lol");
+    add(2, app1);
+
+    LightDimmerApp *app3 = new LightDimmerApp(this->spr_, "lol", "lol");
+    add(3, app3);
+
     setActive(0);
 }
 

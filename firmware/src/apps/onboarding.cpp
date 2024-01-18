@@ -46,7 +46,10 @@ void OnboardingApp::updateStateFromSystem(AppState state) {}
 
 uint8_t OnboardingApp::navigationNext()
 {
-    return current_onboarding_position + 1; // +1 to shift from 0 position which is menu itself
+    if (current_onboarding_position >= 1 && current_onboarding_position <= 3)
+        return current_onboarding_position;
+
+    return 0; // +1 to shift from 0 position which is menu itself
 }
 
 TFT_eSprite *OnboardingApp::render()
