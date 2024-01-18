@@ -143,12 +143,14 @@ void Apps::createOnboarding()
     onboarding_app->add_item(
         app_position,
         OnboardingItem{
+            1,
             "SMART KNOB",
             "DEV KIT V0.1",
-            1,
             spr_->color565(255, 255, 255),
             nullptr,
+            spr_->color565(255, 255, 255),
             nullptr,
+            spr_->color565(255, 255, 255),
             "ROTATE TO START",
         });
 
@@ -157,13 +159,31 @@ void Apps::createOnboarding()
     onboarding_app->add_item(
         app_position,
         OnboardingItem{
+            2,
             "HOME ASSISTANT",
             "INTEGRATION",
-            1,
+            spr_->color565(255, 255, 255),
+            home_assistant_80,
+            spr_->color565(17, 189, 242),
+            nullptr,
+            spr_->color565(255, 255, 255),
+            "PRESS TO CONTINUE",
+        });
+
+    app_position++;
+
+    onboarding_app->add_item(
+        app_position,
+        OnboardingItem{
+            3,
+            "",
+            "WIFI",
+            spr_->color565(255, 255, 255),
+            wifi_40,
             spr_->color565(255, 255, 255),
             nullptr,
-            nullptr,
-            "PRESS TO CONTINUE",
+            spr_->color565(255, 255, 255),
+            "PRESS TO CONFIGURE",
         });
 
     add(0, onboarding_app);

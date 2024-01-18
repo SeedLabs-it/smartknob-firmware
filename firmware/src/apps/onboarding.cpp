@@ -9,12 +9,12 @@ OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
         0,
         0,
         0,
-        -1, // max position < min position indicates no bounds
-        25 * PI / 180,
-        2,
+        0, // max position < min position indicates no bounds
+        60 * PI / 180,
+        1,
         1,
         0.55,
-        "SKDEMO_Menu", // TODO: clean this
+        "SKDEMO_Onboarding", // TODO: clean this
         0,
         {},
         0,
@@ -77,6 +77,7 @@ void OnboardingApp::add_item(uint8_t id, OnboardingItem item)
 {
     items[id] = item;
     onboarding_items_count++;
+    motor_config.max_position = onboarding_items_count;
 }
 
 // TODO: add protection, could cause panic
@@ -93,14 +94,18 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current, OnboardingI
     uint32_t background = spr_->color565(0, 0, 0);
 
     uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t center_w = TFT_WIDTH / 2;
 
-    int8_t screen_name_label_w = 100;
+    uint16_t screen_radius = TFT_WIDTH / 2;
+
+    // int8_t screen_name_label_w = 100;
     int8_t screen_name_label_h = spr_->fontHeight(1);
     int8_t label_vertical_offset = 25;
 
-    uint8_t icon_size_active = 80;
-    uint8_t icon_size_inactive = 40;
+    int8_t call_to_action_label_h = spr_->fontHeight(1);
+
+    uint8_t icon_size_big = 80; // TODO MAKE BIGGER
+    uint8_t icon_size_small = 80;
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
@@ -115,20 +120,45 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current, OnboardingI
         if (current.small_icon == nullptr)
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name, center_v, center_h - screen_name_label_h * 2, 1);
-            spr_->drawString(current.screen_description, center_v, center_h - screen_name_label_h, 1);
+            spr_->drawString(current.screen_name, center_w, center_h - screen_name_label_h * 2, 1);
+            spr_->drawString(current.screen_description, center_w, center_h - screen_name_label_h, 1);
 
             spr_->setTextColor(spr_->color565(128, 255, 80));
-            spr_->drawString(current.call_to_action, center_v, center_v + icon_size_active / 2, 1);
+            spr_->drawString(current.call_to_action, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
         else
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name, center_v, label_vertical_offset + screen_name_label_h / 2 - 1, 1);
+            spr_->drawString(current.screen_name, center_w, screen_name_label_h * 2, 1);
+            spr_->drawString(current.screen_description, center_w, screen_name_label_h * 3, 1);
+
+            spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, current.small_icon, icon_size_big, icon_size_big, current.color_small_icon, background);
 
             spr_->setTextColor(spr_->color565(128, 255, 80));
-            spr_->drawString(current.call_to_action, center_v, center_v + icon_size_active / 2 + 30, 1);
+            spr_->drawString(current.call_to_action, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
+    }
+
+    uint32_t menu_item_color;
+    uint8_t menu_item_diameter = 6;
+    uint8_t position_circle_radius = screen_radius - menu_item_diameter; // the radius of the circle where you want the dots to lay.
+    float degree_per_item = 8 * PI / 180;                                // the degree (angle) between two points in radian
+    float center_point_degree = 270 * PI / 180;                          //
+    float menu_starting_angle = center_point_degree - ((onboarding_items_count * degree_per_item) / 2);
+
+    for (uint16_t i = 0; i < onboarding_items_count; i++)
+    {
+        // draw a circle
+        if (current_onboarding_position == i)
+        {
+            menu_item_color = TFT_GREENYELLOW;
+        }
+        else
+        {
+            menu_item_color = TFT_WHITE;
+        }
+        // polar coordinates
+        spr_->fillCircle(screen_radius + (position_circle_radius * cosf(menu_starting_angle + degree_per_item * i)), screen_radius - position_circle_radius * sinf(menu_starting_angle + degree_per_item * i), menu_item_diameter / 2, menu_item_color);
     }
 
     // spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);

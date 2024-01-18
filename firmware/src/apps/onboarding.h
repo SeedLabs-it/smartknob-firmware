@@ -7,12 +7,14 @@
 
 struct OnboardingItem
 {
+    uint16_t app_id;
     const char *screen_name;
     const char *screen_description;
-    uint16_t app_id;
     uint32_t color;
     const unsigned char *small_icon;
+    uint16_t color_small_icon;
     const unsigned char *big_icon;
+    uint16_t color_big_icon;
     const char *call_to_action;
 };
 
