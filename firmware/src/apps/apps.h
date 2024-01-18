@@ -11,10 +11,13 @@
 #include "climate.h"
 #include "light_dimmer.h"
 #include "light_switch.h"
-#include "menu.h"
 #include "music.h"
 #include "settings.h"
 #include "stopwatch.h"
+
+// include all "menu" apps
+#include "menu.h"
+#include "onboarding.h"
 
 // TODO: generate menu based on items in the map
 class Apps
@@ -31,7 +34,9 @@ public:
     void setSprite(TFT_eSprite *spr_);
     void loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name);
     void updateMenu();
+
     void reload(cJSON *apps_);
+    void createOnboarding();
 
 private:
     QueueHandle_t mutex;

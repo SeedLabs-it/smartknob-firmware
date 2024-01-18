@@ -1,6 +1,7 @@
 #pragma once
 #include "apps.h"
 #include "menu.h"
+#include "onboarding.h"
 #include "settings.h"
 
 #include <typeinfo>
@@ -130,6 +131,44 @@ void Apps::reload(cJSON *apps_)
     updateMenu();
     setActive(0);
     cJSON_Delete(apps_);
+}
+
+void Apps::createOnboarding()
+{
+    clear();
+
+    OnboardingApp *onboarding_app = new OnboardingApp(this->spr_);
+    uint16_t app_position = 0;
+
+    onboarding_app->add_item(
+        app_position,
+        OnboardingItem{
+            "SMART KNOB",
+            "DEV KIT V0.1",
+            1,
+            spr_->color565(255, 255, 255),
+            nullptr,
+            nullptr,
+            "ROTATE TO START",
+        });
+
+    app_position++;
+
+    onboarding_app->add_item(
+        app_position,
+        OnboardingItem{
+            "HOME ASSISTANT",
+            "INTEGRATION",
+            1,
+            spr_->color565(255, 255, 255),
+            nullptr,
+            nullptr,
+            "PRESS TO CONTINUE",
+        });
+
+    add(0, onboarding_app);
+
+    // setActive(0);
 }
 
 void Apps::updateMenu()
