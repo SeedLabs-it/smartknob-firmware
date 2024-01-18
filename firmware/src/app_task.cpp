@@ -167,6 +167,9 @@ void AppTask::run()
 
     EntityStateUpdate entity_state_update_to_send;
 
+    // Value between [0, 65536] for brightness when not engaging with knob
+    bool isCurrentSubPositionSet = false;
+    float currentSubPosition;
     AppState app_state = {};
     while (1)
     {
@@ -175,16 +178,32 @@ void AppTask::run()
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;
             app_state.proximiti_state.RangeStatus = latest_sensors_state_.proximity.RangeStatus;
 
-            if (app_state.proximiti_state.RangeStatus == 0 && app_state.proximiti_state.RangeMilliMeter < 200)
+            // wake up the screen
+            // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
+            if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
             {
-                app_state.screen_state.is_awake = true;
-                app_state.screen_state.awake_until = millis() + 1000; // 1s
+                app_state.screen_state.has_been_engaged = true;
             }
         }
-
-        if (app_state.screen_state.awake_until < millis())
+        if (app_state.screen_state.has_been_engaged == true)
         {
-            app_state.screen_state.is_awake = false;
+            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+            app_state.screen_state.awake_until = millis() + 1000; // 1s
+        }
+        // Check if the knob is awake, and if the time is expired
+        // and set it to not engaged
+        if (app_state.screen_state.has_been_engaged && millis() < app_state.screen_state.awake_until)
+        {
+            app_state.screen_state.has_been_engaged = false;
+        }
+        if (app_state.screen_state.has_been_engaged == false &&
+            app_state.screen_state.brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS &&
+            millis() > app_state.screen_state.awake_until)
+        {   
+            // TODO, this can be timed better (ideally by subtracting MAX_BRIGHTNESS - MIN_BRIGHTNESS/fps/second_of_animation)
+            app_state.screen_state.brightness = app_state.screen_state.brightness - 1000;
+            if (app_state.screen_state.brightness < app_state.screen_state.MIN_LCD_BRIGHTNESS)
+                app_state.screen_state.brightness = app_state.screen_state.MIN_LCD_BRIGHTNESS;
         }
 
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
@@ -204,10 +223,23 @@ void AppTask::run()
 
             // cJSON_Delete(apps_);
         }
-
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
+            // The following is a smoothing filter (rounding) on the sub position unit (to avoid flakines).
+            float roundedNewPosition = round(latest_state_.sub_position_unit * 3) / 3.0;
+            // This if is used to understand if we have touched the knob since last state.
+            if (isCurrentSubPositionSet)
+            {
+                if (currentSubPosition != roundedNewPosition)
+                {
+                    // We set a flag on the object Screen State.
+                    //  Todo: this property should be at app state and not screen state
+                    app_state.screen_state.has_been_engaged = true;
+                }
+            }
+            isCurrentSubPositionSet = true;
+            currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
             entity_state_update_to_send = apps->update(app_state);
@@ -281,6 +313,7 @@ void AppTask::updateHardware(AppState app_state)
     {
         snprintf(buf_, sizeof(buf_), "millilux: %.2f", lux * 1000);
         log(buf_);
+
         last_als = millis();
     }
 #endif
@@ -357,10 +390,7 @@ void AppTask::updateHardware(AppState app_state)
 #if SK_ALS
     brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
 
-    if (app_state.screen_state.is_awake)
-    {
-        brightness = UINT16_MAX;
-    }
+    brightness = app_state.screen_state.brightness;
 #endif
 
 #if SK_DISPLAY
