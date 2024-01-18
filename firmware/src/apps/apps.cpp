@@ -138,10 +138,9 @@ void Apps::createOnboarding()
     clear();
 
     OnboardingApp *onboarding_app = new OnboardingApp(this->spr_);
-    uint16_t app_position = 0;
 
     onboarding_app->add_item(
-        app_position,
+        0,
         OnboardingItem{
             1,
             TextItem{
@@ -166,10 +165,8 @@ void Apps::createOnboarding()
             },
         });
 
-    app_position++;
-
     onboarding_app->add_item(
-        app_position,
+        1,
         OnboardingItem{
             2,
             TextItem{
@@ -194,10 +191,8 @@ void Apps::createOnboarding()
             },
         });
 
-    app_position++;
-
     onboarding_app->add_item(
-        app_position,
+        2,
         OnboardingItem{
             3,
             TextItem{
@@ -221,11 +216,8 @@ void Apps::createOnboarding()
                 spr_->color565(255, 255, 255),
             },
         });
-
-    app_position++;
-
     onboarding_app->add_item(
-        app_position,
+        3,
         OnboardingItem{
             4,
             TextItem{
@@ -249,11 +241,8 @@ void Apps::createOnboarding()
                 spr_->color565(255, 255, 255),
             },
         });
-
-    app_position++;
-
     onboarding_app->add_item(
-        app_position,
+        4,
         OnboardingItem{
             5,
             TextItem{
@@ -282,13 +271,17 @@ void Apps::createOnboarding()
     add(0, onboarding_app);
 
     // APPS FOR OTHER ONBOARDING SCREENS
-    SettingsApp *app0 = new SettingsApp(this->spr_);
+    SettingsApp *app0 = new SettingsApp(spr_);
     add(1, app0);
 
-    StopwatchApp *app1 = new StopwatchApp(this->spr_, "");
+    StopwatchApp *app1 = new StopwatchApp(spr_, "");
     add(2, app1);
 
+    // FOR DEMO
     MenuApp *menu_app = new MenuApp(spr_);
+    SettingsApp *settings_app = new SettingsApp(spr_);
+    add(4, settings_app);
+
     menu_app->add_item(
         0,
         MenuItem{
@@ -298,36 +291,38 @@ void Apps::createOnboarding()
             settings_40,
             settings_80,
         });
-    menu_app->add_item(
-        1,
-        MenuItem{
-            "STOPWATCH",
-            5,
-            spr_->color565(0, 255, 200),
-            stopwatch_40,
-            stopwatch_80,
-        });
-    menu_app->add_item(
-        2,
-        MenuItem{
-            "LIGHTDIMMER",
-            6,
-            spr_->color565(0, 255, 200),
-            light_switch_40,
-            light_switch_80,
-        });
+
+    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
+
+    cJSON *json_root = cJSON_Parse(apps_config.c_str());
+    cJSON *json_app = NULL;
+
+    uint16_t app_position = 5;
+    uint16_t menu_position = 1;
+
+    cJSON_ArrayForEach(json_app, json_root)
+    {
+        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
+        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
+        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
+
+        App *app = loadApp(app_position, std::string(json_app_slug->valuestring), std::string(json_app_id->valuestring), json_friendly_name->valuestring);
+
+        menu_app->add_item(
+            menu_position,
+            MenuItem{
+                app->friendly_name,
+                app_position,
+                spr_->color565(0, 255, 200),
+                app->small_icon,
+                app->big_icon,
+            });
+
+        app_position++;
+        menu_position++;
+    }
 
     add(3, menu_app);
-
-    // // APPS FOR DEMO ONBOARDING SCREEN
-    SettingsApp *app2 = new SettingsApp(this->spr_);
-    add(4, app2);
-
-    StopwatchApp *app3 = new StopwatchApp(this->spr_, "");
-    add(5, app3);
-
-    LightDimmerApp *app4 = new LightDimmerApp(this->spr_, "", "Kitchen");
-    add(6, app4);
 
     setActive(0);
 }
@@ -362,12 +357,11 @@ void Apps::updateMenu()
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
-void Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name)
+App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name)
 {
     if (position < 1)
     {
         ESP_LOGE("apps.cpp", "can't load app at %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
-        return;
     }
 
     ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
@@ -376,47 +370,55 @@ void Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
         ClimateApp *app = new ClimateApp(this->spr_, app_id);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
         BlindsApp *app = new BlindsApp(this->spr_, app_id);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
         LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        return app;
     }
     else
     {
         ESP_LOGE("apps.cpp", "can't find app with slug '%s'", app_slug);
     }
+    return nullptr;
 }
 
 uint8_t Apps::navigationNext()
