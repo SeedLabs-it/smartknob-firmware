@@ -42,7 +42,7 @@ void SensorsTask::run()
 
     while (1)
     {
-        if (millis() - last_proximity_check_ms > 100)
+        if (millis() - last_proximity_check_ms > 50)
         {
 
             lox.rangingTest(&measure, false);
