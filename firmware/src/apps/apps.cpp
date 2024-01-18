@@ -259,8 +259,8 @@ void Apps::createOnboarding()
     add(0, onboarding_app);
 
     // APPS FOR OTHER ONBOARDING SCREENS
-    SettingsApp *app0 = new SettingsApp(spr_);
-    add(1, app0);
+    HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
+    add(1, hass_setup_app);
 
     StopwatchApp *app1 = new StopwatchApp(spr_, "");
     add(2, app1);

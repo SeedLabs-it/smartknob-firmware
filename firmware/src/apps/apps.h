@@ -19,6 +19,9 @@
 #include "menu.h"
 #include "onboarding.h"
 
+// include all "setup" apps
+#include "onboarding/hass_setup.h"
+
 // TODO: generate menu based on items in the map
 class Apps
 {
