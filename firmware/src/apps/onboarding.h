@@ -5,12 +5,16 @@
 
 #include <map>
 
+struct TextItem
+{
+    const char *text;
+    uint16_t color;
+};
 struct OnboardingItem
 {
     uint16_t app_id;
-    const char *screen_name;
-    const char *screen_description;
-    uint32_t color;
+    TextItem screen_name;
+    TextItem screen_description;
     const unsigned char *small_icon;
     uint16_t color_small_icon;
     const unsigned char *big_icon;

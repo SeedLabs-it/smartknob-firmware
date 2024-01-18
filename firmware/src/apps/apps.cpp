@@ -144,9 +144,14 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             1,
-            "SMART KNOB",
-            "DEV KIT V0.1",
-            spr_->color565(255, 255, 255),
+            TextItem{
+                "SMART KNOB",
+                spr_->color565(255, 255, 255),
+            },
+            TextItem{
+                "DEV KIT V0.1",
+                spr_->color565(255, 255, 255),
+            },
             nullptr,
             spr_->color565(255, 255, 255),
             nullptr,
@@ -160,9 +165,14 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             2,
-            "HOME ASSISTANT",
-            "INTEGRATION",
-            spr_->color565(255, 255, 255),
+            TextItem{
+                "HOME ASSISTANT",
+                spr_->color565(255, 255, 255),
+            },
+            TextItem{
+                "INTEGRATION",
+                spr_->color565(255, 255, 255),
+            },
             home_assistant_80,
             spr_->color565(17, 189, 242),
             nullptr,
@@ -176,9 +186,14 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             3,
-            "WIFI",
-            "",
-            spr_->color565(255, 255, 255),
+            TextItem{
+                "WIFI",
+                spr_->color565(255, 255, 255),
+            },
+            TextItem{
+                "",
+                spr_->color565(255, 255, 255),
+            },
             wifi_conn_80,
             spr_->color565(255, 255, 255),
             nullptr,
@@ -192,9 +207,14 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             4,
-            "DEMO MODE",
-            "",
-            spr_->color565(255, 255, 255),
+            TextItem{
+                "DEMO MODE",
+                spr_->color565(255, 255, 255),
+            },
+            TextItem{
+                "",
+                spr_->color565(255, 255, 255),
+            },
             demo_80,
             spr_->color565(255, 255, 255),
             nullptr,
@@ -208,9 +228,14 @@ void Apps::createOnboarding()
         app_position,
         OnboardingItem{
             5,
-            "FIRMWARE: 0.1b",
-            "HARDWARE: DEVKIT V0.1",
-            spr_->color565(255, 255, 255),
+            TextItem{
+                "FIRMWARE 0.1b",
+                spr_->color565(255, 255, 255),
+            },
+            TextItem{
+                "HARDWARE: DEVKIT V0.1",
+                spr_->color565(255, 255, 255),
+            },
             nullptr,
             spr_->color565(255, 255, 255),
             nullptr,
@@ -220,7 +245,7 @@ void Apps::createOnboarding()
 
     add(0, onboarding_app);
 
-    // setActive(0);
+    setActive(0);
 }
 
 void Apps::updateMenu()

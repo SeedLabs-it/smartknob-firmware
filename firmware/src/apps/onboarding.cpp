@@ -71,7 +71,7 @@ OnboardingItem OnboardingApp::find_item(uint8_t id)
 
 void OnboardingApp::render_onboarding_screen(OnboardingItem current)
 {
-    uint32_t color_active = current.color;
+    uint32_t color_active = current.screen_name.color;
     uint32_t color_inactive = spr_->color565(150, 150, 150);
     uint32_t label_color = color_inactive;
     uint32_t background = spr_->color565(0, 0, 0);
@@ -99,8 +99,8 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current)
         if (current.small_icon == nullptr)
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name, center_w, center_h - screen_name_label_h * 2, 1);
-            spr_->drawString(current.screen_description, center_w, center_h - screen_name_label_h, 1);
+            spr_->drawString(current.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
+            spr_->drawString(current.screen_description.text, center_w, center_h - screen_name_label_h, 1);
 
             spr_->setTextColor(spr_->color565(128, 255, 80));
             spr_->drawString(current.call_to_action, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
@@ -108,8 +108,8 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current)
         else
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name, center_w, screen_name_label_h * 2, 1);
-            spr_->drawString(current.screen_description, center_w, screen_name_label_h * 3, 1);
+            spr_->drawString(current.screen_name.text, center_w, screen_name_label_h * 2, 1);
+            spr_->drawString(current.screen_description.text, center_w, screen_name_label_h * 3, 1);
 
             spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, current.small_icon, icon_size_big, icon_size_big, current.color_small_icon, background);
 
