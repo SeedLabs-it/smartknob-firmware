@@ -152,11 +152,18 @@ void Apps::createOnboarding()
                 "DEV KIT V0.1",
                 spr_->color565(255, 255, 255),
             },
-            nullptr,
-            spr_->color565(255, 255, 255),
-            nullptr,
-            spr_->color565(255, 255, 255),
-            "ROTATE TO START",
+            TextItem{
+                "ROTATE TO START",
+                spr_->color565(128, 255, 80),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
         });
 
     app_position++;
@@ -173,11 +180,18 @@ void Apps::createOnboarding()
                 "INTEGRATION",
                 spr_->color565(255, 255, 255),
             },
-            home_assistant_80,
-            spr_->color565(17, 189, 242),
-            nullptr,
-            spr_->color565(255, 255, 255),
-            "PRESS TO CONTINUE",
+            TextItem{
+                "PRESS TO CONTINUE",
+                spr_->color565(128, 255, 80),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                home_assistant_80,
+                spr_->color565(17, 189, 242),
+            },
         });
 
     app_position++;
@@ -194,11 +208,18 @@ void Apps::createOnboarding()
                 "",
                 spr_->color565(255, 255, 255),
             },
-            wifi_conn_80,
-            spr_->color565(255, 255, 255),
-            nullptr,
-            spr_->color565(255, 255, 255),
-            "PRESS TO CONFIGURE",
+            TextItem{
+                "PRESS TO CONFIGURE",
+                spr_->color565(128, 255, 80),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                wifi_conn_80,
+                spr_->color565(255, 255, 255),
+            },
         });
 
     app_position++;
@@ -215,11 +236,18 @@ void Apps::createOnboarding()
                 "",
                 spr_->color565(255, 255, 255),
             },
-            demo_80,
-            spr_->color565(255, 255, 255),
-            nullptr,
-            spr_->color565(255, 255, 255),
-            "PRESS TO START",
+            TextItem{
+                "PRESS TO START",
+                spr_->color565(128, 255, 80),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                demo_80,
+                spr_->color565(255, 255, 255),
+            },
         });
 
     app_position++;
@@ -236,11 +264,19 @@ void Apps::createOnboarding()
                 "HARDWARE: DEVKIT V0.1",
                 spr_->color565(255, 255, 255),
             },
-            nullptr,
-            spr_->color565(255, 255, 255),
-            nullptr,
-            spr_->color565(255, 255, 255),
-            "SEEDLABS.IT ®",
+            TextItem{
+                "SEEDLABS.IT ®", // TODO "®" doesnt show up
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+            IconItem{
+                nullptr,
+                spr_->color565(255, 255, 255),
+            },
+
         });
 
     add(0, onboarding_app);

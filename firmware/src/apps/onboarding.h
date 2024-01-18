@@ -10,16 +10,20 @@ struct TextItem
     const char *text;
     uint16_t color;
 };
+
+struct IconItem
+{
+    const unsigned char *icon;
+    uint16_t color;
+};
 struct OnboardingItem
 {
     uint16_t app_id;
     TextItem screen_name;
     TextItem screen_description;
-    const unsigned char *small_icon;
-    uint16_t color_small_icon;
-    const unsigned char *big_icon;
-    uint16_t color_big_icon;
-    const char *call_to_action;
+    TextItem call_to_action;
+    IconItem big_icon;
+    IconItem small_icon;
 };
 
 class OnboardingApp : public App

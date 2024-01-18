@@ -69,9 +69,9 @@ OnboardingItem OnboardingApp::find_item(uint8_t id)
     return (*items.find(id)).second;
 }
 
-void OnboardingApp::render_onboarding_screen(OnboardingItem current)
+void OnboardingApp::render_onboarding_screen(OnboardingItem item)
 {
-    uint32_t color_active = current.screen_name.color;
+    uint32_t color_active = item.screen_name.color;
     uint32_t color_inactive = spr_->color565(150, 150, 150);
     uint32_t label_color = color_inactive;
     uint32_t background = spr_->color565(0, 0, 0);
@@ -94,27 +94,27 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem current)
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
 
-    if (current.big_icon == nullptr)
+    if (item.big_icon.icon == nullptr)
     {
-        if (current.small_icon == nullptr)
+        if (item.small_icon.icon == nullptr)
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
-            spr_->drawString(current.screen_description.text, center_w, center_h - screen_name_label_h, 1);
+            spr_->drawString(item.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
+            spr_->drawString(item.screen_description.text, center_w, center_h - screen_name_label_h, 1);
 
-            spr_->setTextColor(spr_->color565(128, 255, 80));
-            spr_->drawString(current.call_to_action, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
+            spr_->setTextColor(item.call_to_action.color);
+            spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
         else
         {
             spr_->setTextColor(color_active);
-            spr_->drawString(current.screen_name.text, center_w, screen_name_label_h * 2, 1);
-            spr_->drawString(current.screen_description.text, center_w, screen_name_label_h * 3, 1);
+            spr_->drawString(item.screen_name.text, center_w, screen_name_label_h * 2, 1);
+            spr_->drawString(item.screen_description.text, center_w, screen_name_label_h * 3, 1);
 
-            spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, current.small_icon, icon_size_big, icon_size_big, current.color_small_icon, background);
+            spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, item.small_icon.icon, icon_size_big, icon_size_big, item.small_icon.color, background);
 
-            spr_->setTextColor(spr_->color565(128, 255, 80));
-            spr_->drawString(current.call_to_action, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
+            spr_->setTextColor(item.call_to_action.color);
+            spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
     }
 
