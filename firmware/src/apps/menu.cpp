@@ -51,21 +51,10 @@ uint8_t MenuApp::navigationNext()
 
 TFT_eSprite *MenuApp::render()
 {
-    // ESP_LOGD("menu.cpp", "called real method");
-    // return;
-    // spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_ORANGE);
-
-    // spr_->setTextColor(TFT_BLACK);
-    // spr_->setFreeFont(&Roboto_Thin_24);
-    // spr_->drawString("Menu", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-
-    // current_menu_position = 0;
-
-    // ESP_LOGD("menu.cpp", "pre-render");
-
     MenuItem current_item = find_item(current_menu_position);
     MenuItem prev_item;
     MenuItem next_item;
+
     if (current_menu_position == 0)
     {
         prev_item = find_item(items.size() - 1);
@@ -81,9 +70,9 @@ TFT_eSprite *MenuApp::render()
         prev_item = find_item(current_menu_position - 1);
         next_item = find_item(current_menu_position + 1);
     }
-    // ESP_LOGD("menu.cpp", "mid-render");
+
     render_menu_screen(current_item, prev_item, next_item);
-    // ESP_LOGD("menu.cpp", "post-render");
+
     return this->spr_;
 }
 
@@ -101,7 +90,6 @@ MenuItem MenuApp::find_item(uint8_t id)
 // TODO: add protection of overwriting same items
 void MenuApp::add_item(uint8_t id, MenuItem item)
 {
-    // items[id] = item;
     items.insert(std::make_pair(id, item));
 }
 
@@ -133,7 +121,6 @@ void MenuApp::render_menu_screen(MenuItem current, MenuItem prev, MenuItem next)
     spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);
 
     spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current.big_icon, icon_size_active, icon_size_active, color_active, background);
-    // ESP_LOGD("menu.cpp", "%s", current.screen_name);
 
     // left one
     spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev.small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
