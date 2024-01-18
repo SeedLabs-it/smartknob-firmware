@@ -23,12 +23,7 @@ void Apps::add(uint8_t id, App *app)
     char buf_[10];
     sprintf(buf_, "%d", id);
 
-    // MenuApp *app = new MenuApp(spr_);
-
     apps.insert(std::make_pair(buf_, app));
-    // ESP_LOGD("apps.cpp", ">>> inserted menu App");
-
-    // apps.insert(apps.begin() + id, std::move(app), std::move(app));
     unlock();
 }
 
@@ -45,10 +40,8 @@ EntityStateUpdate Apps::update(AppState state)
     lock();
     char buf_[10];
     sprintf(buf_, "%d", active_id);
-    // ESP_LOGD("apps.cpp", ">>> pre-updated");
     EntityStateUpdate new_state_update = apps[buf_]->updateStateFromKnob(state.motor_state);
     apps[buf_]->updateStateFromSystem(state);
-    // ESP_LOGD("apps.cpp", ">>> updated");
 
     unlock();
     return new_state_update;
@@ -60,13 +53,10 @@ TFT_eSprite *Apps::renderActive()
     lock();
     if (active_app != nullptr)
     {
-        // ESP_LOGE("apps.cpp", "fast rendering");
         rendered_spr_ = active_app->render();
-        // rendered_spr_ = spr_;
         unlock();
         return rendered_spr_;
     }
-    // ESP_LOGE("apps.cpp", "slow rendering");
 
     char buf_[10];
     sprintf(buf_, "%d", active_id);
@@ -117,8 +107,6 @@ void Apps::reload(cJSON *apps_)
         cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
         cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-
-        // ESP_LOGD("apps.cpp", "%s", json_app_id->valuestring);
 
         loadApp(app_position, std::string(json_app_slug->valuestring), json_app_id->valuestring, json_friendly_name->valuestring);
 
@@ -426,9 +414,7 @@ uint8_t Apps::navigationNext()
     lock();
     char buf_[10];
     sprintf(buf_, "%d", active_id);
-    // ESP_LOGD("apps.cpp", ">>> pre-updated");
     uint8_t next = apps[buf_]->navigationNext();
-    // ESP_LOGD("apps.cpp", ">>> updated");
     unlock();
     return next;
 }
@@ -438,9 +424,7 @@ PB_SmartKnobConfig Apps::getActiveMotorConfig()
     lock();
     char buf_[10];
     sprintf(buf_, "%d", active_id);
-    // ESP_LOGD("apps.cpp", ">>> pre-updated");
     PB_SmartKnobConfig motor_config = apps[buf_]->getMotorConfig();
-    // ESP_LOGD("apps.cpp", ">>> updated");
 
     unlock();
     return motor_config;
