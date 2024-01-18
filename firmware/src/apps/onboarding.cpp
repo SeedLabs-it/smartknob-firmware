@@ -132,7 +132,7 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem item)
 
     if (item.app_id == 4)
     {
-        uint32_t colors[6] = {TFT_BLUE, TFT_PURPLE, TFT_RED, TFT_YELLOW, TFT_GREENYELLOW, TFT_GREEN};
+        uint32_t colors[6] = {TFT_CYAN, TFT_PURPLE, TFT_RED, TFT_YELLOW, TFT_GREENYELLOW, TFT_GREEN};
         float angle_step = 2 * PI / 6;
         float circle_radius = 24; // Adjust as needed
         uint8_t small_circle_radius = 8;
