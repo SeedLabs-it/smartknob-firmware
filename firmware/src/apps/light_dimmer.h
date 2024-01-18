@@ -1,8 +1,7 @@
 #pragma once
 #include "app.h"
-
-#include "font/roboto_thin_bold_24.h"
-#include "font/roboto_thin_20.h"
+#include "font/NDS1210pt7b.h"
+#include "font/Pixel62mr11pt7b.h"
 
 class LightDimmerApp : public App
 {

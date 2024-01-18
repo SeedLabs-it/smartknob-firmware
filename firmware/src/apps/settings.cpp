@@ -98,11 +98,11 @@ TFT_eSprite *SettingsApp::render()
         // spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_PURPLE);
 
         spr_->setTextColor(TFT_WHITE);
-        spr_->setFreeFont(&Roboto_Thin_24);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString("Settings", center_h, 20, 1);
 
         spr_->setTextColor(TFT_WHITE);
-        spr_->setFreeFont(&Roboto_Thin_24);
+        spr_->setFreeFont(&NDS1210pt7b);
 
         // draw line to separate title
         spr_->fillRect(0, 45, TFT_WIDTH, 2, DISABLED_COLOR);
@@ -114,7 +114,7 @@ TFT_eSprite *SettingsApp::render()
             wifi_icon_color = DISABLED_COLOR;
         }
 
-        spr_->drawBitmap(20, 75, wifi_40, wifi_icon_size, wifi_icon_size, wifi_icon_color, TFT_BLACK);
+        spr_->drawBitmap(TFT_WIDTH / 2, 25, wifi_40, wifi_icon_size, wifi_icon_size, wifi_icon_color, TFT_BLACK);
 
         // wifi_30
 
@@ -156,22 +156,22 @@ TFT_eSprite *SettingsApp::render()
         if (connectivity_state.is_connected)
         {
             spr_->setTextColor(signal_strength_color);
-            spr_->setFreeFont(&Roboto_Thin_20);
+            spr_->setFreeFont(&NDS1210pt7b);
             spr_->drawString(signal_strength_text.c_str(), center_h, 94, 1);
 
             spr_->setTextColor(TFT_WHITE);
-            spr_->setFreeFont(&Roboto_Thin_20);
+            spr_->setFreeFont(&NDS1210pt7b);
             sprintf(buf_, "%ddb", signal_strength);
             spr_->drawString(buf_, center_h + 75, 94, 1);
 
             spr_->setTextColor(TFT_WHITE);
-            spr_->setFreeFont(&Roboto_Thin_20);
+            spr_->setFreeFont(&NDS1210pt7b);
             sprintf(buf_, "SSID: %s", SSID.c_str());
             spr_->drawString(buf_, center_h, 130, 1);
 
             spr_->setTextColor(TFT_WHITE);
-            spr_->setFreeFont(&Roboto_Thin_20);
-            sprintf(buf_, "ip: %s", ip.c_str());
+            spr_->setFreeFont(&NDS1210pt7b);
+            sprintf(buf_, "IP: %s", ip.c_str());
             spr_->drawString(buf_, center_h, 160, 1);
         }
         else
@@ -181,13 +181,13 @@ TFT_eSprite *SettingsApp::render()
             signal_strength_text = "Disconnected";
 
             spr_->setTextColor(signal_strength_color);
-            spr_->setFreeFont(&Roboto_Thin_20);
+            spr_->setFreeFont(&NDS1210pt7b);
             spr_->drawString(signal_strength_text.c_str(), center_h + 30, 94, 1);
         }
 
         spr_->setTextColor(TFT_WHITE);
         sprintf(buf_, "%dmm | %d", proximity_state.RangeMilliMeter, proximity_state.RangeStatus);
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, 190, 1);
     }
     else if (current_position == 1)
@@ -196,13 +196,13 @@ TFT_eSprite *SettingsApp::render()
 
         spr_->setTextColor(TFT_WHITE);
         sprintf(buf_, "%s", "Proximity");
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, 20, 1);
 
         spr_->setTextDatum(CR_DATUM);
         spr_->setTextColor(TFT_WHITE);
         sprintf(buf_, "%d", proximity_state.RangeStatus);
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, TFT_WIDTH - 5, center_v, 1);
 
         uint16_t max_r = 90;
@@ -233,7 +233,7 @@ TFT_eSprite *SettingsApp::render()
         spr_->setTextDatum(CC_DATUM);
         spr_->setTextColor(TFT_WHITE);
         sprintf(buf_, "%dmm", proximity_state.RangeMilliMeter);
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, TFT_HEIGHT - 20, 1);
     }
     else if (current_position == 2)
@@ -251,7 +251,7 @@ TFT_eSprite *SettingsApp::render()
         spr_->setTextDatum(CC_DATUM);
         spr_->setTextColor(text_color);
         sprintf(buf_, "%s", "Loading");
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, center_v, 1); // string, xpos, ypos, font
 
         // draw animation
@@ -294,7 +294,7 @@ TFT_eSprite *SettingsApp::render()
 
         spr_->setTextDatum(CC_DATUM);
         spr_->setTextColor(text_color);
-        spr_->setFreeFont(&Roboto_Thin_20);
+        spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, 25, 1);
     }
     else if (current_position == 4)
