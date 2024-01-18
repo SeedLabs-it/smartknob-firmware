@@ -101,9 +101,18 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem item)
     {
         if (item.small_icon.icon == nullptr)
         {
-            spr_->setTextColor(color_active);
-            spr_->drawString(item.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
-            spr_->drawString(item.screen_description.text, center_w, center_h - screen_name_label_h, 1);
+            if (item.app_id == 4)
+            {
+                spr_->setTextColor(color_active);
+                spr_->drawString(item.screen_name.text, center_w, screen_name_label_h * 2, 1);
+                spr_->drawString(item.screen_description.text, center_w, screen_name_label_h * 3, 1);
+            }
+            else
+            {
+                spr_->setTextColor(color_active);
+                spr_->drawString(item.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
+                spr_->drawString(item.screen_description.text, center_w, center_h - screen_name_label_h, 1);
+            }
 
             spr_->setTextColor(item.call_to_action.color);
             spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
@@ -118,6 +127,24 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem item)
 
             spr_->setTextColor(item.call_to_action.color);
             spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
+        }
+    }
+
+    if (item.app_id == 4)
+    {
+        uint32_t colors[6] = {TFT_BLUE, TFT_PURPLE, TFT_RED, TFT_YELLOW, TFT_GREENYELLOW, TFT_GREEN};
+        float angle_step = 2 * PI / 6;
+        float circle_radius = 24; // Adjust as needed
+        uint8_t small_circle_radius = 8;
+
+        for (uint16_t i = 0; i < 6; i++)
+        {
+            int16_t x;
+            int16_t y;
+            x = center_w + circle_radius * sinf((i + 3) * angle_step);
+            y = center_h + circle_radius * cosf((i + 3) * angle_step);
+
+            spr_->fillCircle(x, y, small_circle_radius, colors[i]);
         }
     }
 

@@ -237,7 +237,7 @@ void Apps::createOnboarding()
                 spr_->color565(255, 255, 255),
             },
             IconItem{
-                demo_80,
+                nullptr,
                 spr_->color565(255, 255, 255),
             },
         });
