@@ -49,7 +49,7 @@ private:
 
     TFT_eSprite *rendered_spr_;
 
-    // App *find(uint8_t id);
+    std::shared_ptr<App> find(std::string id);
     void lock();
     void unlock();
 };

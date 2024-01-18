@@ -46,7 +46,7 @@ void MenuApp::updateStateFromSystem(AppState state) {}
 
 uint8_t MenuApp::navigationNext()
 {
-    return current_menu_position + 1; // +1 to shift from 0 position which is menu itself
+    return find_item(current_menu_position).app_id;
 }
 
 TFT_eSprite *MenuApp::render()

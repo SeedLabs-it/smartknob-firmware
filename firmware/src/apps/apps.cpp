@@ -281,14 +281,53 @@ void Apps::createOnboarding()
 
     add(0, onboarding_app);
 
+    // APPS FOR OTHER ONBOARDING SCREENS
     SettingsApp *app0 = new SettingsApp(this->spr_);
     add(1, app0);
 
-    StopwatchApp *app1 = new StopwatchApp(this->spr_, "lol");
+    StopwatchApp *app1 = new StopwatchApp(this->spr_, "");
     add(2, app1);
 
-    LightDimmerApp *app3 = new LightDimmerApp(this->spr_, "lol", "lol");
-    add(3, app3);
+    MenuApp *menu_app = new MenuApp(spr_);
+    menu_app->add_item(
+        0,
+        MenuItem{
+            "SETTINGS",
+            4,
+            spr_->color565(0, 255, 200),
+            settings_40,
+            settings_80,
+        });
+    menu_app->add_item(
+        1,
+        MenuItem{
+            "STOPWATCH",
+            5,
+            spr_->color565(0, 255, 200),
+            stopwatch_40,
+            stopwatch_80,
+        });
+    menu_app->add_item(
+        2,
+        MenuItem{
+            "LIGHTDIMMER",
+            6,
+            spr_->color565(0, 255, 200),
+            light_switch_40,
+            light_switch_80,
+        });
+
+    add(3, menu_app);
+
+    // // APPS FOR DEMO ONBOARDING SCREEN
+    SettingsApp *app2 = new SettingsApp(this->spr_);
+    add(4, app2);
+
+    StopwatchApp *app3 = new StopwatchApp(this->spr_, "");
+    add(5, app3);
+
+    LightDimmerApp *app4 = new LightDimmerApp(this->spr_, "", "Kitchen");
+    add(6, app4);
 
     setActive(0);
 }
@@ -405,11 +444,11 @@ PB_SmartKnobConfig Apps::getActiveMotorConfig()
     return motor_config;
 }
 
-// App *Apps::find(uint8_t id)
-// {
-//     // TODO: add protection with array size
-//     return apps[id];
-// }
+std::shared_ptr<App> Apps::find(std::string id)
+{
+    // TODO: add protection with array size
+    return apps[id];
+}
 
 void Apps::lock()
 {
