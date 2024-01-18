@@ -34,5 +34,5 @@ private:
     uint8_t onboarding_items_count = 0;
     uint8_t current_onboarding_position = 0;
 
-    void render_onboarding_screen(OnboardingItem current, OnboardingItem prev, OnboardingItem next);
+    void render_onboarding_screen(OnboardingItem current);
 };

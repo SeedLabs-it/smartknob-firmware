@@ -52,24 +52,7 @@ uint8_t OnboardingApp::navigationNext()
 TFT_eSprite *OnboardingApp::render()
 {
     OnboardingItem current_item = find_item(current_onboarding_position);
-    OnboardingItem prev_item;
-    OnboardingItem next_item;
-    if (current_onboarding_position == 0)
-    {
-        // prev_item = find_item(items.size() - 1);
-        next_item = find_item(current_onboarding_position + 1);
-    }
-    else if (current_onboarding_position == items.size() - 1)
-    {
-        prev_item = find_item(current_onboarding_position - 1);
-        // next_item = find_item(0);
-    }
-    else
-    {
-        prev_item = find_item(current_onboarding_position - 1);
-        next_item = find_item(current_onboarding_position + 1);
-    }
-    render_onboarding_screen(current_item, prev_item, next_item);
+    render_onboarding_screen(current_item);
     return this->spr_;
 }
 
@@ -86,7 +69,7 @@ OnboardingItem OnboardingApp::find_item(uint8_t id)
     return (*items.find(id)).second;
 }
 
-void OnboardingApp::render_onboarding_screen(OnboardingItem current, OnboardingItem prev, OnboardingItem next)
+void OnboardingApp::render_onboarding_screen(OnboardingItem current)
 {
     uint32_t color_active = current.color;
     uint32_t color_inactive = spr_->color565(150, 150, 150);
