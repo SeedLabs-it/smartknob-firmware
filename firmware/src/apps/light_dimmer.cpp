@@ -1,5 +1,6 @@
 #include "light_dimmer.h"
 #include "cJSON.h"
+#include <cstring>
 
 LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::string friendly_name) : App(spr_)
 {
@@ -87,9 +88,16 @@ void LightDimmerApp::updateStateFromSystem(AppState state) {}
 TFT_eSprite *LightDimmerApp::render()
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
-
     uint16_t screen_radius = TFT_WIDTH / 2;
-
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+    uint32_t off_background = spr_->color565(0, 0, 0);
+    uint32_t off_lamp_color = spr_->color565(150, 150, 150);
+    uint32_t on_background = spr_->color565(71, 39, 1);
+    uint32_t on_lamp_color = spr_->color565(245, 164, 66);
+    uint32_t background_color;
+    uint32_t foreground_color;
+    uint32_t dot_color = TFT_WHITE;
     float left_bound = PI / 2;
     float right_bound = 0;
     float range_radians = (motor_config.max_position - motor_config.min_position) * motor_config.position_width_radians;
@@ -99,15 +107,6 @@ TFT_eSprite *LightDimmerApp::render()
 
     float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
     float adjusted_angle = raw_angle - adjusted_sub_position;
-
-    uint32_t off_background = spr_->color565(0, 0, 0);
-    uint32_t off_lamp_color = spr_->color565(150, 150, 150);
-
-    uint32_t on_background = spr_->color565(71, 39, 1);
-    uint32_t on_lamp_color = spr_->color565(245, 164, 66);
-
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
 
     uint8_t icon_size = 80;
 
@@ -130,71 +129,43 @@ TFT_eSprite *LightDimmerApp::render()
         wanted_angle = left_bound;
     }
 
-    if (current_position == 0)
+    if (current_position <= 0)
     {
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, off_background);
-        spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_regular, icon_size, icon_size, off_lamp_color, off_background);
-        spr_->setTextColor(off_lamp_color);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
-        spr_->drawString("off", center_h, center_v + icon_size / 2 + 60 - offset_vertical, 1);
-
-        // draw dot movong path
-        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, DISABLED_COLOR);
-        }
-    }
-    else
-    {
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, on_background);
-        spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_solid, icon_size, icon_size, on_lamp_color, on_background);
-        spr_->setTextColor(on_lamp_color);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
-        spr_->drawString(buf_, center_h, center_v + icon_size / 2 + 60 - offset_vertical, 1);
-
-        // draw dot movong path
-        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, DISABLED_COLOR);
-        }
-
-        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, on_lamp_color);
-        }
-    }
-
-    // set the moving dot color
-    uint32_t dot_color = TFT_WHITE;
-
-    if (current_position < 1)
-    {
+        background_color = off_background;
+        foreground_color = off_lamp_color;
         dot_color = off_background;
+        strcpy(buf_, "OFF");
     }
     else
     {
+        background_color = on_background;
+        foreground_color = on_lamp_color;
         dot_color = on_background;
     }
 
-    // draw moving dot
-    if (num_positions > 0 && ((current_position == motor_config.min_position && sub_position_unit < 0) || (current_position == motor_config.max_position && sub_position_unit > 0)))
-    {
+    spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background_color);
+    spr_->setTextColor(foreground_color);
+    spr_->setFreeFont(&NDS1210pt7b);
 
-        if (adjusted_angle > left_bound)
+    spr_->drawString(friendly_name.c_str(), center_h, center_v + 20, 1);
+    spr_->setFreeFont(&Pixel62mr11pt7b);
+    spr_->drawString(buf_, center_h, center_v - 22, 1);
+
+    if (current_position > 0)
+    {
+        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
         {
-            adjusted_angle = left_bound;
+            // draw the arc
+            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, foreground_color);
         }
-        else if (adjusted_angle < right_bound)
+        // there is some jittering on adjusted_angle that might push the dot outside the arc.
+        // need to  bound it on the right side. On the left side it's already turned off by
+        // the current_position > 0 condition.
+
+        if (adjusted_angle < right_bound)
         {
             adjusted_angle = right_bound;
         }
-
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
-    }
-    else
-    {
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
     }
 
