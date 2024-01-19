@@ -20,10 +20,7 @@ void Apps::setSprite(TFT_eSprite *spr_)
 void Apps::add(app_types type, uint8_t id, App *app)
 {
     lock();
-    char buf_[10];
-    sprintf(buf_, "%d", id);
-
-    apps[type].insert(std::make_pair(buf_, app));
+    apps[type].insert(std::make_pair(id, app));
     unlock();
 }
 
@@ -58,9 +55,7 @@ TFT_eSprite *Apps::renderActive()
     }
 
     //! MIGHT BE WRONG
-    char buf_[10];
-    sprintf(buf_, "%d", active_id);
-    if (apps[apps_type][buf_] == nullptr)
+    if (apps[apps_type][active_id] == nullptr)
     {
         rendered_spr_ = spr_;
         ESP_LOGE("apps.cpp", "null pointer instead of app");
@@ -68,7 +63,7 @@ TFT_eSprite *Apps::renderActive()
         return rendered_spr_;
     }
 
-    active_app = apps[apps_type][buf_];
+    active_app = apps[apps_type][active_id];
 
     rendered_spr_ = active_app->render();
 
@@ -80,9 +75,7 @@ void Apps::setActive(app_types type, uint8_t id)
 {
     lock();
     active_id = id;
-    char buf_[10];
-    sprintf(buf_, "%d", active_id);
-    if (apps[type][buf_] == nullptr)
+    if (apps[type][active_id] == nullptr)
     {
         // TODO: panic?
         ESP_LOGE("apps.cpp", "null pointer instead of app");
@@ -90,7 +83,7 @@ void Apps::setActive(app_types type, uint8_t id)
     }
     else
     {
-        active_app = apps[type][buf_];
+        active_app = apps[type][active_id];
         unlock();
     }
 }
@@ -320,7 +313,7 @@ void Apps::updateMenu()
     // re - generate new menu based on loaded apps
     MenuApp *menu_app = new MenuApp(spr_);
 
-    std::map<std::string, std::shared_ptr<App>>::iterator it;
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
     uint16_t position = 0;
 
@@ -428,7 +421,7 @@ PB_SmartKnobConfig Apps::getActiveMotorConfig()
     return motor_config;
 }
 
-std::shared_ptr<App> Apps::find(std::string id)
+std::shared_ptr<App> Apps::find(uint8_t id)
 {
     // TODO: add protection with array size
     return apps[apps_type][id];
