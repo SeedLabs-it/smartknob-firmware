@@ -32,12 +32,6 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::strin
     small_icon = light_top_40;
 }
 
-uint8_t LightDimmerApp::navigationNext()
-{
-    // back to menu
-    return 0;
-}
-
 EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;

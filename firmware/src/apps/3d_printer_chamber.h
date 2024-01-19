@@ -13,7 +13,6 @@ public:
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-    uint8_t navigationNext();
 
 private:
     uint8_t current_temperature = 0;

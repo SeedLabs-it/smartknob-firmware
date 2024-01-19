@@ -26,12 +26,6 @@ BlindsApp::BlindsApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
     friendly_name = "Shades";
 }
 
-uint8_t BlindsApp::navigationNext()
-{
-    // back to menu
-    return 0;
-}
-
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_closed_position = state.current_position;
