@@ -34,11 +34,6 @@ EntityStateUpdate HassSetupApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void HassSetupApp::updateStateFromSystem(AppState state) {}
 
-uint8_t HassSetupApp::navigationNext()
-{
-    return 0;
-}
-
 TFT_eSprite *HassSetupApp::render()
 {
     uint16_t center_h = TFT_WIDTH / 2;
@@ -50,20 +45,22 @@ TFT_eSprite *HassSetupApp::render()
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS125_small);
 
-    spr_->drawString("SCAN TO CONNECT", center_w, screen_name_label_h * 2, 1);
-    spr_->drawString("TO THE SMART KNOB", center_w, screen_name_label_h * 3, 1);
+    spr_->drawString("SCAN TO CONNECT", center_w, screen_name_label_h * 3, 1);
+    spr_->drawString("TO THE SMART KNOB", center_w, screen_name_label_h * 4, 1);
 
     QRCode qrcode;
-    uint8_t qrcodeData[qrcode_getBufferSize(2)];
-    qrcode_initText(&qrcode, qrcodeData, 2, 0, "https://store.seedlabs.it/");
+    uint8_t qrcodeVersion = 6;
+    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
+    std::string wifiqrcode = "WIFI:T:WPA;S:SMARTKNOB-AP;P:SMARTKNOB;H:;;https://seedlabs.it";
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcode.c_str());
 
-    int moduleSize = 3;
+    int moduleSize = 2;
 
     int qrCodeWidth = qrcode.size * moduleSize;
     int qrCodeHeight = qrcode.size * moduleSize;
 
     int startX = center_w - qrCodeWidth / 2;
-    int startY = center_h - qrCodeHeight / 2;
+    int startY = center_h - 4 - qrCodeHeight / 2;
 
     for (uint8_t y = 0; y < qrcode.size; y++)
     {
@@ -77,7 +74,7 @@ TFT_eSprite *HassSetupApp::render()
     }
 
     spr_->drawString("OR CONNECT TO", center_w, TFT_WIDTH - screen_name_label_h * 4, 1);
-    spr_->drawString("SMARTKNOB-AP WIFI", center_w, TFT_WIDTH - screen_name_label_h * 3, 1);
+    spr_->drawString("SMARTKNOB-AP WiFi", center_w, TFT_WIDTH - screen_name_label_h * 3, 1);
 
     return this->spr_;
 }

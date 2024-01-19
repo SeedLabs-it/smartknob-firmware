@@ -28,12 +28,6 @@ MusicApp::MusicApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
     friendly_name = "Music";
 }
 
-uint8_t MusicApp::navigationNext()
-{
-    // back to menu
-    return 0;
-}
-
 EntityStateUpdate MusicApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_volume_position = state.current_position;

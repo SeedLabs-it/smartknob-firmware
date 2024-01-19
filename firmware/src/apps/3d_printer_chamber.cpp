@@ -33,12 +33,6 @@ PrinterChamberApp::PrinterChamberApp(TFT_eSprite *spr_, std::string entity_name)
     friendly_name = "3D Printer";
 }
 
-uint8_t PrinterChamberApp::navigationNext()
-{
-    // back to menu
-    return 0;
-}
-
 EntityStateUpdate PrinterChamberApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     wanted_temperature_position = state.current_position;

@@ -1,14 +1,15 @@
-#include "onboarding.h"
+#include "onboarding_menu.h"
 
-OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
+OnboardingMenu::OnboardingMenu(TFT_eSprite *spr_) : Menu(spr_)
 {
+
     motor_config = PB_SmartKnobConfig{
         0,
         0,
         0,
         0,
         0, // max position < min position indicates no bounds
-        60 * PI / 180,
+        55 * PI / 180,
         1,
         1,
         0.55,
@@ -20,59 +21,42 @@ OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
     };
 }
 
-EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
+EntityStateUpdate OnboardingMenu::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size
-
     int32_t position_for_onboarding_calc = state.current_position;
 
     // needed to next reload of App
     motor_config.position_nonce = position_for_onboarding_calc;
     motor_config.position = position_for_onboarding_calc;
 
-    if (state.current_position < 0)
-    {
-        position_for_onboarding_calc = items.size() * 10000 + state.current_position;
-    }
-
-    current_onboarding_position = position_for_onboarding_calc % items.size();
+    set_menu_position(position_for_onboarding_calc);
 
     return EntityStateUpdate{};
 }
 
-void OnboardingApp::updateStateFromSystem(AppState state) {}
+void OnboardingMenu::updateStateFromSystem(AppState state) {}
 
-uint8_t OnboardingApp::navigationNext()
+std::pair<app_types, uint8_t> OnboardingMenu::navigationNext()
 {
+    uint8_t current_onboarding_position = get_menu_position();
     // Makes sure only apps 1 - 3 have a "second depth" of navigation
     if (current_onboarding_position >= 1 && current_onboarding_position <= 3)
-        return current_onboarding_position;
+    {
+        if (current_onboarding_position == 3)
+        {
+            return std::make_pair(menu_type, 1);
+        }
+        return std::make_pair(apps_type, current_onboarding_position);
+    }
 
-    return 0;
+    return std::make_pair(type, 0);
 }
 
-TFT_eSprite *OnboardingApp::render()
+TFT_eSprite *OnboardingMenu::render()
 {
-    OnboardingItem current_item = find_item(current_onboarding_position);
-    render_onboarding_screen(current_item);
-    return this->spr_;
-}
+    MenuItem item = find_item(get_menu_position());
 
-void OnboardingApp::add_item(uint8_t id, OnboardingItem item)
-{
-    items[id] = item;
-    onboarding_items_count++;
-    motor_config.max_position = onboarding_items_count - 1;
-}
-
-// TODO: add protection, could cause panic
-OnboardingItem OnboardingApp::find_item(uint8_t id)
-{
-    return (*items.find(id)).second;
-}
-
-void OnboardingApp::render_onboarding_screen(OnboardingItem item)
-{
     uint32_t background = spr_->color565(0, 0, 0);
 
     uint16_t center_h = TFT_WIDTH / 2;
@@ -149,6 +133,9 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem item)
         }
     }
 
+    uint8_t onboarding_items_count = get_menu_items_count();
+    uint8_t current_onboarding_position = get_menu_position();
+
     uint32_t menu_item_color;
     uint8_t menu_item_diameter = 6;
     uint8_t position_circle_radius = screen_radius - menu_item_diameter; // the radius of the circle where you want the dots to lay.
@@ -170,4 +157,6 @@ void OnboardingApp::render_onboarding_screen(OnboardingItem item)
         // polar coordinates
         spr_->fillCircle(screen_radius + (position_circle_radius * cosf(menu_starting_angle + degree_per_item * i)), screen_radius - position_circle_radius * sinf(menu_starting_angle + degree_per_item * i), menu_item_diameter / 2, menu_item_color);
     }
-};
+
+    return this->spr_;
+}
