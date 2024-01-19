@@ -1,4 +1,4 @@
-#include "onboarding_menu.h"
+#include "onboarding.h"
 
 OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : Menu(spr_)
 {

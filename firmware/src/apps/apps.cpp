@@ -1,7 +1,7 @@
+#pragma once
 #include "apps.h"
 #include "menu.h"
-#include "app_menu.h"
-#include "onboarding_menu.h"
+#include "onboarding.h"
 #include "settings.h"
 
 #include <typeinfo>
@@ -122,7 +122,7 @@ void Apps::createOnboarding()
 
     onboarding_app->add_item(
         0,
-        MenuItem{
+        OnboardingItem{
             1,
             TextItem{
                 "SMART KNOB",
@@ -143,11 +143,12 @@ void Apps::createOnboarding()
             IconItem{
                 nullptr,
                 spr_->color565(255, 255, 255),
-            }});
+            },
+        });
 
     onboarding_app->add_item(
         1,
-        MenuItem{
+        OnboardingItem{
             2,
             TextItem{
                 "HOME ASSISTANT",
@@ -168,11 +169,12 @@ void Apps::createOnboarding()
             IconItem{
                 home_assistant_80,
                 spr_->color565(17, 189, 242),
-            }});
+            },
+        });
 
     onboarding_app->add_item(
         2,
-        MenuItem{
+        OnboardingItem{
             3,
             TextItem{
                 "WIFI",
@@ -193,10 +195,11 @@ void Apps::createOnboarding()
             IconItem{
                 wifi_conn_80,
                 spr_->color565(255, 255, 255),
-            }});
+            },
+        });
     onboarding_app->add_item(
         3,
-        MenuItem{
+        OnboardingItem{
             4,
             TextItem{
                 "DEMO MODE",
@@ -217,10 +220,11 @@ void Apps::createOnboarding()
             IconItem{
                 nullptr,
                 spr_->color565(255, 255, 255),
-            }});
+            },
+        });
     onboarding_app->add_item(
         4,
-        MenuItem{
+        OnboardingItem{
             5,
             TextItem{
                 "FIRMWARE 0.1b",
@@ -241,7 +245,9 @@ void Apps::createOnboarding()
             IconItem{
                 nullptr,
                 spr_->color565(255, 255, 255),
-            }});
+            },
+
+        });
 
     add(menu_type, 0, onboarding_app);
 
@@ -260,35 +266,20 @@ void Apps::createOnboarding()
     menu_app->add_item(
         0,
         MenuItem{
+            "SETTINGS",
             4,
-            TextItem{
-                "SETTINGS",
-                spr_->color565(0, 255, 200),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                settings_80,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                settings_40,
-                spr_->color565(0, 255, 200),
-            }});
+            spr_->color565(0, 255, 200),
+            settings_40,
+            settings_80,
+        });
 
     std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
 
     cJSON *json_root = cJSON_Parse(apps_config.c_str());
     cJSON *json_app = NULL;
 
-    uint8_t app_position = 5;
-    uint8_t menu_position = 1;
+    uint16_t app_position = 5;
+    uint16_t menu_position = 1;
 
     cJSON_ArrayForEach(json_app, json_root)
     {
@@ -301,27 +292,12 @@ void Apps::createOnboarding()
         menu_app->add_item(
             menu_position,
             MenuItem{
+                app->friendly_name,
                 app_position,
-                TextItem{
-                    app->friendly_name,
-                    spr_->color565(0, 255, 200),
-                },
-                TextItem{
-                    "",
-                    spr_->color565(255, 255, 255),
-                },
-                TextItem{
-                    "",
-                    spr_->color565(255, 255, 255),
-                },
-                IconItem{
-                    app->big_icon,
-                    spr_->color565(0, 255, 200),
-                },
-                IconItem{
-                    app->small_icon,
-                    spr_->color565(255, 255, 255),
-                }});
+                spr_->color565(0, 255, 200),
+                app->small_icon,
+                app->big_icon,
+            });
 
         app_position++;
         menu_position++;
@@ -339,7 +315,7 @@ void Apps::updateMenu()
 
     std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
-    uint8_t position = 0;
+    uint16_t position = 0;
 
     for (it = apps[apps_type].begin(); it != apps[apps_type].end(); it++)
     {
@@ -348,27 +324,12 @@ void Apps::updateMenu()
         menu_app->add_item(
             position,
             MenuItem{
+                it->second->friendly_name,
                 position + 1, //! FIXES BUG WITH SYNC MIGHT CREATE MORE??
-                TextItem{
-                    it->second->friendly_name,
-                    spr_->color565(0, 255, 200),
-                },
-                TextItem{
-                    "",
-                    spr_->color565(255, 255, 255),
-                },
-                TextItem{
-                    "",
-                    spr_->color565(255, 255, 255),
-                },
-                IconItem{
-                    it->second->big_icon,
-                    0,
-                },
-                IconItem{
-                    it->second->small_icon,
-                    0,
-                }});
+                spr_->color565(0, 255, 200),
+                it->second->small_icon,
+                it->second->big_icon,
+            });
 
         position++;
     }
