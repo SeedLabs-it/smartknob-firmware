@@ -9,7 +9,7 @@ OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
         0,
         0,
         0, // max position < min position indicates no bounds
-        60 * PI / 180,
+        55 * PI / 180,
         1,
         1,
         0.55,
@@ -30,12 +30,7 @@ EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
     motor_config.position_nonce = position_for_onboarding_calc;
     motor_config.position = position_for_onboarding_calc;
 
-    if (state.current_position < 0)
-    {
-        position_for_onboarding_calc = items.size() * 10000 + state.current_position;
-    }
-
-    current_onboarding_position = position_for_onboarding_calc % items.size();
+    current_onboarding_position = position_for_onboarding_calc;
 
     return EntityStateUpdate{};
 }
