@@ -44,7 +44,6 @@ public:
 
     virtual std::pair<app_types, uint8_t> navigationNext()
     {
-        ESP_LOGD("app.h", "type: %d", type);
         if (type == menu_type)
             return std::make_pair(apps_type, 1);
 
