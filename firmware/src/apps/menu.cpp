@@ -44,9 +44,9 @@ EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void MenuApp::updateStateFromSystem(AppState state) {}
 
-uint8_t MenuApp::navigationNext()
+std::pair<app_types, uint8_t> MenuApp::navigationNext()
 {
-    return find_item(current_menu_position).app_id;
+    return std::make_pair(type, find_item(current_menu_position).app_id);
 }
 
 TFT_eSprite *MenuApp::render()

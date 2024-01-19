@@ -2,6 +2,7 @@
 
 OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
 {
+
     motor_config = PB_SmartKnobConfig{
         0,
         0,
@@ -23,7 +24,6 @@ OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : App(spr_)
 EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size
-
     int32_t position_for_onboarding_calc = state.current_position;
 
     // needed to next reload of App
@@ -42,13 +42,19 @@ EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void OnboardingApp::updateStateFromSystem(AppState state) {}
 
-uint8_t OnboardingApp::navigationNext()
+std::pair<app_types, uint8_t> OnboardingApp::navigationNext()
 {
     // Makes sure only apps 1 - 3 have a "second depth" of navigation
     if (current_onboarding_position >= 1 && current_onboarding_position <= 3)
-        return current_onboarding_position;
+    {
+        if (current_onboarding_position == 3)
+        {
+            return std::make_pair(menu_type, 1);
+        }
+        return std::make_pair(apps_type, current_onboarding_position);
+    }
 
-    return 0;
+    return std::make_pair(type, 0);
 }
 
 TFT_eSprite *OnboardingApp::render()

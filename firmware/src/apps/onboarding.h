@@ -28,12 +28,14 @@ struct OnboardingItem
 
 class OnboardingApp : public App
 {
+
 public:
+    const app_types type = menu_type;
     OnboardingApp(TFT_eSprite *spr_);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-    uint8_t navigationNext();
+    std::pair<app_types, uint8_t> navigationNext();
     void add_item(uint8_t id, OnboardingItem item);
     OnboardingItem find_item(uint8_t id);
 

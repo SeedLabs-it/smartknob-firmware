@@ -12,7 +12,6 @@ public:
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-    uint8_t navigationNext();
 
 private:
     std::string entity_name;

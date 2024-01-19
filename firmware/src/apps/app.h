@@ -13,9 +13,16 @@ const char APP_SLUG_3D_PRINTER[48] = "3d_printer";
 const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
+
+enum app_types
+{
+    menu_type = 1,
+    apps_type = 2
+};
 class App
 {
 public:
+    const app_types type = apps_type;
     App(TFT_eSprite *spr_)
     {
         this->spr_ = spr_;
@@ -35,7 +42,14 @@ public:
         return "App";
     }
 
-    virtual uint8_t navigationNext();
+    virtual std::pair<app_types, uint8_t> navigationNext()
+    {
+        ESP_LOGD("app.h", "type: %d", type);
+        if (type == menu_type)
+            return std::make_pair(apps_type, 1);
+
+        return std::make_pair(menu_type, 0);
+    }
 
     const unsigned char *small_icon;
     const unsigned char *big_icon;
