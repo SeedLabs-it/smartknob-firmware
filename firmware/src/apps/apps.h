@@ -47,6 +47,7 @@ public:
 private:
     QueueHandle_t mutex;
     std::map<app_types, std::map<uint8_t, std::shared_ptr<App>>> apps;
+
     uint8_t active_id = 0;
 
     TFT_eSprite *spr_ = nullptr;

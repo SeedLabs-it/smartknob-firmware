@@ -29,7 +29,6 @@ public:
     {
         this->spr_ = spr_;
     };
-    virtual ~App(){};
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
