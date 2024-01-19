@@ -16,8 +16,8 @@
 #include "stopwatch.h"
 
 // include all "menu" apps
-#include "menu.h"
-#include "onboarding.h"
+#include "app_menu.h"
+#include "onboarding_menu.h"
 
 // include all "setup" apps
 #include "onboarding/hass_setup.h"

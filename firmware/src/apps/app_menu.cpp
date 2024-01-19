@@ -1,6 +1,6 @@
 #include "app_menu.h"
 
-MenuApp::MenuApp(TFT_eSprite *spr_) : App(spr_)
+MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
 {
     sprintf(room, "%s", "Office");
 
@@ -101,7 +101,7 @@ void MenuApp::add_item(uint8_t id, MenuItem item)
 void MenuApp::render_menu_screen()
 {
     lock();
-    uint32_t color_active = current_item->color;
+    uint32_t color_active = current_item->screen_name.color;
     uint32_t color_inactive = spr_->color565(150, 150, 150);
     uint32_t label_color = color_inactive;
     uint32_t background = spr_->color565(0, 0, 0);
@@ -126,17 +126,17 @@ void MenuApp::render_menu_screen()
     spr_->setFreeFont(&Roboto_Thin_Bold_24);
     spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);
 
-    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current_item->big_icon, icon_size_active, icon_size_active, color_active, background);
+    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current_item->big_icon.icon, icon_size_active, icon_size_active, color_active, background);
 
     // left one
-    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item->small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
+    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item->small_icon.icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
 
     // right one
-    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
+    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon.icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
 
     spr_->setTextColor(color_active);
     spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(current_item->screen_name, center_h, center_v + icon_size_active / 2 + 30, 1);
+    spr_->drawString(current_item->screen_name.text, center_h, center_v + icon_size_active / 2 + 30, 1);
     unlock();
 };
 

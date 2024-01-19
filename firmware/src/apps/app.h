@@ -19,16 +19,26 @@ enum app_types
     menu_type = 1,
     apps_type = 2
 };
+
+typedef uint8_t id;
 class App
 {
+
 public:
+    // ID for app
+
     const app_types type = apps_type;
+
+    const unsigned char *small_icon;
+    const unsigned char *big_icon;
+    const char *friendly_name;
+
     App(TFT_eSprite *spr_)
     {
         this->spr_ = spr_;
     }
     virtual ~App() {}
-    virtual TFT_eSprite *render();
+
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
 
@@ -50,9 +60,7 @@ public:
         return std::make_pair(menu_type, 0);
     }
 
-    const unsigned char *small_icon;
-    const unsigned char *big_icon;
-    const char *friendly_name;
+    virtual TFT_eSprite *render();
 
 protected:
     /** Full-size sprite used as a framebuffer */
