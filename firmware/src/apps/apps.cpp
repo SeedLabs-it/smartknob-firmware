@@ -325,7 +325,7 @@ void Apps::updateMenu()
             position,
             MenuItem{
                 it->second->friendly_name,
-                1,
+                position + 1, //! FIXES BUG WITH SYNC MIGHT CREATE MORE??
                 spr_->color565(0, 255, 200),
                 it->second->small_icon,
                 it->second->big_icon,
