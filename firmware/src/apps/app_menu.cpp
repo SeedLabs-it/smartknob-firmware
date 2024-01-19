@@ -87,13 +87,13 @@ std::string MenuApp::getClassName()
 }
 
 // TODO: add protection, could cause panic
-MenuItem *MenuApp::find_item(uint8_t id)
+MenuItemOld *MenuApp::find_item(uint8_t id)
 {
     return &(*items.find(id)).second;
 }
 
 // TODO: add protection of overwriting same items
-void MenuApp::add_item(uint8_t id, MenuItem item)
+void MenuApp::add_item(uint8_t id, MenuItemOld item)
 {
     items.insert(std::make_pair(id, item));
 }

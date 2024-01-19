@@ -19,6 +19,8 @@ enum app_types
     menu_type = 1,
     apps_type = 2
 };
+
+typedef uint8_t id;
 class App
 {
 public:
@@ -26,8 +28,8 @@ public:
     App(TFT_eSprite *spr_)
     {
         this->spr_ = spr_;
-    }
-    virtual ~App() {}
+    };
+    virtual ~App(){};
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);

@@ -1,6 +1,6 @@
-#include "onboarding.h"
+#include "onboarding_menu.h"
 
-OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : Menu(spr_)
+OnboardingMenu::OnboardingMenu(TFT_eSprite *spr_) : Menu(spr_)
 {
 
     motor_config = PB_SmartKnobConfig{
@@ -21,7 +21,7 @@ OnboardingApp::OnboardingApp(TFT_eSprite *spr_) : Menu(spr_)
     };
 }
 
-EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
+EntityStateUpdate OnboardingMenu::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size
     int32_t position_for_onboarding_calc = state.current_position;
@@ -35,9 +35,9 @@ EntityStateUpdate OnboardingApp::updateStateFromKnob(PB_SmartKnobState state)
     return EntityStateUpdate{};
 }
 
-void OnboardingApp::updateStateFromSystem(AppState state) {}
+void OnboardingMenu::updateStateFromSystem(AppState state) {}
 
-std::pair<app_types, uint8_t> OnboardingApp::navigationNext()
+std::pair<app_types, uint8_t> OnboardingMenu::navigationNext()
 {
     uint8_t current_onboarding_position = get_menu_position();
     // Makes sure only apps 1 - 3 have a "second depth" of navigation
@@ -53,7 +53,7 @@ std::pair<app_types, uint8_t> OnboardingApp::navigationNext()
     return std::make_pair(type, 0);
 }
 
-TFT_eSprite *OnboardingApp::render()
+TFT_eSprite *OnboardingMenu::render()
 {
     MenuItem item = find_item(get_menu_position());
 

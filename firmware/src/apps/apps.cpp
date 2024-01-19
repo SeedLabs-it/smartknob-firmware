@@ -1,7 +1,8 @@
 #pragma once
 #include "apps.h"
 #include "menu.h"
-#include "onboarding.h"
+#include "onboarding_menu.h"
+#include "app_menu.h"
 #include "settings.h"
 
 #include <typeinfo>
@@ -118,11 +119,11 @@ void Apps::createOnboarding()
 {
     clear();
 
-    OnboardingApp *onboarding_app = new OnboardingApp(this->spr_);
+    OnboardingMenu *onboarding_menu = new OnboardingMenu(this->spr_);
 
-    onboarding_app->add_item(
+    onboarding_menu->add_item(
         0,
-        OnboardingItem{
+        MenuItem{
             1,
             TextItem{
                 "SMART KNOB",
@@ -146,9 +147,9 @@ void Apps::createOnboarding()
             },
         });
 
-    onboarding_app->add_item(
+    onboarding_menu->add_item(
         1,
-        OnboardingItem{
+        MenuItem{
             2,
             TextItem{
                 "HOME ASSISTANT",
@@ -172,9 +173,9 @@ void Apps::createOnboarding()
             },
         });
 
-    onboarding_app->add_item(
+    onboarding_menu->add_item(
         2,
-        OnboardingItem{
+        MenuItem{
             3,
             TextItem{
                 "WIFI",
@@ -197,9 +198,9 @@ void Apps::createOnboarding()
                 spr_->color565(255, 255, 255),
             },
         });
-    onboarding_app->add_item(
+    onboarding_menu->add_item(
         3,
-        OnboardingItem{
+        MenuItem{
             4,
             TextItem{
                 "DEMO MODE",
@@ -222,9 +223,9 @@ void Apps::createOnboarding()
                 spr_->color565(255, 255, 255),
             },
         });
-    onboarding_app->add_item(
+    onboarding_menu->add_item(
         4,
-        OnboardingItem{
+        MenuItem{
             5,
             TextItem{
                 "FIRMWARE 0.1b",
@@ -249,7 +250,7 @@ void Apps::createOnboarding()
 
         });
 
-    add(menu_type, 0, onboarding_app);
+    add(menu_type, 0, onboarding_menu);
 
     // APPS FOR OTHER ONBOARDING SCREENS
     HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
@@ -265,7 +266,7 @@ void Apps::createOnboarding()
 
     menu_app->add_item(
         0,
-        MenuItem{
+        MenuItemOld{
             "SETTINGS",
             4,
             spr_->color565(0, 255, 200),
@@ -291,7 +292,7 @@ void Apps::createOnboarding()
 
         menu_app->add_item(
             menu_position,
-            MenuItem{
+            MenuItemOld{
                 app->friendly_name,
                 app_position,
                 spr_->color565(0, 255, 200),
@@ -323,9 +324,9 @@ void Apps::updateMenu()
 
         menu_app->add_item(
             position,
-            MenuItem{
+            MenuItemOld{
                 it->second->friendly_name,
-                position + 1, //! FIXES BUG WITH SYNC MIGHT CREATE MORE??
+                position, //! adding + 1 FIXES BUG WITH SYNC MIGHT CREATE MORE??
                 spr_->color565(0, 255, 200),
                 it->second->small_icon,
                 it->second->big_icon,

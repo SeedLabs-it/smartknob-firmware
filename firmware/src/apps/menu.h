@@ -32,12 +32,11 @@ class Menu : public App
 public:
     const app_types type = menu_type;
 
-    Menu(TFT_eSprite *spr_) : App(spr_) {}
-    virtual ~Menu() {}
-    TFT_eSprite *render();
+    Menu(TFT_eSprite *spr_) : App(spr_){};
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
     std::pair<app_types, id> navigationNext();
+    TFT_eSprite *render();
 
     void add_item(uint8_t id, MenuItem item)
     {
