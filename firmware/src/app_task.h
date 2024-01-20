@@ -14,6 +14,7 @@
 #include "app_config.h"
 #include "networking_task.h"
 #include "led_ring_task.h"
+#include "sensors_task.h"
 
 class AppTask : public Task<AppTask>,
                 public Logger
@@ -22,7 +23,7 @@ class AppTask : public Task<AppTask>,
     friend class Task<AppTask>; // Allow base Task to invoke protected run()
 
 public:
-    AppTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, NetworkingTask *networking_task, LedRingTask *led_ring_task);
+    AppTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, NetworkingTask *networking_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
     virtual ~AppTask();
 
     void log(const char *msg) override;
@@ -35,6 +36,9 @@ public:
     QueueHandle_t getConnectivityStateQueue();
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
+
+    void strainCalibrationCallback();
+    void verboseToggleCallback();
 
 protected:
     void run();
@@ -50,6 +54,7 @@ private:
     NetworkingTask *networking_task_;
     Apps *apps;
     LedRingTask *led_ring_task_;
+    SensorsTask *sensors_task_;
     char buf_[128];
 
     std::vector<QueueHandle_t> listeners_;
@@ -67,6 +72,8 @@ private:
     bool remote_controlled_ = false;
     int current_config_ = 0;
     uint8_t press_count_ = 1;
+
+    uint8_t last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
 
     PB_SmartKnobState latest_state_ = {};
     PB_SmartKnobConfig latest_config_ = {};

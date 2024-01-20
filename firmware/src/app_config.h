@@ -8,6 +8,12 @@
 const uint32_t APP_ID_SETTINGS = 7;
 const uint32_t APP_ID_HOME_ASSISTANT = 6;
 
+const uint8_t VIRTUAL_BUTTON_IDLE = 0;
+const uint8_t VIRTUAL_BUTTON_SHORT_PRESSED = 1;
+const uint8_t VIRTUAL_BUTTON_SHORT_RELEASED = 2;
+const uint8_t VIRTUAL_BUTTON_LONG_PRESSED = 3;
+const uint8_t VIRTUAL_BUTTON_LONG_RELEASED = 4;
+
 struct ConnectivityState
 {
     bool is_connected;
@@ -30,9 +36,17 @@ struct ProximityState
     uint8_t RangeStatus;
 };
 
+struct StrainState
+{
+    int32_t raw_value;
+    float press_value;
+    uint8_t virtual_button_code;
+};
+
 struct SensorsState
 {
     ProximityState proximity;
+    StrainState strain;
 };
 
 struct ScreenState
