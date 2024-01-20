@@ -1,13 +1,16 @@
-#include "menu.h"
+#include "app_menu.h"
 
 MenuApp::MenuApp(TFT_eSprite *spr_) : App(spr_)
 {
     sprintf(room, "%s", "Office");
 
+    // mutex
+    mutex = xSemaphoreCreateMutex();
+
     motor_config = PB_SmartKnobConfig{
+        1,
         0,
-        0,
-        0,
+        1,
         0,
         -1, // max position < min position indicates no bounds
         25 * PI / 180,
@@ -25,6 +28,9 @@ MenuApp::MenuApp(TFT_eSprite *spr_) : App(spr_)
 EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size
+    // might be needed to make sure first item is selected on "reload" but might fuck if user returns from app to menu again
+    // motor_config.position_nonce = 1;
+    // motor_config.position = 1;
 
     int32_t position_for_menu_calc = state.current_position;
 
@@ -44,28 +50,16 @@ EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void MenuApp::updateStateFromSystem(AppState state) {}
 
-uint8_t MenuApp::navigationNext()
+std::pair<app_types, uint8_t> MenuApp::navigationNext()
 {
-    return current_menu_position + 1; // +1 to shift from 0 position which is menu itself
+    return std::make_pair(type, find_item(current_menu_position)->app_id);
 }
 
 TFT_eSprite *MenuApp::render()
 {
-    // ESP_LOGD("menu.cpp", "called real method");
-    // return;
-    // spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_ORANGE);
+    lock();
+    current_item = find_item(current_menu_position);
 
-    // spr_->setTextColor(TFT_BLACK);
-    // spr_->setFreeFont(&Roboto_Thin_24);
-    // spr_->drawString("Menu", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-
-    // current_menu_position = 0;
-
-    // ESP_LOGD("menu.cpp", "pre-render");
-
-    MenuItem current_item = find_item(current_menu_position);
-    MenuItem prev_item;
-    MenuItem next_item;
     if (current_menu_position == 0)
     {
         prev_item = find_item(items.size() - 1);
@@ -81,9 +75,9 @@ TFT_eSprite *MenuApp::render()
         prev_item = find_item(current_menu_position - 1);
         next_item = find_item(current_menu_position + 1);
     }
-    // ESP_LOGD("menu.cpp", "mid-render");
-    render_menu_screen(current_item, prev_item, next_item);
-    // ESP_LOGD("menu.cpp", "post-render");
+    unlock();
+
+    render_menu_screen();
     return this->spr_;
 }
 
@@ -93,21 +87,21 @@ std::string MenuApp::getClassName()
 }
 
 // TODO: add protection, could cause panic
-MenuItem MenuApp::find_item(uint8_t id)
+MenuItemOld *MenuApp::find_item(uint8_t id)
 {
-    return (*items.find(id)).second;
+    return &(*items.find(id)).second;
 }
 
 // TODO: add protection of overwriting same items
-void MenuApp::add_item(uint8_t id, MenuItem item)
+void MenuApp::add_item(uint8_t id, MenuItemOld item)
 {
-    // items[id] = item;
     items.insert(std::make_pair(id, item));
 }
 
-void MenuApp::render_menu_screen(MenuItem current, MenuItem prev, MenuItem next)
+void MenuApp::render_menu_screen()
 {
-    uint32_t color_active = current.color;
+    lock();
+    uint32_t color_active = current_item->color;
     uint32_t color_inactive = spr_->color565(150, 150, 150);
     uint32_t label_color = color_inactive;
     uint32_t background = spr_->color565(0, 0, 0);
@@ -132,16 +126,26 @@ void MenuApp::render_menu_screen(MenuItem current, MenuItem prev, MenuItem next)
     spr_->setFreeFont(&Roboto_Thin_Bold_24);
     spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);
 
-    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current.big_icon, icon_size_active, icon_size_active, color_active, background);
-    // ESP_LOGD("menu.cpp", "%s", current.screen_name);
+    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current_item->big_icon, icon_size_active, icon_size_active, color_active, background);
 
     // left one
-    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev.small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
+    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item->small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
 
     // right one
-    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next.small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
+    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon, icon_size_inactive, icon_size_inactive, color_inactive, background);
 
     spr_->setTextColor(color_active);
     spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(current.screen_name, center_h, center_v + icon_size_active / 2 + 30, 1);
+    spr_->drawString(current_item->screen_name, center_h, center_v + icon_size_active / 2 + 30, 1);
+    unlock();
 };
+
+void MenuApp::lock()
+{
+    xSemaphoreTake(mutex, portMAX_DELAY);
+}
+
+void MenuApp::unlock()
+{
+    xSemaphoreGive(mutex);
+}

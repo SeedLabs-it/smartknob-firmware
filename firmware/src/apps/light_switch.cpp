@@ -28,12 +28,6 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, std::string entity_name, std::
     small_icon = light_switch_40;
 }
 
-uint8_t LightSwitchApp::navigationNext()
-{
-    // back to menu
-    return 0;
-}
-
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;

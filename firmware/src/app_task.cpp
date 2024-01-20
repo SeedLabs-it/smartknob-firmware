@@ -95,12 +95,12 @@ void AppTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    apps->setActive(0);
+    apps->setActive(menu_type, 0);
     applyConfig(apps->getActiveMotorConfig(), false);
     motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(0); },
+                             { changeConfig(std::make_pair(menu_type, 0)); },
                              [this]()
                              {
                                  if (!configuration_loaded_)
@@ -202,7 +202,6 @@ void AppTask::run()
             abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
             millis() > app_state.screen_state.awake_until)
         {
-
             if (app_state.screen_state.brightness < (targetLuminosity))
             {
                 app_state.screen_state.brightness = (targetLuminosity);
@@ -299,9 +298,9 @@ void AppTask::log(const char *msg)
     xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
-void AppTask::changeConfig(uint32_t id)
+void AppTask::changeConfig(std::pair<app_types, uint8_t> next)
 {
-    apps->setActive(id);
+    apps->setActive(next.first, next.second); // TODO LOOK OVER
 
     applyConfig(apps->getActiveMotorConfig(), false);
 }
