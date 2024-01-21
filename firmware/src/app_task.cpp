@@ -1,7 +1,3 @@
-#if SK_STRAIN
-#include <HX711.h>
-#endif
-
 #if SK_ALS
 #include <Adafruit_VEML7700.h>
 #endif
@@ -10,13 +6,10 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
-#if SK_STRAIN
-HX711 scale;
-float luminosityAdjustment = 1.00;
-#endif
 
 #if SK_ALS
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
+float luminosityAdjustment = 1.00;
 #endif
 
 AppTask::AppTask(
@@ -24,16 +17,18 @@ AppTask::AppTask(
     MotorTask &motor_task,
     DisplayTask *display_task,
     NetworkingTask *networking_task,
-    LedRingTask *led_ring_task) : Task("App", 4800, 1, task_core),
-                                  stream_(),
-                                  motor_task_(motor_task),
-                                  display_task_(display_task),
-                                  networking_task_(networking_task),
-                                  led_ring_task_(led_ring_task),
-                                  plaintext_protocol_(stream_, [this]()
-                                                      { motor_task_.runCalibration(); }),
-                                  proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
-                                                  { applyConfig(config, true); })
+    LedRingTask *led_ring_task,
+    SensorsTask *sensors_task) : Task("App", 4800, 1, task_core),
+                                 stream_(),
+                                 motor_task_(motor_task),
+                                 display_task_(display_task),
+                                 networking_task_(networking_task),
+                                 led_ring_task_(led_ring_task),
+                                 sensors_task_(sensors_task),
+                                 plaintext_protocol_(stream_, [this]()
+                                                     { motor_task_.runCalibration(); }),
+                                 proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
+                                                 { applyConfig(config, true); })
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -68,6 +63,61 @@ void AppTask::setApps(Apps *apps)
     this->apps = apps;
 }
 
+void AppTask::strainCalibrationCallback()
+{
+    log("Strain calibration step 0");
+
+    if (!configuration_loaded_)
+    {
+        log("Strain calibration step 0: configuration not loaded, exiting");
+
+        return;
+    }
+    if (strain_calibration_step_ == 0)
+    {
+        log("Strain calibration step 1: Don't touch the knob, then press 'S' again");
+        strain_calibration_step_ = 1;
+    }
+    else if (strain_calibration_step_ == 1)
+    {
+        configuration_value_.strain.idle_value = latest_sensors_state_.strain.raw_value;
+        snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
+        log(buf_);
+        log("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
+        strain_calibration_step_ = 2;
+    }
+    else if (strain_calibration_step_ == 2)
+    {
+
+        configuration_value_.strain.press_delta = latest_sensors_state_.strain.raw_value - configuration_value_.strain.idle_value;
+        configuration_value_.has_strain = true;
+
+        ESP_LOGD("1", "pre-save %d", configuration_value_.strain.idle_value);
+        snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
+        log(buf_);
+        log("Strain calibration complete! Saving...");
+
+        ESP_LOGD("2", "pre-save %d", configuration_value_.strain.idle_value);
+        strain_calibration_step_ = 0;
+
+        sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
+
+        if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
+        {
+            log("  Saved!");
+        }
+        else
+        {
+            log("  FAILED to save config!!!");
+        }
+    }
+}
+
+void AppTask::verboseToggleCallback()
+{
+    sensors_task_->toggleVerbose();
+}
+
 void AppTask::run()
 {
     stream_.begin();
@@ -75,9 +125,6 @@ void AppTask::run()
 #if SK_ALS && PIN_SDA >= 0 && PIN_SCL >= 0
     Wire.begin(PIN_SDA, PIN_SCL);
     Wire.setClock(400000);
-#endif
-#if SK_STRAIN
-    scale.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
 #endif
 
 #if SK_ALS
@@ -103,45 +150,11 @@ void AppTask::run()
                              { changeConfig(std::make_pair(menu_type, 0)); },
                              [this]()
                              {
-                                 if (!configuration_loaded_)
-                                 {
-                                     return;
-                                 }
-                                 if (strain_calibration_step_ == 0)
-                                 {
-                                     log("Strain calibration step 1: Don't touch the knob, then press 'S' again");
-                                     strain_calibration_step_ = 1;
-                                 }
-                                 else if (strain_calibration_step_ == 1)
-                                 {
-                                     configuration_value_.strain.idle_value = strain_reading_;
-                                     snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
-                                     log(buf_);
-                                     log("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
-                                     strain_calibration_step_ = 2;
-                                 }
-                                 else if (strain_calibration_step_ == 2)
-                                 {
-
-                                     configuration_value_.strain.press_delta = strain_reading_ - configuration_value_.strain.idle_value;
-                                     configuration_value_.has_strain = true;
-
-                                     ESP_LOGD("1", "pre-save %d", configuration_value_.strain.idle_value);
-                                     snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
-                                     log(buf_);
-                                     log("Strain calibration complete! Saving...");
-
-                                     ESP_LOGD("2", "pre-save %d", configuration_value_.strain.idle_value);
-                                     strain_calibration_step_ = 0;
-                                     if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
-                                     {
-                                         log("  Saved!");
-                                     }
-                                     else
-                                     {
-                                         log("  FAILED to save config!!!");
-                                     }
-                                 }
+                                 this->strainCalibrationCallback();
+                             },
+                             [this]()
+                             {
+                                 this->verboseToggleCallback();
                              });
 
     // Start in legacy protocol mode
@@ -275,16 +288,6 @@ void AppTask::run()
 
         updateHardware(app_state);
 
-        if (!configuration_loaded_)
-        {
-            SemaphoreGuard lock(mutex_);
-            if (configuration_ != nullptr)
-            {
-                configuration_value_ = configuration_->get();
-                configuration_loaded_ = true;
-            }
-        }
-
         delay(1);
     }
 }
@@ -331,69 +334,57 @@ void AppTask::updateHardware(AppState app_state)
 
     static bool pressed;
 #if SK_STRAIN
-    if (scale.wait_ready_timeout(100))
+
+    if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
     {
-        strain_reading_ = scale.read();
+        // Ignore readings that are way out of expected bounds
 
-        static uint32_t last_reading_display;
-        if (millis() - last_reading_display > 1000 && strain_calibration_step_ == 0)
+        switch (latest_sensors_state_.strain.virtual_button_code)
         {
-            snprintf(buf_, sizeof(buf_), "HX711 reading: %d", strain_reading_);
-            log(buf_);
-            last_reading_display = millis();
-        }
-        if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
-        {
-            // TODO: calibrate and track (long term moving average) idle point (lower)
-            press_value_unit = lerp(strain_reading_, configuration_value_.strain.idle_value, configuration_value_.strain.idle_value + configuration_value_.strain.press_delta, 0, 1);
-
-            // Ignore readings that are way out of expected bounds
-            if (-1 < press_value_unit && press_value_unit < 2)
+        case VIRTUAL_BUTTON_SHORT_PRESSED:
+            if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
-                static uint8_t press_readings;
-                if (!pressed && press_value_unit > 1)
-                {
-                    press_readings++;
-                    if (press_readings > 2)
-                    {
-                        motor_task_.playHaptic(true);
-                        pressed = true;
-                        press_count_++;
-                        publishState();
-                        if (!remote_controlled_)
-                        {
-                            changeConfig(apps->navigationNext());
-                        }
-                    }
-                }
-                else if (pressed && press_value_unit < 0.5)
-                {
-                    press_readings++;
-                    if (press_readings > 2)
-                    {
-                        motor_task_.playHaptic(false);
-                        pressed = false;
-                    }
-                }
-                else
-                {
-                    press_readings = 0;
-                }
+                motor_task_.playHaptic(true);
+                last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
+            /* code */
+            break;
+        case VIRTUAL_BUTTON_LONG_PRESSED:
+            if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
+            {
+                motor_task_.playHaptic(true);
+                motor_task_.playHaptic(true);
+                last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
+            }
+            /* code */
+            break;
+        case VIRTUAL_BUTTON_SHORT_RELEASED:
+            if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
+            {
+                motor_task_.playHaptic(false);
+                last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
+                /* code */
+
+                changeConfig(apps->navigationNext());
+            }
+            break;
+        case VIRTUAL_BUTTON_LONG_RELEASED:
+            /* code */
+            if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
+            {
+                motor_task_.playHaptic(false);
+                last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
+
+                // TODO exit menu
+                changeConfig(apps->navigationNext());
+            }
+            break;
+        default:
+            last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
+            break;
         }
     }
-    else
-    {
-        log("HX711 not found.");
 
-        // #if SK_LEDS
-        //         for (uint8_t i = 0; i < NUM_LEDS; i++)
-        //         {
-        //             leds[i] = CRGB::Red;
-        //         }
-        //         FastLED.show();
-        // #endif
-    }
 #endif
 
     uint16_t brightness = UINT16_MAX;
@@ -457,6 +448,15 @@ void AppTask::setConfiguration(Configuration *configuration)
 {
     SemaphoreGuard lock(mutex_);
     configuration_ = configuration;
+    if (!configuration_loaded_)
+    {
+        if (configuration_ != nullptr)
+        {
+            configuration_value_ = configuration_->get();
+            configuration_loaded_ = true;
+            sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
+        }
+    }
 }
 
 QueueHandle_t AppTask::getConnectivityStateQueue()

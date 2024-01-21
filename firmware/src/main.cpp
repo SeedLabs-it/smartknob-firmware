@@ -43,7 +43,7 @@ static SensorsTask *sensors_task_p = nullptr;
 
 #endif
 
-AppTask app_task(0, motor_task, display_task_p, networking_task_p, led_ring_task_p);
+AppTask app_task(0, motor_task, display_task_p, networking_task_p, led_ring_task_p, sensors_task_p);
 
 void setup()
 {
