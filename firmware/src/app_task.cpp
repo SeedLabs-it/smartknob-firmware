@@ -6,8 +6,10 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
+
 #if SK_ALS
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
+float luminosityAdjustment = 1.00;
 #endif
 
 AppTask::AppTask(
@@ -200,7 +202,7 @@ void AppTask::run()
         if (app_state.screen_state.has_been_engaged == true)
         {
             app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-            app_state.screen_state.awake_until = millis() + 1000; // 1s
+            app_state.screen_state.awake_until = millis() + 4000; // 1s
         }
         // Check if the knob is awake, and if the time is expired
         // and set it to not engaged
@@ -208,14 +210,20 @@ void AppTask::run()
         {
             app_state.screen_state.has_been_engaged = false;
         }
+        float targetLuminosity = luminosityAdjustment * app_state.screen_state.MIN_LCD_BRIGHTNESS;
         if (app_state.screen_state.has_been_engaged == false &&
-            app_state.screen_state.brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS &&
+            abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
             millis() > app_state.screen_state.awake_until)
         {
-            // TODO, this can be timed better (ideally by subtracting MAX_BRIGHTNESS - MIN_BRIGHTNESS/fps/second_of_animation)
-            app_state.screen_state.brightness = app_state.screen_state.brightness - 1000;
-            if (app_state.screen_state.brightness < app_state.screen_state.MIN_LCD_BRIGHTNESS)
-                app_state.screen_state.brightness = app_state.screen_state.MIN_LCD_BRIGHTNESS;
+            if (app_state.screen_state.brightness < (targetLuminosity))
+            {
+                app_state.screen_state.brightness = (targetLuminosity);
+            }
+            else
+            {
+                // TODO: I don't like this decay function. It's too slow for delta too small
+                app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+            }
         }
 
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
@@ -308,8 +316,12 @@ void AppTask::updateHardware(AppState app_state)
 #if SK_ALS
     const float LUX_ALPHA = 0.005;
     static float lux_avg;
+
     float lux = veml.readLux();
     lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
+
+    // looks at the lower part of the sensor spectrum (0 = dark)
+    luminosityAdjustment = min(1.0f, lux_avg);
     static uint32_t last_als;
     if (millis() - last_als > 1000 && strain_calibration_step_ == 0)
     {
@@ -378,8 +390,6 @@ void AppTask::updateHardware(AppState app_state)
     uint16_t brightness = UINT16_MAX;
 // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
 #if SK_ALS
-    brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
-
     brightness = app_state.screen_state.brightness;
 #endif
 
@@ -389,13 +399,11 @@ void AppTask::updateHardware(AppState app_state)
 
     if (led_ring_task_ != nullptr)
     {
-
         // ESP_LOGD("app_task", "%d", brightness);
         EffectSettings effect_settings;
 
         if (brightness < 2000)
         {
-
             effect_settings.effect_id = 2;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
@@ -414,7 +422,7 @@ void AppTask::updateHardware(AppState app_state)
             // latest_config_.led_hue;
 
             effect_settings.effect_accent_color = (128 << 16) | (0 << 8) | 128;
-            effect_settings.effect_main_color = (128 << 16) | (0 << 8) | 128;
+            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 0;
         }
         led_ring_task_->setEffect(effect_settings);
 
