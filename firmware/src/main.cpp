@@ -55,7 +55,15 @@ void setup()
     app_task.addListener(display_task.getKnobStateQueue());
 
     // link apps from display task
-    app_task.setApps(display_task.getApps());
+    if (false) // ADD BOOL TO CHOOSE LOAD APPS OR ONBOARDING
+    {
+        app_task.setApps(display_task.getApps());
+    }
+    else
+    {
+
+        app_task.setApps(display_task.getOnboarding());
+    }
 
 #endif
 

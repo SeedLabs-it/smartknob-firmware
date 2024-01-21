@@ -19,8 +19,6 @@
 
 // include all "menu" apps
 #include "app_menu.h"
-#include "onboarding_menu.h"
-
 // include all "setup" apps
 #include "onboarding/hass_setup.h"
 
@@ -28,6 +26,22 @@
 
 class Apps
 {
+private:
+    QueueHandle_t mutex;
+
+    uint8_t active_id = 0;
+
+    TFT_eSprite *rendered_spr_;
+
+    std::shared_ptr<App> find(uint8_t id);
+    void lock();
+    void unlock();
+
+protected:
+    std::vector<std::pair<app_types, uint8_t>> navigation_history;
+    std::map<app_types, std::map<uint8_t, std::shared_ptr<App>>> apps;
+    TFT_eSprite *spr_ = nullptr;
+    std::shared_ptr<App> active_app = nullptr;
 
 public:
     Apps();
@@ -46,20 +60,4 @@ public:
     void createOnboarding();
 
     std::pair<app_types, uint8_t> navigationBack();
-
-private:
-    QueueHandle_t mutex;
-    std::vector<std::pair<app_types, uint8_t>> navigation_history;
-    std::map<app_types, std::map<uint8_t, std::shared_ptr<App>>> apps;
-
-    uint8_t active_id = 0;
-
-    TFT_eSprite *spr_ = nullptr;
-    std::shared_ptr<App> active_app = nullptr;
-
-    TFT_eSprite *rendered_spr_;
-
-    std::shared_ptr<App> find(uint8_t id);
-    void lock();
-    void unlock();
 };

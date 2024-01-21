@@ -12,6 +12,7 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
+#include "apps/onboarding/onboarding.h"
 
 class DisplayTask : public Task<DisplayTask>
 {
@@ -26,6 +27,7 @@ public:
     void setBrightness(uint16_t brightness);
     void setLogger(Logger *logger);
     Apps *getApps();
+    Onboarding *getOnboarding();
 
 protected:
     void run();
@@ -36,6 +38,7 @@ private:
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
     Apps apps = Apps();
+    Onboarding onboarding;
 
     QueueHandle_t app_state_queue_;
 

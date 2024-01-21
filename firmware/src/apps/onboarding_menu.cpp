@@ -55,6 +55,10 @@ std::pair<app_types, uint8_t> OnboardingMenu::navigationNext()
 
 TFT_eSprite *OnboardingMenu::render()
 {
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+
     MenuItem item = find_item(get_menu_position());
 
     uint32_t background = spr_->color565(0, 0, 0);
@@ -71,10 +75,6 @@ TFT_eSprite *OnboardingMenu::render()
 
     uint8_t icon_size_big = 80; // TODO MAKE BIGGER
     uint8_t icon_size_small = 80;
-
-    spr_->setTextDatum(CC_DATUM);
-    spr_->setTextSize(1);
-    spr_->setFreeFont(&NDS1210pt7b);
 
     if (item.big_icon.icon == nullptr)
     {

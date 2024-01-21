@@ -5,6 +5,8 @@
 #include "apps/stopwatch.h"
 #include "apps/light_switch.h"
 
+#include "font/NDS1210pt7b.h"
+
 #include "cJSON.h"
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
@@ -16,31 +18,11 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 2048 * 6, 1,
 
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
-}
 
-DisplayTask::~DisplayTask()
-{
-    vQueueDelete(app_state_queue_);
-    vSemaphoreDelete(mutex_);
-}
-
-Apps *DisplayTask::getApps()
-{
-    return &apps;
-}
-
-void DisplayTask::run()
-{
     tft_.begin();
     tft_.invertDisplay(1);
     tft_.setRotation(SK_DISPLAY_ROTATION);
     tft_.fillScreen(TFT_BLACK);
-
-    ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
-    ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
-    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
-
-    log("push menu sprite: ok");
 
     spr_.setColorDepth(8);
 
@@ -56,14 +38,44 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    apps.setSprite(&spr_);
-
-    apps.createOnboarding();
-
-    AppState app_state;
-
     spr_.setTextDatum(CC_DATUM);
     spr_.setTextColor(TFT_WHITE);
+
+    apps.setSprite(&spr_);
+
+    onboarding = Onboarding(&spr_);
+}
+
+DisplayTask::~DisplayTask()
+{
+    vQueueDelete(app_state_queue_);
+    vSemaphoreDelete(mutex_);
+}
+
+Apps *DisplayTask::getApps()
+{
+    return &apps;
+}
+
+Onboarding *DisplayTask::getOnboarding()
+{
+    return &onboarding;
+}
+
+void DisplayTask::run()
+{
+
+    ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
+    ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
+    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
+
+    log("push menu sprite: ok");
+
+    // onboarding.setSprite(&spr_);
+
+    // AppState app_state;
+
+    // spr_.setFreeFont(&NDS1210pt7b);
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
@@ -77,7 +89,10 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            apps.renderActive()->pushSprite(0, 0);
+            if (false)
+                apps.renderActive()->pushSprite(0, 0);
+            else
+                onboarding.renderActive()->pushSprite(0, 0);
 
             {
                 SemaphoreGuard lock(mutex_);

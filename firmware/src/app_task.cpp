@@ -62,6 +62,11 @@ void AppTask::setApps(Apps *apps)
     this->apps = apps;
 }
 
+void AppTask::setOnboarding(Onboarding *onboarding_)
+{
+    apps = onboarding_;
+}
+
 void AppTask::strainCalibrationCallback()
 {
     log("Strain calibration step 0");

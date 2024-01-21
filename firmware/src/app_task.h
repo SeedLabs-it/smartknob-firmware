@@ -30,6 +30,7 @@ public:
     void setConfiguration(Configuration *configuration);
 
     void setApps(Apps *apps);
+    void setOnboarding(Onboarding *onboarding);
 
     void addListener(QueueHandle_t queue);
 
