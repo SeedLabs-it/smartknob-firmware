@@ -6,7 +6,6 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
-
 #if SK_ALS
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 float luminosityAdjustment = 1.00;
@@ -376,7 +375,7 @@ void AppTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
 
                 // TODO exit menu
-                changeConfig(apps->navigationNext());
+                changeConfig(apps->navigationBack());
             }
             break;
         default:

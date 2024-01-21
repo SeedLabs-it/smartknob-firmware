@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include "app.h"
 #include "menu.h"
@@ -44,8 +45,11 @@ public:
     void reload(cJSON *apps_);
     void createOnboarding();
 
+    std::pair<app_types, uint8_t> navigationBack();
+
 private:
     QueueHandle_t mutex;
+    std::vector<std::pair<app_types, uint8_t>> navigation_history;
     std::map<app_types, std::map<uint8_t, std::shared_ptr<App>>> apps;
 
     uint8_t active_id = 0;

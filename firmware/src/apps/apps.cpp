@@ -412,6 +412,21 @@ std::pair<app_types, uint8_t> Apps::navigationNext()
     return std::make_pair(next.first, next.second);
 }
 
+std::pair<app_types, uint8_t> Apps::navigationBack()
+{
+    lock();
+    if (navigation_history.size() == 0)
+    {
+        unlock();
+        return std::make_pair(menu_type, 0); // SHOULD GO TO FIRST MENU/APP
+    }
+
+    std::pair<app_types, uint8_t> last = navigation_history.back();
+    navigation_history.pop_back();
+    unlock();
+    return last;
+}
+
 PB_SmartKnobConfig Apps::getActiveMotorConfig()
 {
     lock();
