@@ -84,10 +84,10 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            // if (false)
-            // apps.renderActive()->pushSprite(0, 0);
-            // else
-            onboarding.renderActive()->pushSprite(0, 0);
+            if (false)
+                apps.renderActive()->pushSprite(0, 0);
+            else
+                onboarding.renderActive()->pushSprite(0, 0);
 
             {
                 SemaphoreGuard lock(mutex_);

@@ -215,14 +215,17 @@ std::pair<app_types, uint8_t> Apps::navigationNext()
 {
     lock();
     // TODO MAYBE CHECK IF ACTIVE APP IS NOT NULL
+    ESP_LOGD("apps.cpp", "navigationNext: %d", millis());
     std::pair<app_types, uint8_t> next = active_app->navigationNext();
+    navigation_history.push_back(next);
     unlock();
-    return std::make_pair(next.first, next.second);
+    return next;
 }
 
 std::pair<app_types, uint8_t> Apps::navigationBack()
 {
     lock();
+
     if (navigation_history.size() == 0)
     {
         unlock();
@@ -231,6 +234,7 @@ std::pair<app_types, uint8_t> Apps::navigationBack()
 
     std::pair<app_types, uint8_t> last = navigation_history.back();
     navigation_history.pop_back();
+
     unlock();
     return last;
 }
