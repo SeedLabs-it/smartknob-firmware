@@ -21,35 +21,6 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 2048 * 6, 1,
 
     mutex = xSemaphoreCreateMutex();
     assert(mutex != NULL);
-
-    lock();
-
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
-    tft_.fillScreen(TFT_BLACK);
-
-    spr_.setColorDepth(8);
-
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
-    {
-        log("ERROR: sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
-    }
-    else
-    {
-        log("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
-
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
-
-    apps.setSprite(&spr_);
-
-    onboarding = Onboarding(&spr_);
-    unlock();
 }
 
 DisplayTask::~DisplayTask()
@@ -71,9 +42,35 @@ Onboarding *DisplayTask::getOnboarding()
 void DisplayTask::run()
 {
 
+    tft_.init();
+    tft_.invertDisplay(1);
+    tft_.setRotation(SK_DISPLAY_ROTATION);
+    tft_.fillScreen(TFT_BLACK);
+
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
+
+    spr_.setColorDepth(8);
+
+    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
+    {
+        log("ERROR: sprite allocation failed!");
+        tft_.fillScreen(TFT_RED);
+    }
+    else
+    {
+        log("Sprite created!");
+        tft_.fillScreen(TFT_BLACK);
+    }
+    spr_.setTextColor(0xFFFF, TFT_BLACK);
+
+    apps.setSprite(&spr_);
+
+    onboarding = Onboarding(&spr_);
+
+    spr_.setTextDatum(CC_DATUM);
+    spr_.setTextColor(TFT_WHITE);
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
@@ -87,10 +84,10 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            if (false)
-                apps.renderActive()->pushSprite(0, 0);
-            else
-                onboarding.renderActive()->pushSprite(0, 0);
+            // if (false)
+            // apps.renderActive()->pushSprite(0, 0);
+            // else
+            onboarding.renderActive()->pushSprite(0, 0);
 
             {
                 SemaphoreGuard lock(mutex_);
