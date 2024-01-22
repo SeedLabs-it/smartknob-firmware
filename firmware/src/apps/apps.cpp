@@ -215,7 +215,6 @@ std::pair<app_types, uint8_t> Apps::navigationNext()
 {
     lock();
     // TODO MAYBE CHECK IF ACTIVE APP IS NOT NULL
-    ESP_LOGD("apps.cpp", "navigationNext: %d", millis());
     std::pair<app_types, uint8_t> next = active_app->navigationNext();
     navigation_history.push_back(next);
     unlock();

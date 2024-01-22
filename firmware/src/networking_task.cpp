@@ -106,7 +106,6 @@ void NetworkingTask::setup_wifi()
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
     mqttClient.publish("smartknob/init", cJSON_PrintUnformatted(json));
 
-    // PREVENTS MEMORY LEAK???
     cJSON_Delete(json);
 }
 
