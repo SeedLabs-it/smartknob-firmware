@@ -19,6 +19,11 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 2048 * 6, 1,
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
 
+    mutex = xSemaphoreCreateMutex();
+    assert(mutex != NULL);
+
+    lock();
+
     tft_.begin();
     tft_.invertDisplay(1);
     tft_.setRotation(SK_DISPLAY_ROTATION);
@@ -44,6 +49,7 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 2048 * 6, 1,
     apps.setSprite(&spr_);
 
     onboarding = Onboarding(&spr_);
+    unlock();
 }
 
 DisplayTask::~DisplayTask()
@@ -69,8 +75,6 @@ void DisplayTask::run()
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
-    log("push menu sprite: ok");
-
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
 
@@ -82,16 +86,19 @@ void DisplayTask::run()
 
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
+            lock();
             spr_.fillSprite(TFT_BLACK);
             if (false)
                 apps.renderActive()->pushSprite(0, 0);
             else
                 onboarding.renderActive()->pushSprite(0, 0);
+            unlock();
 
             {
                 SemaphoreGuard lock(mutex_);
                 ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
             }
+
             last_rendering_ms = millis();
 
             fps_counter++;
@@ -131,4 +138,13 @@ void DisplayTask::log(const char *msg)
     }
 }
 
+void DisplayTask::lock()
+{
+    xSemaphoreTake(mutex, portMAX_DELAY);
+}
+
+void DisplayTask::unlock()
+{
+    xSemaphoreGive(mutex);
+}
 #endif

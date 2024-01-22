@@ -2,9 +2,9 @@
 
 Onboarding::Onboarding(TFT_eSprite *spr_) : Apps()
 {
+
     this->spr_ = spr_;
     clear();
-
     OnboardingMenu *onboarding_menu = new OnboardingMenu(this->spr_);
 
     onboarding_menu->add_item(

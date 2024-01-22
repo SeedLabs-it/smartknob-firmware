@@ -40,14 +40,18 @@ private:
     Apps apps = Apps();
     Onboarding onboarding;
 
-    QueueHandle_t app_state_queue_;
+    SemaphoreHandle_t app_state_queue_;
 
     AppState app_state_;
     SemaphoreHandle_t mutex_;
+    SemaphoreHandle_t mutex;
     uint16_t brightness_;
     Logger *logger_;
     void log(const char *msg);
     char buf_[128];
+
+    void lock();
+    void unlock();
 };
 
 #else
