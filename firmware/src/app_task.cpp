@@ -6,7 +6,6 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
-
 #if SK_ALS
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 float luminosityAdjustment = 1.00;
@@ -142,12 +141,12 @@ void AppTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    apps->setActive(menu_type, 0);
+    apps->setActive(UINT8_MAX);
     applyConfig(apps->getActiveMotorConfig(), false);
     motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(std::make_pair(menu_type, 0)); },
+                             { changeConfig(UINT8_MAX); },
                              [this]()
                              {
                                  this->strainCalibrationCallback();
@@ -301,9 +300,9 @@ void AppTask::log(const char *msg)
     xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
-void AppTask::changeConfig(std::pair<app_types, uint8_t> next)
+void AppTask::changeConfig(uint8_t id)
 {
-    apps->setActive(next.first, next.second); // TODO LOOK OVER
+    apps->setActive(id); // TODO LOOK OVER
 
     applyConfig(apps->getActiveMotorConfig(), false);
 }
@@ -376,7 +375,7 @@ void AppTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
 
                 // TODO exit menu
-                changeConfig(apps->navigationNext());
+                changeConfig(apps->navigationBack());
             }
             break;
         default:

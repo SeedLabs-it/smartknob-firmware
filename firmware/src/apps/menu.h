@@ -19,7 +19,7 @@ struct IconItem
 
 struct MenuItem
 {
-    id app_id;
+    uint8_t app_id;
     TextItem screen_name;
     TextItem screen_description;
     TextItem call_to_action;
@@ -30,12 +30,13 @@ struct MenuItem
 class Menu : public App
 {
 public:
-    const app_types type = menu_type;
-
     Menu(TFT_eSprite *spr_) : App(spr_){};
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-    std::pair<app_types, id> navigationNext();
+
+    uint8_t navigationNext();
+    uint8_t navigationBack();
+
     TFT_eSprite *render();
 
     void add_item(uint8_t id, MenuItem item)
@@ -56,5 +57,5 @@ private:
     uint8_t menu_items_count = 0;
     uint8_t current_menu_position = 0;
 
-    std::map<id, MenuItem> items;
+    std::map<uint8_t, MenuItem> items;
 };

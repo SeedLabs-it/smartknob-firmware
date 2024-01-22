@@ -14,17 +14,24 @@ const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
 
-enum app_types
+enum AppId : uint8_t
 {
-    menu_type = 1,
-    apps_type = 2
+    ONBOARDING_MENU = UINT8_MAX,
+    APP_MENU = UINT8_MAX - 1,
+    PRINTER_CHAMBER = 0,
+    BLINDS = 1,
+    CLIMATE = 2,
+    LIGHT_DIMMER = 3,
+    LIGHT_SWITCH = 4,
+    MUSIC = 5,
+    SETTINGS = 6,
+    STOPWATCH = 7,
+    HASS_SETUP_APP = 8,
 };
 
-typedef uint8_t id;
 class App
 {
 public:
-    const app_types type = apps_type;
     App(TFT_eSprite *spr_)
     {
         this->spr_ = spr_;
@@ -43,13 +50,8 @@ public:
         return "App";
     }
 
-    virtual std::pair<app_types, uint8_t> navigationNext()
-    {
-        if (type == menu_type)
-            return std::make_pair(apps_type, 1);
-
-        return std::make_pair(menu_type, 0);
-    }
+    virtual uint8_t navigationNext() { return 0; };
+    virtual uint8_t navigationBack() { return 0; };
 
     const unsigned char *small_icon;
     const unsigned char *big_icon;

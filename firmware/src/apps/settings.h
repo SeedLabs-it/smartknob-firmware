@@ -13,6 +13,9 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
+    uint8_t navigationNext();
+    uint8_t navigationBack();
+
 private:
     // uint8_t current_volume = 0;
     // uint8_t current_volume_position = 0;

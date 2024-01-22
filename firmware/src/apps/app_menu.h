@@ -27,7 +27,9 @@ public:
     void add_item(uint8_t id, MenuItemOld item);
     MenuItemOld *find_item(uint8_t id);
     std::string getClassName();
-    std::pair<app_types, uint8_t> navigationNext();
+
+    uint8_t navigationNext();
+    uint8_t navigationBack();
 
     void lock();
 

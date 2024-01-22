@@ -21,6 +21,28 @@ OnboardingMenu::OnboardingMenu(TFT_eSprite *spr_) : Menu(spr_)
     };
 }
 
+uint8_t OnboardingMenu::navigationNext()
+{
+    return find_item(get_menu_position()).app_id;
+    // uint8_t current_onboarding_position = get_menu_position();
+    // // Makes sure only apps 1 - 3 have a "second depth" of navigation
+    // if (current_onboarding_position >= 1 && current_onboarding_position <= 3)
+    // {
+    //     if (current_onboarding_position == 3)
+    //     {
+    //         return UINT8_MAX - 1;
+    //     }
+    //     return current_onboarding_position;
+    // }
+
+    // return UINT8_MAX;
+}
+
+uint8_t OnboardingMenu::navigationBack()
+{
+    return UINT8_MAX;
+}
+
 EntityStateUpdate OnboardingMenu::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size
@@ -36,22 +58,6 @@ EntityStateUpdate OnboardingMenu::updateStateFromKnob(PB_SmartKnobState state)
 }
 
 void OnboardingMenu::updateStateFromSystem(AppState state) {}
-
-std::pair<app_types, uint8_t> OnboardingMenu::navigationNext()
-{
-    uint8_t current_onboarding_position = get_menu_position();
-    // Makes sure only apps 1 - 3 have a "second depth" of navigation
-    if (current_onboarding_position >= 1 && current_onboarding_position <= 3)
-    {
-        if (current_onboarding_position == 3)
-        {
-            return std::make_pair(menu_type, 1);
-        }
-        return std::make_pair(apps_type, current_onboarding_position);
-    }
-
-    return std::make_pair(type, 0);
-}
 
 TFT_eSprite *OnboardingMenu::render()
 {

@@ -23,6 +23,16 @@ HassSetupApp::HassSetupApp(TFT_eSprite *spr_) : App(spr_)
     };
 }
 
+uint8_t HassSetupApp::navigationNext()
+{
+    return 0;
+}
+
+uint8_t HassSetupApp::navigationBack()
+{
+    return UINT8_MAX;
+}
+
 EntityStateUpdate HassSetupApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     // needed to next reload of App

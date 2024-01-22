@@ -18,10 +18,10 @@ void Apps::setSprite(TFT_eSprite *spr_)
     this->spr_ = spr_;
 }
 
-void Apps::add(app_types type, uint8_t id, App *app)
+void Apps::add(uint8_t id, App *app)
 {
     lock();
-    apps[type].insert(std::make_pair(id, app));
+    apps.insert(std::make_pair(id, app));
     unlock();
 }
 
@@ -56,7 +56,7 @@ TFT_eSprite *Apps::renderActive()
     }
 
     //! MIGHT BE WRONG
-    if (apps[apps_type][active_id] == nullptr)
+    if (apps[active_id] == nullptr)
     {
         rendered_spr_ = spr_;
         ESP_LOGE("apps.cpp", "null pointer instead of app");
@@ -64,7 +64,7 @@ TFT_eSprite *Apps::renderActive()
         return rendered_spr_;
     }
 
-    active_app = apps[apps_type][active_id];
+    active_app = apps[active_id];
 
     rendered_spr_ = active_app->render();
 
@@ -72,11 +72,11 @@ TFT_eSprite *Apps::renderActive()
     return rendered_spr_;
 }
 
-void Apps::setActive(app_types type, uint8_t id)
+void Apps::setActive(uint8_t id)
 {
     lock();
     active_id = id;
-    if (apps[type][active_id] == nullptr)
+    if (apps[active_id] == nullptr)
     {
         // TODO: panic?
         ESP_LOGE("apps.cpp", "null pointer instead of app");
@@ -84,7 +84,7 @@ void Apps::setActive(app_types type, uint8_t id)
     }
     else
     {
-        active_app = apps[type][active_id];
+        active_app = apps[active_id];
         unlock();
     }
 }
@@ -108,10 +108,10 @@ void Apps::reload(cJSON *apps_)
     }
 
     SettingsApp *settings_app = new SettingsApp(this->spr_);
-    add(apps_type, app_position, settings_app);
+    add(app_position, settings_app);
 
     updateMenu();
-    setActive(menu_type, 0);
+    setActive(0);
     cJSON_Delete(apps_);
 }
 
@@ -124,7 +124,7 @@ void Apps::createOnboarding()
     onboarding_menu->add_item(
         0,
         MenuItem{
-            1,
+            ONBOARDING_MENU,
             TextItem{
                 "SMART KNOB",
                 spr_->color565(255, 255, 255),
@@ -150,7 +150,7 @@ void Apps::createOnboarding()
     onboarding_menu->add_item(
         1,
         MenuItem{
-            2,
+            HASS_SETUP_APP,
             TextItem{
                 "HOME ASSISTANT",
                 spr_->color565(255, 255, 255),
@@ -176,7 +176,7 @@ void Apps::createOnboarding()
     onboarding_menu->add_item(
         2,
         MenuItem{
-            3,
+            SETTINGS,
             TextItem{
                 "WIFI",
                 spr_->color565(255, 255, 255),
@@ -201,7 +201,7 @@ void Apps::createOnboarding()
     onboarding_menu->add_item(
         3,
         MenuItem{
-            4,
+            APP_MENU,
             TextItem{
                 "DEMO MODE",
                 spr_->color565(255, 255, 255),
@@ -226,7 +226,7 @@ void Apps::createOnboarding()
     onboarding_menu->add_item(
         4,
         MenuItem{
-            5,
+            ONBOARDING_MENU,
             TextItem{
                 "FIRMWARE 0.1b",
                 spr_->color565(255, 255, 255),
@@ -250,19 +250,19 @@ void Apps::createOnboarding()
 
         });
 
-    add(menu_type, 0, onboarding_menu);
+    add(ONBOARDING_MENU, onboarding_menu);
 
     // APPS FOR OTHER ONBOARDING SCREENS
     HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
-    add(apps_type, 1, hass_setup_app);
+    add(HASS_SETUP_APP, hass_setup_app);
 
     StopwatchApp *app1 = new StopwatchApp(spr_, "");
-    add(apps_type, 2, app1);
+    add(STOPWATCH, app1);
 
     // FOR DEMO
     MenuApp *menu_app = new MenuApp(spr_);
     SettingsApp *settings_app = new SettingsApp(spr_);
-    add(apps_type, 4, settings_app);
+    add(SETTINGS, settings_app);
 
     menu_app->add_item(
         0,
@@ -304,9 +304,9 @@ void Apps::createOnboarding()
         menu_position++;
     }
 
-    add(menu_type, 1, menu_app);
+    add(APP_MENU, menu_app);
 
-    setActive(menu_type, 0);
+    setActive(0);
 }
 
 void Apps::updateMenu()
@@ -318,7 +318,7 @@ void Apps::updateMenu()
 
     uint16_t position = 0;
 
-    for (it = apps[apps_type].begin(); it != apps[apps_type].end(); it++)
+    for (it = apps.begin(); it != apps.end(); it++)
     {
         ESP_LOGD("apps.cpp", "menu add item %d", position);
 
@@ -335,7 +335,7 @@ void Apps::updateMenu()
         position++;
     }
 
-    add(menu_type, 0, menu_app);
+    add(0, menu_app);
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
@@ -350,49 +350,49 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(this->spr_, app_id);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
         BlindsApp *app = new BlindsApp(this->spr_, app_id);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
         LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
-        add(apps_type, position, app);
+        add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
@@ -403,13 +403,14 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     return nullptr;
 }
 
-std::pair<app_types, uint8_t> Apps::navigationNext()
+uint8_t Apps::navigationNext()
 {
-    lock();
-    // TODO MAYBE CHECK IF ACTIVE APP IS NOT NULL
-    std::pair<app_types, uint8_t> next = active_app->navigationNext();
-    unlock();
-    return std::make_pair(next.first, next.second);
+    return active_app->navigationNext();
+}
+
+uint8_t Apps::navigationBack()
+{
+    return active_app->navigationBack();
 }
 
 PB_SmartKnobConfig Apps::getActiveMotorConfig()
@@ -425,7 +426,7 @@ PB_SmartKnobConfig Apps::getActiveMotorConfig()
 std::shared_ptr<App> Apps::find(uint8_t id)
 {
     // TODO: add protection with array size
-    return apps[apps_type][id];
+    return apps[id];
 }
 
 void Apps::lock()

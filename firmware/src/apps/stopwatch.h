@@ -13,6 +13,9 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
+    uint8_t navigationNext();
+    uint8_t navigationBack();
+
 private:
     std::string entity_name;
     unsigned long start_ms;

@@ -36,6 +36,16 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
     friendly_name = "Climate";
 }
 
+uint8_t ClimateApp::navigationNext()
+{
+    return 0;
+}
+
+uint8_t ClimateApp::navigationBack()
+{
+    return 0;
+}
+
 EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     wanted_temperature = state.current_position;
