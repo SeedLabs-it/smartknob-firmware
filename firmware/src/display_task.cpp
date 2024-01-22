@@ -71,12 +71,6 @@ void DisplayTask::run()
 
     log("push menu sprite: ok");
 
-    // onboarding.setSprite(&spr_);
-
-    // AppState app_state;
-
-    // spr_.setFreeFont(&NDS1210pt7b);
-
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
 
