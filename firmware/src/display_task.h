@@ -49,9 +49,6 @@ private:
     Logger *logger_;
     void log(const char *msg);
     char buf_[128];
-
-    void lock();
-    void unlock();
 };
 
 #else

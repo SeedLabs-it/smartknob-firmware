@@ -133,13 +133,4 @@ void DisplayTask::log(const char *msg)
     }
 }
 
-void DisplayTask::lock()
-{
-    xSemaphoreTake(mutex, portMAX_DELAY);
-}
-
-void DisplayTask::unlock()
-{
-    xSemaphoreGive(mutex);
-}
 #endif
