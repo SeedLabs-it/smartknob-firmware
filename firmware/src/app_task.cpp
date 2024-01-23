@@ -141,12 +141,12 @@ void AppTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    apps->setActive(UINT8_MAX);
+    apps->setActive(ONBOARDING_MENU);
     applyConfig(apps->getActiveMotorConfig(), false);
     motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(UINT8_MAX); },
+                             { changeConfig(ONBOARDING_MENU); },
                              [this]()
                              {
                                  this->strainCalibrationCallback();
