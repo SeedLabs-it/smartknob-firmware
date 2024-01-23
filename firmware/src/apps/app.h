@@ -29,7 +29,6 @@ enum AppId : uint8_t
     HASS_SETUP_APP = 8,
 };
 
-typedef uint8_t (*FunctionPointer)();
 class App
 {
 public:
