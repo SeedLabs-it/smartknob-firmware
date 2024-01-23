@@ -27,12 +27,13 @@ enum AppId : uint8_t
     SETTINGS = 6,
     STOPWATCH = 7,
     HASS_SETUP_APP = 8,
+    DONT_NAVIGATE = 250, // TODO FIX CHANGE IMPORTANT
 };
 
 class App
 {
 public:
-    uint8_t next = 0;
+    uint8_t next = DONT_NAVIGATE;
     uint8_t back = APP_MENU;
 
     App(TFT_eSprite *spr_) : spr_(spr_) {}

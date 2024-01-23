@@ -307,8 +307,10 @@ void AppTask::log(const char *msg)
 
 void AppTask::changeConfig(uint8_t id)
 {
-    apps->setActive(id); // TODO LOOK OVER
+    if (id == DONT_NAVIGATE)
+        return;
 
+    apps->setActive(id); // TODO LOOK OVER
     applyConfig(apps->getActiveMotorConfig(), false);
 }
 
