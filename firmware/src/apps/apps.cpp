@@ -268,7 +268,7 @@ void Apps::createOnboarding()
         0,
         MenuItemOld{
             "SETTINGS",
-            4,
+            SETTINGS,
             spr_->color565(0, 255, 200),
             settings_40,
             settings_80,
