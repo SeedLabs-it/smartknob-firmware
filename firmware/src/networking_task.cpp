@@ -134,6 +134,15 @@ void NetworkingTask::run()
     const uint16_t mqtt_push_interval_ms = 200;
 
     setup_wifi();
+    WebServer server(80);
+    server_ = &server;
+    ElegantOTA.begin(server_);
+    server_->on("/", [this]()
+                { server_->send(200, "text/plain", "Welcome to the SmartKnob devkit (updated)"); });
+    server_->begin();
+
+    log("WebServer started");
+
     static uint32_t last_wifi_status;
 
     static uint32_t mqtt_pull;
@@ -143,9 +152,12 @@ void NetworkingTask::run()
 
     EntityStateUpdate entity_state_to_process_;
 
-    char buf_[128];
     while (1)
     {
+        // move webserver to a different task
+        server_->handleClient();
+        ElegantOTA.loop();
+
         if (millis() - mqtt_pull > 1000)
         {
             mqttClient.loop();

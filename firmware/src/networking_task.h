@@ -12,6 +12,8 @@
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
 #include "app_config.h"
+#include <WebServer.h>
+#include <ElegantOTA.h>
 
 class NetworkingTask : public Task<NetworkingTask>
 {
@@ -55,6 +57,10 @@ private:
     void reconnect_mqtt();
     void mqtt_callback(char *topic, byte *payload, unsigned int length);
     PubSubClient mqttClient;
+
+    char buf_[128];
+
+    WebServer *server_;
 
     void lock();
 
