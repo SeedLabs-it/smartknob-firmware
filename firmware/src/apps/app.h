@@ -53,7 +53,7 @@ public:
 
     const unsigned char *small_icon;
     const unsigned char *big_icon;
-    const char *friendly_name;
+    const char *friendly_name = "";
 
 protected:
     /** Full-size sprite used as a framebuffer */

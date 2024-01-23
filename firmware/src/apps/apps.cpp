@@ -94,7 +94,7 @@ void Apps::reload(cJSON *apps_)
 {
     clear();
 
-    uint16_t app_position = 1;
+    uint16_t app_position = 0;
 
     cJSON *json_app = NULL;
     cJSON_ArrayForEach(json_app, apps_)
@@ -112,7 +112,6 @@ void Apps::reload(cJSON *apps_)
     add(app_position, settings_app);
 
     updateMenu();
-    setActive(0);
     cJSON_Delete(apps_);
 }
 
@@ -186,6 +185,7 @@ void Apps::createOnboarding()
     add(STOPWATCH, app1);
 
     // INIT DEMO MENU
+    // MOVE COLORS TO CORRESPONDING MENU
     uint16_t active_color = spr_->color565(0, 255, 200);
     uint16_t inactive_color = spr_->color565(150, 150, 150);
 
@@ -317,6 +317,9 @@ void Apps::updateMenu() // BROKEN FOR NOW
 
     uint16_t position = 0;
 
+    uint16_t active_color = spr_->color565(0, 255, 200);
+    uint16_t inactive_color = spr_->color565(150, 150, 150);
+
     for (it = apps.begin(); it != apps.end(); it++)
     {
         ESP_LOGD("apps.cpp", "menu add item %d", position);
@@ -324,27 +327,12 @@ void Apps::updateMenu() // BROKEN FOR NOW
         menu_app->add_item(
             position,
             MenuItem{
-                0,
-                TextItem{
-                    it->second->friendly_name,
-                    spr_->color565(255, 255, 255),
-                },
-                TextItem{
-                    "",
-                    spr_->color565(255, 255, 255),
-                },
-                TextItem{
-                    it->second->friendly_name,
-                    spr_->color565(128, 255, 80),
-                },
-                IconItem{
-                    it->second->big_icon,
-                    spr_->color565(255, 255, 255),
-                },
-                IconItem{
-                    it->second->small_icon,
-                    spr_->color565(255, 255, 255),
-                },
+                it->first,
+                TextItem{it->second->friendly_name, inactive_color},
+                TextItem{},
+                TextItem{it->second->friendly_name, inactive_color},
+                IconItem{it->second->big_icon, active_color},
+                IconItem{it->second->small_icon, inactive_color},
             });
 
         position++;
@@ -356,10 +344,6 @@ void Apps::updateMenu() // BROKEN FOR NOW
 // settings and menu apps kept aside for a reason. We will add them manually later
 App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name)
 {
-    if (position < 1)
-    {
-        ESP_LOGE("apps.cpp", "can't load app at %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
-    }
 
     ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)

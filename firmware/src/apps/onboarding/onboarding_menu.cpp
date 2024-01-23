@@ -64,7 +64,7 @@ TFT_eSprite *OnboardingMenu::render()
     {
         if (item.small_icon.icon == nullptr)
         {
-            if (item.app_id == 4)
+            if (get_menu_position() == 3)
             {
                 spr_->setTextColor(item.screen_name.color);
                 spr_->drawString(item.screen_name.text, center_w, screen_name_label_h * 2, 1);
@@ -99,7 +99,7 @@ TFT_eSprite *OnboardingMenu::render()
         }
     }
 
-    if (get_menu_position() == 4)
+    if (get_menu_position() == 3)
     {
         uint32_t colors[6] = {TFT_CYAN, TFT_PURPLE, TFT_RED, TFT_YELLOW, TFT_GREENYELLOW, TFT_GREEN};
         float angle_step = 2 * PI / 6;

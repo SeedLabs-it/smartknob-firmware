@@ -236,6 +236,11 @@ void AppTask::run()
 #if SK_NETWORKING // Should this be here??
             apps->reload(networking_task_->getApps());
 
+            log("Giving 1s for Apps to reload");
+            delay(1000);
+
+            changeConfig(APP_MENU);
+
             // SHOULD BE RELEASE LATER WHEN RELOAD IS DONE
             networking_task_->unlock();
 #endif
