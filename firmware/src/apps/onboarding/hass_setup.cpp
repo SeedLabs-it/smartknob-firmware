@@ -5,6 +5,7 @@
 
 HassSetupApp::HassSetupApp(TFT_eSprite *spr_) : App(spr_)
 {
+    back = ONBOARDING_MENU;
     motor_config = PB_SmartKnobConfig{
         0,
         0,
@@ -21,16 +22,6 @@ HassSetupApp::HassSetupApp(TFT_eSprite *spr_) : App(spr_)
         0,
         20,
     };
-}
-
-uint8_t HassSetupApp::navigationNext()
-{
-    return 0;
-}
-
-uint8_t HassSetupApp::navigationBack()
-{
-    return UINT8_MAX;
 }
 
 EntityStateUpdate HassSetupApp::updateStateFromKnob(PB_SmartKnobState state)

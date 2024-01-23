@@ -1,7 +1,7 @@
 #pragma once
 #include "apps.h"
 #include "menu.h"
-#include "onboarding_menu.h"
+#include "onboarding/onboarding_menu.h"
 #include "app_menu.h"
 #include "settings.h"
 
@@ -75,6 +75,7 @@ TFT_eSprite *Apps::renderActive()
 void Apps::setActive(uint8_t id)
 {
     lock();
+    ESP_LOGD("apps.cpp", "set active %d", id);
     active_id = id;
     if (apps[active_id] == nullptr)
     {
@@ -125,128 +126,53 @@ void Apps::createOnboarding()
         0,
         MenuItem{
             ONBOARDING_MENU,
-            TextItem{
-                "SMART KNOB",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "DEV KIT V0.1",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "ROTATE TO START",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
+            TextItem{"SMART KNOB", spr_->color565(255, 255, 255)},
+            TextItem{"DEV KIT V0.1", spr_->color565(255, 255, 255)},
+            TextItem{"ROTATE TO START", spr_->color565(128, 255, 80)},
+            IconItem{},
+            IconItem{},
         });
 
     onboarding_menu->add_item(
         1,
         MenuItem{
             HASS_SETUP_APP,
-            TextItem{
-                "HOME ASSISTANT",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "INTEGRATION",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO CONTINUE",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                home_assistant_80,
-                spr_->color565(17, 189, 242),
-            },
+            TextItem{"HOME ASSISTANT", spr_->color565(255, 255, 255)},
+            TextItem{"INTEGRATION", spr_->color565(255, 255, 255)},
+            TextItem{"PRESS TO CONTINUE", spr_->color565(128, 255, 80)},
+            IconItem{},
+            IconItem{home_assistant_80, spr_->color565(17, 189, 242)},
         });
 
     onboarding_menu->add_item(
         2,
         MenuItem{
             SETTINGS,
-            TextItem{
-                "WIFI",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO CONFIGURE",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                wifi_conn_80,
-                spr_->color565(255, 255, 255),
-            },
+            TextItem{"WIFI", spr_->color565(255, 255, 255)},
+            TextItem{},
+            TextItem{"PRESS TO CONFIGURE", spr_->color565(128, 255, 80)},
+            IconItem{},
+            IconItem{wifi_conn_80, spr_->color565(255, 255, 255)},
         });
     onboarding_menu->add_item(
         3,
         MenuItem{
             APP_MENU,
-            TextItem{
-                "DEMO MODE",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO START",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
+            TextItem{"DEMO MODE", spr_->color565(255, 255, 255)},
+            TextItem{},
+            TextItem{"PRESS TO START", spr_->color565(128, 255, 80)},
+            IconItem{},
+            IconItem{},
         });
     onboarding_menu->add_item(
         4,
         MenuItem{
             ONBOARDING_MENU,
-            TextItem{
-                "FIRMWARE 0.1b",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "HARDWARE: DEVKIT V0.1",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "SEEDLABS.IT ®", // TODO "®" doesnt show up
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
+            TextItem{"FIRMWARE 0.1b", spr_->color565(255, 255, 255)},
+            TextItem{"HARDWARE: DEVKIT V0.1", spr_->color565(255, 255, 255)},
+            TextItem{"SEEDLABS.IT ®", spr_->color565(255, 255, 255)}, // TODO "®" doesnt show up
+            IconItem{},
+            IconItem{},
 
         });
 
@@ -259,57 +185,130 @@ void Apps::createOnboarding()
     StopwatchApp *app1 = new StopwatchApp(spr_, "");
     add(STOPWATCH, app1);
 
-    // FOR DEMO
+    // INIT DEMO MENU
+    uint16_t active_color = spr_->color565(0, 255, 200);
+    uint16_t inactive_color = spr_->color565(150, 150, 150);
+
     MenuApp *menu_app = new MenuApp(spr_);
     SettingsApp *settings_app = new SettingsApp(spr_);
     add(SETTINGS, settings_app);
 
     menu_app->add_item(
         0,
-        MenuItemOld{
-            "SETTINGS",
+        MenuItem{
             SETTINGS,
-            spr_->color565(0, 255, 200),
-            settings_40,
-            settings_80,
+            TextItem{"SETTINGS", inactive_color},
+            TextItem{},
+            TextItem{"SETTINGS", inactive_color},
+            IconItem{settings_80, active_color},
+            IconItem{settings_40, inactive_color},
+
         });
 
-    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
+    StopwatchApp *stopwatch_app = new StopwatchApp(spr_, "");
+    add(STOPWATCH, stopwatch_app);
 
-    cJSON *json_root = cJSON_Parse(apps_config.c_str());
-    cJSON *json_app = NULL;
+    menu_app->add_item(
+        1,
+        MenuItem{
+            STOPWATCH,
+            TextItem{"STOPWATCH", inactive_color},
+            TextItem{},
+            TextItem{"STOPWATCH", spr_->color565(128, 255, 80)},
+            IconItem{stopwatch_app->big_icon, active_color},
+            IconItem{stopwatch_app->small_icon, inactive_color},
+        });
 
-    uint16_t app_position = 5;
-    uint16_t menu_position = 1;
+    LightSwitchApp *light_switch_app = new LightSwitchApp(spr_, "light.ceiling", "Ceiling");
+    add(LIGHT_SWITCH, light_switch_app);
 
-    cJSON_ArrayForEach(json_app, json_root)
-    {
-        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
-        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
-        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
+    menu_app->add_item(
+        2,
+        MenuItem{
+            LIGHT_SWITCH,
+            TextItem{"CEILING", inactive_color},
+            TextItem{},
+            TextItem{"CEILING", inactive_color},
+            IconItem{light_switch_app->big_icon, active_color},
+            IconItem{light_switch_app->small_icon, inactive_color},
+        });
 
-        App *app = loadApp(app_position, std::string(json_app_slug->valuestring), std::string(json_app_id->valuestring), json_friendly_name->valuestring);
+    LightDimmerApp *light_dimmer_app = new LightDimmerApp(spr_, "light.workbench", "Workbench");
+    add(LIGHT_DIMMER, light_dimmer_app);
 
-        menu_app->add_item(
-            menu_position,
-            MenuItemOld{
-                app->friendly_name,
-                app_position,
-                spr_->color565(0, 255, 200),
-                app->small_icon,
-                app->big_icon,
-            });
+    menu_app->add_item(
+        3,
+        MenuItem{
+            LIGHT_DIMMER,
+            TextItem{"WORKBENCH", inactive_color},
+            TextItem{},
+            TextItem{"WORKBENCH", inactive_color},
+            IconItem{light_dimmer_app->big_icon, active_color},
+            IconItem{light_dimmer_app->small_icon, inactive_color},
+        });
 
-        app_position++;
-        menu_position++;
-    }
+    ClimateApp *climate_app = new ClimateApp(spr_, "climate.office");
+    add(CLIMATE, climate_app);
+
+    menu_app->add_item(
+        4,
+        MenuItem{
+            CLIMATE,
+            TextItem{"CLIMATE", inactive_color},
+            TextItem{},
+            TextItem{"CLIMATE", inactive_color},
+            IconItem{climate_app->big_icon, active_color},
+            IconItem{climate_app->small_icon, inactive_color},
+        });
+
+    PrinterChamberApp *printer_chamber_app = new PrinterChamberApp(spr_, "3d_printer.office");
+    add(PRINTER_CHAMBER, printer_chamber_app);
+
+    menu_app->add_item(
+        5,
+        MenuItem{
+            PRINTER_CHAMBER,
+            TextItem{"3D PRINTER", inactive_color},
+            TextItem{},
+            TextItem{"3D PRINTER", inactive_color},
+            IconItem{printer_chamber_app->big_icon, active_color},
+            IconItem{printer_chamber_app->small_icon, inactive_color},
+        });
+
+    BlindsApp *blinds_app = new BlindsApp(spr_, "blinds.office");
+    add(BLINDS, blinds_app);
+
+    menu_app->add_item(
+        6,
+        MenuItem{
+            BLINDS,
+            TextItem{"BLINDS", inactive_color},
+            TextItem{},
+            TextItem{"BLINDS", active_color},
+            IconItem{blinds_app->big_icon, active_color},
+            IconItem{blinds_app->small_icon, inactive_color},
+        });
+
+    MusicApp *music_app = new MusicApp(spr_, "music.office");
+    add(MUSIC, music_app);
+
+    menu_app->add_item(
+        7,
+        MenuItem{
+            MUSIC,
+            TextItem{"MUSIC", inactive_color},
+            TextItem{},
+            TextItem{"MUSIC", active_color},
+            IconItem{music_app->big_icon, active_color},
+            IconItem{music_app->small_icon, inactive_color},
+        });
 
     add(APP_MENU, menu_app);
 
     setActive(0);
 }
 
-void Apps::updateMenu()
+void Apps::updateMenu() // BROKEN FOR NOW
 {
     // re - generate new menu based on loaded apps
     MenuApp *menu_app = new MenuApp(spr_);
@@ -324,18 +323,34 @@ void Apps::updateMenu()
 
         menu_app->add_item(
             position,
-            MenuItemOld{
-                it->second->friendly_name,
-                position, //! adding + 1 FIXES BUG WITH SYNC MIGHT CREATE MORE??
-                spr_->color565(0, 255, 200),
-                it->second->small_icon,
-                it->second->big_icon,
+            MenuItem{
+                0,
+                TextItem{
+                    it->second->friendly_name,
+                    spr_->color565(255, 255, 255),
+                },
+                TextItem{
+                    "",
+                    spr_->color565(255, 255, 255),
+                },
+                TextItem{
+                    it->second->friendly_name,
+                    spr_->color565(128, 255, 80),
+                },
+                IconItem{
+                    it->second->big_icon,
+                    spr_->color565(255, 255, 255),
+                },
+                IconItem{
+                    it->second->small_icon,
+                    spr_->color565(255, 255, 255),
+                },
             });
 
         position++;
     }
 
-    add(0, menu_app);
+    add(APP_MENU, menu_app);
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
@@ -405,12 +420,12 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
 
 uint8_t Apps::navigationNext()
 {
-    return active_app->navigationNext();
+    return active_app->next;
 }
 
 uint8_t Apps::navigationBack()
 {
-    return active_app->navigationBack();
+    return active_app->back;
 }
 
 PB_SmartKnobConfig Apps::getActiveMotorConfig()

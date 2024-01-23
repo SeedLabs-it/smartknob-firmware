@@ -3,7 +3,6 @@
 BlindsApp::BlindsApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
 {
     this->entity_name = entity_name;
-
     motor_config = PB_SmartKnobConfig{
         15,
         0,
@@ -24,16 +23,6 @@ BlindsApp::BlindsApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
     big_icon = shades_80;
     small_icon = shades_40;
     friendly_name = "Shades";
-}
-
-uint8_t BlindsApp::navigationNext()
-{
-    return 0;
-}
-
-uint8_t BlindsApp::navigationBack()
-{
-    return 0;
 }
 
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)

@@ -4,8 +4,6 @@
 
 LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::string friendly_name) : App(spr_)
 {
-    // sprintf(author, "%s", "Beethoven");
-    // sprintf(track, "%s", "Moonlight Sonata");
     this->app_id = app_id;
     this->friendly_name = friendly_name;
 
@@ -30,16 +28,6 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::strin
 
     big_icon = light_top_80;
     small_icon = light_top_40;
-}
-
-uint8_t LightDimmerApp::navigationNext()
-{
-    return 0;
-}
-
-uint8_t LightDimmerApp::navigationBack()
-{
-    return 0;
 }
 
 EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)

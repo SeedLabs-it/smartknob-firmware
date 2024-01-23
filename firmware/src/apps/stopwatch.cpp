@@ -27,16 +27,6 @@ StopwatchApp::StopwatchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr
     friendly_name = "Stopwatch";
 }
 
-uint8_t StopwatchApp::navigationNext()
-{
-    return 0;
-}
-
-uint8_t StopwatchApp::navigationBack()
-{
-    return 0;
-}
-
 EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;

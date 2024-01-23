@@ -12,9 +12,6 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    uint8_t navigationNext();
-    uint8_t navigationBack();
-
 private:
     uint16_t current_position = 0;
     uint16_t last_position = 0;

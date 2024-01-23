@@ -9,12 +9,16 @@ struct TextItem
 {
     const char *text;
     uint16_t color;
+
+    TextItem(const char *text = "", uint16_t color = 0) : text(text), color(color){};
 };
 
 struct IconItem
 {
     const unsigned char *icon;
     uint16_t color;
+
+    IconItem(const unsigned char *icon = nullptr, uint16_t color = 0) : icon(icon), color(color){};
 };
 
 struct MenuItem
@@ -34,9 +38,6 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    uint8_t navigationNext();
-    uint8_t navigationBack();
-
     TFT_eSprite *render();
 
     void add_item(uint8_t id, MenuItem item)
@@ -48,7 +49,11 @@ public:
     MenuItem find_item(uint8_t id) { return items[id]; };
 
     uint8_t get_menu_position() { return current_menu_position; };
-    void set_menu_position(uint8_t position) { current_menu_position = position; };
+    void set_menu_position(uint8_t position)
+    {
+        current_menu_position = position;
+        next = find_item(position).app_id;
+    };
 
     uint8_t get_menu_items_count() { return menu_items_count; };
     void set_menu_items_count(uint8_t count) { menu_items_count = count; };

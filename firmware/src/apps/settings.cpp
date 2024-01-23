@@ -31,16 +31,6 @@ SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
     startup_ms = millis();
 }
 
-uint8_t SettingsApp::navigationNext()
-{
-    return 0;
-}
-
-uint8_t SettingsApp::navigationBack()
-{
-    return 0;
-}
-
 EntityStateUpdate SettingsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;

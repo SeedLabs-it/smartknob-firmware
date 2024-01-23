@@ -29,13 +29,15 @@ enum AppId : uint8_t
     HASS_SETUP_APP = 8,
 };
 
+typedef uint8_t (*FunctionPointer)();
 class App
 {
 public:
-    App(TFT_eSprite *spr_)
-    {
-        this->spr_ = spr_;
-    };
+    uint8_t next = 0;
+    uint8_t back = APP_MENU;
+
+    App(TFT_eSprite *spr_) : spr_(spr_) {}
+    App(TFT_eSprite *spr_, uint8_t next, uint8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
@@ -49,9 +51,6 @@ public:
     {
         return "App";
     }
-
-    virtual uint8_t navigationNext() { return 0; };
-    virtual uint8_t navigationBack() { return 0; };
 
     const unsigned char *small_icon;
     const unsigned char *big_icon;

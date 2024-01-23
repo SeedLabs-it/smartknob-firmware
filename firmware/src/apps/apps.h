@@ -18,7 +18,7 @@
 
 // include all "menu" apps
 #include "app_menu.h"
-#include "onboarding_menu.h"
+#include "onboarding/onboarding_menu.h"
 
 // include all "setup" apps
 #include "onboarding/hass_setup.h"
