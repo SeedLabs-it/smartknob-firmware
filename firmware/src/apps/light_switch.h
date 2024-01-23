@@ -17,7 +17,6 @@ private:
     uint16_t last_position = 0;
     uint8_t num_positions = 0;
     std::string entity_name;
-    std::string friendly_name;
     // needed for UI
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
