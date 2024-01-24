@@ -23,6 +23,12 @@ MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
     };
 }
 
+void MenuApp::add_item(int8_t id, MenuItem item)
+{
+    items[id] = item;
+    menu_items_count++;
+};
+
 EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size

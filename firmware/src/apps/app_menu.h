@@ -15,6 +15,8 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
+    void add_item(int8_t id, MenuItem item);
+
 private:
     char room[12];
 

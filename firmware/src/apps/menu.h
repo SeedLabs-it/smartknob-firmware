@@ -46,6 +46,7 @@ public:
         motor_config.max_position = menu_items_count;
         menu_items_count++;
     };
+
     MenuItem find_item(int8_t id) { return items[id]; };
 
     uint8_t get_menu_position() { return current_menu_position; };
@@ -58,7 +59,7 @@ public:
     uint8_t get_menu_items_count() { return menu_items_count; };
     void set_menu_items_count(uint8_t count) { menu_items_count = count; };
 
-private:
+protected:
     uint8_t menu_items_count = 0;
     uint8_t current_menu_position = 0;
 
