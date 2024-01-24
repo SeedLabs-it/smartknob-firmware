@@ -35,10 +35,10 @@ class Menu : public App
 {
 public:
     Menu(TFT_eSprite *spr_) : App(spr_){};
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
-    void updateStateFromSystem(AppState state);
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) {};
+    void updateStateFromSystem(AppState state) {};
 
-    TFT_eSprite *render();
+    TFT_eSprite *render() {};
 
     void add_item(uint8_t id, MenuItem item)
     {

@@ -90,6 +90,20 @@ void Apps::setActive(uint8_t id)
     }
 }
 
+void Apps::setMenuActive()
+{
+    lock();
+    if (menu == nullptr)
+    {
+        // TODO: panic?
+        ESP_LOGE("apps.cpp", "null pointer instead of menu");
+        unlock();
+        return;
+    }
+    active_app = menu;
+    unlock();
+}
+
 void Apps::reload(cJSON *apps_)
 {
     clear();
@@ -119,9 +133,11 @@ void Apps::createOnboarding()
 {
     clear();
 
-    OnboardingMenu *onboarding_menu = new OnboardingMenu(this->spr_);
+    menu = std::make_shared<OnboardingMenu>(this->spr_);
 
-    onboarding_menu->add_item(
+    OnboardingMenu *onboarding_menu = new OnboardingMenu(spr_);
+
+    menu->add_item(
         0,
         MenuItem{
             ONBOARDING_MENU,
@@ -132,7 +148,7 @@ void Apps::createOnboarding()
             IconItem{},
         });
 
-    onboarding_menu->add_item(
+    menu->add_item(
         1,
         MenuItem{
             HASS_SETUP_APP,
@@ -143,7 +159,7 @@ void Apps::createOnboarding()
             IconItem{home_assistant_80, spr_->color565(17, 189, 242)},
         });
 
-    onboarding_menu->add_item(
+    menu->add_item(
         2,
         MenuItem{
             SETTINGS,
@@ -153,7 +169,7 @@ void Apps::createOnboarding()
             IconItem{},
             IconItem{wifi_conn_80, spr_->color565(255, 255, 255)},
         });
-    onboarding_menu->add_item(
+    menu->add_item(
         3,
         MenuItem{
             APP_MENU,
@@ -163,7 +179,7 @@ void Apps::createOnboarding()
             IconItem{},
             IconItem{},
         });
-    onboarding_menu->add_item(
+    menu->add_item(
         4,
         MenuItem{
             ONBOARDING_MENU,
@@ -174,8 +190,6 @@ void Apps::createOnboarding()
             IconItem{},
 
         });
-
-    add(ONBOARDING_MENU, onboarding_menu);
 
     // APPS FOR OTHER ONBOARDING SCREENS
     HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
@@ -304,8 +318,7 @@ void Apps::createOnboarding()
         });
 
     add(APP_MENU, menu_app);
-
-    setActive(0);
+    setMenuActive();
 }
 
 void Apps::updateMenu() // BROKEN FOR NOW

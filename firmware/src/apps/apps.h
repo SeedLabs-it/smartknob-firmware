@@ -35,6 +35,8 @@ public:
     EntityStateUpdate update(AppState state);
     TFT_eSprite *renderActive();
     void setActive(uint8_t id);
+    void setMenuActive();
+
     uint8_t navigationNext();
     uint8_t navigationBack();
     PB_SmartKnobConfig getActiveMotorConfig();
@@ -48,6 +50,7 @@ public:
 private:
     QueueHandle_t mutex;
     std::map<uint8_t, std::shared_ptr<App>> apps;
+    std::shared_ptr<Menu> menu = nullptr;
 
     uint8_t active_id = 0;
 
