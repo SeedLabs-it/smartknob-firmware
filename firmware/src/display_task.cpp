@@ -4,6 +4,7 @@
 #include "util.h"
 #include "apps/stopwatch.h"
 #include "apps/light_switch.h"
+#include "apps/onboarding/onboarding.h"
 
 #include "cJSON.h"
 
@@ -31,6 +32,7 @@ Apps *DisplayTask::getApps()
 
 void DisplayTask::run()
 {
+
     tft_.begin();
     tft_.invertDisplay(1);
     tft_.setRotation(SK_DISPLAY_ROTATION);
@@ -56,9 +58,17 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    apps.setSprite(&spr_);
+    if (true) // IF ONBOARDING TRUE
+    {
+        apps = Onboarding(&spr_);
+    }
+    else
+    {
+        apps = Apps();
+        apps.setSprite(&spr_);
+    }
 
-    apps.createOnboarding();
+    // apps.createOnboarding();
 
     AppState app_state;
 

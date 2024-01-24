@@ -30,6 +30,7 @@ class Apps
 
 public:
     Apps();
+    Apps(TFT_eSprite *spr_);
     void add(uint8_t id, App *app);
     void clear();
     EntityStateUpdate update(AppState state);
@@ -46,7 +47,7 @@ public:
     void reload(cJSON *apps_);
     void createOnboarding();
 
-private:
+protected:
     QueueHandle_t mutex;
     std::map<uint8_t, std::shared_ptr<App>> apps;
     std::shared_ptr<Menu> menu = nullptr;

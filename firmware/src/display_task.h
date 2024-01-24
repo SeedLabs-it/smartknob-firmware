@@ -35,7 +35,7 @@ private:
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
-    Apps apps = Apps();
+    Apps apps;
 
     QueueHandle_t app_state_queue_;
 
