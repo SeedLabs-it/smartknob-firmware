@@ -23,7 +23,7 @@ struct IconItem
 
 struct MenuItem
 {
-    uint8_t app_id;
+    int8_t app_id;
     TextItem screen_name;
     TextItem screen_description;
     TextItem call_to_action;
@@ -35,18 +35,18 @@ class Menu : public App
 {
 public:
     Menu(TFT_eSprite *spr_) : App(spr_){};
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) {};
-    void updateStateFromSystem(AppState state) {};
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state){};
+    void updateStateFromSystem(AppState state){};
 
-    TFT_eSprite *render() {};
+    TFT_eSprite *render(){};
 
-    void add_item(uint8_t id, MenuItem item)
+    void add_item(int8_t id, MenuItem item)
     {
         items[id] = item;
         motor_config.max_position = menu_items_count;
         menu_items_count++;
     };
-    MenuItem find_item(uint8_t id) { return items[id]; };
+    MenuItem find_item(int8_t id) { return items[id]; };
 
     uint8_t get_menu_position() { return current_menu_position; };
     void set_menu_position(uint8_t position)

@@ -34,8 +34,7 @@ public:
     void clear();
     EntityStateUpdate update(AppState state);
     TFT_eSprite *renderActive();
-    void setActive(uint8_t id);
-    void setMenuActive();
+    void setActive(int8_t id);
 
     uint8_t navigationNext();
     uint8_t navigationBack();

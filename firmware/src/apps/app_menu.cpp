@@ -2,7 +2,7 @@
 
 MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
 {
-    back = ONBOARDING_MENU;
+    back = MENU;
     sprintf(room, "%s", "Office");
 
     motor_config = PB_SmartKnobConfig{

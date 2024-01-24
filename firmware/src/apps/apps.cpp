@@ -72,9 +72,15 @@ TFT_eSprite *Apps::renderActive()
     return rendered_spr_;
 }
 
-void Apps::setActive(uint8_t id)
+void Apps::setActive(int8_t id)
 {
     lock();
+    if (id == MENU)
+    {
+        active_app = menu;
+        unlock();
+        return;
+    }
     ESP_LOGD("apps.cpp", "set active %d", id);
     active_id = id;
     if (apps[active_id] == nullptr)
@@ -88,20 +94,6 @@ void Apps::setActive(uint8_t id)
         active_app = apps[active_id];
         unlock();
     }
-}
-
-void Apps::setMenuActive()
-{
-    lock();
-    if (menu == nullptr)
-    {
-        // TODO: panic?
-        ESP_LOGE("apps.cpp", "null pointer instead of menu");
-        unlock();
-        return;
-    }
-    active_app = menu;
-    unlock();
 }
 
 void Apps::reload(cJSON *apps_)
@@ -140,7 +132,7 @@ void Apps::createOnboarding()
     menu->add_item(
         0,
         MenuItem{
-            ONBOARDING_MENU,
+            DONT_NAVIGATE,
             TextItem{"SMART KNOB", spr_->color565(255, 255, 255)},
             TextItem{"DEV KIT V0.1", spr_->color565(255, 255, 255)},
             TextItem{"ROTATE TO START", spr_->color565(128, 255, 80)},
@@ -172,7 +164,7 @@ void Apps::createOnboarding()
     menu->add_item(
         3,
         MenuItem{
-            APP_MENU,
+            MENU,
             TextItem{"DEMO MODE", spr_->color565(255, 255, 255)},
             TextItem{},
             TextItem{"PRESS TO START", spr_->color565(128, 255, 80)},
@@ -182,7 +174,7 @@ void Apps::createOnboarding()
     menu->add_item(
         4,
         MenuItem{
-            ONBOARDING_MENU,
+            DONT_NAVIGATE,
             TextItem{"FIRMWARE 0.1b", spr_->color565(255, 255, 255)},
             TextItem{"HARDWARE: DEVKIT V0.1", spr_->color565(255, 255, 255)},
             TextItem{"SEEDLABS.IT ®", spr_->color565(255, 255, 255)}, // TODO "®" doesnt show up
@@ -317,14 +309,14 @@ void Apps::createOnboarding()
             IconItem{music_app->small_icon, inactive_color},
         });
 
-    add(APP_MENU, menu_app);
-    setMenuActive();
+    add(MENU, menu_app);
+    setActive(MENU);
 }
 
 void Apps::updateMenu() // BROKEN FOR NOW
 {
     // re - generate new menu based on loaded apps
-    MenuApp *menu_app = new MenuApp(spr_);
+    menu = std::make_shared<MenuApp>(spr_);
 
     std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
@@ -337,10 +329,10 @@ void Apps::updateMenu() // BROKEN FOR NOW
     {
         ESP_LOGD("apps.cpp", "menu add item %d", position);
 
-        menu_app->add_item(
+        menu->add_item(
             position,
             MenuItem{
-                it->first,
+                (int8_t)it->first,
                 TextItem{it->second->friendly_name, inactive_color},
                 TextItem{},
                 TextItem{it->second->friendly_name, inactive_color},
@@ -351,7 +343,8 @@ void Apps::updateMenu() // BROKEN FOR NOW
         position++;
     }
 
-    add(APP_MENU, menu_app);
+    // add(MENU, menu_app);
+    setActive(MENU);
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later

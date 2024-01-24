@@ -141,12 +141,12 @@ void AppTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    apps->setActive(ONBOARDING_MENU);
+    apps->setActive(MENU);
     applyConfig(apps->getActiveMotorConfig(), false);
     motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(ONBOARDING_MENU); },
+                             { changeConfig(MENU); },
                              [this]()
                              {
                                  this->strainCalibrationCallback();
@@ -239,7 +239,7 @@ void AppTask::run()
             log("Giving 1s for Apps to reload");
             delay(1000);
 
-            changeConfig(APP_MENU);
+            changeConfig(MENU);
 
             // SHOULD BE RELEASE LATER WHEN RELOAD IS DONE
             networking_task_->unlock();
@@ -305,7 +305,7 @@ void AppTask::log(const char *msg)
     xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
-void AppTask::changeConfig(uint8_t id)
+void AppTask::changeConfig(int8_t id)
 {
     if (id == DONT_NAVIGATE)
         return;

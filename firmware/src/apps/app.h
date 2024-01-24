@@ -14,10 +14,10 @@ const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
 
-enum AppId : uint8_t
+enum AppId : int8_t
 {
-    ONBOARDING_MENU = UINT8_MAX,
-    APP_MENU = UINT8_MAX - 1,
+    MENU = -2,
+    DONT_NAVIGATE = -1,
     PRINTER_CHAMBER = 0,
     BLINDS = 1,
     CLIMATE = 2,
@@ -27,17 +27,17 @@ enum AppId : uint8_t
     SETTINGS = 6,
     STOPWATCH = 7,
     HASS_SETUP_APP = 8,
-    DONT_NAVIGATE = 250, // TODO FIX CHANGE IMPORTANT
+
 };
 
 class App
 {
 public:
-    uint8_t next = DONT_NAVIGATE;
-    uint8_t back = APP_MENU;
+    int8_t next = DONT_NAVIGATE;
+    int8_t back = MENU;
 
     App(TFT_eSprite *spr_) : spr_(spr_) {}
-    App(TFT_eSprite *spr_, uint8_t next, uint8_t back) : spr_(spr_), next(next), back(back) {}
+    App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
