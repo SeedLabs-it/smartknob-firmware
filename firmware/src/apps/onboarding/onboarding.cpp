@@ -41,7 +41,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     menu->add_item(
         3,
         MenuItem{
-            MENU,
+            DEMO,
             TextItem{"DEMO MODE", spr_->color565(255, 255, 255)},
             TextItem{},
             TextItem{"PRESS TO START", spr_->color565(128, 255, 80)},
@@ -186,6 +186,6 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{music_app->small_icon, inactive_color},
         });
 
-    add(MENU, menu_app);
+    add(DEMO, menu_app);
     setActive(MENU);
 }

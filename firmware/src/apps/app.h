@@ -27,6 +27,7 @@ enum AppId : int8_t
     SETTINGS = 6,
     STOPWATCH = 7,
     HASS_SETUP_APP = 8,
+    DEMO = INT8_MAX,
 
 };
 
@@ -34,7 +35,7 @@ class App
 {
 public:
     int8_t next = DONT_NAVIGATE;
-    int8_t back = MENU;
+    int8_t back = DEMO;
 
     App(TFT_eSprite *spr_) : spr_(spr_) {}
     App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
