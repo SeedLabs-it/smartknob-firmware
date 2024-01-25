@@ -15,12 +15,13 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    void add_item(int8_t id, MenuItem item);
+    void add_item(int8_t id, std::shared_ptr<MenuItem> item);
+    void update();
 
 private:
     char room[12];
 
-    MenuItem current_item;
-    MenuItem prev_item;
-    MenuItem next_item;
+    std::shared_ptr<MenuItem> current_item;
+    std::shared_ptr<MenuItem> prev_item;
+    std::shared_ptr<MenuItem> next_item;
 };

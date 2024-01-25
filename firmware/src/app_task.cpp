@@ -121,7 +121,7 @@ void AppTask::run()
 {
     stream_.begin();
 
-#if SK_ALS && PIN_SDA >= 0 && PIN_SCL >= 0
+#if PIN_SDA >= 0 && PIN_SCL >= 0
     Wire.begin(PIN_SDA, PIN_SCL);
     Wire.setClock(400000);
 #endif
@@ -209,7 +209,9 @@ void AppTask::run()
         {
             app_state.screen_state.has_been_engaged = false;
         }
+#if SK_ALS
         float targetLuminosity = luminosityAdjustment * app_state.screen_state.MIN_LCD_BRIGHTNESS;
+
         if (app_state.screen_state.has_been_engaged == false &&
             abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
             millis() > app_state.screen_state.awake_until)
@@ -224,6 +226,13 @@ void AppTask::run()
                 app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
             }
         }
+#endif
+#if !SK_ALS
+        if (app_state.screen_state.has_been_engaged == false)
+        {
+            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+        }
+#endif
 
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
         {
@@ -234,18 +243,19 @@ void AppTask::run()
         {
             ESP_LOGD("app_task", "App sync requested!");
 #if SK_NETWORKING // Should this be here??
-            apps->reload(networking_task_->getApps());
+            HassApps hass_apps_ = HassApps();
 
-            log("Giving 1s for Apps to reload");
-            delay(1000);
+            display_task_->setApps(hass_apps_);
+
+            HassApps *hass_apps = (HassApps *)apps;
+            hass_apps->sync(networking_task_->getApps());
+
+            log("Giving 0.5s for Apps to initialize");
+            delay(500);
 
             changeConfig(MENU);
-
-            // SHOULD BE RELEASE LATER WHEN RELOAD IS DONE
             networking_task_->unlock();
 #endif
-
-            // cJSON_Delete(apps_);
         }
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {

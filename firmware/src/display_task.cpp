@@ -132,4 +132,10 @@ void DisplayTask::log(const char *msg)
     }
 }
 
+void DisplayTask::setApps(Apps apps_)
+{
+    apps_.setSprite(&spr_);
+    this->apps = apps_;
+}
+
 #endif

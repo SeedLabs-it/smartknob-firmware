@@ -12,6 +12,7 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
+#include "apps/hass/hass_apps.h"
 
 class DisplayTask : public Task<DisplayTask>
 {
@@ -25,6 +26,7 @@ public:
 
     void setBrightness(uint16_t brightness);
     void setLogger(Logger *logger);
+    void setApps(Apps apps);
     Apps *getApps();
 
 protected:

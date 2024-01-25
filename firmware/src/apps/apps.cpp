@@ -93,43 +93,17 @@ void Apps::setActive(int8_t id)
     {
         // TODO: panic?
         ESP_LOGE("apps.cpp", "null pointer instead of app");
-        unlock();
     }
     else
     {
         active_app = apps[active_id];
-        unlock();
     }
-}
-
-void Apps::reload(cJSON *apps_)
-{
-    clear();
-
-    uint16_t app_position = 0;
-
-    cJSON *json_app = NULL;
-    cJSON_ArrayForEach(json_app, apps_)
-    {
-        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
-        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
-        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-
-        loadApp(app_position, std::string(json_app_slug->valuestring), json_app_id->valuestring, json_friendly_name->valuestring);
-
-        app_position++;
-    }
-
-    SettingsApp *settings_app = new SettingsApp(this->spr_);
-    add(app_position, settings_app);
-
-    updateMenu();
-    cJSON_Delete(apps_);
+    unlock();
 }
 
 void Apps::updateMenu() // BROKEN FOR NOW
 {
-    // re - generate new menu based on loaded apps
+    lock();
     menu = std::make_shared<MenuApp>(spr_);
 
     std::map<uint8_t, std::shared_ptr<App>>::iterator it;
@@ -141,23 +115,19 @@ void Apps::updateMenu() // BROKEN FOR NOW
 
     for (it = apps.begin(); it != apps.end(); it++)
     {
-        ESP_LOGD("apps.cpp", "menu add item %d", position);
-
         menu->add_item(
             position,
-            MenuItem{
+            std::make_shared<MenuItem>(
                 (int8_t)it->first,
                 TextItem{it->second->friendly_name, inactive_color},
                 TextItem{},
                 TextItem{it->second->friendly_name, inactive_color},
                 IconItem{it->second->big_icon, active_color},
-                IconItem{it->second->small_icon, inactive_color},
-            });
+                IconItem{it->second->small_icon, inactive_color}));
 
         position++;
     }
-
-    // add(MENU, menu_app);
+    unlock();
     setActive(MENU);
 }
 

@@ -39,7 +39,7 @@ void OnboardingMenu::updateStateFromSystem(AppState state) {}
 
 TFT_eSprite *OnboardingMenu::render()
 {
-    MenuItem item = find_item(get_menu_position());
+    std::shared_ptr<MenuItem> item = find_item(get_menu_position());
 
     uint32_t background = spr_->color565(0, 0, 0);
 
@@ -60,42 +60,42 @@ TFT_eSprite *OnboardingMenu::render()
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
 
-    if (item.big_icon.icon == nullptr)
+    if (item->big_icon.icon == nullptr)
     {
-        if (item.small_icon.icon == nullptr)
+        if (item->small_icon.icon == nullptr)
         {
             if (get_menu_position() == 3)
             {
-                spr_->setTextColor(item.screen_name.color);
-                spr_->drawString(item.screen_name.text, center_w, screen_name_label_h * 2, 1);
+                spr_->setTextColor(item->screen_name.color);
+                spr_->drawString(item->screen_name.text, center_w, screen_name_label_h * 2, 1);
 
-                spr_->setTextColor(item.screen_description.color);
-                spr_->drawString(item.screen_description.text, center_w, screen_name_label_h * 3, 1);
+                spr_->setTextColor(item->screen_description.color);
+                spr_->drawString(item->screen_description.text, center_w, screen_name_label_h * 3, 1);
             }
             else
             {
-                spr_->setTextColor(item.screen_name.color);
-                spr_->drawString(item.screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
+                spr_->setTextColor(item->screen_name.color);
+                spr_->drawString(item->screen_name.text, center_w, center_h - screen_name_label_h * 2, 1);
 
-                spr_->setTextColor(item.screen_description.color);
-                spr_->drawString(item.screen_description.text, center_w, center_h - screen_name_label_h, 1);
+                spr_->setTextColor(item->screen_description.color);
+                spr_->drawString(item->screen_description.text, center_w, center_h - screen_name_label_h, 1);
             }
 
-            spr_->setTextColor(item.call_to_action.color);
-            spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
+            spr_->setTextColor(item->call_to_action.color);
+            spr_->drawString(item->call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
         else
         {
-            spr_->setTextColor(item.screen_name.color);
-            spr_->drawString(item.screen_name.text, center_w, screen_name_label_h * 2, 1);
+            spr_->setTextColor(item->screen_name.color);
+            spr_->drawString(item->screen_name.text, center_w, screen_name_label_h * 2, 1);
 
-            spr_->setTextColor(item.screen_description.color);
-            spr_->drawString(item.screen_description.text, center_w, screen_name_label_h * 3, 1);
+            spr_->setTextColor(item->screen_description.color);
+            spr_->drawString(item->screen_description.text, center_w, screen_name_label_h * 3, 1);
 
-            spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, item.small_icon.icon, icon_size_big, icon_size_big, item.small_icon.color);
+            spr_->drawBitmap(center_w - icon_size_big / 2, center_h - icon_size_big / 2 + 6, item->small_icon.icon, icon_size_big, icon_size_big, item->small_icon.color);
 
-            spr_->setTextColor(item.call_to_action.color);
-            spr_->drawString(item.call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
+            spr_->setTextColor(item->call_to_action.color);
+            spr_->drawString(item->call_to_action.text, center_w, TFT_WIDTH - (40 + call_to_action_label_h), 1);
         }
     }
 

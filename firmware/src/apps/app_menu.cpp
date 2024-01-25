@@ -15,7 +15,7 @@ MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
         2,
         1,
         0.55,
-        "SKDEMO_Menu", // TODO: clean this
+        "", // TODO: clean this
         0,
         {},
         0,
@@ -23,7 +23,7 @@ MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
     };
 }
 
-void MenuApp::add_item(int8_t id, MenuItem item)
+void MenuApp::add_item(int8_t id, std::shared_ptr<MenuItem> item)
 {
     items[id] = item;
     menu_items_count++;
@@ -66,7 +66,7 @@ EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
         next_item = find_item(current_menu_position + 1);
     }
 
-    next = find_item(current_menu_position).app_id;
+    next = find_item(current_menu_position)->app_id;
 
     return EntityStateUpdate{};
 }
@@ -75,7 +75,7 @@ void MenuApp::updateStateFromSystem(AppState state) {}
 
 TFT_eSprite *MenuApp::render()
 {
-    uint8_t current_menu_position = get_menu_position();
+
     current_item = find_item(current_menu_position);
 
     uint32_t background = spr_->color565(0, 0, 0);
@@ -92,25 +92,25 @@ TFT_eSprite *MenuApp::render()
 
     spr_->setTextDatum(CC_DATUM);
 
-    spr_->fillRect(center_h - room_lable_w / 2, label_vertical_offset, room_lable_w, room_lable_h + 1, current_item.screen_name.color); // +1 for height to draw circle right
-    spr_->fillCircle(center_h - room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, current_item.screen_name.color);
-    spr_->fillCircle(center_h + room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, current_item.screen_name.color);
+    spr_->fillRect(center_h - room_lable_w / 2, label_vertical_offset, room_lable_w, room_lable_h + 1, current_item->screen_name.color); // +1 for height to draw circle right
+    spr_->fillCircle(center_h - room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, current_item->screen_name.color);
+    spr_->fillCircle(center_h + room_lable_w / 2, label_vertical_offset + room_lable_h / 2, room_lable_h / 2, current_item->screen_name.color);
 
     spr_->setTextColor(TFT_BLACK);
     spr_->setFreeFont(&Roboto_Thin_Bold_24);
     spr_->drawString(room, center_h, label_vertical_offset + room_lable_h / 2 - 1, 1);
 
-    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current_item.big_icon.icon, icon_size_active, icon_size_active, current_item.big_icon.color, background);
+    spr_->drawBitmap(center_h - icon_size_active / 2, center_v - icon_size_active / 2, current_item->big_icon.icon, icon_size_active, icon_size_active, current_item->big_icon.color, background);
 
     // left one
-    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item.small_icon.icon, icon_size_inactive, icon_size_inactive, next_item.small_icon.color, background);
+    spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item->small_icon.icon, icon_size_inactive, icon_size_inactive, next_item->small_icon.color, background);
 
     // right one
-    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item.small_icon.icon, icon_size_inactive, icon_size_inactive, next_item.small_icon.color, background);
+    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon.icon, icon_size_inactive, icon_size_inactive, next_item->small_icon.color, background);
 
-    spr_->setTextColor(current_item.screen_name.color);
+    spr_->setTextColor(current_item->screen_name.color);
     spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(current_item.screen_name.text, center_h, center_v + icon_size_active / 2 + 30, 1);
+    spr_->drawString(current_item->screen_name.text, center_h, center_v + icon_size_active / 2 + 30, 1);
 
     return this->spr_;
 }
