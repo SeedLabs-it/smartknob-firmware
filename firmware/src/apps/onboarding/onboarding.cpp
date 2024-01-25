@@ -68,6 +68,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
 
     MenuApp *menu_app = new MenuApp(spr_);
     SettingsApp *settings_app = new SettingsApp(spr_);
+    settings_app->back = DEMO; // TEMP FIXES FOR DEMO MODE
     add(SETTINGS, settings_app);
 
     menu_app->add_item(
@@ -81,6 +82,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{settings_40, inactive_color}));
 
     StopwatchApp *stopwatch_app = new StopwatchApp(spr_, "");
+    stopwatch_app->back = DEMO;
     add(STOPWATCH, stopwatch_app);
 
     menu_app->add_item(
@@ -94,6 +96,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{stopwatch_app->small_icon, inactive_color}));
 
     LightSwitchApp *light_switch_app = new LightSwitchApp(spr_, "light.ceiling", "Ceiling");
+    light_switch_app->back = DEMO;
     add(LIGHT_SWITCH, light_switch_app);
 
     menu_app->add_item(
@@ -107,6 +110,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{light_switch_app->small_icon, inactive_color}));
 
     LightDimmerApp *light_dimmer_app = new LightDimmerApp(spr_, "light.workbench", "Workbench");
+    light_dimmer_app->back = DEMO;
     add(LIGHT_DIMMER, light_dimmer_app);
 
     menu_app->add_item(
@@ -120,6 +124,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{light_dimmer_app->small_icon, inactive_color}));
 
     ClimateApp *climate_app = new ClimateApp(spr_, "climate.office");
+    climate_app->back = DEMO;
     add(CLIMATE, climate_app);
 
     menu_app->add_item(
@@ -133,6 +138,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{climate_app->small_icon, inactive_color}));
 
     PrinterChamberApp *printer_chamber_app = new PrinterChamberApp(spr_, "3d_printer.office");
+    printer_chamber_app->back = DEMO;
     add(PRINTER_CHAMBER, printer_chamber_app);
 
     menu_app->add_item(
@@ -146,6 +152,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{printer_chamber_app->small_icon, inactive_color}));
 
     BlindsApp *blinds_app = new BlindsApp(spr_, "blinds.office");
+    blinds_app->back = DEMO;
     add(BLINDS, blinds_app);
 
     menu_app->add_item(
@@ -159,6 +166,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{blinds_app->small_icon, inactive_color}));
 
     MusicApp *music_app = new MusicApp(spr_, "music.office");
+    music_app->back = DEMO;
     add(MUSIC, music_app);
 
     menu_app->add_item(
