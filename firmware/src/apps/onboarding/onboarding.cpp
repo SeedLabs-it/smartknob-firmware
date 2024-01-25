@@ -67,6 +67,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     uint16_t inactive_color = spr_->color565(150, 150, 150);
 
     MenuApp *menu_app = new MenuApp(spr_);
+    menu_app->back = MENU; // TEMP FIXES FOR DEMO MODE
     SettingsApp *settings_app = new SettingsApp(spr_);
     settings_app->back = DEMO; // TEMP FIXES FOR DEMO MODE
     add(SETTINGS, settings_app);
