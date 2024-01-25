@@ -35,7 +35,7 @@ class App
 {
 public:
     int8_t next = DONT_NAVIGATE;
-    int8_t back = DEMO;
+    int8_t back = MENU;
 
     App(TFT_eSprite *spr_) : spr_(spr_) {}
     App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}

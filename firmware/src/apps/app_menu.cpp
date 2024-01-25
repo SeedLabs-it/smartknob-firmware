@@ -75,6 +75,10 @@ void MenuApp::updateStateFromSystem(AppState state) {}
 
 TFT_eSprite *MenuApp::render()
 {
+    if (prev_item == nullptr || next_item == nullptr)
+    {
+        return this->spr_;
+    }
 
     current_item = find_item(current_menu_position);
 
