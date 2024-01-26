@@ -64,7 +64,7 @@ void SensorsTask::run()
 
     // strain sensor and buttons
     unsigned long short_pressed_triggered_at_ms = 0;
-    const unsigned long long_press_timeout_ms = 1000;
+    const unsigned long long_press_timeout_ms = 500;
 
     while (1)
     {

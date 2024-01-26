@@ -371,6 +371,8 @@ void AppTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(true);
                 motor_task_.playHaptic(true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
+
+                changeConfig(apps->navigationBack());
             }
             /* code */
             break;
@@ -392,7 +394,7 @@ void AppTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
 
                 // TODO exit menu
-                changeConfig(apps->navigationBack());
+                // changeConfig(apps->navigationBack());
             }
             break;
         default:
