@@ -10,10 +10,11 @@ class OnboardingMenu : public Menu
 
 public:
     OnboardingMenu(TFT_eSprite *spr_);
+    TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    TFT_eSprite *render();
+    void add_item(int8_t id, std::shared_ptr<MenuItem> item);
 
 private:
 };

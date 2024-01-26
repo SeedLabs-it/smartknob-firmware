@@ -37,6 +37,13 @@ EntityStateUpdate OnboardingMenu::updateStateFromKnob(PB_SmartKnobState state)
 
 void OnboardingMenu::updateStateFromSystem(AppState state) {}
 
+void OnboardingMenu::add_item(int8_t id, std::shared_ptr<MenuItem> item)
+{
+    items[id] = item;
+    motor_config.max_position = menu_items_count;
+    menu_items_count++;
+};
+
 TFT_eSprite *OnboardingMenu::render()
 {
     std::shared_ptr<MenuItem> item = find_item(get_menu_position());

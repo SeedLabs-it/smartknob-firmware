@@ -55,10 +55,9 @@ public:
 
     TFT_eSprite *render(){};
 
-    void add_item(int8_t id, std::shared_ptr<MenuItem> item)
+    virtual void add_item(int8_t id, std::shared_ptr<MenuItem> item)
     {
         items[id] = item;
-        motor_config.max_position = menu_items_count;
         menu_items_count++;
     };
 
