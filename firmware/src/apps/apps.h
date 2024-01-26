@@ -12,9 +12,9 @@
 #include "apps/climate/climate.h"
 #include "apps/light_dimmer/light_dimmer.h"
 #include "apps/light_switch/light_switch.h"
-#include "music.h"
+#include "apps/music/music.h"
 #include "settings.h"
-#include "stopwatch.h"
+#include "apps/stopwatch/stopwatch.h"
 
 // include all "menu" apps
 #include "app_menu.h"
