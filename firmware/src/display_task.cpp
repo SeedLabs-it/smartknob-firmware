@@ -22,13 +22,19 @@ DisplayTask::~DisplayTask()
     vSemaphoreDelete(mutex_);
 }
 
-Apps *DisplayTask::getApps()
+Onboarding *DisplayTask::getOnboarding()
 {
-    return &apps;
+    return &onboarding;
+}
+
+HassApps *DisplayTask::getHassApps()
+{
+    return &hass_apps;
 }
 
 void DisplayTask::run()
 {
+
     tft_.begin();
     tft_.invertDisplay(1);
     tft_.setRotation(SK_DISPLAY_ROTATION);
@@ -54,9 +60,8 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    apps.setSprite(&spr_);
-
-    apps.createOnboarding();
+    onboarding = Onboarding(&spr_);
+    hass_apps = HassApps(&spr_);
 
     AppState app_state;
 
@@ -75,7 +80,14 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            apps.renderActive()->pushSprite(0, 0);
+            if (is_onboarding)
+            {
+                onboarding.renderActive()->pushSprite(0, 0);
+            }
+            else
+            {
+                hass_apps.renderActive()->pushSprite(0, 0);
+            }
 
             {
                 SemaphoreGuard lock(mutex_);
@@ -119,5 +131,21 @@ void DisplayTask::log(const char *msg)
         logger_->log(msg);
     }
 }
+
+void DisplayTask::enableOnboarding()
+{
+    is_onboarding = true;
+}
+
+void DisplayTask::disableOnboarding()
+{
+    is_onboarding = false;
+}
+
+// void DisplayTask::setApps(Apps apps_)
+// {
+//     apps_.setSprite(&spr_);
+//     this->apps = apps_;
+// }
 
 #endif

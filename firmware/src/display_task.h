@@ -12,6 +12,8 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
+#include "apps/onboarding/onboarding.h"
+#include "apps/hass/hass_apps.h"
 
 class DisplayTask : public Task<DisplayTask>
 {
@@ -25,7 +27,11 @@ public:
 
     void setBrightness(uint16_t brightness);
     void setLogger(Logger *logger);
-    Apps *getApps();
+    void setApps(Apps apps);
+    HassApps *getHassApps();
+    Onboarding *getOnboarding();
+    void enableOnboarding();
+    void disableOnboarding();
 
 protected:
     void run();
@@ -35,7 +41,8 @@ private:
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
-    Apps apps = Apps();
+    Onboarding onboarding;
+    HassApps hass_apps;
 
     QueueHandle_t app_state_queue_;
 
@@ -45,6 +52,7 @@ private:
     Logger *logger_;
     void log(const char *msg);
     char buf_[128];
+    bool is_onboarding;
 };
 
 #else

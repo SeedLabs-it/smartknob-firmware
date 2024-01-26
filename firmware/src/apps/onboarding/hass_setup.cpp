@@ -5,6 +5,7 @@
 
 HassSetupApp::HassSetupApp(TFT_eSprite *spr_) : App(spr_)
 {
+    back = MENU;
     motor_config = PB_SmartKnobConfig{
         0,
         0,

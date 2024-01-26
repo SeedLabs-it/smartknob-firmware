@@ -1,5 +1,5 @@
 #pragma once
-#include "app.h"
+#include "menu.h"
 #include "font/roboto_thin_bold_24.h"
 
 #include <map>
@@ -7,16 +7,7 @@
 const uint8_t SCREEN_NAME_LENGTH = 20;
 const uint8_t MEX_MENU_ITEMS = 12;
 
-struct MenuItemOld
-{
-    const char *screen_name;
-    uint16_t app_id;
-    uint32_t color;
-    const unsigned char *small_icon;
-    const unsigned char *big_icon;
-};
-
-class MenuApp : public App
+class MenuApp : public Menu
 {
 public:
     MenuApp(TFT_eSprite *spr_);
@@ -24,25 +15,13 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    void add_item(uint8_t id, MenuItemOld item);
-    MenuItemOld *find_item(uint8_t id);
-    std::string getClassName();
-    std::pair<app_types, uint8_t> navigationNext();
-
-    void lock();
+    void add_item(int8_t id, std::shared_ptr<MenuItem> item);
+    void update();
 
 private:
-    uint8_t menu_items_count = 0;
-    uint8_t current_menu_position = 0;
-    std::map<uint8_t, MenuItemOld> items;
     char room[12];
-    void render_menu_screen();
 
-    SemaphoreHandle_t mutex;
-
-    MenuItemOld *current_item;
-    MenuItemOld *prev_item;
-    MenuItemOld *next_item;
-
-    void unlock();
+    std::shared_ptr<MenuItem> current_item;
+    std::shared_ptr<MenuItem> prev_item;
+    std::shared_ptr<MenuItem> next_item;
 };

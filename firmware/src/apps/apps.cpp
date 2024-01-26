@@ -1,7 +1,7 @@
 #pragma once
 #include "apps.h"
 #include "menu.h"
-#include "onboarding_menu.h"
+#include "onboarding/onboarding_menu.h"
 #include "app_menu.h"
 #include "settings.h"
 
@@ -13,15 +13,21 @@ Apps::Apps()
     mutex = xSemaphoreCreateMutex();
 }
 
+Apps::Apps(TFT_eSprite *spr_)
+{
+    mutex = xSemaphoreCreateMutex();
+    this->spr_ = spr_;
+}
+
 void Apps::setSprite(TFT_eSprite *spr_)
 {
     this->spr_ = spr_;
 }
 
-void Apps::add(app_types type, uint8_t id, App *app)
+void Apps::add(uint8_t id, App *app)
 {
     lock();
-    apps[type].insert(std::make_pair(id, app));
+    apps.insert(std::make_pair(id, app));
     unlock();
 }
 
@@ -56,7 +62,7 @@ TFT_eSprite *Apps::renderActive()
     }
 
     //! MIGHT BE WRONG
-    if (apps[apps_type][active_id] == nullptr)
+    if (apps[active_id] == nullptr)
     {
         rendered_spr_ = spr_;
         ESP_LOGE("apps.cpp", "null pointer instead of app");
@@ -64,7 +70,7 @@ TFT_eSprite *Apps::renderActive()
         return rendered_spr_;
     }
 
-    active_app = apps[apps_type][active_id];
+    active_app = apps[active_id];
 
     rendered_spr_ = active_app->render();
 
@@ -72,328 +78,117 @@ TFT_eSprite *Apps::renderActive()
     return rendered_spr_;
 }
 
-void Apps::setActive(app_types type, uint8_t id)
+void Apps::setActive(int8_t id)
 {
     lock();
+    if (id == MENU)
+    {
+        active_app = menu;
+        unlock();
+        return;
+    }
+    ESP_LOGD("apps.cpp", "set active %d", id);
     active_id = id;
-    if (apps[type][active_id] == nullptr)
+    if (apps[active_id] == nullptr)
     {
         // TODO: panic?
         ESP_LOGE("apps.cpp", "null pointer instead of app");
-        unlock();
     }
     else
     {
-        active_app = apps[type][active_id];
-        unlock();
+        active_app = apps[active_id];
     }
+    unlock();
 }
 
-void Apps::reload(cJSON *apps_)
+void Apps::updateMenu() // BROKEN FOR NOW
 {
-    clear();
-
-    uint16_t app_position = 1;
-
-    cJSON *json_app = NULL;
-    cJSON_ArrayForEach(json_app, apps_)
-    {
-        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
-        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
-        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-
-        loadApp(app_position, std::string(json_app_slug->valuestring), json_app_id->valuestring, json_friendly_name->valuestring);
-
-        app_position++;
-    }
-
-    SettingsApp *settings_app = new SettingsApp(this->spr_);
-    add(apps_type, app_position, settings_app);
-
-    updateMenu();
-    setActive(menu_type, 0);
-    cJSON_Delete(apps_);
-}
-
-void Apps::createOnboarding()
-{
-    clear();
-
-    OnboardingMenu *onboarding_menu = new OnboardingMenu(this->spr_);
-
-    onboarding_menu->add_item(
-        0,
-        MenuItem{
-            1,
-            TextItem{
-                "SMART KNOB",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "DEV KIT V0.1",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "ROTATE TO START",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-        });
-
-    onboarding_menu->add_item(
-        1,
-        MenuItem{
-            2,
-            TextItem{
-                "HOME ASSISTANT",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "INTEGRATION",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO CONTINUE",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                home_assistant_80,
-                spr_->color565(17, 189, 242),
-            },
-        });
-
-    onboarding_menu->add_item(
-        2,
-        MenuItem{
-            3,
-            TextItem{
-                "WIFI",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO CONFIGURE",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                wifi_conn_80,
-                spr_->color565(255, 255, 255),
-            },
-        });
-    onboarding_menu->add_item(
-        3,
-        MenuItem{
-            4,
-            TextItem{
-                "DEMO MODE",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "PRESS TO START",
-                spr_->color565(128, 255, 80),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-        });
-    onboarding_menu->add_item(
-        4,
-        MenuItem{
-            5,
-            TextItem{
-                "FIRMWARE 0.1b",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "HARDWARE: DEVKIT V0.1",
-                spr_->color565(255, 255, 255),
-            },
-            TextItem{
-                "SEEDLABS.IT ®", // TODO "®" doesnt show up
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-            IconItem{
-                nullptr,
-                spr_->color565(255, 255, 255),
-            },
-
-        });
-
-    add(menu_type, 0, onboarding_menu);
-
-    // APPS FOR OTHER ONBOARDING SCREENS
-    HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
-    add(apps_type, 1, hass_setup_app);
-
-    StopwatchApp *app1 = new StopwatchApp(spr_, "");
-    add(apps_type, 2, app1);
-
-    // FOR DEMO
-    MenuApp *menu_app = new MenuApp(spr_);
-    SettingsApp *settings_app = new SettingsApp(spr_);
-    add(apps_type, 4, settings_app);
-
-    menu_app->add_item(
-        0,
-        MenuItemOld{
-            "SETTINGS",
-            4,
-            spr_->color565(0, 255, 200),
-            settings_40,
-            settings_80,
-        });
-
-    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
-
-    cJSON *json_root = cJSON_Parse(apps_config.c_str());
-    cJSON *json_app = NULL;
-
-    uint16_t app_position = 5;
-    uint16_t menu_position = 1;
-
-    cJSON_ArrayForEach(json_app, json_root)
-    {
-        cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
-        cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
-        cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-
-        App *app = loadApp(app_position, std::string(json_app_slug->valuestring), std::string(json_app_id->valuestring), json_friendly_name->valuestring);
-
-        menu_app->add_item(
-            menu_position,
-            MenuItemOld{
-                app->friendly_name,
-                app_position,
-                spr_->color565(0, 255, 200),
-                app->small_icon,
-                app->big_icon,
-            });
-
-        app_position++;
-        menu_position++;
-    }
-
-    add(menu_type, 1, menu_app);
-
-    setActive(menu_type, 0);
-}
-
-void Apps::updateMenu()
-{
-    // re - generate new menu based on loaded apps
-    MenuApp *menu_app = new MenuApp(spr_);
+    lock();
+    menu = std::make_shared<MenuApp>(spr_);
 
     std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
     uint16_t position = 0;
 
-    for (it = apps[apps_type].begin(); it != apps[apps_type].end(); it++)
-    {
-        ESP_LOGD("apps.cpp", "menu add item %d", position);
+    uint16_t active_color = spr_->color565(0, 255, 200);
+    uint16_t inactive_color = spr_->color565(150, 150, 150);
 
-        menu_app->add_item(
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        menu->add_item(
             position,
-            MenuItemOld{
-                it->second->friendly_name,
-                position, //! adding + 1 FIXES BUG WITH SYNC MIGHT CREATE MORE??
-                spr_->color565(0, 255, 200),
-                it->second->small_icon,
-                it->second->big_icon,
-            });
+            std::make_shared<MenuItem>(
+                (int8_t)it->first,
+                TextItem{it->second->friendly_name, inactive_color},
+                TextItem{},
+                TextItem{},
+                IconItem{it->second->big_icon, active_color},
+                IconItem{it->second->small_icon, inactive_color}));
 
         position++;
     }
-
-    add(menu_type, 0, menu_app);
+    unlock();
+    setActive(MENU);
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
-App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name)
+App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name)
 {
-    if (position < 1)
-    {
-        ESP_LOGE("apps.cpp", "can't load app at %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
-    }
 
-    ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+    ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(this->spr_, app_id);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        app->friendly_name = friendly_name;
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        app->friendly_name = friendly_name;
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
         BlindsApp *app = new BlindsApp(this->spr_, app_id);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        app->friendly_name = friendly_name;
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
         LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        app->friendly_name = friendly_name;
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
-        add(apps_type, position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
+        app->friendly_name = friendly_name;
+        add(position, app);
+        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else
@@ -403,13 +198,14 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     return nullptr;
 }
 
-std::pair<app_types, uint8_t> Apps::navigationNext()
+uint8_t Apps::navigationNext()
 {
-    lock();
-    // TODO MAYBE CHECK IF ACTIVE APP IS NOT NULL
-    std::pair<app_types, uint8_t> next = active_app->navigationNext();
-    unlock();
-    return std::make_pair(next.first, next.second);
+    return active_app->next;
+}
+
+uint8_t Apps::navigationBack()
+{
+    return active_app->back;
 }
 
 PB_SmartKnobConfig Apps::getActiveMotorConfig()
@@ -425,7 +221,7 @@ PB_SmartKnobConfig Apps::getActiveMotorConfig()
 std::shared_ptr<App> Apps::find(uint8_t id)
 {
     // TODO: add protection with array size
-    return apps[apps_type][id];
+    return apps[id];
 }
 
 void Apps::lock()

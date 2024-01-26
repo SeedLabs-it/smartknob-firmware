@@ -2,10 +2,8 @@
 #include "cJSON.h"
 #include <cstring>
 
-LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, std::string app_id, std::string friendly_name) : App(spr_)
+LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
 {
-    // sprintf(author, "%s", "Beethoven");
-    // sprintf(track, "%s", "Moonlight Sonata");
     this->app_id = app_id;
     this->friendly_name = friendly_name;
 
@@ -141,7 +139,7 @@ TFT_eSprite *LightDimmerApp::render()
     spr_->setTextColor(foreground_color);
     spr_->setFreeFont(&NDS1210pt7b);
 
-    spr_->drawString(friendly_name.c_str(), center_h, center_v + 20, 1);
+    spr_->drawString(friendly_name, center_h, center_v + 20, 1);
     spr_->setFreeFont(&Pixel62mr11pt7b);
     spr_->drawString(buf_, center_h, center_v - 22, 1);
 

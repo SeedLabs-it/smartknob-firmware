@@ -14,21 +14,20 @@ const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
 
-enum app_types
+enum SharedAppIds : int8_t
 {
-    menu_type = 1,
-    apps_type = 2
+    MENU = -2,
+    DONT_NAVIGATE = -1,
 };
 
-typedef uint8_t id;
 class App
 {
 public:
-    const app_types type = apps_type;
-    App(TFT_eSprite *spr_)
-    {
-        this->spr_ = spr_;
-    };
+    int8_t next = DONT_NAVIGATE;
+    int8_t back = MENU;
+
+    App(TFT_eSprite *spr_) : spr_(spr_) {}
+    App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
@@ -43,17 +42,9 @@ public:
         return "App";
     }
 
-    virtual std::pair<app_types, uint8_t> navigationNext()
-    {
-        if (type == menu_type)
-            return std::make_pair(apps_type, 1);
-
-        return std::make_pair(menu_type, 0);
-    }
-
     const unsigned char *small_icon;
     const unsigned char *big_icon;
-    const char *friendly_name;
+    char *friendly_name = "";
 
 protected:
     /** Full-size sprite used as a framebuffer */

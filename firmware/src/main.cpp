@@ -55,7 +55,8 @@ void setup()
     app_task.addListener(display_task.getKnobStateQueue());
 
     // link apps from display task
-    app_task.setApps(display_task.getApps());
+    app_task.setOnboardingApps(display_task.getOnboarding());
+    app_task.setHassApps(display_task.getHassApps());
 
 #endif
 
