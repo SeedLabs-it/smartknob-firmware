@@ -8,7 +8,7 @@
 
 // include all apps
 #include "apps/3d_printing_chamber/3d_printer_chamber.h"
-#include "blinds.h"
+#include "apps/blinds/blinds.h"
 #include "climate.h"
 #include "light_dimmer.h"
 #include "light_switch.h"
