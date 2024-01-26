@@ -16,5 +16,6 @@ enum OnboardingIds : int8_t
 class Onboarding : public Apps
 {
 public:
+    Onboarding(){};
     Onboarding(TFT_eSprite *spr_);
 };

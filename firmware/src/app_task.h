@@ -29,7 +29,8 @@ public:
     void log(const char *msg) override;
     void setConfiguration(Configuration *configuration);
 
-    void setApps(Apps *apps);
+    void setHassApps(HassApps *apps);
+    void setOnboardingApps(Onboarding *apps);
 
     void addListener(QueueHandle_t queue);
 
@@ -52,10 +53,13 @@ private:
     MotorTask &motor_task_;
     DisplayTask *display_task_;
     NetworkingTask *networking_task_;
-    Apps *apps;
+    HassApps *hass_apps;
+    Onboarding *onboarding_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     char buf_[128];
+
+    bool is_onboarding = true;
 
     std::vector<QueueHandle_t> listeners_;
 

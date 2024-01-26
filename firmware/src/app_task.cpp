@@ -48,9 +48,14 @@ AppTask::~AppTask()
     vSemaphoreDelete(mutex_);
 }
 
-void AppTask::setApps(Apps *apps)
+void AppTask::setHassApps(HassApps *apps)
 {
-    this->apps = apps;
+    this->hass_apps = apps;
+}
+
+void AppTask::setOnboardingApps(Onboarding *apps)
+{
+    this->onboarding_apps = apps;
 }
 
 void AppTask::strainCalibrationCallback()
@@ -113,9 +118,16 @@ void AppTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    apps->setActive(MENU);
-    applyConfig(apps->getActiveMotorConfig(), false);
+    // TODO: make this configurable based on config
+    display_task_->enableOnboarding();
+
+    changeConfig(MENU);
     motor_task_.addListener(knob_state_queue_);
+
+    // TODO: remove me
+    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
+    cJSON *json_root = cJSON_Parse(apps_config.c_str());
+    hass_apps->sync(json_root);
 
     plaintext_protocol_.init([this]()
                              { changeConfig(MENU); },
@@ -126,6 +138,11 @@ void AppTask::run()
                              [this]()
                              {
                                  this->verboseToggleCallback();
+                             },
+                             [this]()
+                             {
+                                 this->is_onboarding = !this->is_onboarding;
+                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->disableOnboarding();
                              });
 
     // Start in legacy protocol mode
@@ -214,11 +231,6 @@ void AppTask::run()
         {
             ESP_LOGD("app_task", "App sync requested!");
 #if SK_NETWORKING // Should this be here??
-            HassApps hass_apps_ = HassApps();
-
-            display_task_->setApps(hass_apps_);
-
-            HassApps *hass_apps = (HassApps *)apps;
             hass_apps->sync(networking_task_->getApps());
 
             log("Giving 0.5s for Apps to initialize");
@@ -247,7 +259,14 @@ void AppTask::run()
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
-            entity_state_update_to_send = apps->update(app_state);
+            if (is_onboarding)
+            {
+                entity_state_update_to_send = onboarding_apps->update(app_state);
+            }
+            else
+            {
+                entity_state_update_to_send = hass_apps->update(app_state);
+            }
 
 #if SK_NETWORKING
             networking_task_->enqueueEntityStateToSend(entity_state_update_to_send);
@@ -289,10 +308,20 @@ void AppTask::log(const char *msg)
 void AppTask::changeConfig(int8_t id)
 {
     if (id == DONT_NAVIGATE)
+    {
         return;
+    }
 
-    apps->setActive(id); // TODO LOOK OVER
-    applyConfig(apps->getActiveMotorConfig(), false);
+    if (is_onboarding)
+    {
+        onboarding_apps->setActive(id);
+        applyConfig(onboarding_apps->getActiveMotorConfig(), false);
+    }
+    else
+    {
+        hass_apps->setActive(id);
+        applyConfig(hass_apps->getActiveMotorConfig(), false);
+    }
 }
 
 void AppTask::updateHardware(AppState app_state)
@@ -324,7 +353,14 @@ void AppTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
 
-                changeConfig(apps->navigationBack());
+                if (is_onboarding)
+                {
+                    changeConfig(onboarding_apps->navigationBack());
+                }
+                else
+                {
+                    changeConfig(hass_apps->navigationBack());
+                }
             }
             /* code */
             break;
@@ -334,8 +370,14 @@ void AppTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 /* code */
-
-                changeConfig(apps->navigationNext());
+                if (is_onboarding)
+                {
+                    changeConfig(onboarding_apps->navigationNext());
+                }
+                else
+                {
+                    changeConfig(hass_apps->navigationNext());
+                }
             }
             break;
         case VIRTUAL_BUTTON_LONG_RELEASED:
