@@ -7,14 +7,14 @@
 #include "../app_config.h"
 
 // include all apps
-#include "3d_printer_chamber.h"
-#include "blinds.h"
-#include "climate.h"
-#include "light_dimmer.h"
-#include "light_switch.h"
-#include "music.h"
-#include "settings.h"
-#include "stopwatch.h"
+#include "apps/3d_printing_chamber/3d_printer_chamber.h"
+#include "apps/blinds/blinds.h"
+#include "apps/climate/climate.h"
+#include "apps/light_dimmer/light_dimmer.h"
+#include "apps/light_switch/light_switch.h"
+#include "apps/music/music.h"
+#include "apps/settings/settings.h"
+#include "apps/stopwatch/stopwatch.h"
 
 // include all "menu" apps
 #include "app_menu.h"

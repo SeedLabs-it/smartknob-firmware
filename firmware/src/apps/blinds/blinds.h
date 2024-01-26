@@ -1,9 +1,8 @@
 #pragma once
-#include "app.h"
+#include "../app.h"
 
-// #include "font/roboto_thin_bold_24.h"
-#include "font/roboto_thin_20.h"
-#include "font/roboto_light_60.h"
+#include "../../font/roboto_thin_20.h"
+#include "../../font/roboto_light_60.h"
 
 class BlindsApp : public App
 {
