@@ -1,6 +1,6 @@
 #include "blinds.h"
 
-BlindsApp::BlindsApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+BlindsApp::BlindsApp(TFT_eSprite *spr_, const char *entity_name) : App(spr_)
 {
     this->entity_name = entity_name;
     motor_config = PB_SmartKnobConfig{

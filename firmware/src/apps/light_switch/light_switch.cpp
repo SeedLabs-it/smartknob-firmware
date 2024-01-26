@@ -1,11 +1,11 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, std::string entity_name, std::string friendly_name) : App(spr_)
+LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, const char *app_id, const char *friendly_name) : App(spr_)
 {
     // sprintf(author, "%s", "Beethoven");
     // sprintf(track, "%s", "Moonlight Sonata");
-    this->entity_name = entity_name;
-    this->friendly_name_ = friendly_name;
+    this->app_id = app_id;
+    this->friendly_name = friendly_name;
 
     motor_config = PB_SmartKnobConfig{
         0,
@@ -49,7 +49,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    new_state.app_id = entity_name;
+    new_state.app_id = app_id;
     // new_state.entity_name = entity_name;
     // new_state.new_value = current_position * 1.0;
 
@@ -99,7 +99,7 @@ TFT_eSprite *LightSwitchApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_regular, icon_size, icon_size, off_lamp_color, off_background);
         spr_->setTextColor(off_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name_.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name, center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
     }
     else
     {
@@ -107,7 +107,7 @@ TFT_eSprite *LightSwitchApp::render()
         spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_solid, icon_size, icon_size, on_lamp_color, on_background);
         spr_->setTextColor(on_lamp_color);
         spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name_.c_str(), center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
+        spr_->drawString(friendly_name, center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
     }
 
     // set the moving dot color

@@ -25,5 +25,5 @@ void HassApps::sync(cJSON *apps_)
     add(app_position, settings_app);
 
     updateMenu();
-    cJSON_Delete(apps_);
+    // cJSON_Delete(apps_);
 }

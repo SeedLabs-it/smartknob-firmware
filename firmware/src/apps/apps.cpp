@@ -121,7 +121,7 @@ void Apps::updateMenu() // BROKEN FOR NOW
                 (int8_t)it->first,
                 TextItem{it->second->friendly_name, inactive_color},
                 TextItem{},
-                TextItem{it->second->friendly_name, inactive_color},
+                TextItem{},
                 IconItem{it->second->big_icon, active_color},
                 IconItem{it->second->small_icon, inactive_color}));
 
@@ -146,7 +146,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
-        PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
+        PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id.c_str());
         app->friendly_name = friendly_name.c_str();
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
@@ -154,7 +154,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
-        BlindsApp *app = new BlindsApp(this->spr_, app_id);
+        BlindsApp *app = new BlindsApp(this->spr_, app_id.c_str());
         app->friendly_name = friendly_name.c_str();
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
@@ -162,14 +162,14 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, std::string app_id, s
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
+        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id.c_str(), friendly_name.c_str());
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
+        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id.c_str(), friendly_name.c_str());
 
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug.c_str(), app_id.c_str(), friendly_name);
