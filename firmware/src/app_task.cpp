@@ -143,6 +143,7 @@ void AppTask::run()
                              {
                                  this->is_onboarding = !this->is_onboarding;
                                  this->is_onboarding ? display_task_->enableOnboarding() : display_task_->disableOnboarding();
+                                 changeConfig(MENU);
                              });
 
     // Start in legacy protocol mode
