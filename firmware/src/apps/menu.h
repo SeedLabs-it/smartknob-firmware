@@ -8,10 +8,10 @@
 
 struct TextItem
 {
-    const char *text;
+    char *text;
     uint16_t color;
 
-    TextItem(const char *text = "", uint16_t color = 0) : text(text), color(color){};
+    TextItem(char *text = "", uint16_t color = 0) : text(text), color(color){};
 };
 
 struct IconItem

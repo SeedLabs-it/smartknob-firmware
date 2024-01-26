@@ -7,13 +7,13 @@
 class BlindsApp : public App
 {
 public:
-    BlindsApp(TFT_eSprite *spr_, const char *entity_name);
+    BlindsApp(TFT_eSprite *spr_, char *entity_name);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
 private:
-    const char *entity_name;
+    char *entity_name;
     uint8_t current_closed_position = 0;
     uint8_t last_closed_position = 0;
     char buf_[24];

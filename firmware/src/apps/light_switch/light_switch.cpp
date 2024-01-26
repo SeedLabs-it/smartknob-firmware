@@ -1,6 +1,6 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, const char *app_id, const char *friendly_name) : App(spr_)
+LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
 {
     // sprintf(author, "%s", "Beethoven");
     // sprintf(track, "%s", "Moonlight Sonata");

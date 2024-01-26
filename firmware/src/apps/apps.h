@@ -41,7 +41,7 @@ public:
     uint8_t navigationBack();
     PB_SmartKnobConfig getActiveMotorConfig();
     void setSprite(TFT_eSprite *spr_);
-    App *loadApp(uint8_t position, std::string app_slug, std::string app_id, std::string friendly_name);
+    App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name);
     void updateMenu();
 
     void reload(cJSON *apps_);

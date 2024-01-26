@@ -16,7 +16,7 @@ void HassApps::sync(cJSON *apps_)
         cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app, "app_slug");
         cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app, "app_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app, "friendly_name");
-        loadApp(app_position, std::string(json_app_slug->valuestring), json_app_id->valuestring, json_friendly_name->valuestring);
+        loadApp(app_position, json_app_slug->valuestring, cJSON_Print(json_app_id), cJSON_Print(json_friendly_name));
 
         app_position++;
     }

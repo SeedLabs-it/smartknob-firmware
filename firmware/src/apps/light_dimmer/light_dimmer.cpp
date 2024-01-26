@@ -2,7 +2,7 @@
 #include "cJSON.h"
 #include <cstring>
 
-LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, const char *app_id, const char *friendly_name) : App(spr_)
+LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
 {
     this->app_id = app_id;
     this->friendly_name = friendly_name;
