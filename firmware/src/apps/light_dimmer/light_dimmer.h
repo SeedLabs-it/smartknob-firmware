@@ -1,7 +1,7 @@
 #pragma once
-#include "app.h"
-#include "font/NDS1210pt7b.h"
-#include "font/Pixel62mr11pt7b.h"
+#include "../app.h"
+#include "../../font/NDS1210pt7b.h"
+#include "../../font/Pixel62mr11pt7b.h"
 
 class LightDimmerApp : public App
 {
