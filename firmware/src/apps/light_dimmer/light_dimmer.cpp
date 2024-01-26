@@ -53,7 +53,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position)
     {
-        new_state.app_id = app_id;
+        sprintf(new_state.app_id, "%s", app_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
