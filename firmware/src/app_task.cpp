@@ -1,15 +1,6 @@
-#if SK_ALS
-#include <Adafruit_VEML7700.h>
-#endif
-
 #include "app_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-
-#if SK_ALS
-Adafruit_VEML7700 veml = Adafruit_VEML7700();
-float luminosityAdjustment = 1.00;
-#endif
 
 AppTask::AppTask(
     const uint8_t task_core,
@@ -64,8 +55,6 @@ void AppTask::setApps(Apps *apps)
 
 void AppTask::strainCalibrationCallback()
 {
-    log("Strain calibration step 0");
-
     if (!configuration_loaded_)
     {
         log("Strain calibration step 0: configuration not loaded, exiting");
@@ -120,23 +109,6 @@ void AppTask::verboseToggleCallback()
 void AppTask::run()
 {
     stream_.begin();
-
-#if PIN_SDA >= 0 && PIN_SCL >= 0
-    Wire.begin(PIN_SDA, PIN_SCL);
-    Wire.setClock(400000);
-#endif
-
-#if SK_ALS
-    if (veml.begin())
-    {
-        veml.setGain(VEML7700_GAIN_2);
-        veml.setIntegrationTime(VEML7700_IT_400MS);
-    }
-    else
-    {
-        log("ALS sensor not found!");
-    }
-#endif
 
     log("Giving 0.5s for Apps to initialize");
     delay(500);
@@ -210,8 +182,7 @@ void AppTask::run()
             app_state.screen_state.has_been_engaged = false;
         }
 #if SK_ALS
-        float targetLuminosity = luminosityAdjustment * app_state.screen_state.MIN_LCD_BRIGHTNESS;
-
+        float targetLuminosity = latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS;
         if (app_state.screen_state.has_been_engaged == false &&
             abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
             millis() > app_state.screen_state.awake_until)
@@ -328,25 +299,6 @@ void AppTask::updateHardware(AppState app_state)
 {
     // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
-
-#if SK_ALS
-    const float LUX_ALPHA = 0.005;
-    static float lux_avg;
-
-    float lux = veml.readLux();
-    lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
-
-    // looks at the lower part of the sensor spectrum (0 = dark)
-    luminosityAdjustment = min(1.0f, lux_avg);
-    static uint32_t last_als;
-    if (millis() - last_als > 1000 && strain_calibration_step_ == 0)
-    {
-        snprintf(buf_, sizeof(buf_), "millilux: %.2f", lux * 1000);
-        log(buf_);
-
-        last_als = millis();
-    }
-#endif
 
     static bool pressed;
 #if SK_STRAIN

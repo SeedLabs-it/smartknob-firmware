@@ -8,6 +8,10 @@
 #include <HX711.h>
 #endif
 
+#if SK_ALS
+#include <Adafruit_VEML7700.h>
+#endif
+
 static const char *TAG = "sensors_task";
 
 SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 2048 * 2, 1, task_core}
@@ -28,6 +32,11 @@ SensorsTask::~SensorsTask()
 
 void SensorsTask::run()
 {
+
+    Wire.begin(PIN_SDA, PIN_SCL);
+    // TODO make this configurable
+    Wire.setClock(400000);
+
     Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 #if SK_STRAIN
@@ -35,24 +44,45 @@ void SensorsTask::run()
     scale.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
 #endif
 
-    if (!lox.begin())
+#if SK_ALS
+    Adafruit_VEML7700 veml = Adafruit_VEML7700();
+    float luminosity_adjustment = 1.00;
+    const float LUX_ALPHA = 0.005;
+    float lux_avg;
+    float lux = 0;
+
+    if (veml.begin())
     {
-        log("Failed to boot VL53L0X");
+        veml.setGain(VEML7700_GAIN_2);
+        veml.setIntegrationTime(VEML7700_IT_400MS);
     }
     else
+    {
+        log("Failed to boot VEML7700");
+    }
+
+#endif
+
+    if (lox.begin())
     {
         VL53L0X_RangingMeasurementData_t measure;
         lox.rangingTest(&measure, false);
         ESP_LOGD(TAG, "Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+    }
+    else
+    {
+        log("Failed to boot VL53L0X");
     }
 
     VL53L0X_RangingMeasurementData_t measure;
     lox.rangingTest(&measure, false);
     unsigned long last_proximity_check_ms = millis();
     unsigned long last_strain_check_ms = millis();
+    unsigned long last_illumination_check_ms = millis();
 
     const uint8_t proximity_poling_rate_hz = 20;
     const uint8_t strain_poling_rate_hz = 20;
+    const uint8_t illumination_poling_rate_hz = 1;
 
     SensorsState sensors_state = {};
 
@@ -73,7 +103,6 @@ void SensorsTask::run()
 
             lox.rangingTest(&measure, false);
 
-            last_proximity_check_ms = millis();
             sensors_state.proximity.RangeMilliMeter = measure.RangeMilliMeter - PROXIMITY_SENSOR_OFFSET_MM;
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
@@ -81,11 +110,12 @@ void SensorsTask::run()
 
             if (verbose_)
             {
-                snprintf(buf_, sizeof(buf_), "Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+                snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
                 log(buf_);
             }
+            last_proximity_check_ms = millis();
         }
-
+#if SK_STRAIN
         if (millis() - last_strain_check_ms > 1000 / strain_poling_rate_hz)
         {
             if (scale.wait_ready_timeout(100))
@@ -156,12 +186,35 @@ void SensorsTask::run()
                 publishState(sensors_state);
                 if (verbose_)
                 {
-                    snprintf(buf_, sizeof(buf_), "Strain reading:  %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
+                    snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
                     log(buf_);
                 }
             }
         }
+#endif
 
+#if SK_ALS
+        if (millis() - last_illumination_check_ms > 1000 / illumination_poling_rate_hz)
+        {
+
+            lux = veml.readLux();
+            lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
+
+            // looks at the lower part of the sensor spectrum (0 = dark)
+            luminosity_adjustment = min(1.0f, lux_avg);
+
+            sensors_state.illumination.lux = lux;
+            sensors_state.illumination.lux_avg = lux_avg;
+            sensors_state.illumination.lux_adj = luminosity_adjustment;
+
+            if (verbose_)
+            {
+                snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
+                log(buf_);
+            }
+            last_illumination_check_ms = millis();
+        }
+#endif
         delay(1);
     }
 }

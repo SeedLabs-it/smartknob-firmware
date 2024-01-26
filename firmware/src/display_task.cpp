@@ -2,9 +2,6 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-#include "apps/stopwatch.h"
-#include "apps/light_switch.h"
-#include "apps/onboarding/onboarding.h"
 
 #include "cJSON.h"
 

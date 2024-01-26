@@ -30,6 +30,14 @@ struct ConnectivityState
     std::string ip_address;
 };
 
+struct IlluminationState
+{
+    float lux;
+    float lux_avg;
+    float lux_adj;
+};
+
+// TODO: rename fields to follow the convention
 struct ProximityState
 {
     uint16_t RangeMilliMeter;
@@ -47,6 +55,7 @@ struct SensorsState
 {
     ProximityState proximity;
     StrainState strain;
+    IlluminationState illumination;
 };
 
 struct ScreenState
