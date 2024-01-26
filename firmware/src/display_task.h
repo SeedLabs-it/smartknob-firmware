@@ -12,6 +12,7 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
+#include "apps/onboarding/onboarding.h"
 #include "apps/hass/hass_apps.h"
 
 class DisplayTask : public Task<DisplayTask>
