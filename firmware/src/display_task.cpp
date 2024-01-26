@@ -61,11 +61,8 @@ void DisplayTask::run()
     }
     else
     {
-        apps = Apps();
-        apps.setSprite(&spr_);
+        apps = Apps(&spr_); // LOAD STORED APPS, ALSO SYNC WITH HASS?
     }
-
-    // apps.createOnboarding();
 
     AppState app_state;
 

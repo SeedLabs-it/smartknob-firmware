@@ -14,21 +14,10 @@ const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
 
-enum AppId : int8_t
+enum SharedAppIds : int8_t
 {
     MENU = -2,
     DONT_NAVIGATE = -1,
-    PRINTER_CHAMBER = 0,
-    BLINDS = 1,
-    CLIMATE = 2,
-    LIGHT_DIMMER = 3,
-    LIGHT_SWITCH = 4,
-    MUSIC = 5,
-    SETTINGS = 6,
-    STOPWATCH = 7,
-    HASS_SETUP_APP = 8,
-    DEMO = INT8_MAX,
-
 };
 
 class App
