@@ -1,7 +1,5 @@
 #include "climate.h"
 
-#include "music.h"
-
 ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
 {
     // TODO update this via some API
