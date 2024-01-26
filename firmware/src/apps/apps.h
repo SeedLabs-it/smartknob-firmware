@@ -7,7 +7,7 @@
 #include "../app_config.h"
 
 // include all apps
-#include "3d_printer_chamber.h"
+#include "apps/3d_printing_chamber/3d_printer_chamber.h"
 #include "blinds.h"
 #include "climate.h"
 #include "light_dimmer.h"
