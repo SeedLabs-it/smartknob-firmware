@@ -209,7 +209,7 @@ void NetworkingTask::run()
 
             if (entity_state_to_process_.changed)
             {
-                entity_states_to_send[entity_state_to_process_.app_id.c_str()] = entity_state_to_process_;
+                entity_states_to_send[entity_state_to_process_.app_id] = entity_state_to_process_;
             }
         }
 
@@ -222,7 +222,7 @@ void NetworkingTask::run()
                 if (!entity_states_to_send[i.first].sent)
                 {
                     cJSON *json = cJSON_CreateObject();
-                    cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id.c_str());
+                    cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
                     cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
                     String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";

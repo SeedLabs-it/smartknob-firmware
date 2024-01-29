@@ -80,7 +80,7 @@ struct AppState
 
 struct EntityStateUpdate
 {
-    std::string app_id;
+    char app_id[256] = "";
     char state[256] = "";
     char app_slug[48] = "";
     bool changed = false;

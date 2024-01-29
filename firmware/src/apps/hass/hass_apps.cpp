@@ -12,7 +12,8 @@ void HassApps::sync(cJSON *json_apps)
         cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app_, "app_slug");
         cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app_, "app_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app_, "friendly_name");
-        loadApp(app_position, json_app_slug->valuestring, cJSON_Print(json_app_id), cJSON_Print(json_friendly_name));
+
+        loadApp(app_position, json_app_slug->valuestring, json_app_id->valuestring, json_friendly_name->valuestring);
 
         app_position++;
     }
@@ -21,5 +22,5 @@ void HassApps::sync(cJSON *json_apps)
     add(app_position, settings_app);
 
     updateMenu();
-    cJSON_Delete(json_apps);
+    // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }
