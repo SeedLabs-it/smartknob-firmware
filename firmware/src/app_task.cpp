@@ -353,6 +353,15 @@ void AppTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(true);
                 motor_task_.playHaptic(true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
+
+                if (is_onboarding)
+                {
+                    changeConfig(onboarding_apps->navigationBack());
+                }
+                else
+                {
+                    changeConfig(hass_apps->navigationBack());
+                }
             }
             /* code */
             break;
@@ -378,15 +387,6 @@ void AppTask::updateHardware(AppState app_state)
             {
                 motor_task_.playHaptic(false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
-
-                if (is_onboarding)
-                {
-                    changeConfig(onboarding_apps->navigationBack());
-                }
-                else
-                {
-                    changeConfig(hass_apps->navigationBack());
-                }
             }
             break;
         default:
