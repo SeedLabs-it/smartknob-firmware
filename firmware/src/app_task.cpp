@@ -8,7 +8,7 @@ AppTask::AppTask(
     DisplayTask *display_task,
     NetworkingTask *networking_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("App", 4800, 1, task_core),
+    SensorsTask *sensors_task) : Task("App", 1024 * 5, 1, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
