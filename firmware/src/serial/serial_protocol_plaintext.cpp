@@ -38,13 +38,13 @@ void SerialProtocolPlaintext::loop()
             }
             break;
         }
-        if (b == ' ')
-        {
-            if (demo_config_change_callback_)
-            {
-                demo_config_change_callback_();
-            }
-        }
+        // if (b == ' ')
+        // {
+        //     if (demo_config_change_callback_)
+        //     {
+        //         demo_config_change_callback_();
+        //     }
+        // }
         else if (b == 'C' || b == 'c')
         {
             motor_calibration_callback_();
