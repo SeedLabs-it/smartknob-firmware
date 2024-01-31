@@ -99,6 +99,19 @@ void LedRingTask::run()
 {
 
     FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(leds, NUM_LEDS);
+
+    FastLED.setBrightness(255);
+
+    FastLED.clear();
+
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        leds[i].setRGB(255, 255, 255);
+        FastLED.show();
+        vTaskDelay(pdMS_TO_TICKS(15));
+    }
+
+    FastLED.clear();
     FastLED.setBrightness(125);
 
     while (1)
