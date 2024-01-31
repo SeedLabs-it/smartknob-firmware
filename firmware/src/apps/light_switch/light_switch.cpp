@@ -49,12 +49,16 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    sprintf(new_state.app_id, "%s", app_id);
-    // new_state.entity_name = entity_name;
-    // new_state.new_value = current_position * 1.0;
-
     if (last_position != current_position)
     {
+        sprintf(new_state.app_id, "%s", app_id);
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddBoolToObject(json, "on", current_position > 0);
+
+        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+
+        cJSON_Delete(json);
+
         last_position = current_position;
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
