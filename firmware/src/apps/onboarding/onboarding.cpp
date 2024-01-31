@@ -93,12 +93,26 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
             IconItem{stopwatch_app->big_icon, active_color},
             IconItem{stopwatch_app->small_icon, inactive_color}));
 
+    PomodoroApp *pomodoro_app = new PomodoroApp(spr_);
+    pomodoro_app->setBack(DEMO);
+    add(POMODORO, pomodoro_app);
+
+    menu_app->add_item(
+        2,
+        std::make_shared<MenuItem>(
+            POMODORO,
+            TextItem{"POMODORO", inactive_color},
+            TextItem{},
+            TextItem{"POMODORO", spr_->color565(128, 255, 80)},
+            IconItem{pomodoro_app->big_icon, active_color},
+            IconItem{pomodoro_app->small_icon, inactive_color}));
+
     LightSwitchApp *light_switch_app = new LightSwitchApp(spr_, "light.ceiling", "Ceiling");
     light_switch_app->setBack(DEMO);
     add(LIGHT_SWITCH, light_switch_app);
 
     menu_app->add_item(
-        2,
+        3,
         std::make_shared<MenuItem>(
             LIGHT_SWITCH,
             TextItem{"CEILING", inactive_color},
@@ -112,7 +126,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     add(LIGHT_DIMMER, light_dimmer_app);
 
     menu_app->add_item(
-        3,
+        4,
         std::make_shared<MenuItem>(
             LIGHT_DIMMER,
             TextItem{"WORKBENCH", inactive_color},
@@ -126,7 +140,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     add(CLIMATE, climate_app);
 
     menu_app->add_item(
-        4,
+        5,
         std::make_shared<MenuItem>(
             CLIMATE,
             TextItem{"CLIMATE", inactive_color},
@@ -140,7 +154,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     add(PRINTER_CHAMBER, printer_chamber_app);
 
     menu_app->add_item(
-        5,
+        6,
         std::make_shared<MenuItem>(
             PRINTER_CHAMBER,
             TextItem{"3D PRINTER", inactive_color},
@@ -154,7 +168,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     add(BLINDS, blinds_app);
 
     menu_app->add_item(
-        6,
+        7,
         std::make_shared<MenuItem>(
             BLINDS,
             TextItem{"BLINDS", inactive_color},
@@ -168,7 +182,7 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     add(MUSIC, music_app);
 
     menu_app->add_item(
-        7,
+        8,
         std::make_shared<MenuItem>(
             MUSIC,
             TextItem{"MUSIC", inactive_color},

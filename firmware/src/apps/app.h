@@ -29,9 +29,9 @@ public:
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
 
-    int8_t navigationNext();
+    virtual int8_t navigationNext();
     void setNext(int8_t next);
-    int8_t navigationBack();
+    virtual int8_t navigationBack();
     void setBack(int8_t back);
 
     PB_SmartKnobConfig getMotorConfig()
