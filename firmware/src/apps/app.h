@@ -23,14 +23,16 @@ enum SharedAppIds : int8_t
 class App
 {
 public:
-    int8_t next = DONT_NAVIGATE;
-    int8_t back = MENU;
-
     App(TFT_eSprite *spr_) : spr_(spr_) {}
     App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
+
+    virtual int8_t navigationNext();
+    void setNext(int8_t next);
+    virtual int8_t navigationBack();
+    void setBack(int8_t back);
 
     PB_SmartKnobConfig getMotorConfig()
     {
@@ -48,6 +50,8 @@ public:
 
 protected:
     /** Full-size sprite used as a framebuffer */
+    int8_t next = DONT_NAVIGATE;
+    int8_t back = MENU;
     TFT_eSprite *spr_;
     PB_SmartKnobConfig motor_config;
 };

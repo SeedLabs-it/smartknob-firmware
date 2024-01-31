@@ -11,6 +11,7 @@ enum OnboardingIds : int8_t
     SETTINGS = 6,
     STOPWATCH = 7,
     HASS_SETUP_APP = 8,
+    POMODORO = 9,
     DEMO = INT8_MAX,
 };
 class Onboarding : public Apps
