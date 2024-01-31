@@ -58,9 +58,6 @@ Onboarding::Onboarding(TFT_eSprite *spr_) : Apps(spr_)
     HassSetupApp *hass_setup_app = new HassSetupApp(spr_);
     add(HASS_SETUP_APP, hass_setup_app);
 
-    StopwatchApp *app1 = new StopwatchApp(spr_, "");
-    add(STOPWATCH, app1);
-
     // INIT DEMO MENU
     // MOVE COLORS TO CORRESPONDING MENU
     uint16_t active_color = spr_->color565(0, 255, 200);
