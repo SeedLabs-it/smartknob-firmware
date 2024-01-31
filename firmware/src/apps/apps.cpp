@@ -200,12 +200,12 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
 
 uint8_t Apps::navigationNext()
 {
-    return active_app->next;
+    return active_app->navigationNext();
 }
 
 uint8_t Apps::navigationBack()
 {
-    return active_app->back;
+    return active_app->navigationBack();
 }
 
 PB_SmartKnobConfig Apps::getActiveMotorConfig()
