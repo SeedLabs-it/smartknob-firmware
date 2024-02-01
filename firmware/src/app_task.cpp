@@ -275,7 +275,7 @@ void AppTask::run()
 
             if (entity_state_update_to_send.play_haptic)
             {
-                motor_task_.playHaptic(true);
+                motor_task_.playHaptic(true, false);
             }
 
             publish(app_state);
@@ -342,7 +342,7 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
-                motor_task_.playHaptic(true);
+                motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
             /* code */
@@ -350,8 +350,7 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
-                motor_task_.playHaptic(true);
-                motor_task_.playHaptic(true);
+                motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
 
                 if (is_onboarding)
@@ -368,7 +367,7 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
             {
-                motor_task_.playHaptic(false);
+                motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 /* code */
                 if (is_onboarding)
@@ -385,7 +384,7 @@ void AppTask::updateHardware(AppState app_state)
             /* code */
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
-                motor_task_.playHaptic(false);
+                motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
             }
             break;

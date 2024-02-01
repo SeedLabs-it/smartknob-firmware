@@ -19,6 +19,7 @@ enum class CommandType
 struct HapticData
 {
     bool press;
+    bool long_press;
 };
 
 struct Command
@@ -42,7 +43,7 @@ public:
     ~MotorTask();
 
     void setConfig(const PB_SmartKnobConfig config);
-    void playHaptic(bool press);
+    void playHaptic(bool press, bool long_press);
     void runCalibration();
 
     void addListener(QueueHandle_t queue);

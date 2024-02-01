@@ -203,16 +203,22 @@ void MotorTask::run()
             }
             case CommandType::HAPTIC:
             {
+                int foc_ticks = 3;
                 // Play a hardcoded haptic "click"
                 float strength = command.data.haptic.press ? 5 : 1.5;
+                if (command.data.haptic.long_press)
+                {
+                    strength = 20;
+                    foc_ticks = 6;
+                }
                 motor.move(strength);
-                for (uint8_t i = 0; i < 3; i++)
+                for (uint8_t i = 0; i < foc_ticks; i++)
                 {
                     motor.loopFOC();
                     delay(1);
                 }
                 motor.move(-strength);
-                for (uint8_t i = 0; i < 3; i++)
+                for (uint8_t i = 0; i < foc_ticks; i++)
                 {
                     motor.loopFOC();
                     delay(1);
@@ -336,13 +342,14 @@ void MotorTask::setConfig(const PB_SmartKnobConfig config)
     xQueueSend(queue_, &command, portMAX_DELAY);
 }
 
-void MotorTask::playHaptic(bool press)
+void MotorTask::playHaptic(bool press, bool long_press)
 {
     Command command = {
         .command_type = CommandType::HAPTIC,
         .data = {
             .haptic = {
                 .press = press,
+                .long_press = long_press,
             },
         }};
     xQueueSend(queue_, &command, portMAX_DELAY);
