@@ -11,7 +11,7 @@ CRGB leds[NUM_LEDS];
 LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 2048 * 2, 1, task_core}
 {
 
-    render_effect_queue_ = xQueueCreate(5, sizeof(EffectSettings));
+    render_effect_queue_ = xQueueCreate(10, sizeof(EffectSettings));
 
     mutex_ = xSemaphoreCreateMutex();
 
@@ -108,7 +108,7 @@ void LedRingTask::run()
     {
         leds[i].setRGB(255, 255, 255);
         FastLED.show();
-        vTaskDelay(pdMS_TO_TICKS(15));
+        vTaskDelay(pdMS_TO_TICKS(7));
     }
 
     FastLED.clear();
