@@ -6,7 +6,7 @@
 #include "util.h"
 #include "wifi_config.h"
 #include "cJSON.h"
-#include "app_task.h"
+#include "root_task.h"
 
 static const char *MQTT_TAG = "MQTT";
 

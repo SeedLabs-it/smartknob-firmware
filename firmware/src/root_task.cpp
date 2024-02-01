@@ -1,8 +1,8 @@
-#include "app_task.h"
+#include "root_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
 
-AppTask::AppTask(
+RootTask::RootTask(
     const uint8_t task_core,
     MotorTask &motor_task,
     DisplayTask *display_task,
@@ -43,22 +43,22 @@ AppTask::AppTask(
     assert(mutex_ != NULL);
 }
 
-AppTask::~AppTask()
+RootTask::~RootTask()
 {
     vSemaphoreDelete(mutex_);
 }
 
-void AppTask::setHassApps(HassApps *apps)
+void RootTask::setHassApps(HassApps *apps)
 {
     this->hass_apps = apps;
 }
 
-void AppTask::setOnboardingApps(Onboarding *apps)
+void RootTask::setOnboardingApps(Onboarding *apps)
 {
     this->onboarding_apps = apps;
 }
 
-void AppTask::strainCalibrationCallback()
+void RootTask::strainCalibrationCallback()
 {
     if (!configuration_loaded_)
     {
@@ -106,12 +106,12 @@ void AppTask::strainCalibrationCallback()
     }
 }
 
-void AppTask::verboseToggleCallback()
+void RootTask::verboseToggleCallback()
 {
     sensors_task_->toggleVerbose();
 }
 
-void AppTask::run()
+void RootTask::run()
 {
     stream_.begin();
 
@@ -230,7 +230,7 @@ void AppTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            ESP_LOGD("app_task", "App sync requested!");
+            ESP_LOGD("root_task", "App sync requested!");
 #if SK_NETWORKING // Should this be here??
             hass_apps->sync(networking_task_->getApps());
 
@@ -297,7 +297,7 @@ void AppTask::run()
     }
 }
 
-void AppTask::log(const char *msg)
+void RootTask::log(const char *msg)
 {
     // Allocate a string for the duration it's in the queue; it is free'd by the queue consumer
     std::string *msg_str = new std::string(msg);
@@ -306,7 +306,7 @@ void AppTask::log(const char *msg)
     xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
-void AppTask::changeConfig(int8_t id)
+void RootTask::changeConfig(int8_t id)
 {
     if (id == DONT_NAVIGATE)
     {
@@ -325,23 +325,20 @@ void AppTask::changeConfig(int8_t id)
     }
 }
 
-void AppTask::updateHardware(AppState app_state)
+void RootTask::updateHardware(AppState app_state)
 {
-    // How far button is pressed, in range [0, 1]
-    float press_value_unit = 0;
 
     static bool pressed;
 #if SK_STRAIN
 
     if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
     {
-        // Ignore readings that are way out of expected bounds
-
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
+                log("handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
@@ -350,6 +347,8 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
+                log("handling long press");
+
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
 
@@ -367,6 +366,8 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
             {
+                log("handling short press released");
+
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 /* code */
@@ -384,6 +385,8 @@ void AppTask::updateHardware(AppState app_state)
             /* code */
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
+                log("handling long press released");
+
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
             }
@@ -408,7 +411,7 @@ void AppTask::updateHardware(AppState app_state)
 
     if (led_ring_task_ != nullptr)
     {
-        // ESP_LOGD("app_task", "%d", brightness);
+        // ESP_LOGD("root_task", "%d", brightness);
         EffectSettings effect_settings;
 
         if (brightness < 2000)
@@ -439,6 +442,8 @@ void AppTask::updateHardware(AppState app_state)
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
     }
 
+    // How far button is pressed, in range [0, 1]
+    // float press_value_unit = 0;
     // #if SK_LEDS
     //     for (uint8_t i = 0; i < NUM_LEDS; i++)
     //     {
@@ -453,7 +458,7 @@ void AppTask::updateHardware(AppState app_state)
     // #endif
 }
 
-void AppTask::setConfiguration(Configuration *configuration)
+void RootTask::setConfiguration(Configuration *configuration)
 {
     SemaphoreGuard lock(mutex_);
     configuration_ = configuration;
@@ -468,27 +473,27 @@ void AppTask::setConfiguration(Configuration *configuration)
     }
 }
 
-QueueHandle_t AppTask::getConnectivityStateQueue()
+QueueHandle_t RootTask::getConnectivityStateQueue()
 {
     return connectivity_status_queue_;
 }
 
-QueueHandle_t AppTask::getSensorsStateQueue()
+QueueHandle_t RootTask::getSensorsStateQueue()
 {
     return sensors_status_queue_;
 }
 
-QueueHandle_t AppTask::getAppSyncQueue()
+QueueHandle_t RootTask::getAppSyncQueue()
 {
     return app_sync_queue_;
 }
 
-void AppTask::addListener(QueueHandle_t queue)
+void RootTask::addListener(QueueHandle_t queue)
 {
     listeners_.push_back(queue);
 }
 
-void AppTask::publish(const AppState &state)
+void RootTask::publish(const AppState &state)
 {
     for (auto listener : listeners_)
     {
@@ -496,14 +501,14 @@ void AppTask::publish(const AppState &state)
     }
 }
 
-void AppTask::publishState()
+void RootTask::publishState()
 {
     // Apply local state before publishing to serial
     latest_state_.press_nonce = press_count_;
     current_protocol_->handleState(latest_state_);
 }
 
-void AppTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
+void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
 {
     remote_controlled_ = from_remote;
     latest_config_ = config;

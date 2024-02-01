@@ -16,15 +16,15 @@
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
-class AppTask : public Task<AppTask>,
+class RootTask : public Task<RootTask>,
                 public Logger
 {
 
-    friend class Task<AppTask>; // Allow base Task to invoke protected run()
+    friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    AppTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, NetworkingTask *networking_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
-    virtual ~AppTask();
+    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, NetworkingTask *networking_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
+    virtual ~RootTask();
 
     void log(const char *msg) override;
     void setConfiguration(Configuration *configuration);
