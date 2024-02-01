@@ -113,6 +113,7 @@ void LedRingTask::run()
 
     FastLED.clear();
     FastLED.setBrightness(125);
+    FastLED.show();
 
     while (1)
     {
@@ -125,7 +126,8 @@ void LedRingTask::run()
         switch (effect_settings.effect_id)
         {
         case 0:
-            renderEffectSnake();
+            // TODO: disabled for a Demo
+            // renderEffectSnake();
             break;
         case 1:
             renderEffectStaticColor();

@@ -118,16 +118,25 @@ void RootTask::run()
     log("Giving 0.5s for Apps to initialize");
     delay(500);
 
-    // TODO: make this configurable based on config
-    display_task_->enableOnboarding();
-
-    changeConfig(MENU);
-    motor_task_.addListener(knob_state_queue_);
-
     // TODO: remove me
     std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
     cJSON *json_root = cJSON_Parse(apps_config.c_str());
     hass_apps->sync(json_root);
+
+    // TODO: make this configurable based on config
+    if (SK_UI_BOOT_MODE == 0)
+    {
+        display_task_->enableOnboarding();
+        is_onboarding = true;
+    }
+    else
+    {
+        display_task_->disableOnboarding();
+        is_onboarding = false;
+    }
+
+    changeConfig(MENU);
+    motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
                              { changeConfig(MENU); },
@@ -422,6 +431,7 @@ void RootTask::updateHardware(AppState app_state)
             effect_settings.effect_accent_pixel = 0;
             effect_settings.effect_accent_color = (255 << 16) | (255 << 8) | 255;
             effect_settings.effect_main_color = (255 << 16) | (255 << 8) | 255;
+            led_ring_task_->setEffect(effect_settings);
         }
         else
         {
@@ -435,8 +445,8 @@ void RootTask::updateHardware(AppState app_state)
 
             effect_settings.effect_accent_color = (128 << 16) | (0 << 8) | 128;
             effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 0;
+            led_ring_task_->setEffect(effect_settings);
         }
-        led_ring_task_->setEffect(effect_settings);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
