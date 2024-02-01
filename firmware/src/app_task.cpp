@@ -327,21 +327,18 @@ void AppTask::changeConfig(int8_t id)
 
 void AppTask::updateHardware(AppState app_state)
 {
-    // How far button is pressed, in range [0, 1]
-    float press_value_unit = 0;
 
     static bool pressed;
 #if SK_STRAIN
 
     if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
     {
-        // Ignore readings that are way out of expected bounds
-
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
+                log("handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
@@ -350,6 +347,8 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
+                log("handling long press");
+
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
 
@@ -367,6 +366,8 @@ void AppTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
             {
+                log("handling short press released");
+
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 /* code */
@@ -384,6 +385,8 @@ void AppTask::updateHardware(AppState app_state)
             /* code */
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
+                log("handling long press released");
+
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
             }
@@ -439,6 +442,8 @@ void AppTask::updateHardware(AppState app_state)
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
     }
 
+    // How far button is pressed, in range [0, 1]
+    // float press_value_unit = 0;
     // #if SK_LEDS
     //     for (uint8_t i = 0; i < NUM_LEDS; i++)
     //     {

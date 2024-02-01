@@ -88,13 +88,21 @@ void SensorsTask::run()
 
     // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
-    int32_t strain_reading_ = 0;
+    int32_t strain_reading_raw = 0;
 
     char buf_[128];
 
     // strain sensor and buttons
     unsigned long short_pressed_triggered_at_ms = 0;
     const unsigned long long_press_timeout_ms = 500;
+
+    // strain breaking points
+    const float strain_released = 0.3;
+    const float strain_pressed = 1.0;
+
+    // strain value filtering
+    double strain_filtered;
+    MovingAverage strain_filter(5);
 
     while (1)
     {
@@ -120,13 +128,12 @@ void SensorsTask::run()
         {
             if (scale.wait_ready_timeout(100))
             {
-                strain_reading_ = scale.read();
-                sensors_state.strain.raw_value = strain_reading_;
+                strain_reading_raw = scale.read();
+                sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
                 // TODO: calibrate and track (long term moving average) idle point (lower)
-                press_value_unit = lerp(strain_reading_, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, 0, 1);
-                sensors_state.strain.press_value = press_value_unit;
+                sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, 0, 1);
 
-                if (press_value_unit < 0.5)
+                if (sensors_state.strain.press_value < strain_released)
                 {
                     // released
                     switch (sensors_state.strain.virtual_button_code)
@@ -145,7 +152,7 @@ void SensorsTask::run()
                         break;
                     }
                 }
-                else if (0.5 < press_value_unit && press_value_unit < 1)
+                else if (strain_released < sensors_state.strain.press_value && sensors_state.strain.press_value < strain_pressed)
                 {
                     switch (sensors_state.strain.virtual_button_code)
                     {
@@ -161,7 +168,7 @@ void SensorsTask::run()
                         break;
                     }
                 }
-                else if (press_value_unit > 1)
+                else if (sensors_state.strain.press_value > strain_pressed)
                 {
                     switch (sensors_state.strain.virtual_button_code)
                     {
@@ -186,7 +193,7 @@ void SensorsTask::run()
                 publishState(sensors_state);
                 if (verbose_)
                 {
-                    snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
+                    snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
                     log(buf_);
                 }
             }
