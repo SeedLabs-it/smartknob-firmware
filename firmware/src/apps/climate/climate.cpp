@@ -271,7 +271,7 @@ TFT_eSprite *ClimateApp::render()
         text_color = inactive_color;
     }
     spr_->setTextColor(text_color);
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(min_number_position), 1);
 
     float max_number_position = right_bound - (range_radians / num_positions) * 1.5;
@@ -285,7 +285,7 @@ TFT_eSprite *ClimateApp::render()
         text_color = inactive_color;
     }
     spr_->setTextColor(text_color);
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(max_number_position), 1);
 
     uint32_t auto_color = inactive_color;
@@ -395,17 +395,17 @@ TFT_eSprite *ClimateApp::render()
         }
     }
 
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - DESCRIPTION_Y_OFFSET - VALUE_OFFSET, 1);
 
     // draw wanted temperature
-    spr_->setFreeFont(&Roboto_Light_60);
+    spr_->setFreeFont(&Pixel62mr11pt7b);
     sprintf(buf_, "%d°C", wanted_temperature);
     spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
 
     // draw current temperature
     spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     sprintf(buf_, "%d°C", current_temperature);
     spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET + VALUE_OFFSET, 1);
 
