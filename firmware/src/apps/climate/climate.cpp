@@ -10,7 +10,6 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
     this->entity_name = entity_name;
 
     // TODO, sync motor config with wanted temp on retrival
-
     motor_config = PB_SmartKnobConfig{
         wanted_temperature,
         0,
@@ -271,8 +270,8 @@ TFT_eSprite *ClimateApp::render()
         text_color = inactive_color;
     }
     spr_->setTextColor(text_color);
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(min_number_position), 1);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(min_number_position), 1);
 
     float max_number_position = right_bound - (range_radians / num_positions) * 1.5;
     sprintf(buf_, "%d", max_temp);
@@ -285,8 +284,8 @@ TFT_eSprite *ClimateApp::render()
         text_color = inactive_color;
     }
     spr_->setTextColor(text_color);
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(max_number_position), 1);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(max_number_position), 1);
 
     uint32_t auto_color = inactive_color;
     uint32_t snowflake_color = inactive_color;
@@ -396,18 +395,18 @@ TFT_eSprite *ClimateApp::render()
     }
 
     spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - DESCRIPTION_Y_OFFSET - VALUE_OFFSET, 1);
+    spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - 45, 1);
 
     // draw wanted temperature
     spr_->setFreeFont(&Pixel62mr11pt7b);
     sprintf(buf_, "%d°C", wanted_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 -10, 1);
+    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 - 15, 1);
 
     // draw current temperature
     spr_->setTextColor(TFT_WHITE);
     spr_->setFreeFont(&NDS1210pt7b);
     sprintf(buf_, "%d°C", current_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET + VALUE_OFFSET, 1);
+    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + 30, 1);
 
     uint16_t center = TFT_WIDTH / 2;
 

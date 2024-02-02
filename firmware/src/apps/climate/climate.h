@@ -2,6 +2,7 @@
 #include "../app.h"
 
 #include "../../font/NDS1210pt7b.h"
+#include "../../font/NDS125_small.h"
 #include "../../font/Pixel62mr11pt7b.h"
 
 const uint8_t CLIMATE_APP_MODE_AUTO = 0;
