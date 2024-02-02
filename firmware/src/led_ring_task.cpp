@@ -108,11 +108,11 @@ void LedRingTask::run()
     {
         leds[i].setRGB(255, 255, 255);
         FastLED.show();
-        vTaskDelay(pdMS_TO_TICKS(7));
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
 
     FastLED.clear();
-    FastLED.setBrightness(125);
+    FastLED.setBrightness(255);
     FastLED.show();
 
     while (1)
@@ -151,7 +151,7 @@ void LedRingTask::run()
 void LedRingTask::setEffect(EffectSettings effect_settings)
 {
     // TODO: make it async and safe with a queue
-    xQueueSend(render_effect_queue_, &effect_settings, portMAX_DELAY);
+    xQueueSend(render_effect_queue_, &effect_settings, 0); // portMAX_DELAY
 }
 
 void LedRingTask::setLogger(Logger *logger)

@@ -2,6 +2,16 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
+QueueHandle_t trigger_motor_calibration_;
+uint8_t trigger_motor_calibration_event_;
+
+// this is global function because we don't have better design yet
+void delete_me_TriggerMotorCalibration()
+{
+    uint8_t trigger = 1;
+    xQueueSendToBack(trigger_motor_calibration_, &trigger, 0);
+}
+
 RootTask::RootTask(
     const uint8_t task_core,
     MotorTask &motor_task,
@@ -23,6 +33,9 @@ RootTask::RootTask(
 #if SK_DISPLAY
     assert(display_task != nullptr);
 #endif
+
+    trigger_motor_calibration_ = xQueueCreate(1, sizeof(uint8_t *));
+    assert(trigger_motor_calibration_ != NULL);
 
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
@@ -182,9 +195,16 @@ void RootTask::run()
     // Value between [0, 65536] for brightness when not engaging with knob
     bool isCurrentSubPositionSet = false;
     float currentSubPosition;
+
     AppState app_state = {};
     while (1)
     {
+
+        if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
+        {
+            motor_task_.runCalibration();
+        }
+
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
         {
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;

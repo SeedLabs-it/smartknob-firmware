@@ -13,6 +13,10 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
+protected:
+    int8_t navigationNext();
+    // int8_t navigationBack();
+
 private:
     // uint8_t current_volume = 0;
     // uint8_t current_volume_position = 0;
@@ -25,9 +29,22 @@ private:
     char fw_version[24];
     // needed for UI
     float adjusted_sub_position = 0;
+    char buf_[24];
 
     // screen tearing test
     unsigned long startup_ms;
     unsigned long startup_diff_ms;
     uint16_t screen_fps;
+
+    // motor calibration
+    bool motor_calibration_started = false;
+    bool motor_calibration_event_sent = false;
+    bool motor_calibration_finished = false;
+    unsigned long motor_calibration_requested_ms;           // for count down
+    unsigned long motor_calibration_expected_event_send_ms; // for count down
+    unsigned long motor_calibration_expected_finish_ms;     // for count down
+    uint8_t calibration_time_s = 40;
+    uint8_t calibration_safety_time_s = 5;
+
+    void renderViewMotorCalibration();
 };
