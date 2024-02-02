@@ -401,7 +401,7 @@ TFT_eSprite *ClimateApp::render()
     // draw wanted temperature
     spr_->setFreeFont(&Pixel62mr11pt7b);
     sprintf(buf_, "%d°C", wanted_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 -10, 1);
 
     // draw current temperature
     spr_->setTextColor(TFT_WHITE);
