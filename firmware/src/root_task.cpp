@@ -322,6 +322,12 @@ void RootTask::changeConfig(int8_t id)
         return;
     }
 
+    // TODO, think on better design
+    if (id == DONT_NAVIGATE_UPDATE_MOTOR_CONFIG)
+    {
+        applyConfig(hass_apps->getActiveMotorConfig(), false);
+    }
+
     if (is_onboarding)
     {
         onboarding_apps->setActive(id);

@@ -189,7 +189,7 @@ TFT_eSprite *StopwatchApp::render()
 
     if (sub_position_unit < 0)
     {
-        float percent = -sub_position_unit / 3.0;
+        float percent = -(sub_position_unit) / 3.0;
 
         uint8_t color_channel = percent > 1 ? 255 : percent * 255;
 
