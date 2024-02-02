@@ -74,7 +74,6 @@ int8_t ClimateApp::navigationNext()
 {
 
     mode++;
-
     if (mode > CLIMATE_APP_MODE_VENTILATION)
     {
         mode = CLIMATE_APP_MODE_AUTO;
@@ -240,6 +239,7 @@ void ClimateApp::drawDots()
 // TODO: make this real temp, when sensor is connected
 TFT_eSprite *ClimateApp::render()
 {
+
     uint16_t inactive_color = spr_->color565(71, 71, 71);
     uint32_t cooling_color = spr_->color565(80, 100, 200);
     uint32_t cooling_color_dark = spr_->color565(62, 78, 156);
@@ -254,8 +254,24 @@ TFT_eSprite *ClimateApp::render()
 
     float left_bound = PI / 2 + range_radians / 2;
     float right_bound = PI / 2 - range_radians / 2;
+    char buf_[64];
+    // information for creating a ticker
+    // TODO: eventually removed when properly linked (this is for demo purposes)
+    long now = millis();
+    long elapsed = now - startTime;
 
-    char buf_[16];
+    if (elapsed > 1000)
+    {
+        ESP_LOGD("Climate", "now: %d, startime: %d, elapsed: %d", now, startTime, elapsed);
+        startTime = now;
+        if (current_temperature != wanted_temperature)
+        {
+            int temperature_change_delta = (current_temperature > wanted_temperature) ? -1 : ((current_temperature < wanted_temperature) ? 1 : 0);
+
+            current_temperature = current_temperature + temperature_change_delta;
+        }
+    }
+
     uint32_t text_color;
 
     // Draw min/max numbers
@@ -421,6 +437,5 @@ TFT_eSprite *ClimateApp::render()
     spr_->drawBitmap(center - icon_size - icon_margin, TFT_HEIGHT - 30, snowflake, icon_size, icon_size, snowflake_color, TFT_BLACK);
     spr_->drawBitmap(center + icon_margin, TFT_HEIGHT - 30, fire, icon_size, icon_size, fire_color, TFT_BLACK);
     spr_->drawBitmap(center + icon_size + icon_margin * 3, TFT_HEIGHT - 30, wind, icon_size, icon_size, wind_color, TFT_BLACK);
-
     return this->spr_;
 };

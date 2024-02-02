@@ -38,6 +38,7 @@ private:
     uint8_t current_temperature = 0;
     uint8_t wanted_temperature = 0;
     uint8_t last_wanted_temperature = 0;
+    long startTime = 0;
 
     void drawDots();
 };
