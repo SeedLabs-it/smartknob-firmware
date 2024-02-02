@@ -130,7 +130,7 @@ void SensorsTask::run()
             {
                 strain_reading_raw = scale.read();
 
-                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(10 * strain_calibration.press_delta))
+                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(10 * strain_calibration.press_delta) && strain_calibration.idle_value != 0)
                 {
 
                     snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %d, idle value %d, delta value %d", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
