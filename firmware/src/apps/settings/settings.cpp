@@ -153,6 +153,7 @@ TFT_eSprite *SettingsApp::render()
         {
             motor_calibration_finished = true;
             motor_calibration_started = false;
+            motor_calibration_event_sent = false;
         }
     }
 
