@@ -130,9 +130,10 @@ void SensorsTask::run()
             {
                 strain_reading_raw = scale.read();
 
-                if (strain_reading_raw > (strain_calibration.idle_value + strain_calibration.press_delta) * 10)
+                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(10 * strain_calibration.press_delta))
                 {
-                    snprintf(buf_, sizeof(buf_), "Discarding error reading %d > 10x top limit %d", strain_reading_raw, (strain_calibration.idle_value + strain_calibration.press_delta) * 2);
+
+                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %d, idle value %d, delta value %d", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
                     log(buf_);
                 }
                 else
