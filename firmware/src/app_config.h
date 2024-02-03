@@ -28,6 +28,9 @@ struct ConnectivityState
     uint8_t signal_strenth_status;
     std::string ssid;
     std::string ip_address;
+
+    bool is_ap;
+    std::string ap_ip_address;
 };
 
 struct MqttState

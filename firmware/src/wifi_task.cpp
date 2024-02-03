@@ -35,7 +35,7 @@ void WifiTask::setup_wifi()
     {
         delay(1500);
         ESP_LOGD("NETWORKING", "WiFi connectien tries: %d", tries);
-        if (tries > 0) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
+        if (tries > 10) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
         {
             WiFi.mode(WIFI_AP);
             WiFi.softAP("SMARTKNOB-AP", "smartknob");
@@ -47,12 +47,19 @@ void WifiTask::setup_wifi()
 
 void WifiTask::run()
 {
+
     setup_wifi();
-    WebServer server(80);
+    const byte DNS_PORT = 53;
+    DNSServer dnsServer;
+    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+    AsyncWebServer server(80);
     server_ = &server;
     ElegantOTA.begin(server_);
-    server_->on("/", [this]()
-                { server_->send(200, "text/plain", "Welcome to the SmartKnob devkit (updated)"); });
+
+    server_->addHandler(new CaptivePortalHandler()).setFilter(ON_AP_FILTER);
+    server_->onNotFound([&](AsyncWebServerRequest *request)
+                        { request->send(200, "text/html", index_html); });
     server_->begin();
 
     log("WebServer started");
@@ -61,8 +68,7 @@ void WifiTask::run()
 
     while (1)
     {
-        // move webserver to a different task
-        server_->handleClient();
+        dnsServer.processNextRequest();
         ElegantOTA.loop();
 
         if (millis() - last_wifi_status > 5000)
@@ -107,7 +113,10 @@ void WifiTask::updateWifiState()
         WiFi.RSSI(),
         signal_strenth_status,
         WIFI_SSID,
-        WiFi.localIP().toString().c_str()};
+        WiFi.localIP().toString().c_str(),
+        WiFi.getMode() == WIFI_AP ? true : false,
+        WiFi.softAPIP().toString().c_str(),
+    };
 
     publishState(state);
 }
