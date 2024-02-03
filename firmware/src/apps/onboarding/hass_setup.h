@@ -20,12 +20,13 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    int8_t navigationNext();
+    // int8_t navigationNext();
     int8_t navigationBack();
 
 protected:
 private:
     HassSetupState internal_state;
+    AppState state;
 
     TFT_eSprite *renderWifiConnect();
     TFT_eSprite *renderKnobUrl();
