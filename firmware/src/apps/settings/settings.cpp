@@ -1,5 +1,7 @@
 #include "settings.h"
 
+#include "../../root_task.h"
+
 SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
 {
     sprintf(fw_version, "FW: %s", "v0.1-demo");
@@ -33,6 +35,11 @@ SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
 
 EntityStateUpdate SettingsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    if (motor_calibration_started)
+    {
+        return EntityStateUpdate{};
+    }
+
     current_position = state.current_position;
 
     // // needed to next reload of App
@@ -68,8 +75,90 @@ void SettingsApp::updateStateFromSystem(AppState state)
     // motor_config.position = current_volume_position;
 }
 
+int8_t SettingsApp::navigationNext()
+{
+    // todo: make it a const
+    if (current_position == 4)
+    {
+        if (!motor_calibration_started)
+        {
+            motor_calibration_started = true;
+            motor_calibration_requested_ms = millis();
+            motor_calibration_expected_finish_ms = motor_calibration_requested_ms + (calibration_time_s + calibration_safety_time_s) * 1000;
+            motor_calibration_expected_event_send_ms = motor_calibration_requested_ms + calibration_safety_time_s * 1000;
+        }
+    }
+    return DONT_NAVIGATE;
+}
+
+// int8_t SettingsApp::navigationBack()
+// {
+//     // todo: make it a const
+//     if (current_position == 4)
+//     {
+//         if (!motor_calibration_finished)
+//         {
+//             motor_calibration_started = true;
+//             motor_calibration_requested_ms = millis();
+//         }
+//     }
+//     return DONT_NAVIGATE;
+// }
+
+void SettingsApp::renderViewMotorCalibration()
+{
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_HEIGHT / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->drawString("Motor calibration", center_h, center_v - 50, 1);
+
+    if (!motor_calibration_started)
+    {
+        spr_->setFreeFont(&NDS1210pt7b);
+        spr_->drawString("Press to start", center_h, center_v + 50, 1);
+    }
+    else
+    {
+
+        if (motor_calibration_event_sent)
+        {
+            spr_->setTextColor(TFT_ORANGE);
+        }
+
+        spr_->setFreeFont(&NDS1210pt7b);
+        sprintf(buf_, "%ds", (motor_calibration_expected_finish_ms - millis()) / 1000);
+        spr_->drawString(buf_, center_h, center_v, 1);
+
+        spr_->drawString("Don't touch it", center_h, center_v + 50, 1);
+    }
+}
+
 TFT_eSprite *SettingsApp::render()
 {
+    // section to update inner state
+
+    if (motor_calibration_started)
+    {
+        if (!motor_calibration_event_sent && motor_calibration_expected_event_send_ms < millis())
+        {
+            // TODO: send event
+            motor_calibration_event_sent = true;
+            delete_me_TriggerMotorCalibration();
+        }
+
+        if (motor_calibration_expected_finish_ms < millis())
+        {
+            motor_calibration_finished = true;
+            motor_calibration_started = false;
+            motor_calibration_event_sent = false;
+        }
+    }
+
+    // rendering
+
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
     float range_radians = (num_positions + 1) * motor_config.position_width_radians;
@@ -292,6 +381,10 @@ TFT_eSprite *SettingsApp::render()
         spr_->drawString(buf_, center_h, 25, 1);
     }
     else if (current_position == 4)
+    {
+        renderViewMotorCalibration();
+    }
+    else if (current_position == 5)
     {
         // ben10 easter egg
         uint32_t backroung_green = TFT_GREENYELLOW;
