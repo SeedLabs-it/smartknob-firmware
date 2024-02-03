@@ -21,6 +21,9 @@ public:
 
     QueueHandle_t getConnectivityStateQueue();
     QueueHandle_t getEntityStateReceivedQueue();
+
+    void addStateListener(QueueHandle_t queue);
+
     void enqueueEntityStateToSend(EntityStateUpdate);
     void addAppSyncListener(QueueHandle_t queue);
     void setLogger(Logger *logger);
@@ -31,6 +34,8 @@ protected:
     void run();
 
 private:
+    std::vector<QueueHandle_t> state_listeners_;
+
     QueueHandle_t connectivity_status_queue_;
     QueueHandle_t entity_state_to_send_queue_;
     // QueueHandle_t entity_state_received_queue_;
@@ -44,6 +49,8 @@ private:
 
     ConnectivityState last_connectivity_state_;
     MqttState mqtt_state_;
+
+    void publishState(const MqttState &state);
 
     void log(const char *msg);
 

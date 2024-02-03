@@ -80,6 +80,7 @@ struct AppState
 {
     PB_SmartKnobState motor_state;
     ConnectivityState connectivity_state;
+    MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
     cJSON *apps;

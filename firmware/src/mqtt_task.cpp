@@ -39,6 +39,8 @@ void MqttTask::run()
 
     ConnectivityState connectivity_state_to_process_;
 
+    static uint32_t last_mqtt_state_sent;
+
     while (1)
     {
         if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
@@ -105,6 +107,18 @@ void MqttTask::run()
 
                 mqtt_push = millis();
             }
+        }
+
+        if (millis() - last_mqtt_state_sent > 5000)
+        {
+            // MqttState state = {
+            //     mqttClient.connected(),
+            //     MQTT_SERVER,
+            //     "smartknob",
+            // };
+
+            publishState(mqtt_state_);
+            last_mqtt_state_sent = millis();
         }
 
         delay(5);
@@ -186,6 +200,19 @@ void MqttTask::reconnect_mqtt()
             log(buf_);
             delay(5000);
         }
+    }
+}
+
+void MqttTask::addStateListener(QueueHandle_t queue)
+{
+    state_listeners_.push_back(queue);
+}
+
+void MqttTask::publishState(const MqttState &state)
+{
+    for (auto listener : state_listeners_)
+    {
+        xQueueOverwrite(listener, &state);
     }
 }
 
