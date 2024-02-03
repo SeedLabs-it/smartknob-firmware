@@ -1,6 +1,8 @@
 #include "../app.h"
 #include <chrono>
 
+#include "../../font/NDS1210pt7b.h"
+
 enum class PomodoroState
 {
     IDLE,
@@ -21,5 +23,5 @@ protected:
 
 private:
     PomodoroState state;
-    long startTime;
+    long start_time;
 };
