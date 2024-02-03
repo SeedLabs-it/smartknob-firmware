@@ -10,7 +10,7 @@
 
 static const char *MQTT_TAG = "MQTT";
 
-NetworkingTask::NetworkingTask(const uint8_t task_core) : Task{"Networking", 2048 * 2, 1, task_core}
+NetworkingTask::NetworkingTask(const uint8_t task_core) : Task{"Networking", 2048 * 3, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
 
