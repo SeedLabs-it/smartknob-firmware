@@ -35,7 +35,7 @@ void WifiTask::setup_wifi()
     {
         delay(1500);
         ESP_LOGD("NETWORKING", "WiFi connectien tries: %d", tries);
-        if (tries > 0) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
+        if (tries > 10) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
         {
             WiFi.mode(WIFI_AP);
             WiFi.softAP("SMARTKNOB-AP", "smartknob");
@@ -107,8 +107,10 @@ void WifiTask::updateWifiState()
         WiFi.RSSI(),
         signal_strenth_status,
         WIFI_SSID,
-        WiFi.localIP().toString().c_str()};
-
+        WiFi.localIP().toString().c_str(),
+        WiFi.getMode() == WIFI_AP ? true : false,
+        WiFi.softAPIP().toString().c_str(),
+    };
     publishState(state);
 }
 
