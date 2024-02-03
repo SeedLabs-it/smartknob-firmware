@@ -4,18 +4,18 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
 {
     // TODO update this via some API
     current_temperature = 22;
+    // default wanted temp
     wanted_temperature = 25;
 
     this->entity_name = entity_name;
 
     // TODO, sync motor config with wanted temp on retrival
-
     motor_config = PB_SmartKnobConfig{
         wanted_temperature,
         0,
         wanted_temperature,
-        16,
-        35,
+        CLIMATE_APP_MIN_TEMP,
+        CLIMATE_APP_MAX_TEMP,
         8.225806452 * PI / 120,
         2,
         1,
@@ -27,7 +27,7 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
         27,
     };
 
-    num_positions = motor_config.max_position - motor_config.min_position;
+    num_positions = CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP;
 
     big_icon = hvac_80;
     small_icon = hvac_40;
@@ -70,19 +70,182 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void ClimateApp::updateStateFromSystem(AppState state) {}
 
+int8_t ClimateApp::navigationNext()
+{
+
+    mode++;
+    if (mode > CLIMATE_APP_MODE_VENTILATION)
+    {
+        mode = CLIMATE_APP_MODE_AUTO;
+    }
+
+    switch (mode)
+    {
+    case CLIMATE_APP_MODE_AUTO:
+        motor_config = PB_SmartKnobConfig{
+            wanted_temperature,
+            0,
+            wanted_temperature,
+            CLIMATE_APP_MIN_TEMP,
+            CLIMATE_APP_MAX_TEMP,
+            8.225806452 * PI / 120,
+            2,
+            1,
+            1.1,
+            "",
+            0,
+            {},
+            0,
+            27,
+        };
+        break;
+    case CLIMATE_APP_MODE_COOLING:
+        // todo, check that current temp is more than wanted
+        motor_config = PB_SmartKnobConfig{
+            wanted_temperature,
+            0,
+            wanted_temperature,
+            CLIMATE_APP_MIN_TEMP,
+            current_temperature,
+            8.225806452 * PI / 120,
+            2,
+            1,
+            1.1,
+            "",
+            0,
+            {},
+            0,
+            27,
+        };
+        break;
+    case CLIMATE_APP_MODE_HEATING:
+        // todo, check that current temp is less than wanted
+
+        motor_config = PB_SmartKnobConfig{
+            wanted_temperature,
+            0,
+            wanted_temperature,
+            current_temperature,
+            CLIMATE_APP_MAX_TEMP,
+            8.225806452 * PI / 120,
+            2,
+            1,
+            1.1,
+            "",
+            0,
+            {},
+            0,
+            27,
+        };
+        break;
+    case CLIMATE_APP_MODE_VENTILATION:
+        motor_config = PB_SmartKnobConfig{
+            wanted_temperature,
+            0,
+            wanted_temperature,
+            current_temperature,
+            current_temperature,
+            8.225806452 * PI / 120,
+            2,
+            1,
+            1.1,
+            "",
+            0,
+            {},
+            0,
+            27,
+        };
+        break;
+    default:
+        break;
+    }
+
+    return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
+}
+
+void ClimateApp::drawDots()
+{
+    // colors
+    uint16_t inactive_color = spr_->color565(71, 71, 71);
+    uint32_t cooling_color = spr_->color565(80, 100, 200);
+    uint32_t cooling_color_dark = spr_->color565(62, 78, 156);
+    uint32_t heating_color = spr_->color565(255, 128, 0);
+    uint32_t heating_color_dark = spr_->color565(199, 109, 18);
+
+    // screen center
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t screen_radius = TFT_WIDTH / 2;
+
+    // end stops and radians per tick
+    float range_radians = (num_positions + 1) * motor_config.position_width_radians;
+    float left_bound = PI / 2 + range_radians / 2;
+    float right_bound = PI / 2 - range_radians / 2;
+
+    uint32_t dot_color = inactive_color;
+    uint8_t dot_radius = 2;
+
+    // draw left tick
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+    {
+        dot_color = cooling_color_dark;
+    }
+
+    float dot_position = left_bound;
+    spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
+
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+    {
+        dot_color = cooling_color_dark;
+    }
+
+    dot_position = right_bound;
+    spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
+
+    for (int i = 1; i < num_positions + 1; i++)
+    {
+        if (min_temp + i < current_temperature)
+        {
+            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+            {
+                dot_color = cooling_color_dark;
+            }
+            else
+            {
+                dot_color = inactive_color;
+            }
+        }
+        else if (min_temp + i == current_temperature)
+        {
+            dot_color = TFT_WHITE;
+        }
+        else
+        {
+            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+            {
+                dot_color = heating_color_dark;
+            }
+            else
+            {
+                dot_color = inactive_color;
+            }
+        }
+
+        float dot_position = left_bound - (range_radians / (num_positions)) * i;
+        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
+    }
+}
+
+// TODO: make this real temp, when sensor is connected
 TFT_eSprite *ClimateApp::render()
 {
-    uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
-    // int32_t width = (wanted_temperature - motor_config.min_position) * TFT_WIDTH / (motor_config.max_position - motor_config.min_position);
-
-    // TODO: make this real team, when sensor is connected
-
+    uint16_t inactive_color = spr_->color565(71, 71, 71);
     uint32_t cooling_color = spr_->color565(80, 100, 200);
+    uint32_t cooling_color_dark = spr_->color565(62, 78, 156);
     uint32_t heating_color = spr_->color565(255, 128, 0);
 
     // draw division lines
-
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
     uint16_t screen_radius = TFT_WIDTH / 2;
@@ -91,175 +254,188 @@ TFT_eSprite *ClimateApp::render()
 
     float left_bound = PI / 2 + range_radians / 2;
     float right_bound = PI / 2 - range_radians / 2;
+    char buf_[64];
+    // information for creating a ticker
+    // TODO: eventually removed when properly linked (this is for demo purposes)
+    long now = millis();
+    long elapsed = now - startTime;
 
-    spr_->drawLine(TFT_WIDTH / 2 + screen_radius * cosf(left_bound), TFT_HEIGHT / 2 - screen_radius * sinf(left_bound), TFT_WIDTH / 2 + (screen_radius - 10) * cosf(left_bound), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(left_bound), cooling_color);
-    spr_->drawLine(TFT_WIDTH / 2 + screen_radius * cosf(right_bound), TFT_HEIGHT / 2 - screen_radius * sinf(right_bound), TFT_WIDTH / 2 + (screen_radius - 10) * cosf(right_bound), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(right_bound), heating_color);
-
-    char buf_[16];
-
-    uint32_t line_color;
-    uint16_t tick_line_length = 10;
-
-    for (int i = 1; i < num_positions; i++)
+    if (elapsed > 1000)
     {
-        if (motor_config.min_position + i < current_temperature)
+        ESP_LOGD("Climate", "now: %d, startime: %d, elapsed: %d", now, startTime, elapsed);
+        startTime = now;
+        if (current_temperature != wanted_temperature)
         {
-            line_color = cooling_color;
-            tick_line_length = 10;
+            int temperature_change_delta = (current_temperature > wanted_temperature) ? -1 : ((current_temperature < wanted_temperature) ? 1 : 0);
+
+            current_temperature = current_temperature + temperature_change_delta;
         }
-        else if (motor_config.min_position + i == current_temperature)
-        {
-            line_color = TFT_WHITE;
-            tick_line_length = 20;
-        }
-        else
-        {
-            line_color = heating_color;
-            tick_line_length = 10;
-        }
-        float line_position = left_bound - (range_radians / num_positions) * i;
-        spr_->drawLine(TFT_WIDTH / 2 + screen_radius * cosf(line_position), TFT_HEIGHT / 2 - screen_radius * sinf(line_position), TFT_WIDTH / 2 + (screen_radius - tick_line_length) * cosf(line_position), TFT_HEIGHT / 2 - (screen_radius - tick_line_length) * sinf(line_position), line_color);
     }
+
+    uint32_t text_color;
 
     // Draw min/max numbers
     float min_number_position = left_bound + (range_radians / num_positions) * 1.5;
-    sprintf(buf_, "%d", motor_config.min_position);
-    spr_->setTextColor(cooling_color);
-    spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(min_number_position), 1);
+    sprintf(buf_, "%d", min_temp);
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+    {
+        text_color = cooling_color;
+    }
+    else
+    {
+        text_color = inactive_color;
+    }
+    spr_->setTextColor(text_color);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(min_number_position), 1);
 
     float max_number_position = right_bound - (range_radians / num_positions) * 1.5;
-    sprintf(buf_, "%d", motor_config.max_position);
-    spr_->setTextColor(heating_color);
-    spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 15) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 15) * sinf(max_number_position), 1);
+    sprintf(buf_, "%d", max_temp);
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+    {
+        text_color = heating_color;
+    }
+    else
+    {
+        text_color = inactive_color;
+    }
+    spr_->setTextColor(text_color);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(max_number_position), 1);
 
-    uint32_t snowflake_color = DISABLED_COLOR;
-    uint32_t fire_color = DISABLED_COLOR;
-    uint32_t wind_color = DISABLED_COLOR;
+    uint32_t auto_color = inactive_color;
+    uint32_t snowflake_color = inactive_color;
+    uint32_t arc_color = inactive_color;
+    uint32_t fire_color = inactive_color;
+    uint32_t wind_color = inactive_color;
 
-    // set the moving dot color
-    uint32_t dot_color = TFT_WHITE;
+    // set arc
     if (wanted_temperature < current_temperature)
     {
-        dot_color = cooling_color;
+        arc_color = cooling_color;
     }
     else if (wanted_temperature > current_temperature)
     {
-        dot_color = heating_color;
+        arc_color = heating_color;
     }
 
     // TODO check for positions
 
+    switch (mode)
+    {
+    case CLIMATE_APP_MODE_AUTO:
+        auto_color = TFT_WHITE;
+        break;
+    case CLIMATE_APP_MODE_COOLING:
+        snowflake_color = TFT_WHITE;
+        break;
+
+    case CLIMATE_APP_MODE_HEATING:
+        fire_color = TFT_WHITE;
+        break;
+
+    case CLIMATE_APP_MODE_VENTILATION:
+        wind_color = TFT_WHITE;
+        break;
+
+    default:
+        break;
+    }
+
     // draw current mode with text and color
     std::string status = "";
+
     if (wanted_temperature > current_temperature)
     {
         spr_->setTextColor(heating_color);
-        fire_color = heating_color;
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+        {
+            fire_color = heating_color;
+        }
+
         status = "Heating";
 
         // draw arc of action
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - motor_config.min_position);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - motor_config.min_position) - adjusted_sub_position;
+        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
+        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
 
         for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
         {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, dot_color);
+            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
         }
     }
     else if (wanted_temperature == current_temperature)
     {
         spr_->setTextColor(TFT_WHITE);
         status = "idle";
-        wind_color = TFT_GREENYELLOW;
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_VENTILATION)
+        {
+            wind_color = TFT_GREENYELLOW;
+            arc_color = TFT_GREENYELLOW;
+        }
 
         // draw arc of action
 
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - motor_config.min_position);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - motor_config.min_position) - adjusted_sub_position;
+        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
+        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
 
         if (adjusted_sub_position < 0)
         {
-            start_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - motor_config.min_position) - adjusted_sub_position;
-            wanted_angle = left_bound - (range_radians / num_positions) * (current_temperature - motor_config.min_position);
+            start_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
+            wanted_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
         }
 
         for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
         {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, TFT_GREENYELLOW);
+            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
         }
     }
     else
     {
         spr_->setTextColor(cooling_color);
-        snowflake_color = cooling_color;
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+        {
+            snowflake_color = cooling_color;
+        }
         status = "Cooling";
 
         // draw arc of action
         // draw arc of action
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - motor_config.min_position);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - motor_config.min_position) - adjusted_sub_position;
+        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
+        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
 
         for (float r = start_angle; r <= wanted_angle; r += 2 * PI / 180)
         {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, dot_color);
+            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
         }
     }
 
-    // draw moving dot
-    // if (num_positions > 0 && ((wanted_temperature == motor_config.min_position && state.sub_position_unit < 0) || (wanted_temperature == motor_config.max_position && state.sub_position_unit > 0)))
-    // {
-
-    //   spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(raw_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(raw_angle), 5, dot_color);
-    //   if (raw_angle < adjusted_angle)
-    //   {
-    //     for (float r = raw_angle; r <= adjusted_angle; r += 2 * PI / 180)
-    //     {
-    //       spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 2, dot_color);
-    //     }
-    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 2, dot_color);
-    //   }
-    //   else
-    //   {
-    //     for (float r = raw_angle; r >= adjusted_angle; r -= 2 * PI / 180)
-    //     {
-    //       spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 2, dot_color);
-    //     }
-    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 2, dot_color);
-    //   }
-    // }
-    // else
-    // {
-    //   spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
-    // }
-
-    spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - DESCRIPTION_Y_OFFSET - VALUE_OFFSET, 1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - 45, 1);
 
     // draw wanted temperature
-    spr_->setFreeFont(&Roboto_Light_60);
+    spr_->setFreeFont(&Pixel62mr11pt7b);
     sprintf(buf_, "%d°C", wanted_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 - 15, 1);
 
     // draw current temperature
     spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Thin_24);
+    spr_->setFreeFont(&NDS1210pt7b);
     sprintf(buf_, "%d°C", current_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET + VALUE_OFFSET, 1);
+    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + 30, 1);
 
     uint16_t center = TFT_WIDTH / 2;
 
     // draw bottom icons
 
+    drawDots();
+
     uint16_t icon_size = 20;
     uint16_t icon_margin = 3;
 
-    spr_->drawBitmap(center - icon_size * 2 - icon_margin * 3, TFT_HEIGHT - 30, letter_A, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
+    spr_->drawBitmap(center - icon_size * 2 - icon_margin * 3, TFT_HEIGHT - 30, letter_A, icon_size, icon_size, auto_color, TFT_BLACK);
     spr_->drawBitmap(center - icon_size - icon_margin, TFT_HEIGHT - 30, snowflake, icon_size, icon_size, snowflake_color, TFT_BLACK);
-
     spr_->drawBitmap(center + icon_margin, TFT_HEIGHT - 30, fire, icon_size, icon_size, fire_color, TFT_BLACK);
     spr_->drawBitmap(center + icon_size + icon_margin * 3, TFT_HEIGHT - 30, wind, icon_size, icon_size, wind_color, TFT_BLACK);
-
     return this->spr_;
 };

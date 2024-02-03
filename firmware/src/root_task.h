@@ -16,8 +16,10 @@
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
+void delete_me_TriggerMotorCalibration();
+
 class RootTask : public Task<RootTask>,
-                public Logger
+                 public Logger
 {
 
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
