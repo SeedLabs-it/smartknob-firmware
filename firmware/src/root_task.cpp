@@ -16,13 +16,15 @@ RootTask::RootTask(
     const uint8_t task_core,
     MotorTask &motor_task,
     DisplayTask *display_task,
-    NetworkingTask *networking_task,
+    WifiTask *wifi_task,
+    MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task) : Task("App", 1024 * 5, 1, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
-                                 networking_task_(networking_task),
+                                 wifi_task_(wifi_task),
+                                 mqtt_task_(mqtt_task),
                                  led_ring_task_(led_ring_task),
                                  sensors_task_(sensors_task),
                                  plaintext_protocol_(stream_, [this]()
@@ -261,13 +263,13 @@ void RootTask::run()
         {
             ESP_LOGD("root_task", "App sync requested!");
 #if SK_NETWORKING // Should this be here??
-            hass_apps->sync(networking_task_->getApps());
+            hass_apps->sync(mqtt_task_->getApps());
 
             log("Giving 0.5s for Apps to initialize");
             delay(500);
 
             changeConfig(MENU);
-            networking_task_->unlock();
+            mqtt_task_->unlock();
 #endif
         }
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
@@ -299,7 +301,7 @@ void RootTask::run()
             }
 
 #if SK_NETWORKING
-            networking_task_->enqueueEntityStateToSend(entity_state_update_to_send);
+            mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
 #endif
 
             if (entity_state_update_to_send.play_haptic)
