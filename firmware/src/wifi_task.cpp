@@ -65,7 +65,7 @@ void WifiTask::run()
         server_->handleClient();
         ElegantOTA.loop();
 
-        if (millis() - last_wifi_status > 1000)
+        if (millis() - last_wifi_status > 5000)
         {
             int8_t rssi = WiFi.RSSI();
             uint8_t signal_strenth_status;

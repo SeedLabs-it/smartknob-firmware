@@ -43,6 +43,7 @@ void MqttTask::run()
     {
         if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
         {
+            ESP_LOGD(MQTT_TAG, "Received connectivity state");
             if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
             {
                 last_connectivity_state_ = connectivity_state_to_process_;
@@ -54,7 +55,7 @@ void MqttTask::run()
 
         if (last_connectivity_state_.is_connected)
         {
-            if (!mqttClient.connected() && mqtt_state_.server != "")
+            if (mqtt_state_.server == "")
             {
                 setup_mqtt();
             }
