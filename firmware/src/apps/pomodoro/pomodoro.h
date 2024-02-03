@@ -15,6 +15,7 @@ class PomodoroApp : public App
 public:
     PomodoroApp(TFT_eSprite *spr_);
     EntityStateUpdate update(AppState state);
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
 
     TFT_eSprite *render();
 
@@ -23,5 +24,6 @@ protected:
 
 private:
     PomodoroState state;
+    boolean state_changed = false;
     long start_time;
 };

@@ -6,7 +6,7 @@ const long POMODORO_DURATION = 25;
 // Duration of a break in minutes
 const int BREAK_DURATION = 5;
 
-PomodoroApp::PomodoroApp(TFT_eSprite *spr_) : App(spr_), state(PomodoroState::IDLE), start_time(millis())
+PomodoroApp::PomodoroApp(TFT_eSprite *spr_) : App(spr_), state(PomodoroState::IDLE), start_time(millis()), state_changed(false)
 {
     motor_config = PB_SmartKnobConfig{
         0,
@@ -55,6 +55,18 @@ EntityStateUpdate PomodoroApp::update(AppState state_)
     return EntityStateUpdate();
 }
 
+EntityStateUpdate PomodoroApp::updateStateFromKnob(PB_SmartKnobState state)
+{
+    EntityStateUpdate new_state;
+
+    if (state_changed)
+    {
+        new_state.play_haptic = true;
+        state_changed = false;
+    }
+    return new_state;
+}
+
 TFT_eSprite *PomodoroApp::render()
 {
     long now = millis();
@@ -70,15 +82,23 @@ TFT_eSprite *PomodoroApp::render()
     uint16_t center_w = TFT_WIDTH / 2;
     uint16_t screen_radius = TFT_WIDTH / 2;
 
+    spr_->setTextDatum(CC_DATUM);
     spr_->setFreeFont(&NDS1210pt7b);
 
+    uint16_t font_height = spr_->fontHeight(1);
+
+    uint16_t text_begin = screen_radius - font_height * 2;
+
     spr_->fillSprite(TFT_BLACK);
+
+    uint32_t work_color = TFT_RED;
+    uint32_t break_color = TFT_BLUE;
 
     if (state != PomodoroState::IDLE)
     {
 
-        spr_->fillSprite(state == PomodoroState::WORK ? TFT_RED : TFT_GREENYELLOW);
-        spr_->fillSmoothCircle(center_w, center_h, screen_radius - 8, TFT_BLACK, state == PomodoroState::WORK ? TFT_RED : TFT_GREENYELLOW);
+        spr_->fillSprite(state == PomodoroState::WORK ? work_color : break_color);
+        spr_->fillSmoothCircle(center_w, center_h, screen_radius - 8, TFT_BLACK, state == PomodoroState::WORK ? work_color : break_color);
 
         float start_angle = PI / 2;
         float stop_angle = 2.5 * PI - (2.5 * PI - PI / 2) * (1 - ((float)remaining_ms / total_duration_ms));
@@ -98,37 +118,42 @@ TFT_eSprite *PomodoroApp::render()
     if (state == PomodoroState::WORK && remaining_ms <= 0)
     {
         state = PomodoroState::BREAK;
+        state_changed = true;
         start_time = now;
     }
     else if (state == PomodoroState::BREAK && remaining_ms <= 0)
     {
         state = PomodoroState::WORK;
+        state_changed = true;
         start_time = now;
     }
+
+    char buf_[16];
 
     if (state == PomodoroState::IDLE)
     {
         spr_->setTextColor(TFT_WHITE);
-        spr_->drawString("Press to start", TFT_WIDTH / 2, TFT_HEIGHT / 2);
+        spr_->drawString("Press to start", screen_radius, text_begin);
     }
     else if (state == PomodoroState::WORK)
     {
-        spr_->setTextColor(TFT_GREEN);
-        spr_->drawString("Work!", screen_radius, screen_radius);
+        spr_->setTextColor(TFT_WHITE);
+        spr_->drawString("Work!", screen_radius, text_begin);
 
-        spr_->drawString("Time Left: ", screen_radius, screen_radius + 20);
-        std::string time_str = std::to_string(minutes_remaining) + ":" + std::to_string(seconds_remaining);
-        spr_->drawString(time_str.c_str(), screen_radius, screen_radius + 40);
+        spr_->drawString("Time Left: ", screen_radius, text_begin + font_height);
 
-        // SEND STATE PLAY HAPTIC !!!!
+        spr_->setTextDatum(CR_DATUM);
+        sprintf(buf_, "%02d:%02d", minutes_remaining, seconds_remaining);
+        spr_->drawString(buf_, screen_radius + spr_->textWidth("00:00") / 2, text_begin + font_height * 3);
     }
     else
     {
-        spr_->setTextColor(TFT_RED);
+        spr_->setTextColor(TFT_WHITE);
 
-        spr_->drawString("Break!", screen_radius, screen_radius);
-        std::string time_str = std::to_string(minutes_remaining) + ":" + std::to_string(seconds_remaining);
-        spr_->drawString(time_str.c_str(), screen_radius, screen_radius + 40);
+        spr_->drawString("Break!", screen_radius, text_begin);
+        spr_->setTextDatum(CR_DATUM);
+        sprintf(buf_, "%02d:%02d", minutes_remaining, seconds_remaining);
+        spr_->drawString(buf_, screen_radius + spr_->textWidth("00:00") / 2, text_begin + font_height * 2);
     }
 
     return spr_;
