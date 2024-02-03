@@ -30,6 +30,13 @@ struct ConnectivityState
     std::string ip_address;
 };
 
+struct MqttState
+{
+    bool is_connected;
+    std::string server;
+    std::string client_id;
+};
+
 struct IlluminationState
 {
     float lux;

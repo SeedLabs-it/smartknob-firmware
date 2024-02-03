@@ -86,6 +86,7 @@ void setup()
 #if SK_NETWORKING
     wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
+    wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
     wifi_task.begin();
 
     // IF WIFI CONNECTED CONNECT MQTT
