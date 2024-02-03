@@ -30,23 +30,22 @@ void WifiTask::setup_wifi()
 
     WiFi.begin(wifi_name, wifi_pass);
 
-    while (WiFi.status() != WL_CONNECTED)
+    uint8_t tries = 0;
+    while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP)
     {
-        log("connecting to WiFi, waiting");
-        delay(500);
+        delay(1500);
+        ESP_LOGD("NETWORKING", "WiFi connectien tries: %d", tries);
+        if (tries++ > 0) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
+        {
+            WiFi.mode(WIFI_AP);
+            WiFi.softAP("SMARTKNOB-AP", "smartknob");
+        }
     }
-    char buf_[128];
-    sprintf(buf_, "YooHoo, WiFi connected, ip: %s", WiFi.localIP().toString());
-    // TODO: send this state to the UI
-    log(buf_);
+    updateWifiState();
 }
 
 void WifiTask::run()
 {
-    // connect to wifi first
-
-    const uint16_t mqtt_push_interval_ms = 200;
-
     setup_wifi();
     WebServer server(80);
     server_ = &server;
@@ -67,44 +66,49 @@ void WifiTask::run()
 
         if (millis() - last_wifi_status > 5000)
         {
-            int8_t rssi = WiFi.RSSI();
-            uint8_t signal_strenth_status;
-
-            if (rssi < -110)
-            {
-                signal_strenth_status = 4;
-            }
-            else if (rssi < -100)
-            {
-                signal_strenth_status = 3;
-            }
-            else if (rssi < -85)
-            {
-                signal_strenth_status = 2;
-            }
-            else if (rssi < -70)
-            {
-                signal_strenth_status = 1;
-            }
-            else
-            {
-                signal_strenth_status = 0;
-            }
-
-            // harvest state;
-            ConnectivityState state = {
-                WiFi.isConnected(),
-                WiFi.RSSI(),
-                signal_strenth_status,
-                WIFI_SSID,
-                WiFi.localIP().toString().c_str()};
-
-            publishState(state);
+            updateWifiState();
             last_wifi_status = millis();
         }
 
         delay(5);
     }
+}
+
+void WifiTask::updateWifiState()
+{
+    int8_t rssi = WiFi.RSSI();
+    uint8_t signal_strenth_status;
+
+    if (rssi < -110)
+    {
+        signal_strenth_status = 4;
+    }
+    else if (rssi < -100)
+    {
+        signal_strenth_status = 3;
+    }
+    else if (rssi < -85)
+    {
+        signal_strenth_status = 2;
+    }
+    else if (rssi < -70)
+    {
+        signal_strenth_status = 1;
+    }
+    else
+    {
+        signal_strenth_status = 0;
+    }
+
+    // harvest state;
+    ConnectivityState state = {
+        WiFi.isConnected(),
+        WiFi.RSSI(),
+        signal_strenth_status,
+        WIFI_SSID,
+        WiFi.localIP().toString().c_str()};
+
+    publishState(state);
 }
 
 void WifiTask::addStateListener(QueueHandle_t queue)
