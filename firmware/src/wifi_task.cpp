@@ -47,12 +47,19 @@ void WifiTask::setup_wifi()
 
 void WifiTask::run()
 {
+
     setup_wifi();
-    WebServer server(80);
+    const byte DNS_PORT = 53;
+    DNSServer dnsServer;
+    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+    AsyncWebServer server(80);
     server_ = &server;
     ElegantOTA.begin(server_);
-    server_->on("/", [this]()
-                { server_->send(200, "text/plain", "Welcome to the SmartKnob devkit (updated)"); });
+
+    server_->addHandler(new CaptivePortalHandler()).setFilter(ON_AP_FILTER);
+    server_->onNotFound([&](AsyncWebServerRequest *request)
+                        { request->send(200, "text/html", index_html); });
     server_->begin();
 
     log("WebServer started");
@@ -61,8 +68,7 @@ void WifiTask::run()
 
     while (1)
     {
-        // move webserver to a different task
-        server_->handleClient();
+        dnsServer.processNextRequest();
         ElegantOTA.loop();
 
         if (millis() - last_wifi_status > 5000)
@@ -111,6 +117,7 @@ void WifiTask::updateWifiState()
         WiFi.getMode() == WIFI_AP ? true : false,
         WiFi.softAPIP().toString().c_str(),
     };
+
     publishState(state);
 }
 
