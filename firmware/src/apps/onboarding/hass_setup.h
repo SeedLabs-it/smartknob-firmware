@@ -20,7 +20,7 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
-    // int8_t navigationNext();
+    int8_t navigationNext();
     int8_t navigationBack();
 
 protected:

@@ -58,8 +58,6 @@ private:
     void log(const char *msg);
     WiFiClient wifi_client;
     void setup_wifi();
-    void handleRoot();
-    boolean captivePortal();
     void updateWifiState();
     void publishState(const ConnectivityState &state);
     char buf_[128];
