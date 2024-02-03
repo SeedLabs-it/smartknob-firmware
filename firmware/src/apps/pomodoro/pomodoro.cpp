@@ -96,22 +96,18 @@ TFT_eSprite *PomodoroApp::render()
 
     if (state != PomodoroState::IDLE)
     {
-
-        spr_->fillSprite(state == PomodoroState::WORK ? work_color : break_color);
-        spr_->fillSmoothCircle(center_w, center_h, screen_radius - 8, TFT_BLACK, state == PomodoroState::WORK ? work_color : break_color);
-
         float start_angle = PI / 2;
         float stop_angle = 2.5 * PI - (2.5 * PI - PI / 2) * (1 - ((float)remaining_ms / total_duration_ms));
 
         for (float r = start_angle; r <= stop_angle; r += PI / 360)
         {
-            float ax = screen_radius + (screen_radius - 9) * cosf(r);
-            float ay = screen_radius - (screen_radius - 9) * sinf(r);
+            float ax = screen_radius + (screen_radius - 8) * cosf(r);
+            float ay = screen_radius - (screen_radius - 8) * sinf(r);
 
             float bx = screen_radius + (screen_radius)*cosf(r);
             float by = screen_radius - (screen_radius)*sinf(r);
 
-            spr_->drawWideLine(ax, ay, bx, by, 2, TFT_BLACK, TFT_BLACK);
+            spr_->drawWideLine(ax, ay, bx, by, 2, work_color, work_color);
         }
     }
 
