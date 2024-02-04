@@ -39,24 +39,52 @@ void HassSetupApp::updateStateFromSystem(AppState state_)
     state = state_;
 }
 
-int8_t HassSetupApp::navigationNext()
-{
-    switch (internal_state) // FOR NOW GO TO NEXT STATE ON BUTTON PRESS
-    {
-    case HassSetupState::CONTINUE_HASS:
-        internal_state = HassSetupState::DONE;
-        break;
-    case HassSetupState::DONE:
-        internal_state = HassSetupState::WIFI_CONNECT;
-        return MENU; // ! SEND USER TO DEFAULT HASS APPS OR IF THEY HAVE ALREADY SET UP APPS IN HASS
-        break;
-    default:
-        internal_state = HassSetupState::WIFI_CONNECT;
-        break;
-    }
+// int8_t HassSetupApp::navigationNext()
+// {
+//     state = state_;
 
-    return DONT_NAVIGATE;
-}
+//     if (state.connectivity_state.is_ap)
+//     {
+//         ESP_LOGD("HassSetupApp", "AP Mode");
+//     }
+// }
+
+// int8_t HassSetupApp::navigationNext()
+// {
+//     switch (internal_state) // FOR NOW GO TO NEXT STATE ON BUTTON PRESS
+//     {
+//     case HassSetupState::WIFI_CONNECT:
+//         internal_state = HassSetupState::KNOB_URL;
+//         break;
+//     case HassSetupState::KNOB_URL:
+//         internal_state = HassSetupState::PROCESSING_WIFI;
+//         break;
+//     case HassSetupState::PROCESSING_WIFI:
+//         internal_state = HassSetupState::NQTT_CONFIG;
+//         break;
+//     case HassSetupState::NQTT_CONFIG:
+//         internal_state = HassSetupState::CONTINUE_HASS;
+//         break;
+//     case HassSetupState::CONTINUE_HASS:
+//         internal_state = HassSetupState::DONE;
+//         break;
+//     case HassSetupState::DONE:
+//         internal_state = HassSetupState::WIFI_CONNECT;
+//         return MENU; // ! SEND USER TO DEFAULT HASS APPS OR IF THEY HAVE ALREADY SET UP APPS IN HASS
+//         break;
+//     case HassSetupState::ERROR_WIFI:
+//         internal_state = HassSetupState::WIFI_CONNECT;
+//         break;
+//     case HassSetupState::ERROR_MQTT:
+//         internal_state = HassSetupState::NQTT_CONFIG;
+//         break;
+//     default:
+//         internal_state = HassSetupState::PROCESSING_WIFI;
+//         break;
+//     }
+
+//     return DONT_NAVIGATE;
+// }
 
 int8_t HassSetupApp::navigationBack()
 {
