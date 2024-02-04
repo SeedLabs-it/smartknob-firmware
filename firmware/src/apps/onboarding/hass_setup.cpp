@@ -37,6 +37,11 @@ EntityStateUpdate HassSetupApp::updateStateFromKnob(PB_SmartKnobState state)
 void HassSetupApp::updateStateFromSystem(AppState state_)
 {
     state = state_;
+
+    if (state.connectivity_state.is_ap && state.connectivity_state.ap_has_clients)
+    {
+        internal_state = HassSetupState::KNOB_URL;
+    }
 }
 
 // int8_t HassSetupApp::navigationNext()
@@ -191,8 +196,9 @@ TFT_eSprite *HassSetupApp::renderKnobUrl()
     QRCode qrcode;
     uint8_t qrcodeVersion = 6;
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    std::string wifiqrcode = "http://" + state.mqtt_state.server; // ! LOCAL URL TO KNOB!!!
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcode.c_str());
+    // ESP_LOGD("HassSetupApp", "AP IP: %s", state.connectivity_state.ap_ip_address.toString().c_str());
+    std::string wifiqrcodestring = "http://" + std::string(state.connectivity_state.ap_ip_address.toString().c_str()); // ! LOCAL URL TO KNOB!!!
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcodestring.c_str());
 
     int moduleSize = 2;
 
@@ -212,8 +218,8 @@ TFT_eSprite *HassSetupApp::renderKnobUrl()
             }
         }
     }
-
-    spr_->drawString("OR OPEN 0.0.0.0", center_w, TFT_WIDTH - screen_name_label_h * 4, 1);
+    std::string or_open = "OR OPEN: " + wifiqrcodestring;
+    spr_->drawString(or_open.c_str(), center_w, TFT_WIDTH - screen_name_label_h * 4, 1);
     spr_->drawString("IN YOUR BROWSER", center_w, TFT_WIDTH - screen_name_label_h * 3, 1);
 
     return this->spr_;

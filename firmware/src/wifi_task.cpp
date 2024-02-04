@@ -4,7 +4,6 @@
 #include "wifi_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-#include "wifi_config.h"
 #include "cJSON.h"
 #include "root_task.h"
 
@@ -22,26 +21,42 @@ WifiTask::~WifiTask()
 }
 void WifiTask::setup_wifi()
 {
-    const char *wifi_name = WIFI_SSID;
-    const char *wifi_pass = WIFI_PASSWORD;
+    const char *wifi_name = "WIFI_SSID";
+    const char *wifi_pass = "WIFI_PASSWORD";
 
+    WiFi.persistent(SK_REMEMBER_WIFI);
     WiFi.setHostname("SmartKnob");
     WiFi.setAutoReconnect(true);
 
-    WiFi.begin(wifi_name, wifi_pass);
-
     uint8_t tries = 0;
-    while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP)
+
+    while (WiFi.waitForConnectResult() != WL_CONNECTED && tries < 3) //! UP TRIES WHEN IN PRODUCTION
     {
-        delay(1500);
-        ESP_LOGD("NETWORKING", "WiFi connectien tries: %d", tries);
-        if (tries > 10)     // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
-            if (tries > 10) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
-            {
-                WiFi.mode(WIFI_AP);
-                WiFi.softAP("SMARTKNOB-AP", "smartknob");
-            }
+        ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
+        // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
+        // WiFi.begin();
+        delay(3000);
         tries++;
+    }
+
+    if (tries >= 3)
+    {
+        ESP_LOGD(WIFI_TAG, "Failed to connect to wifi, starting AP");
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP("SMARTKNOB-AP", "smartknob");
+
+        while (WiFi.softAPgetStationNum() == 0)
+        {
+            ESP_LOGD(WIFI_TAG, "Waiting for client to connect to AP");
+            delay(1000);
+        }
+
+        ESP_LOGD(WIFI_TAG, "Client connected to AP");
+    }
+
+    if (WiFi.waitForConnectResult() == WL_CONNECTED)
+    {
+        ESP_LOGD(WIFI_TAG, "Connected as: %s", WiFi.localIP().toString().c_str());
     }
     updateWifiState();
 }
@@ -54,7 +69,19 @@ void WifiTask::run()
     server_ = new WebServer(80);
 
     server_->on("/", HTTP_GET, [this]()
-                { server_->send(200, "text/html", "Hello, world!"); });
+                { server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                                  "SSID: <input type='text' name='ssid'><br>"
+                                                  "Password: <input type='text' name='password'><br>"
+                                                  "<input type='submit' value='Submit'>"
+                                                  "</form>"); });
+    server_->on("/submit", [this]()
+                {
+        String name = server_->arg("ssid");
+        String age = server_->arg("password");
+        
+        ESP_LOGD(WIFI_TAG, "SSID: %s, Password: %s", name.c_str(), age.c_str());
+        
+        server_->send(200, "text/plain", "Data received successfully!"); });
 
     server_->begin();
 
@@ -102,16 +129,16 @@ void WifiTask::updateWifiState()
     {
         signal_strenth_status = 0;
     }
-
     // harvest state;
     ConnectivityState state = {
         WiFi.isConnected(),
         WiFi.RSSI(),
         signal_strenth_status,
-        WIFI_SSID,
+        WiFi.SSID().c_str(),
         WiFi.localIP().toString().c_str(),
         WiFi.getMode() == WIFI_AP ? true : false,
-        WiFi.softAPIP().toString().c_str(),
+        WiFi.softAPIP(),
+        WiFi.softAPgetStationNum() > 0 ? true : false,
     };
 
     publishState(state);

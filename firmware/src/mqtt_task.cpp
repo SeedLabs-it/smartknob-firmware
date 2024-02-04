@@ -1,8 +1,6 @@
 #if SK_NETWORKING
 #include "mqtt_task.h"
 
-#include "wifi_config.h"
-
 static const char *MQTT_TAG = "MQTT";
 MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_core}
 {
@@ -127,10 +125,10 @@ void MqttTask::run()
 
 void MqttTask::setup_mqtt()
 {
-    const char *mqtt_host = MQTT_SERVER;
-    const uint16_t mqtt_port = MQTT_PORT;
-    const char *mqtt_user = MQTT_USER;
-    const char *mqtt_pass = MQTT_PASSWORD;
+    const char *mqtt_host = "MQTT_SERVER";
+    const uint16_t mqtt_port = 1883;
+    const char *mqtt_user = "MQTT_USER";
+    const char *mqtt_pass = "MQTT_PASSWORD";
 
     log("Starting MQTT client");
 
@@ -186,17 +184,17 @@ void MqttTask::reconnect_mqtt()
     while (!mqttClient.connected())
     {
         char buf_[64];
-        sprintf(buf_, "Attempting connection %s %s %s", "smartknob", MQTT_USER, MQTT_PASSWORD);
+        sprintf(buf_, "Attempting connection %s %s %s", "smartknob", "MQTT_USER", "MQTT_PASSWORD");
         log(buf_);
 
-        if (mqttClient.connect("smartknob", MQTT_USER, MQTT_PASSWORD))
+        if (mqttClient.connect("smartknob", "MQTT_USER", "MQTT_PASSWORD"))
         {
-            sprintf(buf_, "Connected to %s", MQTT_SERVER);
+            sprintf(buf_, "Connected to %s", "MQTT_SERVER");
             log(buf_);
         }
         else
         {
-            sprintf(buf_, "Failed to connect to %s, retrying in 5s", MQTT_SERVER);
+            sprintf(buf_, "Failed to connect to %s, retrying in 5s", "MQTT_SERVER");
             log(buf_);
             delay(5000);
         }
