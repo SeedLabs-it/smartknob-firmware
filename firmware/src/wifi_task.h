@@ -7,6 +7,7 @@
 #include <WebServer.h>
 #include <vector>
 #include <mqtt.h>
+#include <Preferences.h>
 
 #include "logger.h"
 #include "proto_gen/smartknob.pb.h"
@@ -42,6 +43,7 @@ private:
     void publishState(const ConnectivityState &state);
     char buf_[128];
     WebServer *server_;
+    Preferences preferences;
 };
 
 #else

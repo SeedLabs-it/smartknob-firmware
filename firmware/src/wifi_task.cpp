@@ -34,7 +34,7 @@ void WifiTask::setup_wifi()
     {
         ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
         // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
-        // WiFi.begin();
+        WiFi.begin();
         delay(3000);
         tries++;
     }
@@ -69,19 +69,78 @@ void WifiTask::run()
     server_ = new WebServer(80);
 
     server_->on("/", HTTP_GET, [this]()
-                { server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                { 
+                    if (WiFi.isConnected()) {
+                        server_->sendHeader("Location", "/mqtt");
+                        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");    
+                    } else {
+                         server_->send(200, "text/html", "<form action='/submit' method='get'>"
                                                   "SSID: <input type='text' name='ssid'><br>"
                                                   "Password: <input type='text' name='password'><br>"
+                                                  "<input type='hidden' name='setup_type' value='wifi'>"
+                                                  "<input type='submit' value='Submit'>"
+                                                  "</form>");
+                    } });
+
+    server_->on("/mqtt", HTTP_GET, [this]()
+                { server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                                  "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
+                                                  "MQTT PORT: <input type='number' name='mqtt_port'><br>"
+                                                  "MQTT USER: <input type='text' name='mqtt_user'><br>"
+                                                  "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
+                                                  "<input type='hidden' name='setup_type' value='mqtt'>"
                                                   "<input type='submit' value='Submit'>"
                                                   "</form>"); });
     server_->on("/submit", [this]()
                 {
-        String name = server_->arg("ssid");
-        String age = server_->arg("password");
-        
-        ESP_LOGD(WIFI_TAG, "SSID: %s, Password: %s", name.c_str(), age.c_str());
-        
-        server_->send(200, "text/plain", "Data received successfully!"); });
+        if (server_->arg("setup_type") == "wifi")
+        {
+            String name = server_->arg("ssid");
+            String age = server_->arg("password");
+
+            WiFi.begin(name.c_str(), age.c_str());
+
+            uint8_t tries = 0;
+
+            while (WiFi.waitForConnectResult() != WL_CONNECTED && tries < 5) //! UP TRIES WHEN IN PRODUCTION
+            {
+                ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
+                // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
+                // WiFi.begin();
+                delay(3000);
+                tries++;
+            }
+
+            if (tries >= 5)
+            {
+                server_->sendHeader("Location", "/");
+                server_->send(302, "text/plain", "Invalid WiFi credentials!");
+            }
+
+            server_->sendHeader("Location", "/mqtt");
+            server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+        }
+        else if (server_->arg("setup_type") == "mqtt")
+        {
+            String mqtt_server = server_->arg("mqtt_server");
+            uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
+            String mqtt_user = server_->arg("mqtt_user");
+            String mqtt_password = server_->arg("mqtt_password");
+
+            preferences.begin("mqtt", false); 
+            preferences.clear();
+
+            preferences.putString("mqtt_server", mqtt_server);
+            preferences.putUInt("mqtt_port", mqtt_port);
+            preferences.putString("mqtt_user", mqtt_user);
+            preferences.putString("mqtt_password", mqtt_password);
+
+            preferences.end();
+
+            WiFi.mode(WIFI_STA);
+            WiFi.softAPdisconnect(true);
+            server_->send(200, "text/html", "MQTT setup complete!");
+        } });
 
     server_->begin();
 

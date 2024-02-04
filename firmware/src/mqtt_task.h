@@ -6,6 +6,7 @@
 #include <WiFi.h>
 #include <vector>
 #include <map>
+#include <Preferences.h>
 
 #include "logger.h"
 #include "task.h"
@@ -34,6 +35,11 @@ protected:
     void run();
 
 private:
+    const char *mqtt_server;
+    uint32_t mqtt_port;
+    const char *mqtt_user;
+    const char *mqtt_password;
+
     std::vector<QueueHandle_t> state_listeners_;
 
     QueueHandle_t connectivity_status_queue_;
@@ -46,6 +52,8 @@ private:
     PubSubClient mqttClient;
     Logger *logger_;
     cJSON *apps;
+
+    Preferences preferences;
 
     ConnectivityState last_connectivity_state_;
     MqttState mqtt_state_;

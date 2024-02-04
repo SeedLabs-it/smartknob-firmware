@@ -38,7 +38,7 @@ void HassSetupApp::updateStateFromSystem(AppState state_)
 {
     state = state_;
 
-    if (state.connectivity_state.is_ap && state.connectivity_state.ap_has_clients)
+    if ((state.connectivity_state.is_ap && state.connectivity_state.ap_has_clients) || state.connectivity_state.is_connected)
     {
         internal_state = HassSetupState::KNOB_URL;
     }
