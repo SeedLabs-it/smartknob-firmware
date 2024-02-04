@@ -50,17 +50,12 @@ void WifiTask::run()
 {
 
     setup_wifi();
-    const byte DNS_PORT = 53;
-    DNSServer dnsServer;
-    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
-    AsyncWebServer server(80);
-    server_ = &server;
-    ElegantOTA.begin(server_);
 
-    server_->addHandler(new CaptivePortalHandler()).setFilter(ON_AP_FILTER);
-    server_->onNotFound([&](AsyncWebServerRequest *request)
-                        { request->send(200, "text/html", index_html); });
+    server_ = new WebServer(80);
+
+    server_->on("/", HTTP_GET, [this]()
+                { server_->send(200, "text/html", "Hello, world!"); });
+
     server_->begin();
 
     log("WebServer started");
@@ -69,7 +64,7 @@ void WifiTask::run()
 
     while (1)
     {
-        dnsServer.processNextRequest();
+        server_->handleClient();
         ElegantOTA.loop();
 
         if (millis() - last_wifi_status > 5000)
