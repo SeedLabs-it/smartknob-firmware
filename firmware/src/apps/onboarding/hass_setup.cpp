@@ -34,44 +34,62 @@ EntityStateUpdate HassSetupApp::updateStateFromKnob(PB_SmartKnobState state)
     return EntityStateUpdate{};
 }
 
-void HassSetupApp::updateStateFromSystem(AppState state) {}
-
-int8_t HassSetupApp::navigationNext()
+void HassSetupApp::updateStateFromSystem(AppState state_)
 {
-    switch (internal_state) // FOR NOW GO TO NEXT STATE ON BUTTON PRESS
-    {
-    case HassSetupState::WIFI_CONNECT:
-        internal_state = HassSetupState::KNOB_URL;
-        break;
-    case HassSetupState::KNOB_URL:
-        internal_state = HassSetupState::PROCESSING_WIFI;
-        break;
-    case HassSetupState::PROCESSING_WIFI:
-        internal_state = HassSetupState::NQTT_CONFIG;
-        break;
-    case HassSetupState::NQTT_CONFIG:
-        internal_state = HassSetupState::CONTINUE_HASS;
-        break;
-    case HassSetupState::CONTINUE_HASS:
-        internal_state = HassSetupState::DONE;
-        break;
-    case HassSetupState::DONE:
-        internal_state = HassSetupState::WIFI_CONNECT;
-        return MENU; // ! SEND USER TO DEFAULT HASS APPS OR IF THEY HAVE ALREADY SET UP APPS IN HASS
-        break;
-    case HassSetupState::ERROR_WIFI:
-        internal_state = HassSetupState::WIFI_CONNECT;
-        break;
-    case HassSetupState::ERROR_MQTT:
-        internal_state = HassSetupState::NQTT_CONFIG;
-        break;
-    default:
-        internal_state = HassSetupState::PROCESSING_WIFI;
-        break;
-    }
+    state = state_;
 
-    return DONT_NAVIGATE;
+    if ((state.connectivity_state.is_ap && state.connectivity_state.ap_has_clients) || state.connectivity_state.is_connected)
+    {
+        internal_state = HassSetupState::KNOB_URL;
+    }
 }
+
+// int8_t HassSetupApp::navigationNext()
+// {
+//     state = state_;
+
+//     if (state.connectivity_state.is_ap)
+//     {
+//         ESP_LOGD("HassSetupApp", "AP Mode");
+//     }
+// }
+
+// int8_t HassSetupApp::navigationNext()
+// {
+//     switch (internal_state) // FOR NOW GO TO NEXT STATE ON BUTTON PRESS
+//     {
+//     case HassSetupState::WIFI_CONNECT:
+//         internal_state = HassSetupState::KNOB_URL;
+//         break;
+//     case HassSetupState::KNOB_URL:
+//         internal_state = HassSetupState::PROCESSING_WIFI;
+//         break;
+//     case HassSetupState::PROCESSING_WIFI:
+//         internal_state = HassSetupState::NQTT_CONFIG;
+//         break;
+//     case HassSetupState::NQTT_CONFIG:
+//         internal_state = HassSetupState::CONTINUE_HASS;
+//         break;
+//     case HassSetupState::CONTINUE_HASS:
+//         internal_state = HassSetupState::DONE;
+//         break;
+//     case HassSetupState::DONE:
+//         internal_state = HassSetupState::WIFI_CONNECT;
+//         return MENU; // ! SEND USER TO DEFAULT HASS APPS OR IF THEY HAVE ALREADY SET UP APPS IN HASS
+//         break;
+//     case HassSetupState::ERROR_WIFI:
+//         internal_state = HassSetupState::WIFI_CONNECT;
+//         break;
+//     case HassSetupState::ERROR_MQTT:
+//         internal_state = HassSetupState::NQTT_CONFIG;
+//         break;
+//     default:
+//         internal_state = HassSetupState::PROCESSING_WIFI;
+//         break;
+//     }
+
+//     return DONT_NAVIGATE;
+// }
 
 int8_t HassSetupApp::navigationBack()
 {
@@ -132,7 +150,7 @@ TFT_eSprite *HassSetupApp::renderWifiConnect()
     QRCode qrcode;
     uint8_t qrcodeVersion = 6;
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    std::string wifiqrcode = "WIFI:T:WPA;S:SMARTKNOB-AP;P:SMARTKNOB;H:;;https://seedlabs.it";
+    std::string wifiqrcode = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
     qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcode.c_str());
 
     int moduleSize = 2;
@@ -178,8 +196,9 @@ TFT_eSprite *HassSetupApp::renderKnobUrl()
     QRCode qrcode;
     uint8_t qrcodeVersion = 6;
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    std::string wifiqrcode = "https://seedlabs.it"; // ! LOCAL URL TO KNOB!!!
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcode.c_str());
+    // ESP_LOGD("HassSetupApp", "AP IP: %s", state.connectivity_state.ap_ip_address.toString().c_str());
+    std::string wifiqrcodestring = "http://" + std::string(state.connectivity_state.ap_ip_address.toString().c_str()); // ! LOCAL URL TO KNOB!!!
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcodestring.c_str());
 
     int moduleSize = 2;
 
@@ -199,8 +218,8 @@ TFT_eSprite *HassSetupApp::renderKnobUrl()
             }
         }
     }
-
-    spr_->drawString("OR OPEN 0.0.0.0", center_w, TFT_WIDTH - screen_name_label_h * 4, 1);
+    std::string or_open = "OR OPEN: " + wifiqrcodestring;
+    spr_->drawString(or_open.c_str(), center_w, TFT_WIDTH - screen_name_label_h * 4, 1);
     spr_->drawString("IN YOUR BROWSER", center_w, TFT_WIDTH - screen_name_label_h * 3, 1);
 
     return this->spr_;

@@ -1,8 +1,6 @@
 #if SK_NETWORKING
 #include "mqtt_task.h"
 
-#include "wifi_config.h"
-
 static const char *MQTT_TAG = "MQTT";
 MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_core}
 {
@@ -26,10 +24,13 @@ MqttTask::~MqttTask()
     vQueueDelete(entity_state_to_send_queue_);
     vQueueDelete(connectivity_status_queue_);
     vSemaphoreDelete(mutex_app_sync_);
+
+    preferences.end();
 }
 
 void MqttTask::run()
 {
+    preferences.begin("mqtt", false);
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     const uint16_t mqtt_push_interval_ms = 200;
@@ -38,6 +39,8 @@ void MqttTask::run()
     EntityStateUpdate entity_state_to_process_;
 
     ConnectivityState connectivity_state_to_process_;
+
+    static uint32_t last_mqtt_state_sent;
 
     while (1)
     {
@@ -57,6 +60,7 @@ void MqttTask::run()
         {
             if (mqtt_state_.server == "")
             {
+                ESP_LOGD(MQTT_TAG, "Setting up MQTT");
                 setup_mqtt();
             }
 
@@ -107,16 +111,29 @@ void MqttTask::run()
             }
         }
 
+        if (millis() - last_mqtt_state_sent > 5000)
+        {
+            // MqttState state = {
+            //     mqttClient.connected(),
+            //     MQTT_SERVER,
+            //     "smartknob",
+            // };
+
+            publishState(mqtt_state_);
+            last_mqtt_state_sent = millis();
+        }
+
         delay(5);
     }
 }
 
 void MqttTask::setup_mqtt()
 {
-    const char *mqtt_host = MQTT_SERVER;
-    const uint16_t mqtt_port = MQTT_PORT;
-    const char *mqtt_user = MQTT_USER;
-    const char *mqtt_pass = MQTT_PASSWORD;
+
+    const char *mqtt_server = preferences.getString("mqtt_server", "MQTT_SERVER").c_str();
+    const uint16_t mqtt_port = preferences.getUInt("mqtt_port", 1883);
+    const char *mqtt_user = preferences.getString("mqtt_user", "MQTT_USER").c_str();
+    const char *mqtt_pass = preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str();
 
     log("Starting MQTT client");
 
@@ -124,7 +141,6 @@ void MqttTask::setup_mqtt()
     mqttClient.setBufferSize(512);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
-    mqttClient.setServer(mqtt_host, mqtt_port);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
                            { this->callback_mqtt(topic, payload, length); });
 
@@ -135,7 +151,7 @@ void MqttTask::setup_mqtt()
     mqttClient.loop();
 
     mqtt_state_.is_connected = mqttClient.connected();
-    mqtt_state_.server = mqtt_host;
+    mqtt_state_.server = mqtt_server;
     mqtt_state_.client_id = "smartknob";
 
     char buf_[128];
@@ -171,21 +187,39 @@ void MqttTask::reconnect_mqtt()
 {
     while (!mqttClient.connected())
     {
-        char buf_[64];
-        sprintf(buf_, "Attempting connection %s %s %s", "smartknob", MQTT_USER, MQTT_PASSWORD);
-        log(buf_);
+        String mqtt_server_string = preferences.getString("mqtt_server", "MQTT_SERVER");
+        const char *mqtt_server = mqtt_server_string.c_str();
+        mqttClient.setServer(mqtt_server, 1883);
 
-        if (mqttClient.connect("smartknob", MQTT_USER, MQTT_PASSWORD))
+        ESP_LOGD(MQTT_TAG, "Attempting connection %s %s %s", "smartknob", mqtt_server, preferences.getString("mqtt_user", "MQTT_USER").c_str(), preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str());
+        // if (mqttClient.connect("smartknob", preferences.getString("mqtt_user", "MQTT_USER").c_str(), preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str()))
+        if (mqttClient.connect("smartknob", "", ""))
         {
-            sprintf(buf_, "Connected to %s", MQTT_SERVER);
-            log(buf_);
+            ESP_LOGD(MQTT_TAG, "Connected to %s", mqtt_server);
         }
         else
         {
-            sprintf(buf_, "Failed to connect to %s, retrying in 5s", MQTT_SERVER);
-            log(buf_);
+            // sprintf(buf_, "Failed to connect, retrying in 5s", );
+            ESP_LOGD("", "");
+            ESP_LOGD(MQTT_TAG, "Failed to connect, retrying in 5s");
+            ESP_LOGD(MQTT_TAG, "MQTT IP: %s", mqtt_server);
+            ESP_LOGD(MQTT_TAG, "MQTT PORT: %d", preferences.getUInt("mqtt_port", 1883));
+            ESP_LOGD("", "");
             delay(5000);
         }
+    }
+}
+
+void MqttTask::addStateListener(QueueHandle_t queue)
+{
+    state_listeners_.push_back(queue);
+}
+
+void MqttTask::publishState(const MqttState &state)
+{
+    for (auto listener : state_listeners_)
+    {
+        xQueueOverwrite(listener, &state);
     }
 }
 

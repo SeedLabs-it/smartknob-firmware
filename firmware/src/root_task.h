@@ -38,6 +38,7 @@ public:
     void addListener(QueueHandle_t queue);
 
     QueueHandle_t getConnectivityStateQueue();
+    QueueHandle_t getMqttStateQueue();
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
 
@@ -87,6 +88,7 @@ private:
     PB_SmartKnobConfig latest_config_ = {};
 
     ConnectivityState latest_connectivity_state_ = {};
+    MqttState latest_mqtt_state_ = {};
     SensorsState latest_sensors_state_ = {};
 
     cJSON *apps_ = NULL;
@@ -95,6 +97,7 @@ private:
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;
+    QueueHandle_t mqtt_status_queue_;
     QueueHandle_t sensors_status_queue_;
 
     QueueHandle_t app_sync_queue_;

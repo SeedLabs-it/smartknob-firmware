@@ -30,7 +30,8 @@ struct ConnectivityState
     std::string ip_address;
 
     bool is_ap;
-    std::string ap_ip_address;
+    IPAddress ap_ip_address;
+    bool ap_has_clients;
 };
 
 struct MqttState
