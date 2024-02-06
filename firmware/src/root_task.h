@@ -12,7 +12,8 @@
 #include "serial/uart_stream.h"
 #include "task.h"
 #include "app_config.h"
-#include "networking_task.h"
+#include "wifi_task.h"
+#include "mqtt_task.h"
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
@@ -25,7 +26,7 @@ class RootTask : public Task<RootTask>,
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, NetworkingTask *networking_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
+    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
     virtual ~RootTask();
 
     void log(const char *msg) override;
@@ -54,7 +55,8 @@ private:
 #endif
     MotorTask &motor_task_;
     DisplayTask *display_task_;
-    NetworkingTask *networking_task_;
+    WifiTask *wifi_task_;
+    MqttTask *mqtt_task_;
     HassApps *hass_apps;
     Onboarding *onboarding_apps;
     LedRingTask *led_ring_task_;

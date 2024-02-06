@@ -4,7 +4,7 @@
 #include "display_task.h"
 #include "root_task.h"
 #include "motor_task.h"
-#include "networking_task.h"
+#include "wifi_task.h"
 #include "sensors_task.h"
 #include "led_ring_task.h"
 
@@ -27,11 +27,14 @@ static LedRingTask *led_ring_task_p = nullptr;
 static MotorTask motor_task(1, config);
 
 #if SK_NETWORKING
-static NetworkingTask networking_task(1);
-static NetworkingTask *networking_task_p = &networking_task;
+static WifiTask wifi_task(1);
+static WifiTask *wifi_task_p = &wifi_task;
 
+static MqttTask mqtt_task(1);
+static MqttTask *mqtt_task_p = &mqtt_task;
 #else
-static NetworkingTask *networking_task_p = nullptr;
+static WifiTask *wifi_task_p = nullptr;
+static MqttTask *mqtt_task_p = nullptr;
 
 #endif
 
@@ -43,7 +46,7 @@ static SensorsTask *sensors_task_p = nullptr;
 
 #endif
 
-RootTask root_task(0, motor_task, display_task_p, networking_task_p, led_ring_task_p, sensors_task_p);
+RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p);
 
 void setup()
 {
@@ -81,10 +84,15 @@ void setup()
     motor_task.begin();
 
 #if SK_NETWORKING
-    networking_task.setLogger(&root_task);
-    networking_task.addStateListener(root_task.getConnectivityStateQueue());
-    networking_task.addAppSyncListener(root_task.getAppSyncQueue());
-    networking_task.begin();
+    wifi_task.setLogger(&root_task);
+    wifi_task.addStateListener(root_task.getConnectivityStateQueue());
+    wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
+    wifi_task.begin();
+
+    // IF WIFI CONNECTED CONNECT MQTT
+    mqtt_task.setLogger(&root_task);
+    mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
+    mqtt_task.begin();
 #endif
 
 #if SK_SEEDLABS_DEVKIT
