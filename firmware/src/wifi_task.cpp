@@ -1,6 +1,4 @@
-// co-authored by carlhampuswall
-
-#if SK_NETWORKING
+#if SK_WIFI
 #include "wifi_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
@@ -24,7 +22,7 @@ void WifiTask::setup_wifi()
     const char *wifi_name = "WIFI_SSID";
     const char *wifi_pass = "WIFI_PASSWORD";
 
-    WiFi.persistent(SK_REMEMBER_WIFI);
+    // WiFi.persistent(SK_REMEMBER_WIFI);
     WiFi.setHostname("SmartKnob");
     WiFi.setAutoReconnect(true);
 

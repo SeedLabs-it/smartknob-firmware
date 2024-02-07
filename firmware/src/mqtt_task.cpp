@@ -1,4 +1,4 @@
-#if SK_NETWORKING
+#if SK_MQTT
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";

@@ -1,4 +1,3 @@
-#if SK_SEEDLABS_DEVKIT
 #include "sensors_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
@@ -283,5 +282,3 @@ void SensorsTask::log(const char *msg)
         logger_->log(msg);
     }
 }
-
-#endif

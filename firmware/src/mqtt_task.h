@@ -1,6 +1,6 @@
 #pragma once
 
-#if SK_NETWORKING
+#if SK_MQTT
 
 #include <PubSubClient.h>
 #include <WiFi.h>

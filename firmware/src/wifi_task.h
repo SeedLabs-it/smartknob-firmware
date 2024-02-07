@@ -1,6 +1,6 @@
 #pragma once
 
-#if SK_NETWORKING
+#if SK_WIFI
 
 #include <Arduino.h>
 #include <WiFi.h>
