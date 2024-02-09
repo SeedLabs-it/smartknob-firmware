@@ -270,7 +270,7 @@ void RootTask::run()
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
             ESP_LOGD("root_task", "App sync requested!");
-#if SK_NETWORKING // Should this be here??
+#if SK_MQTT // Should this be here??
             hass_apps->sync(mqtt_task_->getApps());
 
             log("Giving 0.5s for Apps to initialize");
@@ -308,7 +308,7 @@ void RootTask::run()
                 entity_state_update_to_send = hass_apps->update(app_state);
             }
 
-#if SK_NETWORKING
+#if SK_MQTT
             mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
 #endif
 

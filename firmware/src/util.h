@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "Arduino.h"
 
 template <typename T>
 T CLAMP(const T &value, const T &low, const T &high)
@@ -36,3 +37,5 @@ private:
   void shiftFilter(int32_t nextValue);
   void computeAverage();
 };
+
+uint32_t ToRGBA(float h);

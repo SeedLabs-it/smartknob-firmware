@@ -46,7 +46,7 @@ void DisplayTask::run()
 
     log("push menu sprite: ok");
 
-    spr_.setColorDepth(8);
+    spr_.setColorDepth(16);
 
     if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
     {
