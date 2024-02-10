@@ -9,6 +9,20 @@
 
 #include "../../util.h"
 
+#include "../../navigation/navigation.h"
+
+// TODO make this enum ?
+
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_WELCOME = 0;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_1 = 1;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_WIFI_1 = 2;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_DEMO_1 = 3;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_ABOUT = 4;
+
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_2 = 5;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_3 = 6;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_4 = 7;
+
 class OnboardingFlow
 {
 public:
@@ -19,8 +33,12 @@ public:
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
 
+    void handleNavigationEvent(NavigationEvent event);
+
 private:
     int32_t current_position = 0;
+
+    uint8_t current_page = 0;
 
     TFT_eSprite *spr_;
     PB_SmartKnobConfig motor_config;
@@ -31,15 +49,15 @@ private:
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
 
-    TFT_eSprite *renderWelcomeScreen();
-    TFT_eSprite *renderHass1StepScreen();
-    TFT_eSprite *renderHass2StepScreen();
-    TFT_eSprite *renderHass3StepScreen();
-    TFT_eSprite *renderHass4StepScreen();
-    TFT_eSprite *renderHass5StepScreen();
-    TFT_eSprite *renderHass6StepScreen();
-    TFT_eSprite *renderHass7StepScreen();
-    TFT_eSprite *renderWiFi1StepScreen();
-    TFT_eSprite *renderDemo1StepScreen();
-    TFT_eSprite *renderAboutScreen();
+    TFT_eSprite *renderWelcomePage();
+    TFT_eSprite *renderHass1StepPage();
+    TFT_eSprite *renderHass2StepPage();
+    TFT_eSprite *renderHass3StepPage();
+    TFT_eSprite *renderHass4StepPage();
+    TFT_eSprite *renderHass5StepPage();
+    TFT_eSprite *renderHass6StepPage();
+    TFT_eSprite *renderHass7StepPage();
+    TFT_eSprite *renderWiFi1StepPage();
+    TFT_eSprite *renderDemo1StepPage();
+    TFT_eSprite *renderAboutPage();
 };

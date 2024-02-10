@@ -33,9 +33,45 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
     return updateStateFromKnob(state.motor_state);
 }
 
+void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
+{
+
+    if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
+    {
+        switch (current_page)
+        {
+        case ONBOARDING_FLOW_PAGE_STEP_HASS_1:
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    {
+        switch (current_page)
+        {
+        case ONBOARDING_FLOW_PAGE_STEP_HASS_2:
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_1;
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
 EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;
+
+    // this works only at the top menu
+    if (current_page < 5)
+    {
+        current_page = current_position;
+    }
 
     // needed to next reload of App
     motor_config.position_nonce = current_position;
@@ -48,7 +84,7 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
 
 void OnboardingFlow::updateStateFromSystem(AppState state) {}
 
-TFT_eSprite *OnboardingFlow::renderWelcomeScreen()
+TFT_eSprite *OnboardingFlow::renderWelcomePage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -73,7 +109,7 @@ TFT_eSprite *OnboardingFlow::renderWelcomeScreen()
 
     return this->spr_;
 }
-TFT_eSprite *OnboardingFlow::renderHass1StepScreen()
+TFT_eSprite *OnboardingFlow::renderHass1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -97,13 +133,41 @@ TFT_eSprite *OnboardingFlow::renderHass1StepScreen()
 
     return this->spr_;
 }
-TFT_eSprite *OnboardingFlow::renderHass2StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderHass3StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderHass4StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderHass5StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderHass6StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderHass7StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderWiFi1StepScreen()
+TFT_eSprite *OnboardingFlow::renderHass2StepPage()
+{
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+
+    sprintf(buf_, "SCAN TO CONNECT");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 50, 1);
+
+    sprintf(buf_, "THE SMARTKNOB");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 80, 1);
+
+    sprintf(buf_, "OR CONNECT TO");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 155, 1);
+
+    sprintf(buf_, "SMARTKNOB-AP WIFI");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 185, 1);
+
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderHass3StepPage() {}
+TFT_eSprite *OnboardingFlow::renderHass4StepPage() {}
+TFT_eSprite *OnboardingFlow::renderHass5StepPage() {}
+TFT_eSprite *OnboardingFlow::renderHass6StepPage() {}
+TFT_eSprite *OnboardingFlow::renderHass7StepPage() {}
+TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -122,7 +186,7 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepScreen()
 
     return this->spr_;
 }
-TFT_eSprite *OnboardingFlow::renderDemo1StepScreen()
+TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -141,7 +205,7 @@ TFT_eSprite *OnboardingFlow::renderDemo1StepScreen()
 
     return this->spr_;
 }
-TFT_eSprite *OnboardingFlow::renderAboutScreen()
+TFT_eSprite *OnboardingFlow::renderAboutPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -178,18 +242,20 @@ TFT_eSprite *OnboardingFlow::render()
 
     // ESP_LOGD("onboarding", "%d", current_position);
 
-    switch (current_position)
+    switch (current_page)
     {
-    case 0:
-        return renderWelcomeScreen();
-    case 1:
-        return renderHass1StepScreen();
-    case 2:
-        return renderWiFi1StepScreen();
-    case 3:
-        return renderDemo1StepScreen();
-    case 4:
-        return renderAboutScreen();
+    case ONBOARDING_FLOW_PAGE_STEP_WELCOME:
+        return renderWelcomePage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_1:
+        return renderHass1StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_2:
+        return renderHass2StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_WIFI_1:
+        return renderWiFi1StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:
+        return renderDemo1StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_ABOUT:
+        return renderAboutPage();
 
     default:
         break;

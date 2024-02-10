@@ -17,6 +17,8 @@
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
+#include "navigation/navigation.h"
+
 void delete_me_TriggerMotorCalibration();
 
 class RootTask : public Task<RootTask>,

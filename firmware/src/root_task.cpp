@@ -399,7 +399,11 @@ void RootTask::updateHardware(AppState app_state)
 
                 if (is_onboarding)
                 {
-                    changeConfig(onboarding_apps->navigationBack());
+                    NavigationEvent event;
+                    event.press = NAVIGATION_EVENT_PRESS_LONG;
+                    display_task_->onboarding_flow.handleNavigationEvent(event);
+                    // TODO: remove this
+                    // changeConfig(onboarding_apps->navigationBack());
                 }
                 else
                 {
@@ -418,7 +422,11 @@ void RootTask::updateHardware(AppState app_state)
                 /* code */
                 if (is_onboarding)
                 {
-                    changeConfig(onboarding_apps->navigationNext());
+                    NavigationEvent event;
+                    event.press = NAVIGATION_EVENT_PRESS_SHORT;
+                    display_task_->onboarding_flow.handleNavigationEvent(event);
+                    // TODO: remove this
+                    // changeConfig(onboarding_apps->navigationNext());
                 }
                 else
                 {
