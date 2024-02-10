@@ -69,7 +69,7 @@ TFT_eSprite *OnboardingFlow::renderWelcomeScreen()
     sprintf(buf_, "ROTATE TO START");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 170, 1);
+    spr_->drawString(buf_, center_h, 185, 1);
 
     return this->spr_;
 }
@@ -93,7 +93,7 @@ TFT_eSprite *OnboardingFlow::renderHass1StepScreen()
     sprintf(buf_, "PRESS TO CONFIGURE");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 190, 1);
+    spr_->drawString(buf_, center_h, 185, 1);
 
     return this->spr_;
 }
@@ -103,9 +103,75 @@ TFT_eSprite *OnboardingFlow::renderHass4StepScreen() {}
 TFT_eSprite *OnboardingFlow::renderHass5StepScreen() {}
 TFT_eSprite *OnboardingFlow::renderHass6StepScreen() {}
 TFT_eSprite *OnboardingFlow::renderHass7StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderWiFi1StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderDemo1StepScreen() {}
-TFT_eSprite *OnboardingFlow::renderAboutScreen() {}
+TFT_eSprite *OnboardingFlow::renderWiFi1StepScreen()
+{
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+
+    sprintf(buf_, "WIFI");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, center_h, 50, 1);
+
+    sprintf(buf_, "PRESS TO CONFIGURE");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 185, 1);
+
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderDemo1StepScreen()
+{
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+
+    sprintf(buf_, "DEMO MODE");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, center_h, 50, 1);
+
+    sprintf(buf_, "PRESS TO START");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 185, 1);
+
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderAboutScreen()
+{
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CL_DATUM);
+
+    uint8_t left_padding = 30;
+
+    sprintf(buf_, "FIRMWARE 0.1b");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, left_padding, 50, 1);
+
+    sprintf(buf_, "HARDWARE: %s", "DEVKIT V0.1");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, left_padding, 80, 1);
+
+    sprintf(buf_, "WIFI: %s", "NOT CONNECTED");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, left_padding, 110, 1);
+
+    sprintf(buf_, "SEEDLABS.IT®");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, left_padding, 185, 1);
+
+    return this->spr_;
+}
 
 TFT_eSprite *OnboardingFlow::render()
 {
@@ -118,6 +184,12 @@ TFT_eSprite *OnboardingFlow::render()
         return renderWelcomeScreen();
     case 1:
         return renderHass1StepScreen();
+    case 2:
+        return renderWiFi1StepScreen();
+    case 3:
+        return renderDemo1StepScreen();
+    case 4:
+        return renderAboutScreen();
 
     default:
         break;
