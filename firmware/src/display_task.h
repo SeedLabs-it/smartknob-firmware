@@ -15,6 +15,8 @@
 #include "apps/onboarding/onboarding.h"
 #include "apps/hass/hass_apps.h"
 
+#include "apps/onboarding_flow/onboarding_flow.h"
+
 class DisplayTask : public Task<DisplayTask>
 {
     friend class Task<DisplayTask>; // Allow base Task to invoke protected run()
