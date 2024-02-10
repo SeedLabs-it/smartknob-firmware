@@ -63,6 +63,8 @@ void DisplayTask::run()
     onboarding = Onboarding(&spr_);
     hass_apps = HassApps(&spr_);
 
+    onboarding_flow = OnboardingFlow(&spr_);
+
     AppState app_state;
 
     spr_.setTextDatum(CC_DATUM);
@@ -82,7 +84,7 @@ void DisplayTask::run()
             spr_.fillSprite(TFT_BLACK);
             if (is_onboarding)
             {
-                onboarding.renderActive()->pushSprite(0, 0);
+                onboarding_flow.render()->pushSprite(0, 0);
             }
             else
             {

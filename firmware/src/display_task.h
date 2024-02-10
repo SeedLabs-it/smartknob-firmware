@@ -35,6 +35,9 @@ public:
     void enableOnboarding();
     void disableOnboarding();
 
+    // TODO: put under private
+    OnboardingFlow onboarding_flow;
+
 protected:
     void run();
 

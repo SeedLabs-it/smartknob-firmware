@@ -39,3 +39,4 @@ private:
 };
 
 uint32_t ToRGBA(float h);
+uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b);

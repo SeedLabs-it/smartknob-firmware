@@ -301,7 +301,7 @@ void RootTask::run()
 
             if (is_onboarding)
             {
-                entity_state_update_to_send = onboarding_apps->update(app_state);
+                entity_state_update_to_send = display_task_->onboarding_flow.update(app_state);
             }
             else
             {
