@@ -17,6 +17,8 @@
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
+#include "motor_updater/motor_updater.h"
+
 #include "navigation/navigation.h"
 
 void delete_me_TriggerMotorCalibration();

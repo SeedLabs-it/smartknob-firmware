@@ -17,6 +17,10 @@
 
 #include "apps/onboarding_flow/onboarding_flow.h"
 
+const uint8_t BOOT_MODE_NOT_SET = 0;
+const uint8_t BOOT_MODE_ONBOARDING = 1;
+const uint8_t BOOT_MODE_HASS = 2;
+
 class DisplayTask : public Task<DisplayTask>
 {
     friend class Task<DisplayTask>; // Allow base Task to invoke protected run()
@@ -33,10 +37,9 @@ public:
     HassApps *getHassApps();
     Onboarding *getOnboarding();
     void enableOnboarding();
-    void disableOnboarding();
+    void enableHass();
 
-    // TODO: put under private
-    OnboardingFlow onboarding_flow;
+    OnboardingFlow *getOnboardingFlow();
 
 protected:
     void run();
@@ -49,6 +52,9 @@ private:
     Onboarding onboarding;
     HassApps hass_apps;
 
+    // TODO: put under private
+    OnboardingFlow onboarding_flow;
+
     QueueHandle_t app_state_queue_;
 
     AppState app_state_;
@@ -57,7 +63,8 @@ private:
     Logger *logger_;
     void log(const char *msg);
     char buf_[128];
-    bool is_onboarding;
+
+    uint8_t boot_mode = BOOT_MODE_NOT_SET;
 };
 
 #else

@@ -19,7 +19,7 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("App", 1024 * 5, 1, task_core),
+    SensorsTask *sensors_task) : Task("RootTask", 1024 * 10, 1, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
@@ -133,27 +133,6 @@ void RootTask::run()
 {
     stream_.begin();
 
-    log("Giving 0.5s for Apps to initialize");
-    delay(500);
-
-    // TODO: remove me
-    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
-    cJSON *json_root = cJSON_Parse(apps_config.c_str());
-    hass_apps->sync(json_root);
-
-    // TODO: make this configurable based on config
-    if (SK_UI_BOOT_MODE == 0)
-    {
-        display_task_->enableOnboarding();
-        is_onboarding = true;
-    }
-    else
-    {
-        display_task_->disableOnboarding();
-        is_onboarding = false;
-    }
-
-    changeConfig(MENU);
     motor_task_.addListener(knob_state_queue_);
 
     plaintext_protocol_.init([this]()
@@ -169,7 +148,7 @@ void RootTask::run()
                              [this]()
                              {
                                  this->is_onboarding = !this->is_onboarding;
-                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->disableOnboarding();
+                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->enableHass();
                                  changeConfig(MENU);
                              });
 
@@ -194,6 +173,29 @@ void RootTask::run()
 
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
     proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
+
+    // TODO: remove me
+    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
+    cJSON *json_root = cJSON_Parse(apps_config.c_str());
+    hass_apps->sync(json_root);
+
+    MotorUpdater motor_updater = MotorUpdater([this](PB_SmartKnobConfig config)
+                                              { applyConfig(config, false); });
+
+    // TODO: make this configurable based on config
+    if (SK_UI_BOOT_MODE == 0)
+    {
+        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_updater);
+        display_task_->enableOnboarding();
+        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+        is_onboarding = true;
+    }
+    else
+    {
+        display_task_->enableHass();
+        changeConfig(MENU);
+        is_onboarding = false;
+    }
 
     EntityStateUpdate entity_state_update_to_send;
 
@@ -301,7 +303,7 @@ void RootTask::run()
 
             if (is_onboarding)
             {
-                entity_state_update_to_send = display_task_->onboarding_flow.update(app_state);
+                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
             }
             else
             {
@@ -329,6 +331,8 @@ void RootTask::run()
             current_protocol_->log(log_string->c_str());
             delete log_string;
         }
+
+        motor_updater.loopTick();
 
         updateHardware(app_state);
 
@@ -401,7 +405,7 @@ void RootTask::updateHardware(AppState app_state)
                 {
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_LONG;
-                    display_task_->onboarding_flow.handleNavigationEvent(event);
+                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                     // TODO: remove this
                     // changeConfig(onboarding_apps->navigationBack());
                 }
@@ -424,7 +428,7 @@ void RootTask::updateHardware(AppState app_state)
                 {
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                    display_task_->onboarding_flow.handleNavigationEvent(event);
+                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                     // TODO: remove this
                     // changeConfig(onboarding_apps->navigationNext());
                 }

@@ -66,7 +66,7 @@ void setup()
     led_ring_task_p->begin();
 #endif
 
-    // TODO: wait for display task init finishes
+    // TODO: remove this. Wait for display task init finishes
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     root_task.begin();

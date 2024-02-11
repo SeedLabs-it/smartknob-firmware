@@ -2,22 +2,33 @@
 
 OnboardingFlow::OnboardingFlow()
 {
-    // just for initialisation of the firmware
-}
 
-OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
-{
-    this->spr_ = spr_;
+    root_level_motor_config = PB_SmartKnobConfig{
+        1,
+        0,
+        1,
+        0,
+        4,
+        35 * PI / 180,
+        2,
+        1,
+        0.55,
+        "",
+        0,
+        {},
+        0,
+        20,
+    };
 
-    motor_config = PB_SmartKnobConfig{
+    blocked_motor_config = PB_SmartKnobConfig{
         0,
         0,
         0,
         0,
-        5,
-        90 * PI / 180,
-        1,
-        1,
+        0,
+        55 * PI / 180,
+        0.01,
+        0.6,
         1.1,
         "",
         0,
@@ -25,6 +36,58 @@ OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
         0,
         90,
     };
+}
+
+OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
+{
+    this->spr_ = spr_;
+
+    root_level_motor_config = PB_SmartKnobConfig{
+        1,
+        0,
+        1,
+        0,
+        4,
+        35 * PI / 180,
+        2,
+        1,
+        0.55,
+        "",
+        0,
+        {},
+        0,
+        20,
+    };
+
+    blocked_motor_config = PB_SmartKnobConfig{
+        0,
+        0,
+        0,
+        0,
+        0,
+        55 * PI / 180,
+        0.01,
+        0.6,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        90,
+    };
+}
+
+void OnboardingFlow::triggerMotorConfigUpdate()
+{
+    if (this->motor_updater != nullptr)
+    {
+        motor_updater->requestUpdate(root_level_motor_config);
+    }
+}
+
+void OnboardingFlow::setMotorUpdater(MotorUpdater *motor_updater)
+{
+    this->motor_updater = motor_updater;
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)
@@ -42,6 +105,8 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         {
         case ONBOARDING_FLOW_PAGE_STEP_HASS_1:
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
+
+            motor_updater->requestUpdate(blocked_motor_config);
             break;
 
         default:
@@ -55,6 +120,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         {
         case ONBOARDING_FLOW_PAGE_STEP_HASS_2:
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_1;
+
+            motor_updater->requestUpdate(root_level_motor_config);
+
             break;
 
         default:
@@ -71,11 +139,11 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
     if (current_page < 5)
     {
         current_page = current_position;
-    }
 
-    // needed to next reload of App
-    motor_config.position_nonce = current_position;
-    motor_config.position = current_position;
+        // needed to next reload of App
+        root_level_motor_config.position_nonce = current_position;
+        root_level_motor_config.position = current_position;
+    }
 
     EntityStateUpdate new_state;
 
@@ -162,11 +230,26 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
 
     return this->spr_;
 }
-TFT_eSprite *OnboardingFlow::renderHass3StepPage() {}
-TFT_eSprite *OnboardingFlow::renderHass4StepPage() {}
-TFT_eSprite *OnboardingFlow::renderHass5StepPage() {}
-TFT_eSprite *OnboardingFlow::renderHass6StepPage() {}
-TFT_eSprite *OnboardingFlow::renderHass7StepPage() {}
+TFT_eSprite *OnboardingFlow::renderHass3StepPage()
+{
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderHass4StepPage()
+{
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderHass5StepPage()
+{
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderHass6StepPage()
+{
+    return this->spr_;
+}
+TFT_eSprite *OnboardingFlow::renderHass7StepPage()
+{
+    return this->spr_;
+}
 TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
@@ -239,9 +322,6 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
 
 TFT_eSprite *OnboardingFlow::render()
 {
-
-    // ESP_LOGD("onboarding", "%d", current_position);
-
     switch (current_page)
     {
     case ONBOARDING_FLOW_PAGE_STEP_WELCOME:

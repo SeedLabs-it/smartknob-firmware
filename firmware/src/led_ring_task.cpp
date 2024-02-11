@@ -100,7 +100,7 @@ void LedRingTask::run()
 
     FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(leds, NUM_LEDS);
 
-    FastLED.setBrightness(255);
+    FastLED.setBrightness(5);
 
     FastLED.clear();
 
@@ -112,7 +112,7 @@ void LedRingTask::run()
     }
 
     FastLED.clear();
-    FastLED.setBrightness(255);
+    FastLED.setBrightness(5);
     FastLED.show();
 
     while (1)

@@ -1,15 +1,15 @@
 #pragma once
 #include "../app.h"
 
+#include "../../util.h"
+#include "../../navigation/navigation.h"
+#include "../../motor_updater/motor_updater.h"
+
+// Fonts
 #include "../../font/roboto_thin_bold_24.h"
 #include "../../font/roboto_thin_20.h"
-
 #include "../../font/NDS1210pt7b.h"
 #include "../../font/Pixel62mr11pt7b.h"
-
-#include "../../util.h"
-
-#include "../../navigation/navigation.h"
 
 // TODO make this enum ?
 
@@ -27,25 +27,31 @@ class OnboardingFlow
 {
 public:
     OnboardingFlow();
+
     OnboardingFlow(TFT_eSprite *spr_);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
-
     void handleNavigationEvent(NavigationEvent event);
+    void setMotorUpdater(MotorUpdater *motor_updater);
+    void triggerMotorConfigUpdate();
 
 private:
     int32_t current_position = 0;
 
     uint8_t current_page = 0;
 
-    TFT_eSprite *spr_;
-    PB_SmartKnobConfig motor_config;
+    PB_SmartKnobConfig root_level_motor_config;
+    PB_SmartKnobConfig blocked_motor_config;
+
+    MotorUpdater *motor_updater;
 
     char buf_[64];
 
-    // UI constants
+    // UI
+    TFT_eSprite *spr_ = NULL;
+
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
 
