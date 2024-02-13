@@ -64,7 +64,11 @@
         "nds1210pt7b.h": "c",
         "roboto_thin_20.h": "c",
         "arduino.h": "c",
-        "tft_espi.h": "c"
+        "tft_espi.h": "c",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "regex": "cpp"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

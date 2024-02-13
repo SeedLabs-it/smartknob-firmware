@@ -180,7 +180,7 @@ void RootTask::run()
     hass_apps->sync(json_root);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
-                                              { applyConfig(config, false); });
+                                                 { applyConfig(config, false); });
 
     // TODO: make this configurable based on config
     if (SK_UI_BOOT_MODE == 0)
@@ -216,6 +216,10 @@ void RootTask::run()
 
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
+
+            // TODO: handle wifi credentials here
+            // TODO: handle mqtt credentials here
+
             if (is_onboarding)
             {
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);

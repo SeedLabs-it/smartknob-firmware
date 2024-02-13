@@ -4,8 +4,15 @@
 
 struct WiFiAPStarted
 {
-    char ssid[32];
-    char passphrase[10];
+    char ssid[128];
+    char passphrase[128];
+};
+
+struct WiFiSTAConnecting
+{
+    char ssid[128];
+    char passphrase[128];
+    uint8_t tick;
 };
 
 struct WiFiStatus
@@ -18,6 +25,11 @@ struct WiFiStatus
 };
 
 struct APClient
+{
+    bool connected;
+};
+
+struct WebClient
 {
     bool connected;
 };
@@ -36,13 +48,18 @@ union WiFiEventBody
     WiFiAPStarted wifi_ap_started;
     WiFiStatus wifi_status;
     APClient ap_client;
+    WebClient web_client;
+    WiFiSTAConnecting wifi_sta_connecting;
 };
 
 enum EventType
 {
     WIFI_AP_STARTED = 1,
     WIFI_STATUS,
-    AP_CLIENT
+    AP_CLIENT,
+    WEB_CLIENT,
+    WIFI_STA_CONNECTING,
+    WIFI_STA_CONNECTION_FAILED
 };
 
 struct WiFiEvent

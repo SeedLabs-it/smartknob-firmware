@@ -24,7 +24,7 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 2048 * 2, 1, task_cor
 
     // TODO make this more robust
     wifi_notifier.setCallback([this]()
-                              { this->startWiFiAP(); });
+                              { this->startWiFiAP(); this->startWebServer(); });
 }
 
 WifiTask::~WifiTask()
@@ -67,7 +67,7 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 void WifiTask::startWiFiAP()
 {
 
-    char ssid[32] = "SKDK_A2R45C";
+    char ssid[12] = "SKDK_A2R45C";
     char passphrase[9] = "12345678";
 
     // TODO, randomise hostname and password
@@ -81,7 +81,7 @@ void WifiTask::startWiFiAP()
     strcpy(event.body.wifi_ap_started.ssid, ssid);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
-    // DEBUG: added delay for testing
+    // DEBUG: added delay for testing, remove this on release
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     publishWiFiEvent(event);
@@ -151,19 +151,31 @@ void WifiTask::startWebServer()
 {
     server_ = new WebServer(80);
 
+    // TODO: do local files rendering
+    // TODO: redo wifi reconnection
+    // TODO: make this page work async with animations on UI
+
     server_->on("/", HTTP_GET, [this]()
-                { 
-                    if (WiFi.isConnected()) {
-                        server_->sendHeader("Location", "/mqtt");
-                        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");    
-                    } else {
-                         server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                                  "SSID: <input type='text' name='ssid'><br>"
-                                                  "Password: <input type='text' name='password'><br>"
-                                                  "<input type='hidden' name='setup_type' value='wifi'>"
-                                                  "<input type='submit' value='Submit'>"
-                                                  "</form>");
-                    } });
+                {
+                    WiFiEvent event;
+                    event.type = WEB_CLIENT;
+                    event.body.web_client.connected = true;
+
+                    publishWiFiEvent(event);
+                    // TODO trigger event that user is connected
+
+                    // if (WiFi.isConnected()) {
+                    //     server_->sendHeader("Location", "/mqtt");
+                    //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+                    // } else {
+                    server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                                    "SSID: <input type='text' name='ssid'><br>"
+                                                    "Password: <input type='text' name='password'><br>"
+                                                    "<input type='hidden' name='setup_type' value='wifi'>"
+                                                    "<input type='submit' value='Submit'>"
+                                                    "</form>");
+                    // }
+                });
 
     server_->on("/mqtt", HTTP_GET, [this]()
                 { server_->send(200, "text/html", "<form action='/submit' method='get'>"
@@ -178,30 +190,46 @@ void WifiTask::startWebServer()
                 {
         if (server_->arg("setup_type") == "wifi")
         {
-            String name = server_->arg("ssid");
-            String age = server_->arg("password");
+            String ssid = server_->arg("ssid");
+            String passphrase = server_->arg("password");
 
-            WiFi.begin(name.c_str(), age.c_str());
+            // TODO send event connecting to wifi
 
-            uint8_t tries = 0;
+            WiFiEvent wifi_sta_connecting_event;
 
-            while (WiFi.waitForConnectResult() != WL_CONNECTED && tries < 5) //! UP TRIES WHEN IN PRODUCTION
-            {
-                ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
-                // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
-                // WiFi.begin();
-                delay(3000);
-                tries++;
+            wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+            sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", ssid.c_str());
+            sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", passphrase.c_str());
+            wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
+
+            publishWiFiEvent(wifi_sta_connecting_event);
+
+            WiFi.begin(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase);
+
+            uint8_t max_tries = 20;
+
+            while (WiFi.status() != WL_CONNECTED) {
+                if(wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries){
+                    break;
+                }
+                delay(1000);
+                wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
+                publishWiFiEvent(wifi_sta_connecting_event);
+                // TODO: retry to connect after X seconds
             }
 
-            if (tries >= 5)
-            {
+            if(WiFi.status() != WL_CONNECTED){
+                WiFiEvent wifi_sta_connection_failed_event;
+                wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
+                publishWiFiEvent(wifi_sta_connecting_event);
+
                 server_->sendHeader("Location", "/");
                 server_->send(302, "text/plain", "Invalid WiFi credentials!");
+            }else{
+                server_->sendHeader("Location", "/mqtt");
+                server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
             }
 
-            server_->sendHeader("Location", "/mqtt");
-            server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
         }
         else if (server_->arg("setup_type") == "mqtt")
         {
@@ -220,8 +248,8 @@ void WifiTask::startWebServer()
 
             preferences.end();
 
-            WiFi.mode(WIFI_STA);
-            WiFi.softAPdisconnect(true);
+            // WiFi.mode(WIFI_STA);
+            // WiFi.softAPdisconnect(true);
             server_->send(200, "text/html", "MQTT setup complete!");
         } });
 
@@ -229,6 +257,7 @@ void WifiTask::startWebServer()
 
     log("WebServer started");
     is_webserver_started = true;
+    // TODO: send event to
 }
 
 void WifiTask::run()

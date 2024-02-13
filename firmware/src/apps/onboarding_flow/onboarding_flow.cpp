@@ -1,5 +1,7 @@
 #include "onboarding_flow.h"
 
+#include "qrcode.h"
+
 OnboardingFlow::OnboardingFlow()
 {
 
@@ -108,8 +110,10 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
     {
     case WIFI_AP_STARTED:
         is_wifi_ap_started = true;
-        strcpy(wifi_ap_ssid, event.body.wifi_ap_started.ssid);
-        strcpy(wifi_ap_passphrase, event.body.wifi_ap_started.passphrase);
+        sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
+        sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
+        sprintf(wifi_qr_code, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
+
         break;
     case AP_CLIENT:
         is_wifi_ap_client_connected = event.body.ap_client.connected;
@@ -121,6 +125,25 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         {
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
         }
+        break;
+    case WEB_CLIENT:
+        is_web_client_connected = event.body.ap_client.connected;
+        if (is_web_client_connected)
+        {
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
+        }
+        else
+        {
+            // TODO: possible problem after setup finished
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
+        }
+        break;
+    case WIFI_STA_CONNECTING:
+        is_sta_connecting = true;
+        sta_connecting_tick = event.body.wifi_sta_connecting.tick;
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
+        sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
+        sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
         break;
     default:
         break;
@@ -255,57 +278,164 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
         return this->spr_;
     }
 
-    sprintf(buf_, "SCAN TO CONNECT");
-    spr_->setFreeFont(&NDS125_small);
-    spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 30, 1);
+    int8_t screen_name_label_h = spr_->fontHeight(1);
 
-    sprintf(buf_, "TO THE SMARTKNOB");
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
     spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 50, 1);
 
-    sprintf(buf_, "OR CONNECT TO");
-    spr_->setFreeFont(&NDS125_small);
-    spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 170, 1);
+    spr_->drawString("SCAN TO CONNECT", center_h, screen_name_label_h * 3, 1);
+    spr_->drawString("TO THE SMART KNOB", center_h, screen_name_label_h * 4, 1);
 
-    sprintf(buf_, "SSID: %s", wifi_ap_ssid);
-    spr_->setFreeFont(&NDS125_small);
-    spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 190, 1);
+    QRCode qrcode;
+    uint8_t qrcodeVersion = 6;
+    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
 
-    sprintf(buf_, "PASS: %s", wifi_ap_passphrase);
-    spr_->setFreeFont(&NDS125_small);
-    spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 210, 1);
+    // std::string wifiqrcode = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifi_qr_code);
+
+    int moduleSize = 2;
+
+    int qrCodeWidth = qrcode.size * moduleSize;
+    int qrCodeHeight = qrcode.size * moduleSize;
+
+    int startX = center_h - qrCodeWidth / 2;
+    int startY = center_v - 4 - qrCodeHeight / 2;
+
+    for (uint8_t y = 0; y < qrcode.size; y++)
+    {
+        for (uint8_t x = 0; x < qrcode.size; x++)
+        {
+            if (qrcode_getModule(&qrcode, x, y))
+            {
+                spr_->fillRect(startX + x * moduleSize, startY + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
+            }
+        }
+    }
+
+    spr_->drawString("OR CONNECT TO", center_h, TFT_HEIGHT - screen_name_label_h * 4, 1);
+    spr_->drawString(wifi_ap_ssid, center_h, TFT_HEIGHT - screen_name_label_h * 3, 1);
+    spr_->drawString(wifi_ap_passphrase, center_h, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
     return this->spr_;
 }
+
 TFT_eSprite *OnboardingFlow::renderHass3StepPage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t center_vertical = TFT_WIDTH / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+
+    int8_t screen_name_label_h = spr_->fontHeight(1);
 
     spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->setTextColor(accent_text_color);
 
-    sprintf(buf_, "MQTT setup");
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_h, 50, 1);
+    spr_->drawString("SCAN TO START", center_horizontal, screen_name_label_h * 3, 1);
+    spr_->drawString("SETUP", center_horizontal, screen_name_label_h * 4, 1);
+
+    QRCode qrcode;
+    uint8_t qrcodeVersion = 6;
+    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
+    // ESP_LOGD("HassSetupApp", "AP IP: %s", state.connectivity_state.ap_ip_address.toString().c_str());
+    std::string wifiqrcodestring = "";
+    if (is_wifi_ap_client_connected)
+    {
+        wifiqrcodestring = "http://192.168.4.1"; // always the same
+    }
+    else
+    {
+        wifiqrcodestring = "http://10.0.0.1"; // TODO: fetch real ip address
+    }
+
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcodestring.c_str());
+
+    int moduleSize = 2;
+
+    int qrCodeWidth = qrcode.size * moduleSize;
+    int qrCodeHeight = qrcode.size * moduleSize;
+
+    int startX = center_horizontal - qrCodeWidth / 2;
+    int startY = center_vertical - 4 - qrCodeHeight / 2;
+
+    for (uint8_t y = 0; y < qrcode.size; y++)
+    {
+        for (uint8_t x = 0; x < qrcode.size; x++)
+        {
+            if (qrcode_getModule(&qrcode, x, y))
+            {
+                spr_->fillRect(startX + x * moduleSize, startY + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
+            }
+        }
+    }
+    std::string or_open = "OR OPEN: " + wifiqrcodestring;
+    spr_->drawString(or_open.c_str(), center_horizontal, TFT_WIDTH - screen_name_label_h * 4, 1);
+    spr_->drawString("IN YOUR BROWSER", center_horizontal, TFT_WIDTH - screen_name_label_h * 3, 1);
 
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass4StepPage()
 {
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+
+    spr_->drawString("CONTINUE IN", center_horizontal, center_vertical - screen_name_label_h, 1);
+    spr_->drawString("BROWSER", center_horizontal, center_vertical + screen_name_label_h, 1);
+
+    spr_->setTextColor(default_text_color);
+    spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
+
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass5StepPage()
 {
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+
+    spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
+    spr_->drawString(wifi_sta_ssid, center_horizontal, center_vertical + screen_name_label_h, 1);
+
+    sprintf(buf_, "%ds", sta_connecting_tick);
+
+    spr_->setTextColor(default_text_color);
+
+    spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
+
+    spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
+
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass6StepPage()
 {
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+
+    spr_->drawString("CONTINUE IN", center_horizontal, center_vertical - screen_name_label_h, 1);
+    spr_->drawString("BROWSER", center_horizontal, center_vertical + screen_name_label_h, 1);
+
+    spr_->setTextColor(default_text_color);
+    spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass7StepPage()
@@ -392,6 +522,12 @@ TFT_eSprite *OnboardingFlow::render()
         return renderHass1StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_HASS_2:
         return renderHass2StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_3:
+        return renderHass3StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_4:
+        return renderHass4StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_5:
+        return renderHass5StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_WIFI_1:
         return renderWiFi1StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:

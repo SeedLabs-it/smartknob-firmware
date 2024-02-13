@@ -25,6 +25,7 @@ const uint8_t ONBOARDING_FLOW_PAGE_STEP_ABOUT = 4;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_2 = 5;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_3 = 6;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_4 = 7;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_5 = 8;
 
 class OnboardingFlow
 {
@@ -75,7 +76,16 @@ private:
 
     // wifi AP variables
     bool is_wifi_ap_started = false;
-    char wifi_ap_ssid[32];
-    char wifi_ap_passphrase[8];
+    char wifi_ap_ssid[12];
+    char wifi_ap_passphrase[9];
     bool is_wifi_ap_client_connected = false;
+
+    // web progress variables
+    bool is_web_client_connected = false;
+    bool is_sta_connecting = false;
+    uint8_t sta_connecting_tick = 0;
+    char wifi_sta_ssid[128];
+    char wifi_sta_passphrase[128];
+
+    char wifi_qr_code[40];
 };
