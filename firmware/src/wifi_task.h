@@ -14,6 +14,9 @@
 #include "task.h"
 #include "app_config.h"
 
+#include "events/events.h"
+#include "notify/wifi_notifier/wifi_notifier.h"
+
 #include <ElegantOTA.h>
 
 class WifiTask : public Task<WifiTask>
@@ -26,6 +29,9 @@ public:
 
     void setLogger(Logger *logger);
     void addStateListener(QueueHandle_t queue);
+
+    WiFiNotifier *getNotifier();
+    QueueHandle_t getWiFiEventsQueue();
 
 protected:
     void run();
@@ -44,6 +50,14 @@ private:
     char buf_[128];
     WebServer *server_;
     Preferences preferences;
+
+    void publishWiFiEvent(WiFiEvent event);
+    void startWebServer();
+    bool is_webserver_started = false;
+    void startWiFiAP();
+    // QueueHandle_t wifi_events_queue;
+
+    WiFiNotifier wifi_notifier;
 };
 
 #else

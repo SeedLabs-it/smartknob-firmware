@@ -179,13 +179,14 @@ void RootTask::run()
     cJSON *json_root = cJSON_Parse(apps_config.c_str());
     hass_apps->sync(json_root);
 
-    MotorUpdater motor_updater = MotorUpdater([this](PB_SmartKnobConfig config)
+    MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                               { applyConfig(config, false); });
 
     // TODO: make this configurable based on config
     if (SK_UI_BOOT_MODE == 0)
     {
-        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_updater);
+        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
         display_task_->enableOnboarding();
         display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
         is_onboarding = true;
@@ -202,6 +203,7 @@ void RootTask::run()
     // Value between [0, 65536] for brightness when not engaging with knob
     bool isCurrentSubPositionSet = false;
     float currentSubPosition;
+    WiFiEvent wifi_event;
 
     AppState app_state = {};
     while (1)
@@ -210,6 +212,14 @@ void RootTask::run()
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();
+        }
+
+        if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
+        {
+            if (is_onboarding)
+            {
+                display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+            }
         }
 
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
@@ -332,7 +342,7 @@ void RootTask::run()
             delete log_string;
         }
 
-        motor_updater.loopTick();
+        motor_notifier.loopTick();
 
         updateHardware(app_state);
 

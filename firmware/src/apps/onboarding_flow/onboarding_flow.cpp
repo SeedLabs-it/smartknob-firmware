@@ -79,21 +79,52 @@ OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
 
 void OnboardingFlow::triggerMotorConfigUpdate()
 {
-    if (this->motor_updater != nullptr)
+    if (this->motor_notifier != nullptr)
     {
-        motor_updater->requestUpdate(root_level_motor_config);
+        motor_notifier->requestUpdate(root_level_motor_config);
     }
 }
 
-void OnboardingFlow::setMotorUpdater(MotorUpdater *motor_updater)
+void OnboardingFlow::setMotorUpdater(MotorNotifier *motor_notifier)
 {
-    this->motor_updater = motor_updater;
+    this->motor_notifier = motor_notifier;
+}
+
+void OnboardingFlow::setWiFiNotifier(WiFiNotifier *wifi_notifier)
+{
+    this->wifi_notifier = wifi_notifier;
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)
 {
     updateStateFromSystem(state);
     return updateStateFromKnob(state.motor_state);
+}
+
+void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
+{
+
+    switch (event.type)
+    {
+    case WIFI_AP_STARTED:
+        is_wifi_ap_started = true;
+        strcpy(wifi_ap_ssid, event.body.wifi_ap_started.ssid);
+        strcpy(wifi_ap_passphrase, event.body.wifi_ap_started.passphrase);
+        break;
+    case AP_CLIENT:
+        is_wifi_ap_client_connected = event.body.ap_client.connected;
+        if (is_wifi_ap_client_connected)
+        {
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
+        }
+        else
+        {
+            current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
@@ -105,8 +136,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         {
         case ONBOARDING_FLOW_PAGE_STEP_HASS_1:
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
+            wifi_notifier->requestAP();
 
-            motor_updater->requestUpdate(blocked_motor_config);
+            motor_notifier->requestUpdate(blocked_motor_config);
             break;
 
         default:
@@ -121,7 +153,7 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         case ONBOARDING_FLOW_PAGE_STEP_HASS_2:
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_1;
 
-            motor_updater->requestUpdate(root_level_motor_config);
+            motor_notifier->requestUpdate(root_level_motor_config);
 
             break;
 
@@ -208,30 +240,60 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
 
     spr_->setTextDatum(CC_DATUM);
 
+    if (!is_wifi_ap_started)
+    {
+        sprintf(buf_, "WiFi starting...");
+        spr_->setFreeFont(&NDS1210pt7b);
+        spr_->setTextColor(accent_text_color);
+        spr_->drawString(buf_, center_h, center_v, 1);
+
+        sprintf(buf_, "wait a momoment please");
+        spr_->setFreeFont(&NDS125_small);
+        spr_->setTextColor(default_text_color);
+        spr_->drawString(buf_, center_h, center_v + 50, 1);
+
+        return this->spr_;
+    }
+
     sprintf(buf_, "SCAN TO CONNECT");
-    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 30, 1);
+
+    sprintf(buf_, "TO THE SMARTKNOB");
+    spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_h, 50, 1);
 
-    sprintf(buf_, "THE SMARTKNOB");
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 80, 1);
-
     sprintf(buf_, "OR CONNECT TO");
-    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 155, 1);
+    spr_->drawString(buf_, center_h, 170, 1);
 
-    sprintf(buf_, "SMARTKNOB-AP WIFI");
-    spr_->setFreeFont(&NDS1210pt7b);
+    sprintf(buf_, "SSID: %s", wifi_ap_ssid);
+    spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 185, 1);
+    spr_->drawString(buf_, center_h, 190, 1);
+
+    sprintf(buf_, "PASS: %s", wifi_ap_passphrase);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString(buf_, center_h, 210, 1);
 
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass3StepPage()
 {
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+
+    sprintf(buf_, "MQTT setup");
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+    spr_->drawString(buf_, center_h, 50, 1);
+
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass4StepPage()

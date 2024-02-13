@@ -1,6 +1,6 @@
-#include "motor_updater.h"
+#include "motor_notifier.h"
 
-MotorUpdater::MotorUpdater(MotorUpdaterCallback callback)
+MotorNotifier::MotorNotifier(MotorUpdaterCallback callback)
 {
     this->callback = callback;
 
@@ -8,12 +8,12 @@ MotorUpdater::MotorUpdater(MotorUpdaterCallback callback)
     assert(motor_updates_queue != NULL);
 }
 
-void MotorUpdater::requestUpdate(PB_SmartKnobConfig config)
+void MotorNotifier::requestUpdate(PB_SmartKnobConfig config)
 {
     xQueueSendToBack(motor_updates_queue, &config, 0);
 }
 
-void MotorUpdater::loopTick()
+void MotorNotifier::loopTick()
 {
     if (xQueueReceive(motor_updates_queue, &tmp_recieved_config, 0) == pdTRUE)
     {

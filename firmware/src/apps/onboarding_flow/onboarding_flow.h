@@ -3,12 +3,15 @@
 
 #include "../../util.h"
 #include "../../navigation/navigation.h"
-#include "../../motor_updater/motor_updater.h"
+#include "../../notify/motor_notifier/motor_notifier.h"
+#include "../../notify/wifi_notifier/wifi_notifier.h"
+#include "../../events/events.h"
 
 // Fonts
 #include "../../font/roboto_thin_bold_24.h"
 #include "../../font/roboto_thin_20.h"
 #include "../../font/NDS1210pt7b.h"
+#include "../../font/NDS125_small.h"
 #include "../../font/Pixel62mr11pt7b.h"
 
 // TODO make this enum ?
@@ -34,27 +37,12 @@ public:
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
     void handleNavigationEvent(NavigationEvent event);
-    void setMotorUpdater(MotorUpdater *motor_updater);
+    void handleWiFiEvent(WiFiEvent event);
+    void setMotorUpdater(MotorNotifier *motor_notifier);
+    void setWiFiNotifier(WiFiNotifier *wifi_notifier);
     void triggerMotorConfigUpdate();
 
 private:
-    int32_t current_position = 0;
-
-    uint8_t current_page = 0;
-
-    PB_SmartKnobConfig root_level_motor_config;
-    PB_SmartKnobConfig blocked_motor_config;
-
-    MotorUpdater *motor_updater;
-
-    char buf_[64];
-
-    // UI
-    TFT_eSprite *spr_ = NULL;
-
-    uint16_t default_text_color = rgbToUint32(150, 150, 150);
-    uint16_t accent_text_color = rgbToUint32(128, 255, 80);
-
     TFT_eSprite *renderWelcomePage();
     TFT_eSprite *renderHass1StepPage();
     TFT_eSprite *renderHass2StepPage();
@@ -66,4 +54,28 @@ private:
     TFT_eSprite *renderWiFi1StepPage();
     TFT_eSprite *renderDemo1StepPage();
     TFT_eSprite *renderAboutPage();
+
+    int32_t current_position = 0;
+
+    uint8_t current_page = 0;
+
+    PB_SmartKnobConfig root_level_motor_config;
+    PB_SmartKnobConfig blocked_motor_config;
+
+    MotorNotifier *motor_notifier;
+    WiFiNotifier *wifi_notifier;
+
+    char buf_[64];
+
+    // UI
+    TFT_eSprite *spr_ = NULL;
+
+    uint16_t default_text_color = rgbToUint32(150, 150, 150);
+    uint16_t accent_text_color = rgbToUint32(128, 255, 80);
+
+    // wifi AP variables
+    bool is_wifi_ap_started = false;
+    char wifi_ap_ssid[32];
+    char wifi_ap_passphrase[8];
+    bool is_wifi_ap_client_connected = false;
 };
