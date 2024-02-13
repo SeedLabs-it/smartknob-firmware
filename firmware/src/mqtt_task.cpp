@@ -121,7 +121,7 @@ void MqttTask::setup_mqtt()
     log("Starting MQTT client");
 
     mqttClient.setClient(wifi_client);
-    mqttClient.setBufferSize(512);
+    mqttClient.setBufferSize(2048);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setServer(mqtt_host, mqtt_port);
