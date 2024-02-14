@@ -12,6 +12,8 @@
 #include "task.h"
 #include "cJSON.h"
 #include "app_config.h"
+#include "events/events.h"
+
 class MqttTask : public Task<MqttTask>
 {
     friend class Task<MqttTask>; // Allow base Task to invoke protected run()
@@ -30,6 +32,8 @@ public:
     void setLogger(Logger *logger);
     void unlock();
     cJSON *getApps();
+    void handleEvent(WiFiEvent event);
+    void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
 protected:
     void run();
@@ -44,6 +48,7 @@ private:
 
     QueueHandle_t connectivity_status_queue_;
     QueueHandle_t entity_state_to_send_queue_;
+    QueueHandle_t shared_events_queue;
     // QueueHandle_t entity_state_received_queue_;
     std::vector<QueueHandle_t> app_sync_listeners_;
 
@@ -62,11 +67,13 @@ private:
 
     void log(const char *msg);
 
-    void setup_mqtt();
+    void setup_mqtt(char *host, uint16_t port, char *user, char *password);
     void reconnect_mqtt();
     void callback_mqtt(char *topic, byte *payload, unsigned int length);
 
     void publishAppSync(const cJSON *state);
+
+    void publishEvent(WiFiEvent event);
 
     void lock();
 };

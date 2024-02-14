@@ -55,9 +55,13 @@ private:
     void startWebServer();
     bool is_webserver_started = false;
     void startWiFiAP();
-    // QueueHandle_t wifi_events_queue;
 
     WiFiNotifier wifi_notifier;
+    // websrver handlers
+    void webHandlerWiFiForm();
+    void webHandlerMQTTForm();
+    void webHandlerWiFiCredentials();
+    void webHandlerMQTTCredentials();
 };
 
 #else

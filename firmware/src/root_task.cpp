@@ -135,6 +135,8 @@ void RootTask::run()
 
     motor_task_.addListener(knob_state_queue_);
 
+    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     plaintext_protocol_.init([this]()
                              { changeConfig(MENU); },
                              [this]()
@@ -217,12 +219,16 @@ void RootTask::run()
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
 
-            // TODO: handle wifi credentials here
-            // TODO: handle mqtt credentials here
-
             if (is_onboarding)
             {
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+            }
+
+            // TODO: handle wifi credentials here
+            // TODO: handle mqtt credentials here
+            if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
+            {
+                mqtt_task_->handleEvent(wifi_event);
             }
         }
 

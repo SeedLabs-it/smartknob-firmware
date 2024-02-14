@@ -147,111 +147,154 @@ void WifiTask::setup_wifi()
     // updateWifiState();
 }
 
+void WifiTask::webHandlerWiFiForm()
+{
+    WiFiEvent event;
+    event.type = WEB_CLIENT;
+    event.body.web_client.connected = true;
+
+    publishWiFiEvent(event);
+    // TODO trigger event that user is connected
+
+    // if (WiFi.isConnected()) {
+    //     server_->sendHeader("Location", "/mqtt");
+    //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+    // } else {
+    server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                    "SSID: <input type='text' name='ssid'><br>"
+                                    "Password: <input type='text' name='password'><br>"
+                                    "<input type='hidden' name='setup_type' value='wifi'>"
+                                    "<input type='submit' value='Submit'>"
+                                    "</form>");
+}
+
+void WifiTask::webHandlerMQTTForm()
+{
+    WiFiEvent event;
+    event.type = WEB_CLIENT_MQTT;
+    publishWiFiEvent(event);
+
+    server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                    "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
+                                    "MQTT PORT: <input type='number' name='mqtt_port'><br>"
+                                    "MQTT USER: <input type='text' name='mqtt_user'><br>"
+                                    "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
+                                    "<input type='hidden' name='setup_type' value='mqtt'>"
+                                    "<input type='submit' value='Submit'>"
+                                    "</form>");
+}
+
+void WifiTask::webHandlerWiFiCredentials()
+{
+    // TODO: redo wifi reconnection
+
+    String ssid = server_->arg("ssid");
+    String passphrase = server_->arg("password");
+
+    // TODO send event connecting to wifi
+
+    WiFiEvent wifi_sta_connecting_event;
+
+    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", ssid.c_str());
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", passphrase.c_str());
+    wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
+
+    publishWiFiEvent(wifi_sta_connecting_event);
+
+    WiFi.begin(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase);
+
+    uint8_t max_tries = 20;
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        if (wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries)
+        {
+            break;
+        }
+        delay(1000);
+        wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
+        publishWiFiEvent(wifi_sta_connecting_event);
+        // TODO: retry to connect after X seconds
+    }
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connection_failed_event;
+        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
+        publishWiFiEvent(wifi_sta_connecting_event);
+
+        server_->sendHeader("Location", "/");
+        server_->send(302, "text/plain", "Invalid WiFi credentials!");
+    }
+    else
+    {
+        server_->sendHeader("Location", "/mqtt");
+        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+    }
+}
+
+void WifiTask::webHandlerMQTTCredentials()
+{
+    String mqtt_server = server_->arg("mqtt_server");
+    uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
+    String mqtt_user = server_->arg("mqtt_user");
+    String mqtt_password = server_->arg("mqtt_password");
+
+    WiFiEvent event;
+    event.type = MQTT_CREDENTIALS_RECIEVED;
+    sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
+    event.body.mqtt_connecting.port = mqtt_port;
+    sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
+    sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+
+    ESP_LOGD("wifi", "%s %d %s %s",
+             event.body.mqtt_connecting.host,
+             event.body.mqtt_connecting.port,
+             event.body.mqtt_connecting.user,
+             event.body.mqtt_connecting.password);
+
+    publishWiFiEvent(event);
+
+    // preferences.begin("mqtt", false);
+    // preferences.clear();
+
+    // preferences.putString("mqtt_server", mqtt_server);
+    // preferences.putUInt("mqtt_port", mqtt_port);
+    // preferences.putString("mqtt_user", mqtt_user);
+    // preferences.putString("mqtt_password", mqtt_password);
+
+    // preferences.end();
+
+    // WiFi.mode(WIFI_STA);
+    // WiFi.softAPdisconnect(true);
+    server_->send(200, "text/html", "MQTT setup complete!");
+}
+
 void WifiTask::startWebServer()
 {
     server_ = new WebServer(80);
 
     // TODO: do local files rendering
-    // TODO: redo wifi reconnection
     // TODO: make this page work async with animations on UI
 
     server_->on("/", HTTP_GET, [this]()
-                {
-                    WiFiEvent event;
-                    event.type = WEB_CLIENT;
-                    event.body.web_client.connected = true;
-
-                    publishWiFiEvent(event);
-                    // TODO trigger event that user is connected
-
-                    // if (WiFi.isConnected()) {
-                    //     server_->sendHeader("Location", "/mqtt");
-                    //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
-                    // } else {
-                    server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                                    "SSID: <input type='text' name='ssid'><br>"
-                                                    "Password: <input type='text' name='password'><br>"
-                                                    "<input type='hidden' name='setup_type' value='wifi'>"
-                                                    "<input type='submit' value='Submit'>"
-                                                    "</form>");
-                    // }
-                });
+                { this->webHandlerWiFiForm(); });
 
     server_->on("/mqtt", HTTP_GET, [this]()
-                { server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                                  "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
-                                                  "MQTT PORT: <input type='number' name='mqtt_port'><br>"
-                                                  "MQTT USER: <input type='text' name='mqtt_user'><br>"
-                                                  "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
-                                                  "<input type='hidden' name='setup_type' value='mqtt'>"
-                                                  "<input type='submit' value='Submit'>"
-                                                  "</form>"); });
+                { this->webHandlerMQTTForm(); });
+
     server_->on("/submit", [this]()
                 {
-        if (server_->arg("setup_type") == "wifi")
-        {
-            String ssid = server_->arg("ssid");
-            String passphrase = server_->arg("password");
+                    if (server_->arg("setup_type") == "wifi")
+                    {
+                    this->webHandlerWiFiCredentials();
 
-            // TODO send event connecting to wifi
-
-            WiFiEvent wifi_sta_connecting_event;
-
-            wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
-            sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", ssid.c_str());
-            sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", passphrase.c_str());
-            wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
-
-            publishWiFiEvent(wifi_sta_connecting_event);
-
-            WiFi.begin(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase);
-
-            uint8_t max_tries = 20;
-
-            while (WiFi.status() != WL_CONNECTED) {
-                if(wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries){
-                    break;
-                }
-                delay(1000);
-                wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
-                publishWiFiEvent(wifi_sta_connecting_event);
-                // TODO: retry to connect after X seconds
-            }
-
-            if(WiFi.status() != WL_CONNECTED){
-                WiFiEvent wifi_sta_connection_failed_event;
-                wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
-                publishWiFiEvent(wifi_sta_connecting_event);
-
-                server_->sendHeader("Location", "/");
-                server_->send(302, "text/plain", "Invalid WiFi credentials!");
-            }else{
-                server_->sendHeader("Location", "/mqtt");
-                server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
-            }
-
-        }
-        else if (server_->arg("setup_type") == "mqtt")
-        {
-            String mqtt_server = server_->arg("mqtt_server");
-            uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
-            String mqtt_user = server_->arg("mqtt_user");
-            String mqtt_password = server_->arg("mqtt_password");
-
-            preferences.begin("mqtt", false); 
-            preferences.clear();
-
-            preferences.putString("mqtt_server", mqtt_server);
-            preferences.putUInt("mqtt_port", mqtt_port);
-            preferences.putString("mqtt_user", mqtt_user);
-            preferences.putString("mqtt_password", mqtt_password);
-
-            preferences.end();
-
-            // WiFi.mode(WIFI_STA);
-            // WiFi.softAPdisconnect(true);
-            server_->send(200, "text/html", "MQTT setup complete!");
-        } });
+                    }
+                    else if (server_->arg("setup_type") == "mqtt")
+                    {
+                    this->webHandlerMQTTCredentials();
+                    } });
 
     server_->begin();
 

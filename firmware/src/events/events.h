@@ -15,6 +15,14 @@ struct WiFiSTAConnecting
     uint8_t tick;
 };
 
+struct MQTTConnecting
+{
+    char host[20];
+    uint16_t port;
+    char user[128];
+    char password[128];
+};
+
 struct WiFiStatus
 {
     /* data */
@@ -50,8 +58,11 @@ union WiFiEventBody
     APClient ap_client;
     WebClient web_client;
     WiFiSTAConnecting wifi_sta_connecting;
+    MQTTConnecting mqtt_connecting;
 };
 
+// TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED
+// TODO add uniq prefix, clashing with some events
 enum EventType
 {
     WIFI_AP_STARTED = 1,
@@ -59,9 +70,15 @@ enum EventType
     AP_CLIENT,
     WEB_CLIENT,
     WIFI_STA_CONNECTING,
-    WIFI_STA_CONNECTION_FAILED
+    WIFI_STA_CONNECTED,
+    WIFI_STA_CONNECTION_FAILED,
+    WEB_CLIENT_MQTT,
+    MQTT_CREDENTIALS_RECIEVED,
+    MQTT_CONNECTING,
+    SK_MQTT_CONNECTED
 };
 
+// TODO: rename to generic event?
 struct WiFiEvent
 {
     EventType type;

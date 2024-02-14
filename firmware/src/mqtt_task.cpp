@@ -28,9 +28,29 @@ MqttTask::~MqttTask()
     preferences.end();
 }
 
+void MqttTask::handleEvent(WiFiEvent event)
+{
+
+    if (event.type == MQTT_CREDENTIALS_RECIEVED)
+    {
+
+        ESP_LOGD("mqtt", "%s %d %s %s",
+                 event.body.mqtt_connecting.host,
+                 event.body.mqtt_connecting.port,
+                 event.body.mqtt_connecting.user,
+                 event.body.mqtt_connecting.password);
+
+        setup_mqtt(
+            event.body.mqtt_connecting.host,
+            event.body.mqtt_connecting.port,
+            event.body.mqtt_connecting.user,
+            event.body.mqtt_connecting.password);
+    }
+}
+
 void MqttTask::run()
 {
-    preferences.begin("mqtt", false);
+    // preferences.begin("mqtt", false);
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     const uint16_t mqtt_push_interval_ms = 200;
@@ -38,121 +58,139 @@ void MqttTask::run()
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
     EntityStateUpdate entity_state_to_process_;
 
-    ConnectivityState connectivity_state_to_process_;
+    // ConnectivityState connectivity_state_to_process_;
 
     static uint32_t last_mqtt_state_sent;
 
     while (1)
     {
-        if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
-        {
-            ESP_LOGD(MQTT_TAG, "Received connectivity state");
-            if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
-            {
-                last_connectivity_state_ = connectivity_state_to_process_;
-            }
-            {
-                last_connectivity_state_ = connectivity_state_to_process_;
-            }
-        }
+        // if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
+        // {
+        //     ESP_LOGD(MQTT_TAG, "Received connectivity state");
+        //     if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
+        //     {
+        //         last_connectivity_state_ = connectivity_state_to_process_;
+        //     }
+        //     {
+        //         last_connectivity_state_ = connectivity_state_to_process_;
+        //     }
+        // }
 
-        if (last_connectivity_state_.is_connected)
-        {
-            if (mqtt_state_.server == "")
-            {
-                ESP_LOGD(MQTT_TAG, "Setting up MQTT");
-                setup_mqtt();
-            }
+        // if (last_connectivity_state_.is_connected)
+        // {
+        //     if (mqtt_state_.server == "")
+        //     {
+        //         ESP_LOGD(MQTT_TAG, "Setting up MQTT");
+        //         setup_mqtt();
+        //     }
 
-            if (!mqttClient.connected())
-            {
-                reconnect_mqtt();
-            }
+        //     if (!mqttClient.connected())
+        //     {
+        //         reconnect_mqtt();
+        //     }
 
-            if (millis() - mqtt_pull > 1000)
-            {
-                mqttClient.loop();
-                mqtt_pull = millis();
-            }
+        //     if (millis() - mqtt_pull > 1000)
+        //     {
+        //         mqttClient.loop();
+        //         mqtt_pull = millis();
+        //     }
 
-            if (xQueueReceive(entity_state_to_send_queue_, &entity_state_to_process_, 0) == pdTRUE)
-            {
+        //     if (xQueueReceive(entity_state_to_send_queue_, &entity_state_to_process_, 0) == pdTRUE)
+        //     {
 
-                if (entity_state_to_process_.changed)
-                {
-                    entity_states_to_send[entity_state_to_process_.app_id] = entity_state_to_process_;
-                }
-            }
+        //         if (entity_state_to_process_.changed)
+        //         {
+        //             entity_states_to_send[entity_state_to_process_.app_id] = entity_state_to_process_;
+        //         }
+        //     }
 
-            if (millis() - mqtt_push > mqtt_push_interval_ms)
-            {
+        //     if (millis() - mqtt_push > mqtt_push_interval_ms)
+        //     {
 
-                // iterate over all items in the map and push all not pushed yet
-                for (auto i : entity_states_to_send)
-                {
-                    if (!entity_states_to_send[i.first].sent)
-                    {
-                        cJSON *json = cJSON_CreateObject();
-                        cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
-                        cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
+        //         // iterate over all items in the map and push all not pushed yet
+        //         for (auto i : entity_states_to_send)
+        //         {
+        //             if (!entity_states_to_send[i.first].sent)
+        //             {
+        //                 cJSON *json = cJSON_CreateObject();
+        //                 cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
+        //                 cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
-                        String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
+        //                 String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
 
-                        mqttClient.publish(topic.c_str(), cJSON_PrintUnformatted(json));
+        //                 mqttClient.publish(topic.c_str(), cJSON_PrintUnformatted(json));
 
-                        entity_states_to_send[i.first]
-                            .sent = true;
+        //                 entity_states_to_send[i.first]
+        //                     .sent = true;
 
-                        cJSON_Delete(json);
-                    }
-                }
+        //                 cJSON_Delete(json);
+        //             }
+        //         }
 
-                mqtt_push = millis();
-            }
-        }
+        //         mqtt_push = millis();
+        //     }
+        // }
 
-        if (millis() - last_mqtt_state_sent > 5000)
-        {
-            // MqttState state = {
-            //     mqttClient.connected(),
-            //     MQTT_SERVER,
-            //     "smartknob",
-            // };
+        // if (millis() - last_mqtt_state_sent > 5000)
+        // {
+        //     // MqttState state = {
+        //     //     mqttClient.connected(),
+        //     //     MQTT_SERVER,
+        //     //     "smartknob",
+        //     // };
 
-            publishState(mqtt_state_);
-            last_mqtt_state_sent = millis();
-        }
+        //     publishState(mqtt_state_);
+        //     last_mqtt_state_sent = millis();
+        // }
 
         delay(5);
     }
 }
 
-void MqttTask::setup_mqtt()
+void MqttTask::setup_mqtt(char *host, uint16_t port, char *user, char *password)
 {
 
-    const char *mqtt_server = preferences.getString("mqtt_server", "MQTT_SERVER").c_str();
-    const uint16_t mqtt_port = preferences.getUInt("mqtt_port", 1883);
-    const char *mqtt_user = preferences.getString("mqtt_user", "MQTT_USER").c_str();
-    const char *mqtt_pass = preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str();
+    // const char *mqtt_server = preferences.getString("mqtt_server", "MQTT_SERVER").c_str();
+    // const uint16_t mqtt_port = preferences.getUInt("mqtt_port", 1883);
+    // const char *mqtt_user = preferences.getString("mqtt_user", "MQTT_USER").c_str();
+    // const char *mqtt_pass = preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str();
+
+    WiFiEvent event;
+    event.type = MQTT_CONNECTING;
+    sprintf(event.body.mqtt_connecting.host, "%s");
+    event.body.mqtt_connecting.port = mqtt_port;
+    sprintf(event.body.mqtt_connecting.user, "%s", user);
+    sprintf(event.body.mqtt_connecting.password, "%s", password);
+
+    publishEvent(event);
 
     log("Starting MQTT client");
 
     mqttClient.setClient(wifi_client);
+    mqttClient.setServer(host, port);
     mqttClient.setBufferSize(512);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
                            { this->callback_mqtt(topic, payload, length); });
 
-    if (!mqttClient.connected())
+    bool mqtt_connected = mqttClient.connect("smartknob", user, password);
+
+    if (mqtt_connected)
     {
-        reconnect_mqtt();
+        WiFiEvent event;
+        event.type = SK_MQTT_CONNECTED;
     }
+
+    // if (!mqttClient.connected())
+    // {
+    //     reconnect_mqtt();
+    // }
     mqttClient.loop();
 
-    mqtt_state_.is_connected = mqttClient.connected();
-    mqtt_state_.server = mqtt_server;
-    mqtt_state_.client_id = "smartknob";
+    // mqtt_state_.is_connected = mqttClient.connected();
+    // mqtt_state_.server = mqtt_server;
+    // mqtt_state_.client_id = "smartknob";
 
     char buf_[128];
     sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
@@ -272,6 +310,16 @@ void MqttTask::lock()
 void MqttTask::unlock()
 {
     xSemaphoreGive(mutex_app_sync_);
+}
+
+void MqttTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    this->shared_events_queue = shared_events_queue;
+}
+
+void MqttTask::publishEvent(WiFiEvent event)
+{
+    xQueueSendToBack(shared_events_queue, &event, 0);
 }
 
 #endif

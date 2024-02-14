@@ -139,11 +139,17 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         }
         break;
     case WIFI_STA_CONNECTING:
-        is_sta_connecting = true;
         sta_connecting_tick = event.body.wifi_sta_connecting.tick;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
         sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
+        break;
+    case WEB_CLIENT_MQTT:
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
+        break;
+    case MQTT_CONNECTING:
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
+        sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         break;
     default:
         break;
@@ -434,12 +440,32 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
     spr_->drawString("BROWSER", center_horizontal, center_vertical + screen_name_label_h, 1);
 
     spr_->setTextColor(default_text_color);
-    spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+    spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass7StepPage()
 {
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(accent_text_color);
+
+    spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
+    spr_->drawString(mqtt_server, center_horizontal, center_vertical + screen_name_label_h, 1);
+
+    sprintf(buf_, "%ds", mqtt_connecting_tick);
+
+    spr_->setTextColor(default_text_color);
+
+    spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
+
+    spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
+
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
@@ -528,6 +554,10 @@ TFT_eSprite *OnboardingFlow::render()
         return renderHass4StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_HASS_5:
         return renderHass5StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_6:
+        return renderHass6StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_7:
+        return renderHass7StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_WIFI_1:
         return renderWiFi1StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:

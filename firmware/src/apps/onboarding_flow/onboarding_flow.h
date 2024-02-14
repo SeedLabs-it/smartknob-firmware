@@ -26,6 +26,8 @@ const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_2 = 5;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_3 = 6;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_4 = 7;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_5 = 8;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_6 = 9;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_7 = 10;
 
 class OnboardingFlow
 {
@@ -86,6 +88,7 @@ private:
     uint8_t sta_connecting_tick = 0;
     char wifi_sta_ssid[128];
     char wifi_sta_passphrase[128];
-
     char wifi_qr_code[40];
+    char mqtt_server[32];
+    uint8_t mqtt_connecting_tick = 0;
 };
