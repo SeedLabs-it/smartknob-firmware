@@ -28,6 +28,7 @@ const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_4 = 7;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_5 = 8;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_6 = 9;
 const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_7 = 10;
+const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_8 = 11;
 
 class OnboardingFlow
 {
@@ -54,6 +55,7 @@ private:
     TFT_eSprite *renderHass5StepPage();
     TFT_eSprite *renderHass6StepPage();
     TFT_eSprite *renderHass7StepPage();
+    TFT_eSprite *renderHass8StepPage();
     TFT_eSprite *renderWiFi1StepPage();
     TFT_eSprite *renderDemo1StepPage();
     TFT_eSprite *renderAboutPage();

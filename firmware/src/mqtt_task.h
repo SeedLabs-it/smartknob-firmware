@@ -14,6 +14,14 @@
 #include "app_config.h"
 #include "events/events.h"
 
+struct MQTTConfig
+{
+    std::string host;
+    uint16_t port;
+    std::string user;
+    std::string password;
+};
+
 class MqttTask : public Task<MqttTask>
 {
     friend class Task<MqttTask>; // Allow base Task to invoke protected run()
@@ -67,7 +75,7 @@ private:
 
     void log(const char *msg);
 
-    void setup_mqtt(char *host, uint16_t port, char *user, char *password);
+    void setup_mqtt(MQTTConfig config);
     void reconnect_mqtt();
     void callback_mqtt(char *topic, byte *payload, unsigned int length);
 

@@ -151,6 +151,10 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         break;
+    case SK_MQTT_CONNECTED:
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
+        sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+        break;
     default:
         break;
     }
@@ -468,6 +472,25 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
 
     return this->spr_;
 }
+
+TFT_eSprite *OnboardingFlow::renderHass8StepPage()
+{
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(2);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->setTextColor(TFT_SKYBLUE);
+
+    spr_->drawString("CONTINUE THE SETUP IN", center_horizontal, center_vertical - screen_name_label_h / 1.8, 1);
+    spr_->drawString("HOME ASSISTANT", center_horizontal, center_vertical + screen_name_label_h / 1.8, 1);
+
+    return this->spr_;
+}
+
 TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
@@ -558,6 +581,8 @@ TFT_eSprite *OnboardingFlow::render()
         return renderHass6StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_HASS_7:
         return renderHass7StepPage();
+    case ONBOARDING_FLOW_PAGE_STEP_HASS_8:
+        return renderHass8StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_WIFI_1:
         return renderWiFi1StepPage();
     case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:
