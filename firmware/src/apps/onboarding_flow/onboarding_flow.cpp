@@ -45,9 +45,9 @@ OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
     this->spr_ = spr_;
 
     root_level_motor_config = PB_SmartKnobConfig{
-        1,
         0,
-        1,
+        0,
+        0,
         0,
         4,
         35 * PI / 180,
@@ -198,6 +198,7 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 
 EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
 {
+    // TODO adapt for subviews if needed
     current_position = state.current_position;
 
     // this works only at the top menu
