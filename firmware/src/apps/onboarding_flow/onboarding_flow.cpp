@@ -1,5 +1,5 @@
 #include "onboarding_flow.h"
-
+#include "./../icons.h"
 #include "qrcode.h"
 
 OnboardingFlow::OnboardingFlow()
@@ -219,50 +219,56 @@ void OnboardingFlow::updateStateFromSystem(AppState state) {}
 
 TFT_eSprite *OnboardingFlow::renderWelcomePage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t center_width = TFT_WIDTH / 2;
+    uint16_t center_height = TFT_HEIGHT / 2;
+    uint16_t icon_size = 96;
 
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "SMART KNOB");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_h, 70, 1);
+    spr_->drawString(buf_, center_width, center_height - 90, 1);
 
     // TODO move this to a constant of software/hardware
     sprintf(buf_, "DEV KIT V%d.%d", 0, 1);
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_h, 100, 1);
+    spr_->drawString(buf_, center_width, center_height - 68, 1);
+
+    spr_->drawBitmap(center_width - icon_size / 2, center_height - icon_size / 2, seedlabs_logo, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
 
     sprintf(buf_, "ROTATE TO START");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 185, 1);
+    spr_->drawString(buf_, center_width, center_height + 70, 1);
 
     return this->spr_;
 }
 TFT_eSprite *OnboardingFlow::renderHass1StepPage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t center_width = TFT_WIDTH / 2;
+    uint16_t center_height = TFT_HEIGHT / 2;
+    uint16_t icon_size = 80;
 
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "HOME ASSISTANT");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_h, 50, 1);
+    spr_->drawString(buf_, center_width, center_height - 85, 1);
 
     sprintf(buf_, "INTEGRATION");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_h, 80, 1);
+    spr_->drawString(buf_, center_width, center_height - 63, 1);
+
+    spr_->drawBitmap(center_width - icon_size / 2, center_height - icon_size / 2, home_assistant_80, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
 
     sprintf(buf_, "PRESS TO CONFIGURE");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_h, 185, 1);
+    spr_->drawString(buf_, center_width, center_height + 70, 1);
 
     return this->spr_;
 }
