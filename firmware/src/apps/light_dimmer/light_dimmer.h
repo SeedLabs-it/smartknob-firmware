@@ -28,6 +28,8 @@ private:
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
 
+    cJSON *json;
+
     // app state
     uint8_t app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
 

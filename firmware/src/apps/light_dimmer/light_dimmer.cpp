@@ -28,6 +28,8 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
 
     big_icon = light_top_80;
     small_icon = light_top_40;
+
+    json = cJSON_CreateObject();
 }
 
 int8_t LightDimmerApp::navigationNext()
@@ -135,19 +137,21 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     // Memoty leak is here
     // if (last_position != current_position)
     // {
+
+    //     // TODO: find a way how to clean json obj
+
     //     sprintf(new_state.app_id, "%s", app_id);
-    //     cJSON *json = cJSON_CreateObject();
     //     cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
     //     cJSON_AddNumberToObject(json, "color_temp", 0);
-    //     cJSON *rgb_array = cJSON_CreateArray();
-    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+    //     // cJSON *rgb_array = cJSON_CreateArray();
+    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     // cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
     //     sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
 
-    //     cJSON_Delete(json);
+    //     // cJSON_Delete(json);
 
     //     last_position = current_position;
     //     new_state.changed = true;
