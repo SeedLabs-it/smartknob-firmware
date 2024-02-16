@@ -130,7 +130,9 @@ void RootTask::run()
 
     motor_task_.addListener(knob_state_queue_);
 
+#if SK_MQTT
     mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#endif
 
     plaintext_protocol_.init([this]()
                              { changeConfig(MENU); },
@@ -223,7 +225,9 @@ void RootTask::run()
             // TODO: handle mqtt credentials here
             if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
             {
+#if SK_MQTT
                 mqtt_task_->handleEvent(wifi_event);
+#endif
             }
         }
 

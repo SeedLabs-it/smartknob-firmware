@@ -8,12 +8,12 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
     this->friendly_name = friendly_name;
 
     motor_config = PB_SmartKnobConfig{
+        current_brightness,
         0,
-        0,
-        0,
+        current_brightness,
         0,
         100,
-        3.6 / 2 * PI / 180,
+        2.4 * PI / 180,
         1,
         1,
         1.1,
@@ -43,12 +43,12 @@ int8_t LightDimmerApp::navigationNext()
     {
     case LIGHT_DIMMER_APP_MODE_DIMMER:
         motor_config = PB_SmartKnobConfig{
-            current_position,
+            current_brightness,
             0,
-            current_position,
+            current_brightness,
             0,
             100,
-            3.6 / 2 * PI / 180,
+            2.4 * PI / 180,
             1,
             1,
             1.1,
@@ -67,7 +67,7 @@ int8_t LightDimmerApp::navigationNext()
             current_position,
             0,
             -1,
-            3.6 / 2 * PI / 180,
+            1.8 * PI / 180,
             1,
             1,
             1.1,
@@ -111,6 +111,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         {
             current_position = 0;
         }
+        current_brightness = current_position;
     }
 
     sub_position_unit = state.sub_position_unit;
@@ -266,8 +267,8 @@ TFT_eSprite *LightDimmerApp::render()
     float right_bound = 0;
     float range_radians = (motor_config.max_position - motor_config.min_position) * motor_config.position_width_radians;
 
-    left_bound = PI / 2;
-    right_bound = PI / 2 - range_radians - motor_config.position_width_radians;
+    left_bound = PI / 2 + range_radians / 2;
+    right_bound = PI / 2 - range_radians / 2 - motor_config.position_width_radians;
 
     float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
     float adjusted_angle = raw_angle - adjusted_sub_position;
