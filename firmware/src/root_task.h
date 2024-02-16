@@ -66,7 +66,11 @@ private:
     SensorsTask *sensors_task_;
     char buf_[128];
 
+#if SK_UI_BOOT_MODE
+    bool is_onboarding = false;
+#else
     bool is_onboarding = true;
+#endif
 
     std::vector<QueueHandle_t> listeners_;
 
