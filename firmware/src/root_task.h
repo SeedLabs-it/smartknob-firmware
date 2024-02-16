@@ -17,6 +17,10 @@
 #include "led_ring_task.h"
 #include "sensors_task.h"
 
+#include "notify/motor_notifier/motor_notifier.h"
+
+#include "navigation/navigation.h"
+
 void delete_me_TriggerMotorCalibration();
 
 class RootTask : public Task<RootTask>,
@@ -33,11 +37,11 @@ public:
     void setConfiguration(Configuration *configuration);
 
     void setHassApps(HassApps *apps);
-    void setOnboardingApps(Onboarding *apps);
 
     void addListener(QueueHandle_t queue);
 
     QueueHandle_t getConnectivityStateQueue();
+    QueueHandle_t getMqttStateQueue();
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
 
@@ -58,12 +62,15 @@ private:
     WifiTask *wifi_task_;
     MqttTask *mqtt_task_;
     HassApps *hass_apps;
-    Onboarding *onboarding_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     char buf_[128];
 
+#if SK_UI_BOOT_MODE
+    bool is_onboarding = false;
+#else
     bool is_onboarding = true;
+#endif
 
     std::vector<QueueHandle_t> listeners_;
 
@@ -87,6 +94,7 @@ private:
     PB_SmartKnobConfig latest_config_ = {};
 
     ConnectivityState latest_connectivity_state_ = {};
+    MqttState latest_mqtt_state_ = {};
     SensorsState latest_sensors_state_ = {};
 
     cJSON *apps_ = NULL;
@@ -95,6 +103,7 @@ private:
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;
+    QueueHandle_t mqtt_status_queue_;
     QueueHandle_t sensors_status_queue_;
 
     QueueHandle_t app_sync_queue_;

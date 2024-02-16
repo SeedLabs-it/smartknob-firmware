@@ -7,7 +7,7 @@
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 2048 * 6, 1, task_core}
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 12, 1, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
@@ -22,9 +22,9 @@ DisplayTask::~DisplayTask()
     vSemaphoreDelete(mutex_);
 }
 
-Onboarding *DisplayTask::getOnboarding()
+OnboardingFlow *DisplayTask::getOnboardingFlow()
 {
-    return &onboarding;
+    return &onboarding_flow;
 }
 
 HassApps *DisplayTask::getHassApps()
@@ -34,7 +34,6 @@ HassApps *DisplayTask::getHassApps()
 
 void DisplayTask::run()
 {
-
     tft_.begin();
     tft_.invertDisplay(1);
     tft_.setRotation(SK_DISPLAY_ROTATION);
@@ -46,7 +45,7 @@ void DisplayTask::run()
 
     log("push menu sprite: ok");
 
-    spr_.setColorDepth(8);
+    spr_.setColorDepth(16);
 
     if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
     {
@@ -60,8 +59,9 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    onboarding = Onboarding(&spr_);
     hass_apps = HassApps(&spr_);
+
+    onboarding_flow = OnboardingFlow(&spr_);
 
     AppState app_state;
 
@@ -80,11 +80,11 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            if (is_onboarding)
+            if (boot_mode == BOOT_MODE_ONBOARDING)
             {
-                onboarding.renderActive()->pushSprite(0, 0);
+                onboarding_flow.render()->pushSprite(0, 0);
             }
-            else
+            else if (boot_mode == BOOT_MODE_HASS)
             {
                 hass_apps.renderActive()->pushSprite(0, 0);
             }
@@ -104,7 +104,7 @@ void DisplayTask::run()
             }
         }
 
-        delay(1);
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
@@ -134,18 +134,12 @@ void DisplayTask::log(const char *msg)
 
 void DisplayTask::enableOnboarding()
 {
-    is_onboarding = true;
+    boot_mode = BOOT_MODE_ONBOARDING;
 }
 
-void DisplayTask::disableOnboarding()
+void DisplayTask::enableHass()
 {
-    is_onboarding = false;
+    boot_mode = BOOT_MODE_HASS;
 }
-
-// void DisplayTask::setApps(Apps apps_)
-// {
-//     apps_.setSprite(&spr_);
-//     this->apps = apps_;
-// }
 
 #endif

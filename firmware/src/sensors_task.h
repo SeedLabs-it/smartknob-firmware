@@ -1,7 +1,5 @@
 #pragma once
 
-#if SK_SEEDLABS_DEVKIT
-
 #include "logger.h"
 #include "task.h"
 #include "app_config.h"
@@ -46,11 +44,3 @@ private:
     bool verbose_ = false;
     StrainCalibration strain_calibration;
 };
-
-#else
-
-class SensorsTask
-{
-};
-
-#endif
