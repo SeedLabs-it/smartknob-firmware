@@ -5,7 +5,9 @@
 #include "cJSON.h"
 #include "root_task.h"
 
+#if SK_NETWORKING
 #include "wifi_config.h"
+#endif
 
 static const char *WIFI_TAG = "WIFI";
 
@@ -89,8 +91,13 @@ void WifiTask::startWiFiAP()
 
 void WifiTask::setup_wifi()
 {
+#if SK_NETWORKING
     const char *wifi_name = WIFI_SSID;
     const char *wifi_pass = WIFI_PASSWORD;
+#else
+    const char *wifi_name = "";
+    const char *wifi_pass = "";
+#endif
 
     // WiFi.persistent(SK_REMEMBER_WIFI);
     // WiFi.setAutoReconnect(true);
