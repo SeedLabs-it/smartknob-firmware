@@ -27,11 +27,6 @@ OnboardingFlow *DisplayTask::getOnboardingFlow()
     return &onboarding_flow;
 }
 
-Onboarding *DisplayTask::getOnboarding()
-{
-    return &onboarding;
-}
-
 HassApps *DisplayTask::getHassApps()
 {
     return &hass_apps;
@@ -64,7 +59,6 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    onboarding = Onboarding(&spr_);
     hass_apps = HassApps(&spr_);
 
     onboarding_flow = OnboardingFlow(&spr_);

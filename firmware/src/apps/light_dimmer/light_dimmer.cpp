@@ -112,26 +112,27 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    if (last_position != current_position)
-    {
-        sprintf(new_state.app_id, "%s", app_id);
-        cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
-        cJSON_AddNumberToObject(json, "color_temp", 0);
-        cJSON *rgb_array = cJSON_CreateArray();
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-        cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+    // Memoty leak is here
+    // if (last_position != current_position)
+    // {
+    //     sprintf(new_state.app_id, "%s", app_id);
+    //     cJSON *json = cJSON_CreateObject();
+    //     cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
+    //     cJSON_AddNumberToObject(json, "color_temp", 0);
+    //     cJSON *rgb_array = cJSON_CreateArray();
+    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+    //     cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
-        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+    //     sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
 
-        cJSON_Delete(json);
+    //     cJSON_Delete(json);
 
-        last_position = current_position;
-        new_state.changed = true;
-        sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
-    }
+    //     last_position = current_position;
+    //     new_state.changed = true;
+    //     sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
+    // }
 
     return new_state;
 }
@@ -167,7 +168,7 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     uint16_t offset_vertical = 30;
 
-    char buf_[6];
+    char buf_[16];
     sprintf(buf_, "%d%%", current_position);
 
     spr_->fillScreen(DISABLED_COLOR);
@@ -203,74 +204,22 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
             segment_color);
     }
 
-    segment_color = ToRGBA(app_hue_position);
+    uint32_t current_color = ToRGBA(app_hue_position);
     spr_->fillCircle(center_h, center_v, 80, color_black);
 
-    spr_->fillTriangle(center_h, center_v - 70, center_h - 10, center_v - 55, center_h + 10, center_v - 55, segment_color);
-    // spr_->fillCircle(center_h, center_v - 60, 10, segment_color);
+    spr_->fillTriangle(center_h, center_v - 70, center_h - 10, center_v - 55, center_h + 10, center_v - 55, current_color);
 
-    sprintf(buf_, "%d", app_hue_position);
-    spr_->setFreeFont(&Pixel62mr11pt7b);
-    spr_->setTextColor(color_light_grey);
-    spr_->drawString(buf_, center_h, center_v - 10, 1);
+    HEXColor current_color_hex = hToHEX(app_hue_position);
 
-    sprintf(buf_, "HUE");
+    sprintf(buf_, "#%02X%02X%02X", current_color_hex.r, current_color_hex.g, current_color_hex.b);
+    spr_->setTextColor(current_color);
     spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(buf_, center_h, center_v + 40, 1);
+    spr_->drawString(buf_, center_h, center_v, 1);
 
-    // float start_angle = left_bound;
-    // float wanted_angle = right_bound;
-
-    // wanted_angle = left_bound - (range_radians / num_positions) * (current_position - motor_config.min_position) - adjusted_sub_position - motor_config.position_width_radians;
-    // if (wanted_angle < right_bound - motor_config.position_width_radians)
-    // {
-    //     wanted_angle = right_bound - motor_config.position_width_radians;
-    // }
-
-    // if (wanted_angle > left_bound)
-    // {
-    //     wanted_angle = left_bound;
-    // }
-
-    // if (current_position <= 0)
-    // {
-    //     background_color = off_background;
-    //     foreground_color = off_lamp_color;
-    //     dot_color = off_background;
-    //     strcpy(buf_, "OFF");
-    // }
-    // else
-    // {
-    //     background_color = on_background;
-    //     foreground_color = on_lamp_color;
-    //     dot_color = on_background;
-    // }
-
-    // spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background_color);
-    // spr_->setTextColor(foreground_color);
-    // spr_->setFreeFont(&NDS1210pt7b);
-
-    // spr_->drawString(friendly_name, center_h, center_v + 20, 1);
-    // spr_->setFreeFont(&Pixel62mr11pt7b);
-    // spr_->drawString(buf_, center_h, center_v - 22, 1);
-
-    // if (current_position > 0)
-    // {
-    //     for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-    //     {
-    //         // draw the arc
-    //         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, foreground_color);
-    //     }
-    //     // there is some jittering on adjusted_angle that might push the dot outside the arc.
-    //     // need to  bound it on the right side. On the left side it's already turned off by
-    //     // the current_position > 0 condition.
-
-    //     if (adjusted_angle < right_bound)
-    //     {
-    //         adjusted_angle = right_bound;
-    //     }
-    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
-    // }
+    sprintf(buf_, "HEX", app_hue_position);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(color_light_grey);
+    spr_->drawString(buf_, center_h, center_v + 30, 1);
 
     return this->spr_;
 }

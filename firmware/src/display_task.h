@@ -12,7 +12,6 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
-#include "apps/onboarding/onboarding.h"
 #include "apps/hass/hass_apps.h"
 
 #include "apps/onboarding_flow/onboarding_flow.h"
@@ -35,7 +34,6 @@ public:
     void setLogger(Logger *logger);
     void setApps(Apps apps);
     HassApps *getHassApps();
-    Onboarding *getOnboarding();
     void enableOnboarding();
     void enableHass();
 
@@ -49,7 +47,6 @@ private:
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
-    Onboarding onboarding;
     HassApps hass_apps;
 
     // TODO: put under private

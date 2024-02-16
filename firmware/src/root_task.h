@@ -37,7 +37,6 @@ public:
     void setConfiguration(Configuration *configuration);
 
     void setHassApps(HassApps *apps);
-    void setOnboardingApps(Onboarding *apps);
 
     void addListener(QueueHandle_t queue);
 
@@ -63,7 +62,6 @@ private:
     WifiTask *wifi_task_;
     MqttTask *mqtt_task_;
     HassApps *hass_apps;
-    Onboarding *onboarding_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     char buf_[128];

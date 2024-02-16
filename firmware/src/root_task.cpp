@@ -71,11 +71,6 @@ void RootTask::setHassApps(HassApps *apps)
     this->hass_apps = apps;
 }
 
-void RootTask::setOnboardingApps(Onboarding *apps)
-{
-    this->onboarding_apps = apps;
-}
-
 void RootTask::strainCalibrationCallback()
 {
     if (!configuration_loaded_)
@@ -382,12 +377,7 @@ void RootTask::changeConfig(int8_t id)
         applyConfig(hass_apps->getActiveMotorConfig(), false);
     }
 
-    if (is_onboarding)
-    {
-        onboarding_apps->setActive(id);
-        applyConfig(onboarding_apps->getActiveMotorConfig(), false);
-    }
-    else
+    if (!is_onboarding)
     {
         hass_apps->setActive(id);
         applyConfig(hass_apps->getActiveMotorConfig(), false);
@@ -426,8 +416,6 @@ void RootTask::updateHardware(AppState app_state)
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_LONG;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                    // TODO: remove this
-                    // changeConfig(onboarding_apps->navigationBack());
                 }
                 else
                 {
@@ -449,8 +437,6 @@ void RootTask::updateHardware(AppState app_state)
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_SHORT;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                    // TODO: remove this
-                    // changeConfig(onboarding_apps->navigationNext());
                 }
                 else
                 {
