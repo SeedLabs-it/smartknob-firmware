@@ -112,7 +112,7 @@ void LedRingTask::run()
     }
 
     FastLED.clear();
-    FastLED.setBrightness(255);
+    FastLED.setBrightness(155);
     FastLED.show();
 
     while (1)

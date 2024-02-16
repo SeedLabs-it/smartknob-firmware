@@ -19,7 +19,7 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("App", 1024 * 5, 1, task_core),
+    SensorsTask *sensors_task) : Task("RootTask", 1024 * 10, 1, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
@@ -51,6 +51,9 @@ RootTask::RootTask(
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
 
+    mqtt_status_queue_ = xQueueCreate(1, sizeof(MqttState));
+    assert(mqtt_status_queue_ != NULL);
+
     sensors_status_queue_ = xQueueCreate(100, sizeof(SensorsState));
     assert(sensors_status_queue_ != NULL);
 
@@ -66,11 +69,6 @@ RootTask::~RootTask()
 void RootTask::setHassApps(HassApps *apps)
 {
     this->hass_apps = apps;
-}
-
-void RootTask::setOnboardingApps(Onboarding *apps)
-{
-    this->onboarding_apps = apps;
 }
 
 void RootTask::strainCalibrationCallback()
@@ -130,28 +128,11 @@ void RootTask::run()
 {
     stream_.begin();
 
-    log("Giving 0.5s for Apps to initialize");
-    delay(500);
-
-    // TODO: remove me
-    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
-    cJSON *json_root = cJSON_Parse(apps_config.c_str());
-    hass_apps->sync(json_root);
-
-    // TODO: make this configurable based on config
-    if (SK_UI_BOOT_MODE == 0)
-    {
-        display_task_->enableOnboarding();
-        is_onboarding = true;
-    }
-    else
-    {
-        display_task_->disableOnboarding();
-        is_onboarding = false;
-    }
-
-    changeConfig(MENU);
     motor_task_.addListener(knob_state_queue_);
+
+#if SK_MQTT
+    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#endif
 
     plaintext_protocol_.init([this]()
                              { changeConfig(MENU); },
@@ -166,7 +147,7 @@ void RootTask::run()
                              [this]()
                              {
                                  this->is_onboarding = !this->is_onboarding;
-                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->disableOnboarding();
+                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->enableHass();
                                  changeConfig(MENU);
                              });
 
@@ -192,11 +173,36 @@ void RootTask::run()
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
     proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
 
+    // TODO: remove me
+    std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
+    cJSON *json_root = cJSON_Parse(apps_config.c_str());
+    hass_apps->sync(json_root);
+
+    MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
+                                                 { applyConfig(config, false); });
+
+    // TODO: make this configurable based on config
+    if (SK_UI_BOOT_MODE == 0)
+    {
+        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+        display_task_->enableOnboarding();
+        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+        is_onboarding = true;
+    }
+    else
+    {
+        display_task_->enableHass();
+        changeConfig(MENU);
+        is_onboarding = false;
+    }
+
     EntityStateUpdate entity_state_update_to_send;
 
     // Value between [0, 65536] for brightness when not engaging with knob
     bool isCurrentSubPositionSet = false;
     float currentSubPosition;
+    WiFiEvent wifi_event;
 
     AppState app_state = {};
     while (1)
@@ -205,6 +211,24 @@ void RootTask::run()
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();
+        }
+
+        if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
+        {
+
+            if (is_onboarding)
+            {
+                display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+            }
+
+            // TODO: handle wifi credentials here
+            // TODO: handle mqtt credentials here
+            if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
+            {
+#if SK_MQTT
+                mqtt_task_->handleEvent(wifi_event);
+#endif
+            }
         }
 
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
@@ -259,10 +283,15 @@ void RootTask::run()
             app_state.connectivity_state = latest_connectivity_state_;
         }
 
+        if (xQueueReceive(mqtt_status_queue_, &latest_mqtt_state_, 0) == pdTRUE)
+        {
+            app_state.mqtt_state = latest_mqtt_state_;
+        }
+
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
             ESP_LOGD("root_task", "App sync requested!");
-#if SK_NETWORKING // Should this be here??
+#if SK_MQTT // Should this be here??
             hass_apps->sync(mqtt_task_->getApps());
 
             log("Giving 0.5s for Apps to initialize");
@@ -293,14 +322,14 @@ void RootTask::run()
 
             if (is_onboarding)
             {
-                entity_state_update_to_send = onboarding_apps->update(app_state);
+                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
             }
             else
             {
                 entity_state_update_to_send = hass_apps->update(app_state);
             }
 
-#if SK_NETWORKING
+#if SK_MQTT
             mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
 #endif
 
@@ -321,6 +350,8 @@ void RootTask::run()
             current_protocol_->log(log_string->c_str());
             delete log_string;
         }
+
+        motor_notifier.loopTick();
 
         updateHardware(app_state);
 
@@ -350,12 +381,7 @@ void RootTask::changeConfig(int8_t id)
         applyConfig(hass_apps->getActiveMotorConfig(), false);
     }
 
-    if (is_onboarding)
-    {
-        onboarding_apps->setActive(id);
-        applyConfig(onboarding_apps->getActiveMotorConfig(), false);
-    }
-    else
+    if (!is_onboarding)
     {
         hass_apps->setActive(id);
         applyConfig(hass_apps->getActiveMotorConfig(), false);
@@ -391,7 +417,9 @@ void RootTask::updateHardware(AppState app_state)
 
                 if (is_onboarding)
                 {
-                    changeConfig(onboarding_apps->navigationBack());
+                    NavigationEvent event;
+                    event.press = NAVIGATION_EVENT_PRESS_LONG;
+                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
@@ -410,7 +438,9 @@ void RootTask::updateHardware(AppState app_state)
                 /* code */
                 if (is_onboarding)
                 {
-                    changeConfig(onboarding_apps->navigationNext());
+                    NavigationEvent event;
+                    event.press = NAVIGATION_EVENT_PRESS_SHORT;
+                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
@@ -514,6 +544,11 @@ void RootTask::setConfiguration(Configuration *configuration)
 QueueHandle_t RootTask::getConnectivityStateQueue()
 {
     return connectivity_status_queue_;
+}
+
+QueueHandle_t RootTask::getMqttStateQueue()
+{
+    return mqtt_status_queue_;
 }
 
 QueueHandle_t RootTask::getSensorsStateQueue()

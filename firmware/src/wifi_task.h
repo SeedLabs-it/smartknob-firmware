@@ -1,39 +1,23 @@
 #pragma once
 
-#if SK_NETWORKING
+#if SK_WIFI
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <DNSServer.h>
+#include <WebServer.h>
 #include <vector>
 #include <mqtt.h>
+#include <Preferences.h>
 
 #include "logger.h"
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
 #include "app_config.h"
 
-#include <ElegantOTA.h>
+#include "events/events.h"
+#include "notify/wifi_notifier/wifi_notifier.h"
 
-const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head>
-  <title>SETUP SMARTKNOB</title>
-</head>
-<body>
-  <form>
-    <label for="ssid">SSID:</label><br>
-    <input type="text" id="ssid" name="ssid"><br>
-    <label for="password">Password:</label><br>
-    <input type="text" id="password" name="password"><br>
-    <input type="submit" value="Continue">
-  </form>
-</body>
-</html>
-)rawliteral";
+#include <ElegantOTA.h>
 
 class WifiTask : public Task<WifiTask>
 {
@@ -45,6 +29,9 @@ public:
 
     void setLogger(Logger *logger);
     void addStateListener(QueueHandle_t queue);
+
+    WiFiNotifier *getNotifier();
+    QueueHandle_t getWiFiEventsQueue();
 
 protected:
     void run();
@@ -58,36 +45,23 @@ private:
     void log(const char *msg);
     WiFiClient wifi_client;
     void setup_wifi();
-    void handleRoot();
-    boolean captivePortal();
     void updateWifiState();
     void publishState(const ConnectivityState &state);
     char buf_[128];
-    AsyncWebServer *server_;
-};
+    WebServer *server_;
+    Preferences preferences;
 
-class CaptivePortalHandler : public AsyncWebHandler
-{
-public:
-    CaptivePortalHandler() {}
-    virtual ~CaptivePortalHandler() {}
+    void publishWiFiEvent(WiFiEvent event);
+    void startWebServer();
+    bool is_webserver_started = false;
+    void startWiFiAP();
 
-    bool canHandle(AsyncWebServerRequest *request)
-    {
-        return request->url() == "/";
-    }
-
-    void handleRequest(AsyncWebServerRequest *request)
-    {
-        if (request->method() == HTTP_GET && request->url() == "/")
-        {
-            request->send(200, "text/html", index_html);
-        }
-        else
-        {
-            request->send(200, "text/html", index_html);
-        }
-    }
+    WiFiNotifier wifi_notifier;
+    // websrver handlers
+    void webHandlerWiFiForm();
+    void webHandlerMQTTForm();
+    void webHandlerWiFiCredentials();
+    void webHandlerMQTTCredentials();
 };
 
 #else

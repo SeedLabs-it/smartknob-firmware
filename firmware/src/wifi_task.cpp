@@ -1,84 +1,353 @@
-// co-authored by carlhampuswall
-
-#if SK_NETWORKING
+#if SK_WIFI
 #include "wifi_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-#include "wifi_config.h"
 #include "cJSON.h"
 #include "root_task.h"
 
+#if SK_NETWORKING
+#include "wifi_config.h"
+#endif
+
 static const char *WIFI_TAG = "WIFI";
+
+QueueHandle_t wifi_events_queue;
+
+// example article
+// https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
 WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 2048 * 2, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    wifi_events_queue = xQueueCreate(5, sizeof(WiFiEvent));
+    assert(wifi_events_queue != NULL);
+
+    // TODO make this more robust
+    wifi_notifier.setCallback([this]()
+                              { this->startWiFiAP(); this->startWebServer(); });
 }
 
 WifiTask::~WifiTask()
 {
     vSemaphoreDelete(mutex_);
 }
+
+void OnWiFiEventGlobal(WiFiEvent_t event)
+{
+
+    WiFiEvent wifi_event;
+
+    switch (event)
+    {
+
+    case SYSTEM_EVENT_STA_CONNECTED:
+        Serial.println("ESP32 Connected to WiFi Network");
+        break;
+    // case SYSTEM_EVENT_AP_START:
+    //     Serial.println("ESP32 soft AP started");
+    //     break;
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+        wifi_event.type = AP_CLIENT;
+        wifi_event.body.ap_client.connected = true;
+
+        xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+
+        wifi_event.type = AP_CLIENT;
+        wifi_event.body.ap_client.connected = false;
+
+        xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
+        break;
+    default:
+        break;
+    }
+}
+
+void WifiTask::startWiFiAP()
+{
+
+    char ssid[12] = "SKDK_A2R45C";
+    char passphrase[9] = "12345678";
+
+    // TODO, randomise hostname and password
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.onEvent(OnWiFiEventGlobal);
+    WiFi.softAP(ssid, passphrase);
+
+    WiFiEvent event;
+    event.type = WIFI_AP_STARTED;
+
+    strcpy(event.body.wifi_ap_started.ssid, ssid);
+    strcpy(event.body.wifi_ap_started.passphrase, passphrase);
+
+    // DEBUG: added delay for testing, remove this on release
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    publishWiFiEvent(event);
+}
+
 void WifiTask::setup_wifi()
 {
+#if SK_NETWORKING
     const char *wifi_name = WIFI_SSID;
     const char *wifi_pass = WIFI_PASSWORD;
+#else
+    const char *wifi_name = "";
+    const char *wifi_pass = "";
+#endif
 
-    WiFi.setHostname("SmartKnob");
-    WiFi.setAutoReconnect(true);
-
-    WiFi.begin(wifi_name, wifi_pass);
+    // WiFi.persistent(SK_REMEMBER_WIFI);
+    // WiFi.setAutoReconnect(true);
 
     uint8_t tries = 0;
-    while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP)
+
+    char hostname[23] = "";
+
+    printf(hostname, "SmartKnob_DevKit_%s", "A2R45C");
+
+    // WiFi.setHostname(hostname);
+
+    log(hostname);
+
+    if (SK_UI_BOOT_MODE == 0)
     {
-        delay(1500);
-        ESP_LOGD("NETWORKING", "WiFi connectien tries: %d", tries);
-        if (tries > 10) // if we can't connect to wifi, start AP. tries dont really mean tries since we're not trying to connect to wifi here.
-        {
-            WiFi.mode(WIFI_AP);
-            WiFi.softAP("SMARTKNOB-AP", "smartknob");
-        }
-        tries++;
+        // onboarding
+        WiFi.mode(WIFI_MODE_APSTA);
+        WiFi.softAP("SmartKnob_DevKit_A2R45C", "smartknob");
+        WiFi.begin(wifi_name, wifi_pass);
     }
-    updateWifiState();
+    else
+    {
+    }
+
+    // while (WiFi.waitForConnectResult() != WL_CONNECTED && tries < 3) //! UP TRIES WHEN IN PRODUCTION
+    // {
+    //     ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
+    //     // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
+    //     WiFi.begin();
+    //     delay(3000);
+    //     tries++;
+    // }
+
+    // if (tries >= 3)
+    // {
+    //     ESP_LOGD(WIFI_TAG, "Failed to connect to wifi, starting AP");
+    //     WiFi.mode(WIFI_AP);
+    //     WiFi.softAP("SMARTKNOB-AP", "smartknob");
+
+    //     while (WiFi.softAPgetStationNum() == 0)
+    //     {
+    //         ESP_LOGD(WIFI_TAG, "Waiting for client to connect to AP");
+    //         delay(1000);
+    //     }
+
+    //     ESP_LOGD(WIFI_TAG, "Client connected to AP");
+    // }
+
+    // if (WiFi.waitForConnectResult() == WL_CONNECTED)
+    // {
+    //     ESP_LOGD(WIFI_TAG, "Connected as: %s", WiFi.localIP().toString().c_str());
+    // }
+    // updateWifiState();
+}
+
+void WifiTask::webHandlerWiFiForm()
+{
+    WiFiEvent event;
+    event.type = WEB_CLIENT;
+    event.body.web_client.connected = true;
+
+    publishWiFiEvent(event);
+    // TODO trigger event that user is connected
+
+    // if (WiFi.isConnected()) {
+    //     server_->sendHeader("Location", "/mqtt");
+    //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+    // } else {
+    server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                    "SSID: <input type='text' name='ssid'><br>"
+                                    "Password: <input type='text' name='password'><br>"
+                                    "<input type='hidden' name='setup_type' value='wifi'>"
+                                    "<input type='submit' value='Submit'>"
+                                    "</form>");
+}
+
+void WifiTask::webHandlerMQTTForm()
+{
+    WiFiEvent event;
+    event.type = WEB_CLIENT_MQTT;
+    publishWiFiEvent(event);
+
+    server_->send(200, "text/html", "<form action='/submit' method='get'>"
+                                    "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
+                                    "MQTT PORT: <input type='number' name='mqtt_port'><br>"
+                                    "MQTT USER: <input type='text' name='mqtt_user'><br>"
+                                    "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
+                                    "<input type='hidden' name='setup_type' value='mqtt'>"
+                                    "<input type='submit' value='Submit'>"
+                                    "</form>");
+}
+
+void WifiTask::webHandlerWiFiCredentials()
+{
+    // TODO: redo wifi reconnection
+
+    String ssid = server_->arg("ssid");
+    String passphrase = server_->arg("password");
+
+    // TODO send event connecting to wifi
+
+    WiFiEvent wifi_sta_connecting_event;
+
+    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", ssid.c_str());
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", passphrase.c_str());
+    wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
+
+    publishWiFiEvent(wifi_sta_connecting_event);
+
+    WiFi.begin(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase);
+
+    uint8_t max_tries = 20;
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        if (wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries)
+        {
+            break;
+        }
+        delay(1000);
+        wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
+        publishWiFiEvent(wifi_sta_connecting_event);
+        // TODO: retry to connect after X seconds
+    }
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connection_failed_event;
+        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
+        publishWiFiEvent(wifi_sta_connecting_event);
+
+        server_->sendHeader("Location", "/");
+        server_->send(302, "text/plain", "Invalid WiFi credentials!");
+    }
+    else
+    {
+        server_->sendHeader("Location", "/mqtt");
+        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+    }
+}
+
+void WifiTask::webHandlerMQTTCredentials()
+{
+    String mqtt_server = server_->arg("mqtt_server");
+    uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
+    String mqtt_user = server_->arg("mqtt_user");
+    String mqtt_password = server_->arg("mqtt_password");
+
+    WiFiEvent event;
+    event.type = MQTT_CREDENTIALS_RECIEVED;
+    sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
+    event.body.mqtt_connecting.port = mqtt_port;
+    sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
+    sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+
+    ESP_LOGD("wifi", "%s %d %s %s",
+             event.body.mqtt_connecting.host,
+             event.body.mqtt_connecting.port,
+             event.body.mqtt_connecting.user,
+             event.body.mqtt_connecting.password);
+
+    publishWiFiEvent(event);
+
+    // preferences.begin("mqtt", false);
+    // preferences.clear();
+
+    // preferences.putString("mqtt_server", mqtt_server);
+    // preferences.putUInt("mqtt_port", mqtt_port);
+    // preferences.putString("mqtt_user", mqtt_user);
+    // preferences.putString("mqtt_password", mqtt_password);
+
+    // preferences.end();
+
+    // WiFi.mode(WIFI_STA);
+    // WiFi.softAPdisconnect(true);
+    server_->send(200, "text/html", "MQTT setup complete!");
+}
+
+void WifiTask::startWebServer()
+{
+    server_ = new WebServer(80);
+
+    // TODO: do local files rendering
+    // TODO: make this page work async with animations on UI
+
+    server_->on("/", HTTP_GET, [this]()
+                { this->webHandlerWiFiForm(); });
+
+    server_->on("/mqtt", HTTP_GET, [this]()
+                { this->webHandlerMQTTForm(); });
+
+    server_->on("/submit", [this]()
+                {
+                    if (server_->arg("setup_type") == "wifi")
+                    {
+                    this->webHandlerWiFiCredentials();
+
+                    }
+                    else if (server_->arg("setup_type") == "mqtt")
+                    {
+                    this->webHandlerMQTTCredentials();
+                    } });
+
+    server_->begin();
+
+    log("WebServer started");
+    is_webserver_started = true;
+    // TODO: send event to
 }
 
 void WifiTask::run()
 {
-
-    setup_wifi();
-    const byte DNS_PORT = 53;
-    DNSServer dnsServer;
-    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
-    AsyncWebServer server(80);
-    server_ = &server;
-    ElegantOTA.begin(server_);
-
-    server_->addHandler(new CaptivePortalHandler()).setFilter(ON_AP_FILTER);
-    server_->onNotFound([&](AsyncWebServerRequest *request)
-                        { request->send(200, "text/html", index_html); });
-    server_->begin();
-
-    log("WebServer started");
+    // setup_wifi();
 
     static uint32_t last_wifi_status;
 
     while (1)
     {
-        dnsServer.processNextRequest();
-        ElegantOTA.loop();
 
-        if (millis() - last_wifi_status > 5000)
+        if (is_webserver_started)
         {
-            updateWifiState();
-            last_wifi_status = millis();
+            server_->handleClient();
+            ElegantOTA.loop();
         }
+
+        // TODO listen for incoming requests for actions
+
+        // TODO make it real event
+        // if (true)
+        // {
+        //     startWiFiAP();
+        // }
+
+        // if (millis() - last_wifi_status > 5000)
+        // {
+        //     updateWifiState();
+        //     last_wifi_status = millis();
+        // }
+
+        wifi_notifier.loopTick();
 
         delay(5);
     }
+}
+
+WiFiNotifier *WifiTask::getNotifier()
+{
+    return &wifi_notifier;
 }
 
 void WifiTask::updateWifiState()
@@ -106,16 +375,16 @@ void WifiTask::updateWifiState()
     {
         signal_strenth_status = 0;
     }
-
     // harvest state;
     ConnectivityState state = {
         WiFi.isConnected(),
         WiFi.RSSI(),
         signal_strenth_status,
-        WIFI_SSID,
+        WiFi.SSID().c_str(),
         WiFi.localIP().toString().c_str(),
         WiFi.getMode() == WIFI_AP ? true : false,
-        WiFi.softAPIP().toString().c_str(),
+        WiFi.softAPIP(),
+        WiFi.softAPgetStationNum() > 0 ? true : false,
     };
 
     publishState(state);
@@ -145,6 +414,16 @@ void WifiTask::log(const char *msg)
     {
         logger_->log(msg);
     }
+}
+
+QueueHandle_t WifiTask::getWiFiEventsQueue()
+{
+    return wifi_events_queue;
+}
+
+void WifiTask::publishWiFiEvent(WiFiEvent event)
+{
+    xQueueSendToBack(wifi_events_queue, &event, 0);
 }
 
 #endif

@@ -12,8 +12,13 @@
 #include "app_config.h"
 
 #include "apps/apps.h"
-#include "apps/onboarding/onboarding.h"
 #include "apps/hass/hass_apps.h"
+
+#include "apps/onboarding_flow/onboarding_flow.h"
+
+const uint8_t BOOT_MODE_NOT_SET = 0;
+const uint8_t BOOT_MODE_ONBOARDING = 1;
+const uint8_t BOOT_MODE_HASS = 2;
 
 class DisplayTask : public Task<DisplayTask>
 {
@@ -29,9 +34,10 @@ public:
     void setLogger(Logger *logger);
     void setApps(Apps apps);
     HassApps *getHassApps();
-    Onboarding *getOnboarding();
     void enableOnboarding();
-    void disableOnboarding();
+    void enableHass();
+
+    OnboardingFlow *getOnboardingFlow();
 
 protected:
     void run();
@@ -41,8 +47,10 @@ private:
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
-    Onboarding onboarding;
     HassApps hass_apps;
+
+    // TODO: put under private
+    OnboardingFlow onboarding_flow;
 
     QueueHandle_t app_state_queue_;
 
@@ -52,7 +60,8 @@ private:
     Logger *logger_;
     void log(const char *msg);
     char buf_[128];
-    bool is_onboarding;
+
+    uint8_t boot_mode = BOOT_MODE_NOT_SET;
 };
 
 #else

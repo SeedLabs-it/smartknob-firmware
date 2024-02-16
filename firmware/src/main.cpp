@@ -26,25 +26,24 @@ static LedRingTask *led_ring_task_p = nullptr;
 
 static MotorTask motor_task(1, config);
 
-#if SK_NETWORKING
+#if SK_WIFI
 static WifiTask wifi_task(1);
 static WifiTask *wifi_task_p = &wifi_task;
+#else
+static WifiTask *wifi_task_p = nullptr;
 
+#endif
+
+#if SK_MQTT
 static MqttTask mqtt_task(1);
 static MqttTask *mqtt_task_p = &mqtt_task;
 #else
-static WifiTask *wifi_task_p = nullptr;
 static MqttTask *mqtt_task_p = nullptr;
 
 #endif
 
-#if SK_SEEDLABS_DEVKIT
 static SensorsTask sensors_task(1);
 static SensorsTask *sensors_task_p = &sensors_task;
-#else
-static SensorsTask *sensors_task_p = nullptr;
-
-#endif
 
 RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p);
 
@@ -58,7 +57,6 @@ void setup()
     root_task.addListener(display_task.getKnobStateQueue());
 
     // link apps from display task
-    root_task.setOnboardingApps(display_task.getOnboarding());
     root_task.setHassApps(display_task.getHassApps());
 
 #endif
@@ -67,7 +65,7 @@ void setup()
     led_ring_task_p->begin();
 #endif
 
-    // TODO: wait for display task init finishes
+    // TODO: remove this. Wait for display task init finishes
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     root_task.begin();
@@ -83,23 +81,24 @@ void setup()
     motor_task.setLogger(&root_task);
     motor_task.begin();
 
-#if SK_NETWORKING
+#if SK_WIFI
     wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
-    wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
     wifi_task.begin();
+#endif
 
+#if SK_MQTT
     // IF WIFI CONNECTED CONNECT MQTT
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
+    wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
+    mqtt_task.addStateListener(root_task.getMqttStateQueue());
     mqtt_task.begin();
 #endif
 
-#if SK_SEEDLABS_DEVKIT
     sensors_task_p->setLogger(&root_task);
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
-#endif
 
     // Free up the Arduino loop task
     vTaskDelete(NULL);

@@ -95,7 +95,7 @@ TFT_eSprite *BlindsApp::render()
     // spr_->drawNumber(current_closed_position, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
     spr_->setTextColor(TFT_WHITE);
     spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString("Bedroom shade", TFT_WIDTH / 2, TFT_HEIGHT / 2 - DESCRIPTION_Y_OFFSET - VALUE_OFFSET, 1);
+    spr_->drawString("Bedroom shade", TFT_WIDTH / 2, TFT_HEIGHT / 2 - 20 - 30, 1);
 
     return this->spr_;
 };
