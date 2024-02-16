@@ -67,7 +67,7 @@ int8_t LightDimmerApp::navigationNext()
             current_position,
             0,
             -1,
-            3.6 / 2 * PI / 255,
+            3.6 / 2 * PI / 180,
             1,
             1,
             1.1,
@@ -91,7 +91,26 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
-        app_hue_position = current_position % 255;
+
+        if (current_position < 0)
+        {
+            app_hue_position = (360 * 100 + current_position * 2) % 360;
+        }
+        else
+        {
+            app_hue_position = (current_position * 2) % 360;
+        }
+    }
+    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+    {
+        if (current_position > 100)
+        {
+            current_position = 100;
+        }
+        if (current_position < 0)
+        {
+            current_position = 0;
+        }
     }
 
     sub_position_unit = state.sub_position_unit;
@@ -173,7 +192,7 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     spr_->fillScreen(DISABLED_COLOR);
 
-    uint8_t segmetns = 255;
+    uint16_t segmetns = 360;
 
     float position_in_radians = PI / (segmetns) * 2;
 

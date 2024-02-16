@@ -20,8 +20,8 @@ protected:
     TFT_eSprite *renderHUEWheel();
 
 private:
-    uint16_t current_position = 0;
-    uint16_t last_position = 0;
+    int16_t current_position = 0;
+    int16_t last_position = 0;
     uint8_t num_positions = 0;
     char *app_id;
     // needed for UI
@@ -31,5 +31,5 @@ private:
     // app state
     uint8_t app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
 
-    uint8_t app_hue_position = 0;
+    uint16_t app_hue_position = 0;
 };
