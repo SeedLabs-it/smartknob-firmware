@@ -69,7 +69,7 @@ int8_t LightDimmerApp::navigationNext()
             current_position,
             0,
             -1,
-            1.8 * PI / 180,
+            PI * 2 / 180,
             1,
             1,
             1.1,
@@ -185,9 +185,6 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     left_bound = PI / 2;
     right_bound = PI / 2 - range_radians - motor_config.position_width_radians;
 
-    float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
-    float adjusted_angle = raw_angle - adjusted_sub_position;
-
     uint8_t icon_size = 80;
 
     uint16_t offset_vertical = 30;
@@ -199,9 +196,11 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     uint16_t segmetns = 360;
 
-    float position_in_radians = PI / (segmetns) * 2;
+    // 1.8 * PI / 180
 
-    float dot_position = 0;
+    float position_in_radians = PI * 2 / (segmetns);
+
+    float segment_position = 0;
 
     uint32_t segment_color = TFT_WHITE;
 
@@ -210,26 +209,20 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     for (int i = 0; i < segmetns; i++)
     {
-        dot_position = left_bound + position_in_radians * i;
-
-        // segment_color = kelvinToRGB(kelvins);
-
-        segment_color = ToRGBA(i); // spr_->color565(i * 2, i * 2, i * 2);
-
-        // segment_color = i % 2 == 0 ? spr_->color565(255, 255, 255) : spr_->color565(0, 0, 0);
-
+        segment_position = left_bound + position_in_radians * i;
+        segment_color = ToRGBA(i);
         spr_->fillTriangle(
-            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(dot_position - position_in_radians / 2),
-            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(dot_position - position_in_radians / 2),
-            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(dot_position + position_in_radians / 2),
-            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(dot_position + position_in_radians / 2),
+            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(segment_position - position_in_radians / 2),
+            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(segment_position - position_in_radians / 2),
+            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(segment_position + position_in_radians / 2),
+            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(segment_position + position_in_radians / 2),
             center_h,
             center_v,
             segment_color);
     }
 
     uint32_t current_color = ToRGBA(app_hue_position);
-    spr_->fillCircle(center_h, center_v, 80, color_black);
+    spr_->fillSmoothCircle(center_h, center_v, 80, color_black, color_black);
 
     spr_->fillTriangle(center_h, center_v - 70, center_h - 10, center_v - 55, center_h + 10, center_v - 55, current_color);
 
@@ -335,7 +328,7 @@ TFT_eSprite *LightDimmerApp::render()
         {
             adjusted_angle = right_bound;
         }
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
+        spr_->fillSmoothCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color, foreground_color);
     }
 
     return this->spr_;
