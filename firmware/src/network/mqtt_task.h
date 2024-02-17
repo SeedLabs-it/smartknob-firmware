@@ -11,8 +11,8 @@
 #include "logger.h"
 #include "task.h"
 #include "cJSON.h"
-#include "app_config.h"
-#include "events/events.h"
+#include "../app_config.h"
+#include "../events/events.h"
 
 struct MQTTConfig
 {
@@ -65,8 +65,6 @@ private:
     PubSubClient mqttClient;
     Logger *logger_;
     cJSON *apps;
-
-    Preferences preferences;
 
     ConnectivityState last_connectivity_state_;
     MqttState mqtt_state_;

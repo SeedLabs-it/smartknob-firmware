@@ -58,6 +58,7 @@ union WiFiEventBody
     APClient ap_client;
     WebClient web_client;
     WiFiSTAConnecting wifi_sta_connecting;
+    WiFiSTAConnecting wifi_sta_connected;
     MQTTConnecting mqtt_connecting;
 };
 
@@ -71,6 +72,7 @@ enum EventType
     WEB_CLIENT,
     WIFI_STA_CONNECTING,
     WIFI_STA_CONNECTED,
+    WIFI_STA_CONNECTED_NEW_CREDENTIALS,
     WIFI_STA_CONNECTION_FAILED,
     WEB_CLIENT_MQTT,
     MQTT_CREDENTIALS_RECIEVED,

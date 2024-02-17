@@ -14,6 +14,8 @@ Configuration::Configuration()
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    wifi_config = WiFiConfiguration();
 }
 
 Configuration::~Configuration()
@@ -122,6 +124,77 @@ bool Configuration::saveToDisk()
     }
 
     return true;
+}
+
+bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
+{
+    // TODO: persist in a file
+    char buf_[512];
+    sprintf(buf_, "saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
+    log(buf_);
+
+    is_wifi_set = true;
+    EEPROM.put(WIFI_SSID_EEPROM_POS, wifi_config_to_save.ssid);
+    EEPROM.put(WIFI_PASSPHRASE_EEPROM_POS, wifi_config_to_save.passphrase);
+    EEPROM.put(WIFI_SET_EEPROM_POS, is_wifi_set);
+
+    return EEPROM.commit();
+}
+
+WiFiConfiguration Configuration::getWiFiConfiguration()
+{
+    return wifi_config;
+}
+
+bool Configuration::loadWiFiConfiguration()
+{
+
+    char buf_[512];
+
+    EEPROM.get(WIFI_SSID_EEPROM_POS, wifi_config.ssid);
+    EEPROM.get(WIFI_PASSPHRASE_EEPROM_POS, wifi_config.passphrase);
+    EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
+
+    sprintf(buf_, "loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
+    log(buf_);
+
+    return is_wifi_set;
+}
+
+bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
+{
+
+    this->os_config.mode = os_config.mode;
+    char buf_[32];
+    sprintf(buf_, "os mode set to %d", os_config.mode);
+    log(buf_);
+
+    return true;
+}
+
+bool Configuration::saveOSConfiguration(OSConfiguration os_config)
+{
+    EEPROM.put(OS_MODE_EEPROM_POS, os_config.mode);
+
+    return EEPROM.commit();
+}
+
+bool Configuration::loadOSConfiguration()
+{
+    // boot mode
+    EEPROM.get(OS_MODE_EEPROM_POS, os_config.mode);
+
+    if (os_config.mode > Hass)
+    {
+        os_config.mode = Onboarding;
+    }
+
+    return true;
+}
+
+OSConfiguration Configuration::getOSConfiguration()
+{
+    return os_config;
 }
 
 PB_PersistentConfiguration Configuration::get()

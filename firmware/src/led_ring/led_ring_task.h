@@ -2,9 +2,9 @@
 
 #if SK_LEDS
 
-#include "logger.h"
-#include "task.h"
-#include "app_config.h"
+#include "../logger.h"
+#include "../task.h"
+#include "../app_config.h"
 
 const uint8_t total_effects = 1;
 

@@ -1,18 +1,19 @@
 #pragma once
-#include "../app.h"
+#include "apps/app.h"
 
-#include "../../util.h"
-#include "../../navigation/navigation.h"
-#include "../../notify/motor_notifier/motor_notifier.h"
-#include "../../notify/wifi_notifier/wifi_notifier.h"
-#include "../../events/events.h"
+#include "util.h"
+#include "navigation/navigation.h"
+#include "notify/motor_notifier/motor_notifier.h"
+#include "notify/wifi_notifier/wifi_notifier.h"
+#include "notify/os_config_notifier/os_config_notifier.h"
+#include "events/events.h"
 
 // Fonts
-#include "../../font/roboto_thin_bold_24.h"
-#include "../../font/roboto_thin_20.h"
-#include "../../font/NDS1210pt7b.h"
-#include "../../font/NDS125_small.h"
-#include "../../font/Pixel62mr11pt7b.h"
+#include "font/roboto_thin_bold_24.h"
+#include "font/roboto_thin_20.h"
+#include "font/NDS1210pt7b.h"
+#include "font/NDS125_small.h"
+#include "font/Pixel62mr11pt7b.h"
 
 // TODO make this enum ?
 
@@ -44,6 +45,7 @@ public:
     void handleWiFiEvent(WiFiEvent event);
     void setMotorUpdater(MotorNotifier *motor_notifier);
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
+    void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void triggerMotorConfigUpdate();
 
 private:
@@ -69,6 +71,7 @@ private:
 
     MotorNotifier *motor_notifier;
     WiFiNotifier *wifi_notifier;
+    OSConfigNotifier *os_config_notifier;
 
     char buf_[64];
 
@@ -77,6 +80,8 @@ private:
 
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
+
+    bool is_onboarding_finished = false;
 
     // wifi AP variables
     bool is_wifi_ap_started = false;

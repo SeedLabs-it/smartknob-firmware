@@ -3,10 +3,10 @@
 #include "configuration.h"
 #include "display_task.h"
 #include "root_task.h"
-#include "motor_task.h"
-#include "wifi_task.h"
-#include "sensors_task.h"
-#include "led_ring_task.h"
+#include "motor_foc/motor_task.h"
+#include "network/wifi_task.h"
+#include "sensors/sensors_task.h"
+#include "led_ring/led_ring_task.h"
 
 Configuration config;
 
@@ -49,6 +49,13 @@ RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_
 
 void setup()
 {
+
+    // TODO: move from eeprom to ffatfs
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        ESP_LOGE("config", "failed to start EEPROM");
+    }
+
 #if SK_DISPLAY
     display_task.setLogger(&root_task);
     display_task.begin();

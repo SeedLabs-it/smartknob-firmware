@@ -1,5 +1,5 @@
 #include "onboarding_flow.h"
-#include "./../icons.h"
+#include "apps/icons.h"
 #include "qrcode.h"
 
 OnboardingFlow::OnboardingFlow()
@@ -97,15 +97,20 @@ void OnboardingFlow::setWiFiNotifier(WiFiNotifier *wifi_notifier)
     this->wifi_notifier = wifi_notifier;
 }
 
+void OnboardingFlow::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    this->os_config_notifier = os_config_notifier;
+}
+
 EntityStateUpdate OnboardingFlow::update(AppState state)
 {
     updateStateFromSystem(state);
     return updateStateFromKnob(state.motor_state);
 }
 
+// TODO: rename to generic event
 void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
 {
-
     switch (event.type)
     {
     case WIFI_AP_STARTED:
@@ -154,6 +159,8 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
     case SK_MQTT_CONNECTED:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+        is_onboarding_finished = true;
+        os_config_notifier->setOSMode(Hass);
         break;
     default:
         break;
@@ -570,6 +577,12 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
 
 TFT_eSprite *OnboardingFlow::render()
 {
+
+    if (is_onboarding_finished)
+    {
+        return renderHass8StepPage();
+    }
+
     switch (current_page)
     {
     case ONBOARDING_FLOW_PAGE_STEP_WELCOME:

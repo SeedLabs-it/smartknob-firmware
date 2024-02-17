@@ -6,18 +6,19 @@
 #include "configuration.h"
 #include "display_task.h"
 #include "logger.h"
-#include "motor_task.h"
+#include "motor_foc/motor_task.h"
 #include "serial/serial_protocol_plaintext.h"
 #include "serial/serial_protocol_protobuf.h"
 #include "serial/uart_stream.h"
 #include "task.h"
 #include "app_config.h"
-#include "wifi_task.h"
-#include "mqtt_task.h"
-#include "led_ring_task.h"
-#include "sensors_task.h"
+#include "network/wifi_task.h"
+#include "network/mqtt_task.h"
+#include "led_ring/led_ring_task.h"
+#include "sensors/sensors_task.h"
 
 #include "notify/motor_notifier/motor_notifier.h"
+#include "notify/os_config_notifier/os_config_notifier.h"
 
 #include "navigation/navigation.h"
 
@@ -66,12 +67,6 @@ private:
     SensorsTask *sensors_task_;
     char buf_[128];
 
-#if SK_UI_BOOT_MODE
-    bool is_onboarding = false;
-#else
-    bool is_onboarding = true;
-#endif
-
     std::vector<QueueHandle_t> listeners_;
 
     SemaphoreHandle_t mutex_;
@@ -107,6 +102,8 @@ private:
     QueueHandle_t sensors_status_queue_;
 
     QueueHandle_t app_sync_queue_;
+
+    OSConfigNotifier os_config_notifier_;
 
     SerialProtocolPlaintext plaintext_protocol_;
     SerialProtocolProtobuf proto_protocol_;

@@ -197,7 +197,7 @@ TFT_eSprite *SettingsApp::render()
             wifi_icon_color = DISABLED_COLOR;
         }
 
-        spr_->drawBitmap(TFT_WIDTH / 2, 25, wifi_40, wifi_icon_size, wifi_icon_size, wifi_icon_color, TFT_BLACK);
+        spr_->drawBitmap(20, 75, wifi_40, wifi_icon_size, wifi_icon_size, wifi_icon_color, TFT_BLACK);
 
         // wifi_30
 
