@@ -32,5 +32,7 @@ build/
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+!.gitkeep
+
 __pycache__
 
