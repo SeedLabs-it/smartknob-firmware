@@ -51,6 +51,14 @@ struct WiFiConfiguration
     char passphrase[128];
 };
 
+struct MQTTConfiguration
+{
+    char host[128];
+    char port[5];
+    char user[128];
+    char pass[128];
+};
+
 enum OSMode
 {
     Onboarding = 0,
@@ -78,6 +86,9 @@ public:
     bool saveWiFiConfiguration(WiFiConfiguration wifi_config);
     WiFiConfiguration getWiFiConfiguration();
     bool loadWiFiConfiguration();
+    bool saveMQTTConfiguration(MQTTConfiguration mqtt_config);
+    MQTTConfiguration getMQTTConfiguration();
+    bool loadMQTTConfiguration();
     bool saveOSConfiguration(OSConfiguration os_config);
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
@@ -92,6 +103,8 @@ private:
 
     WiFiConfiguration wifi_config;
     bool is_wifi_set = false;
+    MQTTConfiguration mqtt_config;
+    bool is_mqtt_set = false;
     OSConfiguration os_config;
 
     uint8_t buffer_[PB_PersistentConfiguration_size];

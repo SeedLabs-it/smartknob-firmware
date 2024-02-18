@@ -163,6 +163,44 @@ bool Configuration::loadWiFiConfiguration()
     return is_wifi_set;
 }
 
+bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
+{
+    // TODO: persist in a file
+    char buf_[512];
+    sprintf(buf_, "saving MQTT credentials %s %s %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.pass);
+    log(buf_);
+
+    is_wifi_set = true;
+    EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
+    EEPROM.put(MQTT_PORT_EEPROM_POS, mqtt_config_to_save.port);
+    EEPROM.put(MQTT_USER_EEPROM_POS, mqtt_config_to_save.port);
+    EEPROM.put(MQTT_PASS_EEPROM_POS, mqtt_config_to_save.port);
+    EEPROM.put(MQTT_SET_EEPROM_POS, is_mqtt_set);
+
+    return EEPROM.commit();
+}
+
+MQTTConfiguration Configuration::getMQTTConfiguration()
+{
+    return mqtt_config;
+}
+
+bool Configuration::loadMQTTConfiguration()
+{
+    char buf_[512];
+
+    EEPROM.get(MQTT_HOST_EEPROM_POS, mqtt_config.host);
+    EEPROM.get(MQTT_PORT_EEPROM_POS, mqtt_config.port);
+    EEPROM.get(MQTT_USER_EEPROM_POS, mqtt_config.user);
+    EEPROM.get(MQTT_PASS_EEPROM_POS, mqtt_config.pass);
+    EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
+
+    sprintf(buf_, "loaded MQTT credentials %s %s %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.pass, is_mqtt_set);
+    log(buf_);
+
+    return is_mqtt_set;
+}
+
 bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
 {
 
