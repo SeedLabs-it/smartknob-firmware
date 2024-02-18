@@ -85,6 +85,10 @@ void OnboardingFlow::triggerMotorConfigUpdate()
     {
         motor_notifier->requestUpdate(root_level_motor_config);
     }
+    else
+    {
+        ESP_LOGE("onboarding_flow", "motor_notifier is not set");
+    }
 }
 
 void OnboardingFlow::setMotorUpdater(MotorNotifier *motor_notifier)

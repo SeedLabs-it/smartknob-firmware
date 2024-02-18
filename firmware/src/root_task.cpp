@@ -146,30 +146,32 @@ void RootTask::run()
                              },
                              [this]()
                              {
-                                 OSConfiguration os_config = this->configuration_->getOSConfiguration();
+                                 OSConfiguration *os_config = this->configuration_->getOSConfiguration();
 
-                                 switch (os_config.mode)
+                                 switch (os_config->mode)
                                  {
                                  case Onboarding:
-                                     os_config.mode = Demo;
+                                     os_config->mode = Demo;
                                      display_task_->enableDemo();
+                                     changeConfig(MENU);
                                      break;
                                  case Demo:
-                                     os_config.mode = Hass;
+                                     os_config->mode = Hass;
                                      display_task_->enableHass();
                                      changeConfig(MENU);
                                      break;
                                  case Hass:
-                                     os_config.mode = Onboarding;
+                                     os_config->mode = Onboarding;
                                      display_task_->enableOnboarding();
                                      break;
                                  default:
+                                     os_config->mode = Hass;
+                                     display_task_->enableHass();
+                                     changeConfig(MENU);
                                      break;
                                  }
 
-                                 this->configuration_->saveOSConfigurationInMemory(os_config);
-
-                                 changeConfig(MENU);
+                                 this->configuration_->saveOSConfigurationInMemory(*os_config);
                              });
 
     // Start in legacy protocol mode
@@ -204,11 +206,11 @@ void RootTask::run()
 
     os_config_notifier_.setCallback([this](OSMode os_mode)
                                     {
-                                        OSConfiguration os_config = this->configuration_->getOSConfiguration();
-                                        os_config.mode = os_mode;
-                                        this->configuration_->saveOSConfiguration(os_config);
+                                        OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+                                        os_config->mode = os_mode;
+                                        this->configuration_->saveOSConfiguration(*os_config);
 
-                                        switch (os_config.mode)
+                                        switch (os_config->mode)
                                         {
                                         case Onboarding:
                                             display_task_->enableOnboarding();
@@ -235,7 +237,7 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
-    switch (configuration_->getOSConfiguration().mode)
+    switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
         display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
@@ -245,6 +247,7 @@ void RootTask::run()
 #endif
         display_task_->enableOnboarding();
         display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+        motor_notifier.loopTick();
         break;
 
     case Demo:
@@ -280,7 +283,7 @@ void RootTask::run()
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
 
-            if (configuration_->getOSConfiguration().mode == Onboarding)
+            if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
             }
@@ -394,7 +397,7 @@ void RootTask::run()
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
-            if (configuration_->getOSConfiguration().mode == Onboarding)
+            if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
             }
@@ -456,14 +459,14 @@ void RootTask::changeConfig(int8_t id)
         applyConfig(hass_apps->getActiveMotorConfig(), false);
     }
 
-    if (configuration_->getOSConfiguration().mode == Onboarding)
+    if (configuration_->getOSConfiguration()->mode == Onboarding)
     {
         // TODO: think how to integrate this
         // display_task_->getOnboardingFlow->setActive(id);
         // applyConfig(hass_apps->getActiveMotorConfig(), false);
     }
 
-    if (configuration_->getOSConfiguration().mode == Hass)
+    if (configuration_->getOSConfiguration()->mode == Hass)
     {
         hass_apps->setActive(id);
         applyConfig(hass_apps->getActiveMotorConfig(), false);
@@ -497,7 +500,7 @@ void RootTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
 
-                if (configuration_->getOSConfiguration().mode == Onboarding)
+                if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_LONG;
@@ -517,7 +520,7 @@ void RootTask::updateHardware(AppState app_state)
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
 
-                if (configuration_->getOSConfiguration().mode == Onboarding)
+                if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
                     NavigationEvent event;
                     event.press = NAVIGATION_EVENT_PRESS_SHORT;
@@ -622,7 +625,7 @@ void RootTask::setConfiguration(Configuration *configuration)
             configuration_->loadOSConfiguration();
 
 #if SK_WIFI
-            if (configuration_->getOSConfiguration().mode == Hass && configuration_->loadWiFiConfiguration())
+            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadWiFiConfiguration())
             {
 
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();

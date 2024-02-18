@@ -16,6 +16,8 @@ Configuration::Configuration()
     assert(mutex_ != NULL);
 
     wifi_config = WiFiConfiguration();
+    loadOSConfiguration();
+    loadWiFiConfiguration();
 }
 
 Configuration::~Configuration()
@@ -189,12 +191,17 @@ bool Configuration::loadOSConfiguration()
         os_config.mode = Onboarding;
     }
 
+    if (os_config.mode < 0)
+    {
+        os_config.mode = Onboarding;
+    }
+
     return true;
 }
 
-OSConfiguration Configuration::getOSConfiguration()
+OSConfiguration *Configuration::getOSConfiguration()
 {
-    return os_config;
+    return &os_config;
 }
 
 PB_PersistentConfiguration Configuration::get()

@@ -147,6 +147,7 @@ void DisplayTask::log(const char *msg)
 void DisplayTask::enableOnboarding()
 {
     os_mode = Onboarding;
+    onboarding_flow.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableHass()
