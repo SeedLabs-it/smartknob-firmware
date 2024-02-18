@@ -14,9 +14,8 @@ static const uint16_t WIFI_SSID_LENGTH = 128;
 static const uint16_t WIFI_PASSPHRASE_LENGTH = 128;
 static const uint16_t WIFI_SET_LENGTH = 1;
 
-// Some exta bytes for local domains
 static const uint16_t MQTT_HOST_LENGTH = 64;
-static const uint16_t MQTT_PORT_LENGTH = 4;
+static const uint16_t MQTT_PORT_LENGTH = sizeof(uint16_t);
 static const uint16_t MQTT_USER_LENGTH = 64;
 static const uint16_t MQTT_PASS_LENGTH = 64;
 static const uint16_t MQTT_SET_LENGTH = 1;
@@ -30,7 +29,7 @@ static const uint16_t OS_MODE_EEPROM_POS = 0;
 
 // WiFi EEPROM positions
 static const uint16_t WIFI_SSID_EEPROM_POS = OS_MODE_EEPROM_POS + OS_CONFIG_TOTAL_LENGTH;
-static const uint16_t WIFI_PASSPHRASE_EEPROM_POS = WIFI_SSID_LENGTH;
+static const uint16_t WIFI_PASSPHRASE_EEPROM_POS = WIFI_SSID_EEPROM_POS + WIFI_SSID_LENGTH;
 static const uint16_t WIFI_SET_EEPROM_POS = WIFI_PASSPHRASE_EEPROM_POS + WIFI_PASSPHRASE_LENGTH;
 
 // MQTT EEPROM positions
@@ -41,7 +40,7 @@ static const uint16_t MQTT_PASS_EEPROM_POS = MQTT_USER_EEPROM_POS + MQTT_USER_LE
 static const uint16_t MQTT_SET_EEPROM_POS = MQTT_PASS_EEPROM_POS + MQTT_PASS_LENGTH;
 
 // EEPROM size, verify when adding new fiels that size is still big enough
-static const uint16_t EEPROM_SIZE = 512;
+static const uint16_t EEPROM_SIZE = 640;
 
 const uint32_t PERSISTENT_CONFIGURATION_VERSION = 1;
 
@@ -53,10 +52,10 @@ struct WiFiConfiguration
 
 struct MQTTConfiguration
 {
-    char host[128];
-    char port[5];
-    char user[128];
-    char pass[128];
+    char host[64];
+    uint16_t port;
+    char user[64];
+    char password[64];
 };
 
 enum OSMode
