@@ -40,7 +40,7 @@ static const uint16_t MQTT_PASS_EEPROM_POS = MQTT_USER_EEPROM_POS + MQTT_USER_LE
 static const uint16_t MQTT_SET_EEPROM_POS = MQTT_PASS_EEPROM_POS + MQTT_PASS_LENGTH;
 
 // EEPROM size, verify when adding new fiels that size is still big enough
-static const uint16_t EEPROM_SIZE = 640;
+static const uint16_t EEPROM_SIZE = 512;
 
 const uint32_t PERSISTENT_CONFIGURATION_VERSION = 1;
 
