@@ -294,7 +294,6 @@ void RootTask::run()
                 strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
                 strcpy(wifi_config.passphrase, wifi_event.body.wifi_sta_connected.passphrase);
                 configuration_->saveWiFiConfiguration(wifi_config);
-                configuration_->loadWiFiConfiguration();
             }
 
             // TODO: handle wifi credentials here
@@ -309,7 +308,6 @@ void RootTask::run()
                 strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
                 strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
                 configuration_->saveMQTTConfiguration(mqtt_config);
-                configuration_->loadMQTTConfiguration();
                 mqtt_task_->handleEvent(wifi_event);
             }
 #endif
