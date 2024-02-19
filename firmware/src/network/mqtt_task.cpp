@@ -84,12 +84,6 @@ void MqttTask::run()
 
         if (last_connectivity_state_.is_connected)
         {
-            if (mqtt_state_.server == "")
-            {
-                ESP_LOGD(MQTT_TAG, "Setting up MQTT");
-                // setup_mqtt();
-            }
-
             if (!mqttClient.connected())
             {
                 reconnect_mqtt();
@@ -169,7 +163,7 @@ void MqttTask::setup_mqtt(MQTTConfig config)
 
     mqttClient.setClient(wifi_client);
     mqttClient.setServer(config.host.c_str(), config.port);
-    mqttClient.setBufferSize(512);
+    mqttClient.setBufferSize(2048);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)

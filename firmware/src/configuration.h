@@ -14,9 +14,8 @@ static const uint16_t WIFI_SSID_LENGTH = 128;
 static const uint16_t WIFI_PASSPHRASE_LENGTH = 128;
 static const uint16_t WIFI_SET_LENGTH = 1;
 
-// Some exta bytes for local domains
 static const uint16_t MQTT_HOST_LENGTH = 64;
-static const uint16_t MQTT_PORT_LENGTH = 4;
+static const uint16_t MQTT_PORT_LENGTH = sizeof(uint16_t);
 static const uint16_t MQTT_USER_LENGTH = 64;
 static const uint16_t MQTT_PASS_LENGTH = 64;
 static const uint16_t MQTT_SET_LENGTH = 1;
@@ -30,7 +29,7 @@ static const uint16_t OS_MODE_EEPROM_POS = 0;
 
 // WiFi EEPROM positions
 static const uint16_t WIFI_SSID_EEPROM_POS = OS_MODE_EEPROM_POS + OS_CONFIG_TOTAL_LENGTH;
-static const uint16_t WIFI_PASSPHRASE_EEPROM_POS = WIFI_SSID_LENGTH;
+static const uint16_t WIFI_PASSPHRASE_EEPROM_POS = WIFI_SSID_EEPROM_POS + WIFI_SSID_LENGTH;
 static const uint16_t WIFI_SET_EEPROM_POS = WIFI_PASSPHRASE_EEPROM_POS + WIFI_PASSPHRASE_LENGTH;
 
 // MQTT EEPROM positions
@@ -49,6 +48,14 @@ struct WiFiConfiguration
 {
     char ssid[128];
     char passphrase[128];
+};
+
+struct MQTTConfiguration
+{
+    char host[64];
+    uint16_t port;
+    char user[64];
+    char password[64];
 };
 
 enum OSMode
@@ -78,6 +85,9 @@ public:
     bool saveWiFiConfiguration(WiFiConfiguration wifi_config);
     WiFiConfiguration getWiFiConfiguration();
     bool loadWiFiConfiguration();
+    bool saveMQTTConfiguration(MQTTConfiguration mqtt_config);
+    MQTTConfiguration getMQTTConfiguration();
+    bool loadMQTTConfiguration();
     bool saveOSConfiguration(OSConfiguration os_config);
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
@@ -92,6 +102,8 @@ private:
 
     WiFiConfiguration wifi_config;
     bool is_wifi_set = false;
+    MQTTConfiguration mqtt_config;
+    bool is_mqtt_set = false;
     OSConfiguration os_config;
 
     uint8_t buffer_[PB_PersistentConfiguration_size];

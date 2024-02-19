@@ -294,7 +294,6 @@ void RootTask::run()
                 strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
                 strcpy(wifi_config.passphrase, wifi_event.body.wifi_sta_connected.passphrase);
                 configuration_->saveWiFiConfiguration(wifi_config);
-                configuration_->loadWiFiConfiguration();
             }
 
             // TODO: handle wifi credentials here
@@ -303,6 +302,12 @@ void RootTask::run()
 
             if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
             {
+                MQTTConfiguration mqtt_config;
+                strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
+                mqtt_config.port = wifi_event.body.mqtt_connecting.port;
+                strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
+                strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
+                configuration_->saveMQTTConfiguration(mqtt_config);
                 mqtt_task_->handleEvent(wifi_event);
             }
 #endif
@@ -631,6 +636,15 @@ void RootTask::setConfiguration(Configuration *configuration)
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
                 // TODO: send event to wifi to start STA part with given credentials
                 wifi_task_->getNotifier()->requestSTA(wifi_config);
+            }
+#endif
+#if SK_MQTT
+            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
+            {
+                MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+                // DO STUFF WITH MQTT CONFIG!!!
+                // mqtt_task_->getNotifier()->requestMQTT(mqtt_config);
             }
 #endif
         }
