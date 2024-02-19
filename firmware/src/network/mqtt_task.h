@@ -6,21 +6,12 @@
 #include <WiFi.h>
 #include <vector>
 #include <map>
-#include <Preferences.h>
 
 #include "logger.h"
 #include "task.h"
 #include "cJSON.h"
 #include "../app_config.h"
 #include "../events/events.h"
-
-struct MQTTConfig
-{
-    std::string host;
-    uint16_t port;
-    std::string user;
-    std::string password;
-};
 
 class MqttTask : public Task<MqttTask>
 {
@@ -42,6 +33,8 @@ public:
     cJSON *getApps();
     void handleEvent(WiFiEvent event);
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
+
+    bool setupMQTT(MQTTConfiguration config);
 
 protected:
     void run();
@@ -73,7 +66,6 @@ private:
 
     void log(const char *msg);
 
-    void setup_mqtt(MQTTConfig config);
     void reconnect_mqtt();
     void callback_mqtt(char *topic, byte *payload, unsigned int length);
 

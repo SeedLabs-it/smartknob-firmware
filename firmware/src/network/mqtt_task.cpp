@@ -38,13 +38,13 @@ void MqttTask::handleEvent(WiFiEvent event)
                  event.body.mqtt_connecting.user,
                  event.body.mqtt_connecting.password);
 
-        MQTTConfig mqtt_config;
-        mqtt_config.host = event.body.mqtt_connecting.host;
+        MQTTConfiguration mqtt_config;
+        sprintf(mqtt_config.host, "%s", event.body.mqtt_connecting.host);
         mqtt_config.port = event.body.mqtt_connecting.port;
-        mqtt_config.user = event.body.mqtt_connecting.user;
-        mqtt_config.password = event.body.mqtt_connecting.password;
+        sprintf(mqtt_config.user, "%s", event.body.mqtt_connecting.user);
+        sprintf(mqtt_config.password, "%s", event.body.mqtt_connecting.password);
 
-        setup_mqtt(mqtt_config);
+        setupMQTT(mqtt_config);
     }
 }
 
@@ -147,27 +147,25 @@ void MqttTask::run()
     }
 }
 
-void MqttTask::setup_mqtt(MQTTConfig config)
+bool MqttTask::setupMQTT(MQTTConfiguration config)
 {
-
-    log("Starting MQTT client");
-
     WiFiEvent event;
     event.type = MQTT_CONNECTING;
-    sprintf(event.body.mqtt_connecting.host, "%s", config.host.c_str());
+    sprintf(event.body.mqtt_connecting.host, "%s", config.host);
     event.body.mqtt_connecting.port = config.port;
-    sprintf(event.body.mqtt_connecting.user, "%s", config.user.c_str());
-    sprintf(event.body.mqtt_connecting.password, "%s", config.password.c_str());
+    sprintf(event.body.mqtt_connecting.user, "%s", config.user);
+    sprintf(event.body.mqtt_connecting.password, "%s", config.password);
 
     publishEvent(event);
 
     mqttClient.setClient(wifi_client);
-    mqttClient.setServer(config.host.c_str(), config.port);
+    mqttClient.setServer(config.host, config.port);
     mqttClient.setBufferSize(2048);
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
                            { this->callback_mqtt(topic, payload, length); });
+
     bool mqtt_connected = false;
     if (config.user == "")
     {
@@ -175,7 +173,7 @@ void MqttTask::setup_mqtt(MQTTConfig config)
     }
     else
     {
-        mqtt_connected = mqttClient.connect("smartknob", config.user.c_str(), config.password.c_str());
+        mqtt_connected = mqttClient.connect("smartknob", config.user, config.password);
     }
 
     if (mqtt_connected)
@@ -183,11 +181,13 @@ void MqttTask::setup_mqtt(MQTTConfig config)
         WiFiEvent event;
         event.type = SK_MQTT_CONNECTED;
         log("MQTT client connected");
+        return true;
     }
     else
     {
         log("MQTT connection failed");
     }
+    return false;
 
     // if (!mqttClient.connected())
     // {
@@ -206,18 +206,16 @@ void MqttTask::setup_mqtt(MQTTConfig config)
     cJSON *json = cJSON_CreateObject();
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
     mqttClient.publish("smartknob/init", cJSON_PrintUnformatted(json));
-
-    // PREVENTS MEMORY LEAK???
     cJSON_Delete(json);
 
     mqttClient.loop();
 
     WiFiEvent mqtt_connected_event;
     mqtt_connected_event.type = SK_MQTT_CONNECTED;
-    sprintf(mqtt_connected_event.body.mqtt_connecting.host, "%s", config.host.c_str());
+    sprintf(mqtt_connected_event.body.mqtt_connecting.host, "%s", config.host);
     mqtt_connected_event.body.mqtt_connecting.port = config.port;
-    sprintf(mqtt_connected_event.body.mqtt_connecting.user, "%s", config.user.c_str());
-    sprintf(mqtt_connected_event.body.mqtt_connecting.password, "%s", config.password.c_str());
+    sprintf(mqtt_connected_event.body.mqtt_connecting.user, "%s", config.user);
+    sprintf(mqtt_connected_event.body.mqtt_connecting.password, "%s", config.password);
 
     publishEvent(mqtt_connected_event);
 

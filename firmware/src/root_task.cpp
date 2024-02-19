@@ -300,6 +300,17 @@ void RootTask::run()
             // TODO: handle mqtt credentials here
 #if SK_MQTT
 
+            if (wifi_event.type == WIFI_STA_CONNECTED)
+            {
+                if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
+                {
+                    MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                    ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+
+                    mqtt_task_->setupMQTT(mqtt_config);
+                }
+            }
+
             if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
             {
                 MQTTConfiguration mqtt_config;
@@ -643,6 +654,8 @@ void RootTask::setConfiguration(Configuration *configuration)
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                 ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+
+                // mqtt_task_->setupMQTT(mqtt_config);
                 // DO STUFF WITH MQTT CONFIG!!!
                 // mqtt_task_->getNotifier()->requestMQTT(mqtt_config);
             }
