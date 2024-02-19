@@ -307,7 +307,7 @@ void RootTask::run()
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                     ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
 
-                    mqtt_task_->setupMQTT(mqtt_config);
+                    mqtt_task_->setup(mqtt_config);
                 }
             }
 
@@ -320,6 +320,16 @@ void RootTask::run()
                 strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
                 configuration_->saveMQTTConfiguration(mqtt_config);
                 mqtt_task_->handleEvent(wifi_event);
+            }
+
+            if (wifi_event.type == MQTT_SETUP)
+            {
+                mqtt_task_->connect();
+            }
+
+            if (wifi_event.type == SK_MQTT_CONNECTED)
+            {
+                mqtt_task_->init();
             }
 #endif
         }

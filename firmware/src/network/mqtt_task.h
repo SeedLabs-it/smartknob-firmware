@@ -34,16 +34,18 @@ public:
     void handleEvent(WiFiEvent event);
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
-    bool setupMQTT(MQTTConfiguration config);
+    bool setup(MQTTConfiguration config);
+    bool connect();
+    bool init();
 
 protected:
     void run();
 
 private:
-    const char *mqtt_server;
-    uint32_t mqtt_port;
-    const char *mqtt_user;
-    const char *mqtt_password;
+    char host[64];
+    uint16_t port;
+    char user[64];
+    char password[64];
 
     std::vector<QueueHandle_t> state_listeners_;
 
@@ -66,8 +68,7 @@ private:
 
     void log(const char *msg);
 
-    void reconnect_mqtt();
-    void callback_mqtt(char *topic, byte *payload, unsigned int length);
+    void callback(char *topic, byte *payload, unsigned int length);
 
     void publishAppSync(const cJSON *state);
 
