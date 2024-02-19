@@ -53,7 +53,7 @@ void MqttTask::run()
     // preferences.begin("mqtt", false);
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
-    const uint16_t mqtt_push_interval_ms = 200;
+    const uint16_t mqtt_push_interval_ms = 1000;
 
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
     EntityStateUpdate entity_state_to_process_;

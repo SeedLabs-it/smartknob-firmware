@@ -34,9 +34,11 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
 
 int8_t LightDimmerApp::navigationNext()
 {
-
-    app_state_mode++;
-    if (app_state_mode > LIGHT_DIMMER_APP_MODE_HUE)
+    if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+    {
+        app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
+    }
+    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
         app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
     }
@@ -64,9 +66,9 @@ int8_t LightDimmerApp::navigationNext()
     case LIGHT_DIMMER_APP_MODE_HUE:
         // todo, check that current temp is more than wanted
         motor_config = PB_SmartKnobConfig{
-            current_position,
+            app_hue_position,
             0,
-            current_position,
+            app_hue_position,
             0,
             -1,
             PI * 2 / 180,
@@ -136,14 +138,20 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position)
     {
+
         sprintf(new_state.app_id, "%s", app_id);
         cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
+
+        cJSON_AddNumberToObject(json, "brightness", int(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
+
+        uint8_t r, g, b;
+        uint32ToRGB(ToRGBA(app_hue_position), &r, &g, &b);
+
         cJSON *rgb_array = cJSON_CreateArray();
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(r));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(g));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(b));
         cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
         sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
