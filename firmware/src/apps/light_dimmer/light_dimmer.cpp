@@ -134,29 +134,26 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    // Memoty leak is here
-    // if (last_position != current_position)
-    // {
+    if (last_position != current_position)
+    {
+        sprintf(new_state.app_id, "%s", app_id);
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
+        cJSON_AddNumberToObject(json, "color_temp", 0);
+        cJSON *rgb_array = cJSON_CreateArray();
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
+        cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
-    //     // TODO: find a way how to clean json obj
+        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
 
-    //     sprintf(new_state.app_id, "%s", app_id);
-    //     cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
-    //     cJSON_AddNumberToObject(json, "color_temp", 0);
-    //     // cJSON *rgb_array = cJSON_CreateArray();
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+        cJSON_Delete(json);
 
-    //     sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
-
-    //     // cJSON_Delete(json);
-
-    //     last_position = current_position;
-    //     new_state.changed = true;
-    //     sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
-    // }
+        last_position = current_position;
+        new_state.changed = true;
+        sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
+    }
 
     return new_state;
 }
