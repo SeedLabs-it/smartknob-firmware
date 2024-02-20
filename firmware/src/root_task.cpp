@@ -51,9 +51,6 @@ RootTask::RootTask(
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
 
-    mqtt_status_queue_ = xQueueCreate(1, sizeof(MqttState));
-    assert(mqtt_status_queue_ != NULL);
-
     sensors_status_queue_ = xQueueCreate(100, sizeof(SensorsState));
     assert(sensors_status_queue_ != NULL);
 
@@ -380,11 +377,6 @@ void RootTask::run()
             app_state.connectivity_state = latest_connectivity_state_;
         }
 
-        if (xQueueReceive(mqtt_status_queue_, &latest_mqtt_state_, 0) == pdTRUE)
-        {
-            app_state.mqtt_state = latest_mqtt_state_;
-        }
-
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
             ESP_LOGD("root_task", "App sync requested!");
@@ -671,11 +663,6 @@ void RootTask::setConfiguration(Configuration *configuration)
 QueueHandle_t RootTask::getConnectivityStateQueue()
 {
     return connectivity_status_queue_;
-}
-
-QueueHandle_t RootTask::getMqttStateQueue()
-{
-    return mqtt_status_queue_;
 }
 
 QueueHandle_t RootTask::getSensorsStateQueue()

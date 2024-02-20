@@ -11,18 +11,11 @@ MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_cor
 
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
-
-    mqtt_state_ = {
-        false,
-        "",
-        "",
-    };
 }
 
 MqttTask::~MqttTask()
 {
     vQueueDelete(entity_state_to_send_queue_);
-    vQueueDelete(connectivity_status_queue_);
     vSemaphoreDelete(mutex_app_sync_);
 }
 
@@ -50,11 +43,6 @@ void MqttTask::handleEvent(WiFiEvent event)
     {
         init();
     }
-
-    // if (event.type == MQTT_CONNECTION_FAILED)
-    // {
-    //     reconnect();
-    // }
 }
 
 void MqttTask::run()
@@ -75,7 +63,6 @@ void MqttTask::run()
 
         if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
         {
-            ESP_LOGD(MQTT_TAG, "Received connectivity state");
             if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
             {
                 last_connectivity_state_ = connectivity_state_to_process_;
@@ -139,18 +126,6 @@ void MqttTask::run()
 
                 mqtt_push = millis();
             }
-        }
-
-        if (millis() - last_mqtt_state_sent > 5000)
-        {
-            // MqttState state = {
-            //     mqttClient.connected(),
-            //     MQTT_SERVER,
-            //     "smartknob",
-            // };
-
-            publishState(mqtt_state_);
-            last_mqtt_state_sent = millis();
         }
 
         delay(5);
@@ -251,19 +226,6 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         unlock();
 
         publishAppSync(apps);
-    }
-}
-
-void MqttTask::addStateListener(QueueHandle_t queue)
-{
-    state_listeners_.push_back(queue);
-}
-
-void MqttTask::publishState(const MqttState &state)
-{
-    for (auto listener : state_listeners_)
-    {
-        xQueueOverwrite(listener, &state);
     }
 }
 

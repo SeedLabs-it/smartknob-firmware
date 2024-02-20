@@ -99,7 +99,6 @@ void setup()
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
     wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
-    // mqtt_task.addStateListener(root_task.getMqttStateQueue());
     mqtt_task.begin();
 #endif
 
