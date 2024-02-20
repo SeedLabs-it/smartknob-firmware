@@ -40,6 +40,21 @@ void MqttTask::handleEvent(WiFiEvent event)
 
         setup(event.body.mqtt_connecting);
     }
+
+    if (event.type == MQTT_SETUP)
+    {
+        connect();
+    }
+
+    if (event.type == SK_MQTT_CONNECTED)
+    {
+        init();
+    }
+
+    if (event.type == MQTT_CONNECTION_FAILED)
+    {
+        reconnect();
+    }
 }
 
 void MqttTask::run()
@@ -57,11 +72,6 @@ void MqttTask::run()
 
     while (1)
     {
-        if (!mqttClient.connected())
-        {
-            vTaskDelay(pdMS_TO_TICKS(5));
-            continue;
-        }
 
         if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
         {
@@ -82,6 +92,8 @@ void MqttTask::run()
                 WiFiEvent event;
                 event.type = MQTT_CONNECTION_FAILED;
                 publishEvent(event);
+                vTaskDelay(pdMS_TO_TICKS(5));
+                continue;
             }
 
             if (millis() - mqtt_pull > 1000)
@@ -176,10 +188,12 @@ bool MqttTask::connect()
     bool mqtt_connected = false;
     if (config_.user == "")
     {
+        log("Connecting to MQTT without credentials");
         mqtt_connected = mqttClient.connect("smartknob");
     }
     else
     {
+        log("Connecting to MQTT with credentials");
         mqtt_connected = mqttClient.connect("smartknob", config_.user, config_.password);
     }
 
@@ -197,6 +211,21 @@ bool MqttTask::connect()
         event.type = MQTT_CONNECTION_FAILED;
         publishEvent(event);
         log("MQTT connection failed");
+    }
+    return false;
+}
+
+bool MqttTask::reconnect()
+{
+    while (!mqttClient.connected())
+    {
+        log("Retrying MQTT connection..."); // TODO: add retry limit?
+        if (connect())
+        {
+            log("MQTT reconnected");
+            return true;
+        }
+        delay(5000);
     }
     return false;
 }

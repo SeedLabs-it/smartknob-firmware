@@ -282,7 +282,6 @@ void RootTask::run()
 
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-
             if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
@@ -302,7 +301,7 @@ void RootTask::run()
 
             if (wifi_event.type == WIFI_STA_CONNECTED)
             {
-                if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
+                if (configuration_->getOSConfiguration()->mode == Hass)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                     ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
@@ -322,14 +321,9 @@ void RootTask::run()
                 mqtt_task_->handleEvent(wifi_event);
             }
 
-            if (wifi_event.type == MQTT_SETUP)
+            if (wifi_event.type == MQTT_SETUP || wifi_event.type == MQTT_INIT || wifi_event.type == MQTT_CONNECTING || wifi_event.type == SK_MQTT_CONNECTED || wifi_event.type == MQTT_CONNECTION_FAILED)
             {
-                mqtt_task_->connect();
-            }
-
-            if (wifi_event.type == SK_MQTT_CONNECTED)
-            {
-                mqtt_task_->init();
+                mqtt_task_->handleEvent(wifi_event);
             }
 #endif
         }

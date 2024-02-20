@@ -36,6 +36,7 @@ public:
 
     bool setup(MQTTConfiguration config);
     bool connect();
+    bool reconnect();
     bool init();
 
 protected:
