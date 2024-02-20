@@ -38,13 +38,7 @@ void MqttTask::handleEvent(WiFiEvent event)
                  event.body.mqtt_connecting.user,
                  event.body.mqtt_connecting.password);
 
-        MQTTConfiguration mqtt_config;
-        sprintf(mqtt_config.host, "%s", event.body.mqtt_connecting.host);
-        mqtt_config.port = event.body.mqtt_connecting.port;
-        sprintf(mqtt_config.user, "%s", event.body.mqtt_connecting.user);
-        sprintf(mqtt_config.password, "%s", event.body.mqtt_connecting.password);
-
-        setup(mqtt_config);
+        setup(event.body.mqtt_connecting);
     }
 }
 
