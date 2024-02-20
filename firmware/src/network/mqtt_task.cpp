@@ -50,7 +50,6 @@ void MqttTask::handleEvent(WiFiEvent event)
 
 void MqttTask::run()
 {
-    // preferences.begin("mqtt", false);
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     const uint16_t mqtt_push_interval_ms = 200;
@@ -86,10 +85,9 @@ void MqttTask::run()
         {
             if (!mqttClient.connected())
             {
-                // WiFiEvent event;
-                // event.type = MQTT_CONNECTION_FAILED;
-                // publishEvent(event);
-                // connect();
+                WiFiEvent event;
+                event.type = MQTT_CONNECTION_FAILED;
+                publishEvent(event);
             }
 
             if (millis() - mqtt_pull > 1000)
