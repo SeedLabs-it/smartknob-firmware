@@ -15,14 +15,6 @@ struct WiFiSTAConnecting
     uint8_t tick;
 };
 
-struct MQTTConnecting
-{
-    char host[20];
-    uint16_t port;
-    char user[128];
-    char password[128];
-};
-
 struct WiFiStatus
 {
     /* data */
@@ -59,7 +51,7 @@ union WiFiEventBody
     WebClient web_client;
     WiFiSTAConnecting wifi_sta_connecting;
     WiFiSTAConnecting wifi_sta_connected;
-    MQTTConnecting mqtt_connecting;
+    MQTTConfiguration mqtt_connecting;
 };
 
 // TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED

@@ -159,13 +159,15 @@ bool MqttTask::setup(MQTTConfiguration config)
     sprintf(event.body.mqtt_connecting.user, "%s", config.user);
     sprintf(event.body.mqtt_connecting.password, "%s", config.password);
 
-    sprintf(host, "%s", config.host);
-    port = config.port;
-    sprintf(user, "%s", config.user);
-    sprintf(password, "%s", config.password);
+    // sprintf(config_.host, "%s", config.host);
+    // config_.port = config.port;
+    // sprintf(config_.user, "%s", config.user);
+    // sprintf(config_.password, "%s", config.password);
+
+    config_ = config;
 
     mqttClient.setClient(wifi_client);
-    mqttClient.setServer(host, port);
+    mqttClient.setServer(config_.host, config_.port);
     mqttClient.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
@@ -178,20 +180,20 @@ bool MqttTask::setup(MQTTConfiguration config)
 
 bool MqttTask::connect()
 {
-    if (host == "")
+    if (config_.host == "")
     {
         log("No host set");
         return false;
     }
 
     bool mqtt_connected = false;
-    if (user == "")
+    if (config_.user == "")
     {
         mqtt_connected = mqttClient.connect("smartknob");
     }
     else
     {
-        mqtt_connected = mqttClient.connect("smartknob", user, password);
+        mqtt_connected = mqttClient.connect("smartknob", config_.user, config_.password);
     }
 
     if (mqtt_connected)

@@ -42,10 +42,7 @@ protected:
     void run();
 
 private:
-    char host[64];
-    uint16_t port;
-    char user[64];
-    char password[64];
+    MQTTConfiguration config_;
 
     std::vector<QueueHandle_t> state_listeners_;
 
