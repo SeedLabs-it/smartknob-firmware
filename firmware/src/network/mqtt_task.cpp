@@ -51,10 +51,10 @@ void MqttTask::handleEvent(WiFiEvent event)
         init();
     }
 
-    if (event.type == MQTT_CONNECTION_FAILED)
-    {
-        reconnect();
-    }
+    // if (event.type == MQTT_CONNECTION_FAILED)
+    // {
+    //     reconnect();
+    // }
 }
 
 void MqttTask::run()
@@ -92,7 +92,10 @@ void MqttTask::run()
                 WiFiEvent event;
                 event.type = MQTT_CONNECTION_FAILED;
                 publishEvent(event);
-                vTaskDelay(pdMS_TO_TICKS(5));
+
+                log("Retrying MQTT connection..."); // TODO: add retry limit?
+                connect();
+                delay(3000);
                 continue;
             }
 
@@ -211,21 +214,6 @@ bool MqttTask::connect()
         event.type = MQTT_CONNECTION_FAILED;
         publishEvent(event);
         log("MQTT connection failed");
-    }
-    return false;
-}
-
-bool MqttTask::reconnect()
-{
-    while (!mqttClient.connected())
-    {
-        log("Retrying MQTT connection..."); // TODO: add retry limit?
-        if (connect())
-        {
-            log("MQTT reconnected");
-            return true;
-        }
-        delay(5000);
     }
     return false;
 }
