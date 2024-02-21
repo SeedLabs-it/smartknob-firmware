@@ -24,6 +24,23 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         27,
     };
 
+    root_level_motor_config = PB_SmartKnobConfig{
+        current_brightness,
+        0,
+        current_brightness,
+        0,
+        100,
+        2.4 * PI / 180,
+        1,
+        1,
+        1.1,
+        "SKDEMO_Light_dimmer",
+        0,
+        {},
+        0,
+        27,
+    };
+
     num_positions = motor_config.max_position - motor_config.min_position;
 
     big_icon = light_top_80;
@@ -190,6 +207,8 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
             adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
         }
     }
+
+    motor_notifier->requestUpdate(root_level_motor_config);
 
     // if (color_temp != NULL)
     // {

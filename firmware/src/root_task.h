@@ -108,7 +108,7 @@ private:
     SerialProtocolPlaintext plaintext_protocol_;
     SerialProtocolProtobuf proto_protocol_;
 
-    void changeConfig(int8_t id);
+    // void changeConfig(int8_t id);
     void updateHardware(AppState app_state);
     void publishState();
     void applyConfig(PB_SmartKnobConfig config, bool from_remote);

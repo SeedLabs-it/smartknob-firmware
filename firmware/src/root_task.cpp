@@ -132,7 +132,9 @@ void RootTask::run()
 #endif
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(MENU); },
+                             {
+                                 //  CHANGE MOTOR CONFIG????
+                             },
                              [this]()
                              {
                                  this->strainCalibrationCallback();
@@ -150,12 +152,13 @@ void RootTask::run()
                                  case Onboarding:
                                      os_config->mode = Demo;
                                      display_task_->enableDemo();
-                                     changeConfig(MENU);
+                                     //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
                                      os_config->mode = Hass;
                                      display_task_->enableHass();
-                                     changeConfig(MENU);
+                                     //  CHANGE MOTOR CONFIG
+
                                      break;
                                  case Hass:
                                      os_config->mode = Onboarding;
@@ -164,7 +167,8 @@ void RootTask::run()
                                  default:
                                      os_config->mode = Hass;
                                      display_task_->enableHass();
-                                     changeConfig(MENU);
+                                     //  CHANGE MOTOR CONFIG
+
                                      break;
                                  }
 
@@ -217,7 +221,6 @@ void RootTask::run()
                                             break;
                                         case Hass:
                                             display_task_->enableHass();
-                                            changeConfig(MENU);
                                             break;
                                         default:
                                             break;
@@ -253,7 +256,9 @@ void RootTask::run()
         break;
     case Hass:
         display_task_->enableHass();
-        changeConfig(MENU);
+        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+        display_task_->getHassApps()->triggerMotorConfigUpdate();
+        motor_notifier.loopTick();
         break;
 
     default:
@@ -390,8 +395,6 @@ void RootTask::run()
 
             log("Giving 0.5s for Apps to initialize");
             delay(500);
-
-            changeConfig(MENU);
             mqtt_task_->unlock();
 #endif
         }
@@ -463,33 +466,6 @@ void RootTask::log(const char *msg)
     xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
-void RootTask::changeConfig(int8_t id)
-{
-    if (id == DONT_NAVIGATE)
-    {
-        return;
-    }
-
-    // TODO, think on better design
-    if (id == DONT_NAVIGATE_UPDATE_MOTOR_CONFIG)
-    {
-        applyConfig(hass_apps->getActiveMotorConfig(), false);
-    }
-
-    if (configuration_->getOSConfiguration()->mode == Onboarding)
-    {
-        // TODO: think how to integrate this
-        // display_task_->getOnboardingFlow->setActive(id);
-        // applyConfig(hass_apps->getActiveMotorConfig(), false);
-    }
-
-    if (configuration_->getOSConfiguration()->mode == Hass)
-    {
-        hass_apps->setActive(id);
-        applyConfig(hass_apps->getActiveMotorConfig(), false);
-    }
-}
-
 void RootTask::updateHardware(AppState app_state)
 {
 
@@ -516,16 +492,15 @@ void RootTask::updateHardware(AppState app_state)
 
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
-
+                NavigationEvent event;
+                event.press = NAVIGATION_EVENT_PRESS_LONG;
                 if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    NavigationEvent event;
-                    event.press = NAVIGATION_EVENT_PRESS_LONG;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
-                    changeConfig(hass_apps->navigationBack());
+                    display_task_->getHassApps()->handleNavigationEvent(event);
                 }
             }
             break;
@@ -536,16 +511,15 @@ void RootTask::updateHardware(AppState app_state)
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
-
+                NavigationEvent event;
+                event.press = NAVIGATION_EVENT_PRESS_SHORT;
                 if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    NavigationEvent event;
-                    event.press = NAVIGATION_EVENT_PRESS_SHORT;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
-                    changeConfig(hass_apps->navigationNext());
+                    display_task_->getHassApps()->handleNavigationEvent(event);
                 }
             }
             break;
