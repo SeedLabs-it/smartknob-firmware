@@ -395,6 +395,7 @@ void RootTask::run()
 
             log("Giving 0.5s for Apps to initialize");
             delay(500);
+            display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
 #endif
         }
