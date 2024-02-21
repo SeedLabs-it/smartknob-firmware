@@ -28,20 +28,16 @@ void HassApps::sync(cJSON *json_apps)
 void HassApps::handleEvent(WiFiEvent event)
 {
     lock();
-    ESP_LOGD("hass_apps.cpp", "handleEvent");
-
     std::shared_ptr<App> app;
 
     switch (event.type)
     {
     case MQTT_STATE_UPDATE:
-        ESP_LOGD("HASS_APPS", "APP_ID: %s !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", event.body.mqtt_state_update.app_id);
-        app = find(event.body.mqtt_state_update.app_id); // Initialize the variable inside the case
+        app = find(event.body.mqtt_state_update.app_id);
         if (app != nullptr)
         {
-            ESP_LOGD("HASS_APPS", "APP NEEDING UPDATE: %s", app->app_id);
-            ESP_LOGD("HASS_APPS", "APP FOUND");
             app->updateStateFromHASS(event.body.mqtt_state_update);
+            motor_notifier->requestUpdate(active_app->getMotorConfig());
         }
         else
         {

@@ -41,6 +41,8 @@ protected:
     void run();
 
 private:
+    std::map<std::string, EntityStateUpdate> entity_states_to_send;
+
     MQTTConfiguration config_;
 
     QueueHandle_t connectivity_status_queue_;
