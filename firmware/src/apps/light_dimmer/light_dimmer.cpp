@@ -24,23 +24,6 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         27,
     };
 
-    root_level_motor_config = PB_SmartKnobConfig{
-        current_brightness,
-        0,
-        current_brightness,
-        0,
-        100,
-        2.4 * PI / 180,
-        1,
-        1,
-        1.1,
-        "",
-        0,
-        {},
-        0,
-        27,
-    };
-
     num_positions = motor_config.max_position - motor_config.min_position;
 
     big_icon = light_top_80;

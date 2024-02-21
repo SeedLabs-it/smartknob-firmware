@@ -16,8 +16,6 @@ public:
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
 
-    const char *app_slug = APP_SLUG_LIGHT_DIMMER;
-
 protected:
     int8_t navigationNext();
     TFT_eSprite *renderHUEWheel();
