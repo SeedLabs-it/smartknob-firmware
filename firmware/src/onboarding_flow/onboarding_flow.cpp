@@ -166,6 +166,8 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         is_onboarding_finished = true;
         os_config_notifier->setOSMode(Hass);
         break;
+    case MQTT_STATE_UPDATE:
+        break;
     default:
         break;
     }

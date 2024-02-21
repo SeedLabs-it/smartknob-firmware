@@ -43,6 +43,12 @@ struct WebClient
 //     int8_t sta_rssi;
 // };
 
+struct MQTTStateUpdate
+{
+    char *app_id;
+    cJSON *state;
+};
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -52,6 +58,7 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connecting;
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
+    MQTTStateUpdate mqtt_state_update;
 };
 
 // TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED
@@ -72,6 +79,7 @@ enum EventType
     MQTT_SETUP,
     MQTT_INIT,
     MQTT_CONNECTION_FAILED,
+    MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED
 };
 

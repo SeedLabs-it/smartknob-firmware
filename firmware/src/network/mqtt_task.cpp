@@ -227,6 +227,27 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
         publishAppSync(apps);
     }
+
+    if (strcmp(type->valuestring, "state_update") == 0)
+    {
+        log("state_update received");
+
+        cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
+        cJSON *new_state = cJSON_GetObjectItem(json_root, "new_state");
+
+        ESP_LOGD(MQTT_TAG, "app_id: %s", cJSON_PrintUnformatted(app_id));
+        ESP_LOGD(MQTT_TAG, "new_state: %s", cJSON_PrintUnformatted(new_state));
+
+        MQTTStateUpdate state_update;
+        state_update.app_id = app_id->valuestring;
+        state_update.state = new_state;
+
+        WiFiEvent event;
+        event.type = MQTT_STATE_UPDATE;
+        event.body.mqtt_state_update = state_update;
+
+        publishEvent(event);
+    }
 }
 
 cJSON *MqttTask::getApps()
