@@ -57,6 +57,7 @@ protected:
     TFT_eSprite *rendered_spr_;
 
     std::shared_ptr<App> find(uint8_t id);
+    std::shared_ptr<App> find(char *app_slug);
     void lock();
     void unlock();
 };

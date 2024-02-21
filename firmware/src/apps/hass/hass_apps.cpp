@@ -24,3 +24,32 @@ void HassApps::sync(cJSON *json_apps)
     updateMenu();
     // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }
+
+void HassApps::handleEvent(WiFiEvent event)
+{
+    lock();
+    ESP_LOGD("hass_apps.cpp", "handleEvent");
+
+    std::shared_ptr<App> app;
+
+    switch (event.type)
+    {
+    case MQTT_STATE_UPDATE:
+        app = find(event.body.mqtt_state_update.app_id); // Initialize the variable inside the case
+        if (app != nullptr)
+        {
+            ESP_LOGD("HASS_APPS", "APP NEEDING UPDATE: %s", app->app_id);
+            ESP_LOGD("HASS_APPS", "APP FOUND");
+        }
+        else
+        {
+            ESP_LOGD("HASS_APPS", "APP NOT FOUND");
+        }
+
+        // cJSON_Delete(event.body.mqtt_state_update.state);
+        break;
+    default:
+        break;
+    }
+    unlock();
+}

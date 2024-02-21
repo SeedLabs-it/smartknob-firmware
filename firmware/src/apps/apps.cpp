@@ -223,6 +223,19 @@ std::shared_ptr<App> Apps::find(uint8_t id)
     return apps[id];
 }
 
+std::shared_ptr<App> Apps::find(char *app_id)
+{
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        if (strcmp(it->second->app_id, app_id) == 0)
+        {
+            return it->second;
+        }
+    }
+    return nullptr;
+}
+
 void Apps::lock()
 {
     xSemaphoreTake(mutex, portMAX_DELAY);

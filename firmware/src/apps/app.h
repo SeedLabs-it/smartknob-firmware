@@ -48,6 +48,7 @@ public:
     const unsigned char *small_icon;
     const unsigned char *big_icon;
     char *friendly_name = "";
+    char *app_id = "";
 
 protected:
     /** Full-size sprite used as a framebuffer */

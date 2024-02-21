@@ -322,6 +322,11 @@ void RootTask::run()
             {
                 mqtt_task_->handleEvent(wifi_event);
             }
+
+            if (wifi_event.type == MQTT_STATE_UPDATE)
+            {
+                display_task_->getHassApps()->handleEvent(wifi_event);
+            }
 #endif
         }
 #endif
