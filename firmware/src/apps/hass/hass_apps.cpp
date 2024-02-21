@@ -35,11 +35,13 @@ void HassApps::handleEvent(WiFiEvent event)
     switch (event.type)
     {
     case MQTT_STATE_UPDATE:
+        ESP_LOGD("HASS_APPS", "APP_ID: %s !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", event.body.mqtt_state_update.app_id);
         app = find(event.body.mqtt_state_update.app_id); // Initialize the variable inside the case
         if (app != nullptr)
         {
             ESP_LOGD("HASS_APPS", "APP NEEDING UPDATE: %s", app->app_id);
             ESP_LOGD("HASS_APPS", "APP FOUND");
+            app->updateStateFromHASS(event.body.mqtt_state_update);
         }
         else
         {

@@ -166,6 +166,48 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
+void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
+    cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
+    cJSON *rgb_color = cJSON_GetObjectItem(mqtt_state_update.state, "rgb_color");
+
+    if (brightness != NULL)
+    {
+        current_position = brightness->valueint / 2.55;
+        current_brightness = current_position;
+        motor_config.position_nonce = current_position;
+        motor_config.position = current_position;
+
+        adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
+
+        if (current_position == motor_config.min_position && sub_position_unit < 0)
+        {
+            adjusted_sub_position = -logf(1 - sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        }
+        else if (current_position == motor_config.max_position && sub_position_unit > 0)
+        {
+            adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        }
+    }
+
+    // if (color_temp != NULL)
+    // {
+    //      current_color_temp = color_temp->valueint;
+    // }
+
+    // if (rgb_color != NULL)
+    // {
+    //     uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
+    //     uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
+    //     uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
+
+    //     app_hue_position = RGBToHue(r, g, b);
+    // }
+
+    // cJSON_Delete(new_state);
+}
+
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
 
 TFT_eSprite *LightDimmerApp::renderHUEWheel()

@@ -5,6 +5,7 @@
 #include "../proto_gen/smartknob.pb.h"
 #include "../app_config.h"
 #include "icons.h"
+#include "../events/events.h"
 
 const char APP_SLUG_CLIMATE[48] = "thermostat";
 const char APP_SLUG_BLINDS[48] = "blinds";
@@ -28,6 +29,7 @@ public:
     App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     virtual void updateStateFromSystem(AppState state);
 
     virtual int8_t navigationNext();

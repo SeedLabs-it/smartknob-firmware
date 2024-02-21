@@ -13,6 +13,7 @@ public:
     LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
 
     const char *app_slug = APP_SLUG_LIGHT_DIMMER;

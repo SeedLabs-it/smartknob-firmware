@@ -10,6 +10,10 @@ EntityStateUpdate App::updateStateFromKnob(PB_SmartKnobState state)
     return EntityStateUpdate();
 }
 
+void App::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+}
+
 void App::updateStateFromSystem(AppState state)
 {
 }
