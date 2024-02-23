@@ -1,6 +1,8 @@
 #include "app.h"
 
-#ifndef USE_DISPLAY_BUFFER
+#ifdef USE_DISPLAY_BUFFER
+void App::render(){}
+#else
 TFT_eSprite *App::render()
 {
     return spr_;

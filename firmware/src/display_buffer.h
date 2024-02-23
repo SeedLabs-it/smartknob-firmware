@@ -18,6 +18,8 @@
 #define DISPLAY_BUFFER_DRAW_DELAY 40 // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
                                      //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
 
+
+
 class DisplayBuffer
 {
 public:
@@ -28,7 +30,7 @@ public:
     {
 
         // Init the TFT
-       
+
         tft_.begin();
         tft_.invertDisplay(1);
         tft_.setRotation(SK_DISPLAY_ROTATION);
@@ -42,8 +44,8 @@ public:
         tftBufferXSemaphore = xSemaphoreCreateMutex();
 
         // Init the TFT task
-        DisplayBuffer::instance_ = this;
-        DisplayBuffer::tftDebugDrawCount = 0;
+        instance_ = this;
+        tftDebugDrawCount = 0;
         lastTftDrawTimeMs = millis();
         xTaskCreate(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL);
     }
@@ -128,11 +130,11 @@ private:
 
 protected:
     /* The instance of the DisplayBuffer to manage it as a singleton */
-    static DisplayBuffer *instance_;
+    inline static DisplayBuffer *instance_ = nullptr;
     /* The last time the TFT was drawn to, useful to adapt the TFT task delay based on MCU load */
-    static long lastTftDrawTimeMs;
+    inline static long lastTftDrawTimeMs = 0;
     /* The counter of the debug draw operations */
-    static uint8_t tftDebugDrawCount;
+    inline static uint8_t tftDebugDrawCount = 0;
 
     /**
      * Suspend all the tasks that are registered to be suspended when the TFT is being drawn to

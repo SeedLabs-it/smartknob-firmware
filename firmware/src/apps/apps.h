@@ -34,6 +34,7 @@ public:
     Apps(TFT_eSprite *spr_);
     TFT_eSprite *renderActive();
 #endif
+    ~Apps(){ }
     void add(uint8_t id, App *app);
     void clear();
     EntityStateUpdate update(AppState state);
