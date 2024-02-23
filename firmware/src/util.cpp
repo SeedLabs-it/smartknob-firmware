@@ -70,6 +70,13 @@ uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b)
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
 
+void uint32ToRGB(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b)
+{
+    // Extract red, green, and blue components from the 32-bit color
+    *r = (color >> 8) & 0xF8;
+    *g = (color >> 3) & 0xFC;
+    *b = (color << 3) & 0xF8;
+}
 
 HEXColor hToHEX(float h)
 {

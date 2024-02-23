@@ -11,18 +11,11 @@ MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_cor
 
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
-
-    mqtt_state_ = {
-        false,
-        "",
-        "",
-    };
 }
 
 MqttTask::~MqttTask()
 {
     vQueueDelete(entity_state_to_send_queue_);
-    vQueueDelete(connectivity_status_queue_);
     vSemaphoreDelete(mutex_app_sync_);
 }
 
@@ -38,24 +31,26 @@ void MqttTask::handleEvent(WiFiEvent event)
                  event.body.mqtt_connecting.user,
                  event.body.mqtt_connecting.password);
 
-        MQTTConfig mqtt_config;
-        mqtt_config.host = event.body.mqtt_connecting.host;
-        mqtt_config.port = event.body.mqtt_connecting.port;
-        mqtt_config.user = event.body.mqtt_connecting.user;
-        mqtt_config.password = event.body.mqtt_connecting.password;
+        setup(event.body.mqtt_connecting);
+    }
 
-        setup_mqtt(mqtt_config);
+    if (event.type == MQTT_SETUP)
+    {
+        connect();
+    }
+
+    if (event.type == SK_MQTT_CONNECTED)
+    {
+        init();
     }
 }
 
 void MqttTask::run()
 {
-    // preferences.begin("mqtt", false);
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     const uint16_t mqtt_push_interval_ms = 200;
 
-    std::map<std::string, EntityStateUpdate> entity_states_to_send;
     EntityStateUpdate entity_state_to_process_;
 
     ConnectivityState connectivity_state_to_process_;
@@ -64,15 +59,9 @@ void MqttTask::run()
 
     while (1)
     {
-        if (!mqttClient.connected())
-        {
-            vTaskDelay(pdMS_TO_TICKS(5));
-            continue;
-        }
 
         if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
         {
-            ESP_LOGD(MQTT_TAG, "Received connectivity state");
             if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
             {
                 last_connectivity_state_ = connectivity_state_to_process_;
@@ -86,7 +75,14 @@ void MqttTask::run()
         {
             if (!mqttClient.connected())
             {
-                reconnect_mqtt();
+                WiFiEvent event;
+                event.type = MQTT_CONNECTION_FAILED;
+                publishEvent(event);
+
+                log("Retrying MQTT connection..."); // TODO: add retry limit?
+                connect();
+                delay(3000);
+                continue;
             }
 
             if (millis() - mqtt_pull > 1000)
@@ -131,74 +127,73 @@ void MqttTask::run()
             }
         }
 
-        if (millis() - last_mqtt_state_sent > 5000)
-        {
-            // MqttState state = {
-            //     mqttClient.connected(),
-            //     MQTT_SERVER,
-            //     "smartknob",
-            // };
-
-            publishState(mqtt_state_);
-            last_mqtt_state_sent = millis();
-        }
-
         delay(5);
     }
 }
 
-void MqttTask::setup_mqtt(MQTTConfig config)
+bool MqttTask::setup(MQTTConfiguration config)
 {
-
-    log("Starting MQTT client");
-
     WiFiEvent event;
-    event.type = MQTT_CONNECTING;
-    sprintf(event.body.mqtt_connecting.host, "%s", config.host.c_str());
+    event.type = MQTT_SETUP;
+    sprintf(event.body.mqtt_connecting.host, "%s", config.host);
     event.body.mqtt_connecting.port = config.port;
-    sprintf(event.body.mqtt_connecting.user, "%s", config.user.c_str());
-    sprintf(event.body.mqtt_connecting.password, "%s", config.password.c_str());
+    sprintf(event.body.mqtt_connecting.user, "%s", config.user);
+    sprintf(event.body.mqtt_connecting.password, "%s", config.password);
 
-    publishEvent(event);
+    config_ = config;
 
     mqttClient.setClient(wifi_client);
-    mqttClient.setServer(config.host.c_str(), config.port);
-    mqttClient.setBufferSize(2048);
+    mqttClient.setServer(config_.host, config_.port);
+    mqttClient.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
     mqttClient.setKeepAlive(60);
     mqttClient.setSocketTimeout(60);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
-                           { this->callback_mqtt(topic, payload, length); });
-    bool mqtt_connected = false;
-    if (config.user == "")
+                           { this->callback(topic, payload, length); });
+
+    publishEvent(event);
+    return true;
+}
+
+bool MqttTask::connect()
+{
+    if (config_.host == "")
     {
+        log("No host set");
+        return false;
+    }
+
+    bool mqtt_connected = false;
+    if (config_.user == "")
+    {
+        log("Connecting to MQTT without credentials");
         mqtt_connected = mqttClient.connect("smartknob");
     }
     else
     {
-        mqtt_connected = mqttClient.connect("smartknob", config.user.c_str(), config.password.c_str());
+        log("Connecting to MQTT with credentials");
+        mqtt_connected = mqttClient.connect("smartknob", config_.user, config_.password);
     }
 
     if (mqtt_connected)
     {
         WiFiEvent event;
         event.type = SK_MQTT_CONNECTED;
+        publishEvent(event);
         log("MQTT client connected");
+        return true;
     }
     else
     {
+        WiFiEvent event;
+        event.type = MQTT_CONNECTION_FAILED;
+        publishEvent(event);
         log("MQTT connection failed");
     }
+    return false;
+}
 
-    // if (!mqttClient.connected())
-    // {
-    //     reconnect_mqtt();
-    // }
-    mqttClient.loop();
-
-    // mqtt_state_.is_connected = mqttClient.connected();
-    // mqtt_state_.server = mqtt_server;
-    // mqtt_state_.client_id = "smartknob";
-
+bool MqttTask::init()
+{
     char buf_[128];
     sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
     mqttClient.subscribe(buf_);
@@ -206,25 +201,17 @@ void MqttTask::setup_mqtt(MQTTConfig config)
     cJSON *json = cJSON_CreateObject();
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
     mqttClient.publish("smartknob/init", cJSON_PrintUnformatted(json));
-
-    // PREVENTS MEMORY LEAK???
     cJSON_Delete(json);
 
     mqttClient.loop();
 
     WiFiEvent mqtt_connected_event;
-    mqtt_connected_event.type = SK_MQTT_CONNECTED;
-    sprintf(mqtt_connected_event.body.mqtt_connecting.host, "%s", config.host.c_str());
-    mqtt_connected_event.body.mqtt_connecting.port = config.port;
-    sprintf(mqtt_connected_event.body.mqtt_connecting.user, "%s", config.user.c_str());
-    sprintf(mqtt_connected_event.body.mqtt_connecting.password, "%s", config.password.c_str());
-
+    mqtt_connected_event.type = MQTT_INIT;
     publishEvent(mqtt_connected_event);
-
-    log("MQTT init message sent");
+    return true;
 }
 
-void MqttTask::callback_mqtt(char *topic, byte *payload, unsigned int length)
+void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 {
     cJSON *json_root = cJSON_Parse((char *)payload);
     cJSON *type = cJSON_GetObjectItem(json_root, "type");
@@ -239,46 +226,26 @@ void MqttTask::callback_mqtt(char *topic, byte *payload, unsigned int length)
 
         publishAppSync(apps);
     }
-}
 
-void MqttTask::reconnect_mqtt()
-{
-    // while (!mqttClient.connected())
-    // {
-    //     String mqtt_server_string = preferences.getString("mqtt_server", "MQTT_SERVER");
-    //     const char *mqtt_server = mqtt_server_string.c_str();
-    //     mqttClient.setServer(mqtt_server, 1883);
-
-    //     ESP_LOGD(MQTT_TAG, "Attempting connection %s %s %s", "smartknob", mqtt_server, preferences.getString("mqtt_user", "MQTT_USER").c_str(), preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str());
-    //     // if (mqttClient.connect("smartknob", preferences.getString("mqtt_user", "MQTT_USER").c_str(), preferences.getString("mqtt_password", "MQTT_PASSWORD").c_str()))
-    //     if (mqttClient.connect("smartknob", "", ""))
-    //     {
-    //         ESP_LOGD(MQTT_TAG, "Connected to %s", mqtt_server);
-    //     }
-    //     else
-    //     {
-    //         // sprintf(buf_, "Failed to connect, retrying in 5s", );
-    //         ESP_LOGD("", "");
-    //         ESP_LOGD(MQTT_TAG, "Failed to connect, retrying in 5s");
-    //         ESP_LOGD(MQTT_TAG, "MQTT IP: %s", mqtt_server);
-    //         ESP_LOGD(MQTT_TAG, "MQTT PORT: %d", preferences.getUInt("mqtt_port", 1883));
-    //         ESP_LOGD("", "");
-    //         delay(5000);
-    //     }
-    // }
-}
-
-void MqttTask::addStateListener(QueueHandle_t queue)
-{
-    state_listeners_.push_back(queue);
-}
-
-void MqttTask::publishState(const MqttState &state)
-{
-    for (auto listener : state_listeners_)
+    if (strcmp(type->valuestring, "state_update") == 0)
     {
-        xQueueOverwrite(listener, &state);
+        log("state_update received");
+
+        cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
+        cJSON *new_state = cJSON_GetObjectItem(json_root, "new_state");
+
+        MQTTStateUpdate state_update;
+        state_update.app_id = app_id->valuestring;
+        state_update.state = new_state;
+
+        WiFiEvent event;
+        event.type = MQTT_STATE_UPDATE;
+        event.body.mqtt_state_update = state_update;
+
+        publishEvent(event);
     }
+
+    cJSON_free(json_root);
 }
 
 cJSON *MqttTask::getApps()

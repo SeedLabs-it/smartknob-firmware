@@ -97,5 +97,6 @@ struct EntityStateUpdate
     char app_slug[48] = "";
     bool changed = false;
     bool sent = false;
+    bool acknowledged = false;
     bool play_haptic = false;
 };
