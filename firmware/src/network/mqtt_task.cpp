@@ -109,12 +109,14 @@ void MqttTask::run()
                     if (!entity_states_to_send[i.first].sent)
                     {
                         cJSON *json = cJSON_CreateObject();
+                        cJSON_AddStringToObject(json, "type", "state_update");
                         cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
                         cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
-                        String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
+                        char buf_[128];
+                        sprintf(buf_, "smartknob/%s/from_knob", WiFi.macAddress().c_str());
 
-                        mqttClient.publish(topic.c_str(), cJSON_PrintUnformatted(json));
+                        mqttClient.publish(buf_, cJSON_PrintUnformatted(json));
 
                         entity_states_to_send[i.first]
                             .sent = true;
@@ -216,6 +218,9 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     cJSON *json_root = cJSON_Parse((char *)payload);
     cJSON *type = cJSON_GetObjectItem(json_root, "type");
 
+    char buf_[128];
+    sprintf(buf_, "smartknob/%s/from_knob", WiFi.macAddress().c_str());
+
     if (strcmp(type->valuestring, "sync") == 0)
     {
         log("sync");
@@ -223,6 +228,15 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         lock();
         apps = cJSON_GetObjectItem(json_root, "apps");
         unlock();
+
+        // DELAY TO MAKE SURE APPS ARE INITIALIZED?
+        delay(100);
+
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddStringToObject(json, "type", "acknowledgement");
+        cJSON_AddStringToObject(json, "data", "sync");
+
+        mqttClient.publish(buf_, cJSON_PrintUnformatted(json));
 
         publishAppSync(apps);
     }
@@ -243,6 +257,18 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         event.body.mqtt_state_update = state_update;
 
         publishEvent(event);
+    }
+
+    if (strcmp(type->valuestring, "acknowledgement") == 0)
+    {
+        // log("acknowledgement received");
+
+        // cJSON *type = cJSON_GetObjectItem(json_root, "type");
+
+        // if (strcmp(type->valuestring, "init") == 0)
+        // {
+        //     log("init acknowledgement received");
+        // }
     }
 
     cJSON_free(json_root);
