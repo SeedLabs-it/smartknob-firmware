@@ -11,10 +11,16 @@ enum class PomodoroState
 class PomodoroApp : public App
 {
 public:
-    PomodoroApp(TFT_eSprite *spr_);
+    #ifdef USE_DISPLAY_BUFFER
+        PomodoroApp();
+        void render();
+    #else
+        PomodoroApp(TFT_eSprite *spr_);
+        TFT_eSprite *render();
+    #endif
     EntityStateUpdate update(AppState state);
 
-    TFT_eSprite *render();
+    
 
 protected:
     int8_t navigationNext();

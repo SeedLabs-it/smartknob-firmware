@@ -1,9 +1,11 @@
 #include "app.h"
 
+#ifndef USE_DISPLAY_BUFFER
 TFT_eSprite *App::render()
 {
     return spr_;
 }
+#endif
 
 EntityStateUpdate App::updateStateFromKnob(PB_SmartKnobState state)
 {

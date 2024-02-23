@@ -1,6 +1,9 @@
 #include "music.h"
-
+#ifdef USE_DISPLAY_BUFFER
+MusicApp::MusicApp(std::string entity_name) : App()
+#else
 MusicApp::MusicApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+#endif
 {
     sprintf(author, "%s", "Beethoven");
     sprintf(track, "%s", "Moonlight Sonata");
@@ -54,7 +57,11 @@ EntityStateUpdate MusicApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void MusicApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void MusicApp::render()
+#else
 TFT_eSprite *MusicApp::render()
+#endif
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
@@ -165,6 +172,7 @@ TFT_eSprite *MusicApp::render()
     char buf_[4];
     sprintf(buf_, "%d%%", current_volume);
     spr_->drawString(buf_, center_h + 30, footer_position + 18, 1);
-
-    return this->spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 };

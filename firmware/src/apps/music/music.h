@@ -3,6 +3,7 @@
 
 #include "../../font/roboto_thin_bold_24.h"
 #include "../../font/roboto_thin_20.h"
+#include "../../display_buffer.h"
 
 const uint8_t AUTHOR_LENGTH = 24;
 const uint8_t TRACK_LENGTH = 48;
@@ -10,8 +11,14 @@ const uint8_t TRACK_LENGTH = 48;
 class MusicApp : public App
 {
 public:
-    MusicApp(TFT_eSprite *spr_, std::string entity_name);
-    TFT_eSprite *render();
+    #ifdef USE_DISPLAY_BUFFER
+        MusicApp(std::string entity_name);
+        void render();
+    #else
+        MusicApp(TFT_eSprite *spr_, std::string entity_name);
+        TFT_eSprite *render();
+    #endif
+   
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

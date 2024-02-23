@@ -6,7 +6,11 @@ const long POMODORO_DURATION = 25;
 // Duration of a break in minutes
 const int BREAK_DURATION = 5;
 
+#ifdef USE_DISPLAY_BUFFER
+PomodoroApp::PomodoroApp() : App(), state(PomodoroState::IDLE), startTime(millis())
+#else
 PomodoroApp::PomodoroApp(TFT_eSprite *spr_) : App(spr_), state(PomodoroState::IDLE), startTime(millis())
+#endif
 {
     motor_config = PB_SmartKnobConfig{
         0,
@@ -55,7 +59,11 @@ EntityStateUpdate PomodoroApp::update(AppState state_)
     return EntityStateUpdate();
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void PomodoroApp::render()
+#else
 TFT_eSprite *PomodoroApp::render()
+#endif
 {
     long now = millis();
     long elapsed = now - startTime;
@@ -110,6 +118,7 @@ TFT_eSprite *PomodoroApp::render()
         std::string time_str = std::to_string(minutes) + ":" + std::to_string(seconds);
         spr_->drawString(time_str.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 + 40);
     }
-
-    return spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return spr_;
+    #endif
 }

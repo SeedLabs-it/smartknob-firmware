@@ -17,8 +17,11 @@ void HassApps::sync(cJSON *json_apps)
 
         app_position++;
     }
-
-    SettingsApp *settings_app = new SettingsApp(this->spr_);
+    #ifdef USE_DISPLAY_BUFFER
+        SettingsApp *settings_app = new SettingsApp();
+    #else
+        SettingsApp *settings_app = new SettingsApp(this->spr_);
+    #endif
     add(app_position, settings_app);
 
     updateMenu();

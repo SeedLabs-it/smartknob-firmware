@@ -1,6 +1,9 @@
 #include "app_menu.h"
-
+#ifdef USE_DISPLAY_BUFFER
+MenuApp::MenuApp() : Menu()
+#else
 MenuApp::MenuApp(TFT_eSprite *spr_) : Menu(spr_)
+#endif
 {
     back = MENU;
     sprintf(room, "%s", "Office");
@@ -73,11 +76,19 @@ EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void MenuApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void MenuApp::render()
+#else
 TFT_eSprite *MenuApp::render()
+#endif
 {
     if (prev_item == nullptr || next_item == nullptr)
     {
+#ifdef USE_DISPLAY_BUFFER
+        return;
+#else
         return this->spr_;
+#endif
     }
 
     current_item = find_item(current_menu_position);
@@ -116,5 +127,7 @@ TFT_eSprite *MenuApp::render()
     spr_->setFreeFont(&Roboto_Thin_24);
     spr_->drawString(current_item->screen_name.text, center_h, center_v + icon_size_active / 2 + 30, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }

@@ -5,6 +5,7 @@
 #include "../proto_gen/smartknob.pb.h"
 #include "../app_config.h"
 #include "icons.h"
+#include "display_buffer.h"
 
 const char APP_SLUG_CLIMATE[48] = "thermostat";
 const char APP_SLUG_BLINDS[48] = "blinds";
@@ -24,9 +25,16 @@ enum SharedAppIds : int8_t
 class App
 {
 public:
+#ifdef USE_DISPLAY_BUFFER
+    App() : spr_(DisplayBuffer::getInstance()->getTftBuffer()) {}
+    App(int8_t next, int8_t back) : spr_(DisplayBuffer::getInstance()->getTftBuffer()), next(next), back(back) {}
+    virtual void render();
+#else
     App(TFT_eSprite *spr_) : spr_(spr_) {}
     App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
     virtual TFT_eSprite *render();
+#endif
+
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromSystem(AppState state);
 

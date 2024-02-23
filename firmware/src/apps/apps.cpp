@@ -12,11 +12,13 @@ Apps::Apps()
     mutex = xSemaphoreCreateMutex();
 }
 
+#ifndef USE_DISPLAY_BUFFER
 Apps::Apps(TFT_eSprite *spr_)
 {
     mutex = xSemaphoreCreateMutex();
     this->spr_ = spr_;
 }
+#endif
 
 void Apps::setSprite(TFT_eSprite *spr_)
 {
@@ -49,15 +51,25 @@ EntityStateUpdate Apps::update(AppState state)
     return new_state_update;
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void Apps::render()
+#else
 TFT_eSprite *Apps::renderActive()
+#endif
 {
     // TODO: update with AppState
     lock();
     if (active_app != nullptr)
     {
-        rendered_spr_ = active_app->render();
+        #ifdef USE_DISPLAY_BUFFER
+            active_app->render();
+        #else
+            rendered_spr_ = active_app->render();
+        #endif
         unlock();
-        return rendered_spr_;
+        #ifndef USE_DISPLAY_BUFFER
+            return rendered_spr_;
+        #endif
     }
 
     //! MIGHT BE WRONG
@@ -66,15 +78,23 @@ TFT_eSprite *Apps::renderActive()
         rendered_spr_ = spr_;
         ESP_LOGE("apps.cpp", "null pointer instead of app");
         unlock();
-        return rendered_spr_;
+        #ifndef USE_DISPLAY_BUFFER
+            return rendered_spr_;
+        #endif
     }
 
     active_app = apps[active_id];
 
-    rendered_spr_ = active_app->render();
+    #ifdef USE_DISPLAY_BUFFER
+        active_app->render();
+    #else
+        rendered_spr_ = active_app->render();
+    #endif
 
     unlock();
-    return rendered_spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return rendered_spr_;
+    #endif
 }
 
 void Apps::setActive(int8_t id)
@@ -103,7 +123,11 @@ void Apps::setActive(int8_t id)
 void Apps::updateMenu() // BROKEN FOR NOW
 {
     lock();
+    #ifdef USE_DISPLAY_BUFFER
+    menu = std::make_shared<MenuApp>();
+    #else
     menu = std::make_shared<MenuApp>(spr_);
+    #endif
 
     std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
@@ -137,15 +161,23 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        ClimateApp *app = new ClimateApp(app_id);
+        #else
         ClimateApp *app = new ClimateApp(this->spr_, app_id);
+        #endif
         app->friendly_name = friendly_name;
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
-    {
+    {   
+        #ifdef USE_DISPLAY_BUFFER
+        PrinterChamberApp *app = new PrinterChamberApp(app_id);
+        #else
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
+        #endif
         app->friendly_name = friendly_name;
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
@@ -153,7 +185,11 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        BlindsApp *app = new BlindsApp(app_id);
+        #else
         BlindsApp *app = new BlindsApp(this->spr_, app_id);
+        #endif
         app->friendly_name = friendly_name;
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
@@ -161,14 +197,22 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        LightDimmerApp *app = new LightDimmerApp();
+        #else
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
+        #endif
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        LightSwitchApp *app = new LightSwitchApp(app_id, friendly_name);
+        #else
         LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
+        #endif
 
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
@@ -176,7 +220,11 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        MusicApp *app = new MusicApp(app_id);
+        #else
         MusicApp *app = new MusicApp(this->spr_, app_id);
+        #endif
         app->friendly_name = friendly_name;
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
@@ -184,7 +232,11 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
+        #ifdef USE_DISPLAY_BUFFER
+        StopwatchApp *app = new StopwatchApp(app_id);
+        #else
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
+        #endif
         app->friendly_name = friendly_name;
         add(position, app);
         ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);

@@ -1,6 +1,7 @@
 #pragma once
 #include "menu.h"
 #include "font/roboto_thin_bold_24.h"
+#include "display_buffer.h"
 
 #include <map>
 
@@ -10,8 +11,13 @@ const uint8_t MEX_MENU_ITEMS = 12;
 class MenuApp : public Menu
 {
 public:
-    MenuApp(TFT_eSprite *spr_);
-    TFT_eSprite *render();
+    #ifdef USE_DISPLAY_BUFFER
+        MenuApp();
+        void render();
+    #else
+        MenuApp(TFT_eSprite *spr_);
+        TFT_eSprite *render();
+    #endif
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

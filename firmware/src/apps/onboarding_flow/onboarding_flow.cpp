@@ -40,6 +40,7 @@ OnboardingFlow::OnboardingFlow()
     };
 }
 
+#ifndef USE_DISPLAY_BUFFER
 OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
 {
     this->spr_ = spr_;
@@ -78,6 +79,7 @@ OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
         90,
     };
 }
+#endif
 
 void OnboardingFlow::triggerMotorConfigUpdate()
 {
@@ -218,7 +220,11 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
 
 void OnboardingFlow::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderWelcomePage()
+#else
 TFT_eSprite *OnboardingFlow::renderWelcomePage()
+#endif
 {
     uint16_t center_width = TFT_WIDTH / 2;
     uint16_t center_height = TFT_HEIGHT / 2;
@@ -243,10 +249,16 @@ TFT_eSprite *OnboardingFlow::renderWelcomePage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_width, center_height + 70, 1);
-
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass1StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass1StepPage()
+#endif
 {
     uint16_t center_width = TFT_WIDTH / 2;
     uint16_t center_height = TFT_HEIGHT / 2;
@@ -271,9 +283,16 @@ TFT_eSprite *OnboardingFlow::renderHass1StepPage()
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_width, center_height + 70, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass2StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass2StepPage()
+#endif
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -292,7 +311,9 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
         spr_->setTextColor(default_text_color);
         spr_->drawString(buf_, center_h, center_v + 50, 1);
 
+#ifndef USE_DISPLAY_BUFFER
         return this->spr_;
+#endif
     }
 
     int8_t screen_name_label_h = spr_->fontHeight(1);
@@ -335,10 +356,16 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
     spr_->drawString(wifi_ap_ssid, center_h, TFT_HEIGHT - screen_name_label_h * 3, 1);
     spr_->drawString(wifi_ap_passphrase, center_h, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass3StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass3StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_WIDTH / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -391,9 +418,16 @@ TFT_eSprite *OnboardingFlow::renderHass3StepPage()
     spr_->drawString(or_open.c_str(), center_horizontal, TFT_WIDTH - screen_name_label_h * 4, 1);
     spr_->drawString("IN YOUR BROWSER", center_horizontal, TFT_WIDTH - screen_name_label_h * 3, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass4StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass4StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -410,9 +444,16 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
     spr_->setTextColor(default_text_color);
     spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass5StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass5StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -434,9 +475,16 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
 
     spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass6StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass6StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -453,9 +501,16 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
     spr_->setTextColor(default_text_color);
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass7StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass7StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -477,10 +532,16 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
 
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderHass8StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderHass8StepPage()
+#endif
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -495,10 +556,16 @@ TFT_eSprite *OnboardingFlow::renderHass8StepPage()
     spr_->drawString("CONTINUE THE SETUP IN", center_horizontal, center_vertical - screen_name_label_h / 1.8, 1);
     spr_->drawString("HOME ASSISTANT", center_horizontal, center_vertical + screen_name_label_h / 1.8, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderWiFi1StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
+#endif
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -515,9 +582,16 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_h, 185, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderDemo1StepPage()
+#else
 TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
+#endif
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -534,9 +608,16 @@ TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_h, 185, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
+
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::renderAboutPage()
+#else
 TFT_eSprite *OnboardingFlow::renderAboutPage()
+#endif
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
@@ -565,10 +646,16 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, left_padding, 185, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void OnboardingFlow::render()
+#else
 TFT_eSprite *OnboardingFlow::render()
+#endif
 {
     switch (current_page)
     {
@@ -601,5 +688,7 @@ TFT_eSprite *OnboardingFlow::render()
         break;
     }
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 };

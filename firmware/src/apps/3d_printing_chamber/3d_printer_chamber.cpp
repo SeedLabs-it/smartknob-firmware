@@ -1,6 +1,10 @@
 #include "3d_printer_chamber.h"
 
+#ifdef USE_DISPLAY_BUFFER
+PrinterChamberApp::PrinterChamberApp(char *entity_name) : App()
+#else
 PrinterChamberApp::PrinterChamberApp(TFT_eSprite *spr_, char *entity_name) : App(spr_)
+#endif
 {
     current_temperature = 30;
     this->entity_name = entity_name;
@@ -12,7 +16,7 @@ PrinterChamberApp::PrinterChamberApp(TFT_eSprite *spr_, char *entity_name) : App
     motor_config = PB_SmartKnobConfig{
         current_temperature / degrees_per_position,
         0,
-        current_temperature / degrees_per_position,
+        (uint8_t)(current_temperature / degrees_per_position),
         min_temp / degrees_per_position,
         max_temp / degrees_per_position,
         segment_size,
@@ -59,7 +63,11 @@ EntityStateUpdate PrinterChamberApp::updateStateFromKnob(PB_SmartKnobState state
 
 void PrinterChamberApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void PrinterChamberApp::render()
+#else
 TFT_eSprite *PrinterChamberApp::render()
+#endif
 {
     uint32_t background = spr_->color565(0, 0, 0);
     uint32_t backgroun_light = spr_->color565(150, 150, 150);
@@ -163,5 +171,7 @@ TFT_eSprite *PrinterChamberApp::render()
     sprintf(buf_, "%d°C", current_temperature);
     spr_->drawString(buf_, center_h, center_v + 50, 1);
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 };

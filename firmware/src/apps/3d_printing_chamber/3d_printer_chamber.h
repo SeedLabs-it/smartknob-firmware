@@ -2,12 +2,19 @@
 
 #include "../../font/NDS1210pt7b.h"
 #include "../../font/Pixel62mr11pt7b.h"
+#include "../../display_buffer.h"
 
 class PrinterChamberApp : public App
 {
 public:
+#ifdef USE_DISPLAY_BUFFER
+    PrinterChamberApp(char *entity_name);
+    void render();
+#else
     PrinterChamberApp(TFT_eSprite *spr_, char *entity_name);
     TFT_eSprite *render();
+#endif
+
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

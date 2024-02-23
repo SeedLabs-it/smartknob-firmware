@@ -16,6 +16,10 @@
 
 #include "apps/onboarding_flow/onboarding_flow.h"
 
+#include <stdint.h>
+#include <display_buffer.h>
+
+
 const uint8_t BOOT_MODE_NOT_SET = 0;
 const uint8_t BOOT_MODE_ONBOARDING = 1;
 const uint8_t BOOT_MODE_HASS = 2;
@@ -43,10 +47,14 @@ protected:
     void run();
 
 private:
+#ifdef USE_DISPLAY_BUFFER
+    DisplayBuffer *displayBuffer;
+#else
     TFT_eSPI tft_ = TFT_eSPI();
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
+#endif
     HassApps hass_apps;
 
     // TODO: put under private

@@ -5,6 +5,7 @@
 #include "app.h"
 #include "menu.h"
 #include "../app_config.h"
+#include "display_buffer.h"
 
 // include all apps
 #include "apps/3d_printing_chamber/3d_printer_chamber.h"
@@ -27,11 +28,16 @@ class Apps
 
 public:
     Apps();
+#ifdef USE_DISPLAY_BUFFER
+    void render();
+#else
     Apps(TFT_eSprite *spr_);
+    TFT_eSprite *renderActive();
+#endif
     void add(uint8_t id, App *app);
     void clear();
     EntityStateUpdate update(AppState state);
-    TFT_eSprite *renderActive();
+
     void setActive(int8_t id);
 
     uint8_t navigationNext();

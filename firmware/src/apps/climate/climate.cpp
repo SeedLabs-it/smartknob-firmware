@@ -1,6 +1,10 @@
 #include "climate.h"
 
+#ifdef USE_DISPLAY_BUFFER
+ClimateApp::ClimateApp(std::string entity_name) : App()
+#else
 ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+#endif
 {
     // TODO update this via some API
     current_temperature = 22;
@@ -237,7 +241,11 @@ void ClimateApp::drawDots()
 }
 
 // TODO: make this real temp, when sensor is connected
+#ifdef USE_DISPLAY_BUFFER
+void ClimateApp::render()
+#else
 TFT_eSprite *ClimateApp::render()
+#endif
 {
 
     uint16_t inactive_color = spr_->color565(71, 71, 71);
@@ -437,5 +445,7 @@ TFT_eSprite *ClimateApp::render()
     spr_->drawBitmap(center - icon_size - icon_margin, TFT_HEIGHT - 30, snowflake, icon_size, icon_size, snowflake_color, TFT_BLACK);
     spr_->drawBitmap(center + icon_margin, TFT_HEIGHT - 30, fire, icon_size, icon_size, fire_color, TFT_BLACK);
     spr_->drawBitmap(center + icon_size + icon_margin * 3, TFT_HEIGHT - 30, wind, icon_size, icon_size, wind_color, TFT_BLACK);
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 };

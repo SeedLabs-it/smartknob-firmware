@@ -8,8 +8,14 @@
 class SettingsApp : public App
 {
 public:
-    SettingsApp(TFT_eSprite *spr_);
-    TFT_eSprite *render();
+    #ifdef USE_DISPLAY_BUFFER
+        SettingsApp();
+        void render();
+    #else    
+        SettingsApp(TFT_eSprite *spr_);
+        TFT_eSprite *render();
+    #endif
+    
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

@@ -1,6 +1,9 @@
 #include "blinds.h"
-
+#ifdef USE_DISPLAY_BUFFER
+BlindsApp::BlindsApp(char *entity_name) : App()
+#else
 BlindsApp::BlindsApp(TFT_eSprite *spr_, char *entity_name) : App(spr_)
+#endif
 {
     this->entity_name = entity_name;
     motor_config = PB_SmartKnobConfig{
@@ -50,7 +53,11 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void BlindsApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void BlindsApp::render()
+#else
 TFT_eSprite *BlindsApp::render()
+#endif
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
@@ -96,6 +103,7 @@ TFT_eSprite *BlindsApp::render()
     spr_->setTextColor(TFT_WHITE);
     spr_->setFreeFont(&Roboto_Thin_24);
     spr_->drawString("Bedroom shade", TFT_WIDTH / 2, TFT_HEIGHT / 2 - 20 - 30, 1);
-
-    return this->spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 };

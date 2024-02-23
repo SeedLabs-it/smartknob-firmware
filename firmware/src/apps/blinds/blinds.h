@@ -3,12 +3,19 @@
 
 #include "../../font/roboto_thin_20.h"
 #include "../../font/roboto_light_60.h"
+#include "../../display_buffer.h"
 
 class BlindsApp : public App
 {
 public:
-    BlindsApp(TFT_eSprite *spr_, char *entity_name);
-    TFT_eSprite *render();
+    #ifdef USE_DISPLAY_BUFFER
+        BlindsApp(char *entity_name);
+        void render();
+    #else
+        BlindsApp(TFT_eSprite *spr_, char *entity_name);
+        TFT_eSprite *render();
+    #endif
+    
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

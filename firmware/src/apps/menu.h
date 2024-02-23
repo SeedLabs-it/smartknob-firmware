@@ -6,6 +6,8 @@
 #include <map>
 #include <memory>
 
+#include "display_buffer.h"
+
 struct TextItem
 {
     char *text;
@@ -49,11 +51,15 @@ struct MenuItem
 class Menu : public App
 {
 public:
-    Menu(TFT_eSprite *spr_) : App(spr_){};
+    #ifdef USE_DISPLAY_BUFFER
+        Menu() : App(){};
+        void render(){};
+    #else
+        Menu(TFT_eSprite *spr_) : App(spr_){};
+        TFT_eSprite *render(){};
+    #endif
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state){};
     void updateStateFromSystem(AppState state){};
-
-    TFT_eSprite *render(){};
 
     virtual void add_item(int8_t id, std::shared_ptr<MenuItem> item)
     {

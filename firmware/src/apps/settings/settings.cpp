@@ -2,7 +2,11 @@
 
 #include "../../root_task.h"
 
+#ifdef USE_DISPLAY_BUFFER
+SettingsApp::SettingsApp() : App()
+#else
 SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
+#endif
 {
     sprintf(fw_version, "FW: %s", "v0.1-demo");
     sprintf(room, "%s", "Kitchen");
@@ -136,7 +140,11 @@ void SettingsApp::renderViewMotorCalibration()
     }
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void SettingsApp::render()
+#else
 TFT_eSprite *SettingsApp::render()
+#endif
 {
     // section to update inner state
 
@@ -494,6 +502,7 @@ TFT_eSprite *SettingsApp::render()
         // polar coordinates
         spr_->fillCircle(screen_radius + (position_circle_radius * cosf(menu_starting_angle + degree_per_item * i)), screen_radius - position_circle_radius * sinf(menu_starting_angle + degree_per_item * i), menu_item_diameter / 2, menu_item_color);
     }
-
-    return this->spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 };

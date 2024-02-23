@@ -4,6 +4,8 @@
 #include "../../font/NDS1210pt7b.h"
 #include "../../font/NDS125_small.h"
 #include "../../font/Pixel62mr11pt7b.h"
+#include "../../display_buffer.h"
+
 
 const uint8_t CLIMATE_APP_MODE_AUTO = 0;
 const uint8_t CLIMATE_APP_MODE_COOLING = 1;
@@ -16,8 +18,14 @@ const uint8_t CLIMATE_APP_MAX_TEMP = 35;
 class ClimateApp : public App
 {
 public:
-    ClimateApp(TFT_eSprite *spr_, std::string entity_name);
-    TFT_eSprite *render();
+    #ifdef USE_DISPLAY_BUFFER
+        ClimateApp(std::string entity_name);
+        void render();
+    #else
+        ClimateApp(TFT_eSprite *spr_, std::string entity_name);
+        TFT_eSprite *render();
+    #endif
+    
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 

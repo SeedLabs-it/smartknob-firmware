@@ -1,9 +1,16 @@
 #if SK_DISPLAY
+#include <Arduino.h>
+#include "task.h"
+#include "semphr.h"
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-
+#include "display_buffer.h"
 #include "cJSON.h"
+
+
+
+
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
@@ -34,10 +41,14 @@ HassApps *DisplayTask::getHassApps()
 
 void DisplayTask::run()
 {
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
-    tft_.fillScreen(TFT_BLACK);
+    #ifdef USE_DISPLAY_BUFFER
+        displayBuffer = DisplayBuffer::getInstance();
+    #else    
+        tft_.begin();
+        tft_.invertDisplay(1);
+        tft_.setRotation(SK_DISPLAY_ROTATION);
+        tft_.fillScreen(TFT_BLACK);
+    #endif
 
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
@@ -45,28 +56,39 @@ void DisplayTask::run()
 
     log("push menu sprite: ok");
 
-    spr_.setColorDepth(16);
+    #ifdef USE_DISPLAY_BUFFER
+        hass_apps = HassApps(); 
+        onboarding_flow = OnboardingFlow();
+    #else
+        spr_.setColorDepth(16);
 
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
-    {
-        log("ERROR: sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
-    }
-    else
-    {
-        log("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
+        if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
+        {
+            log("ERROR: sprite allocation failed!");
+            tft_.fillScreen(TFT_RED);
+        }
+        else
+        {
+            log("Sprite created!");
+            tft_.fillScreen(TFT_BLACK);
+        }
+        spr_.setTextColor(0xFFFF, TFT_BLACK);
+        hass_apps = HassApps(&spr_);
+        onboarding_flow = OnboardingFlow(&spr_);
+    #endif
 
-    hass_apps = HassApps(&spr_);
+    
 
-    onboarding_flow = OnboardingFlow(&spr_);
+    
 
     AppState app_state;
-
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
+    #ifdef USE_DISPLAY_BUFFER
+        displayBuffer->getTftBuffer()->setTextDatum(CC_DATUM);
+        displayBuffer->getTftBuffer()->setTextColor(TFT_WHITE);   
+    #else
+        spr_.setTextDatum(CC_DATUM);
+        spr_.setTextColor(TFT_WHITE);
+    #endif
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
@@ -79,14 +101,26 @@ void DisplayTask::run()
 
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
-            spr_.fillSprite(TFT_BLACK);
+            #ifdef USE_DISPLAY_BUFFER
+                displayBuffer->getTftBuffer()->fillSprite(TFT_BLACK);
+            #else
+                spr_.fillSprite(TFT_BLACK);
+            #endif
             if (boot_mode == BOOT_MODE_ONBOARDING)
             {
-                onboarding_flow.render()->pushSprite(0, 0);
+                #ifdef USE_DISPLAY_BUFFER
+                    onboarding_flow.render();
+                #else
+                    onboarding_flow.render()->pushSprite(0, 0);
+                #endif
             }
             else if (boot_mode == BOOT_MODE_HASS)
             {
-                hass_apps.renderActive()->pushSprite(0, 0);
+                #ifdef USE_DISPLAY_BUFFER
+                    hass_apps.render();
+                #else
+                    hass_apps.renderActive()->pushSprite(0, 0);
+                #endif
             }
 
             {

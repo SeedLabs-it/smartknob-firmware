@@ -1,6 +1,10 @@
 #include "light_switch.h"
 
+#ifdef USE_DISPLAY_BUFFER
+LightSwitchApp::LightSwitchApp(char *app_id, char *friendly_name) : App()
+#else
 LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+#endif
 {
     // sprintf(author, "%s", "Beethoven");
     // sprintf(track, "%s", "Moonlight Sonata");
@@ -69,7 +73,11 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightSwitchApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void LightSwitchApp::render()
+#else
 TFT_eSprite *LightSwitchApp::render()
+#endif
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
@@ -152,6 +160,7 @@ TFT_eSprite *LightSwitchApp::render()
     {
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
     }
-
-    return this->spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 };

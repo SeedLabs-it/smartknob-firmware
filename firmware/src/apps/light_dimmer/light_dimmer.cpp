@@ -2,7 +2,11 @@
 #include "cJSON.h"
 #include <cstring>
 
+#ifdef USE_DISPLAY_BUFFER
+LightDimmerApp::LightDimmerApp(char *app_id, std::string entity_name) : App()
+#else
 LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+#endif
 {
     this->app_id = app_id;
     this->friendly_name = friendly_name;
@@ -66,7 +70,7 @@ int8_t LightDimmerApp::navigationNext()
         motor_config = PB_SmartKnobConfig{
             current_position,
             0,
-            current_position,
+            (uint8_t)current_position,
             0,
             -1,
             1.8 * PI / 180,
@@ -163,7 +167,11 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
 
+#ifdef USE_DISPLAY_BUFFER
+void LightDimmerApp::renderHUEWheel()
+#else
 TFT_eSprite *LightDimmerApp::renderHUEWheel()
+#endif
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
     uint16_t color_black = spr_->color565(0, 0, 0);
@@ -244,11 +252,16 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(color_light_grey);
     spr_->drawString(buf_, center_h, center_v + 30, 1);
-
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void LightDimmerApp::render()
+#else
 TFT_eSprite *LightDimmerApp::render()
+#endif
 {
 
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
@@ -338,5 +351,7 @@ TFT_eSprite *LightDimmerApp::render()
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
     }
 
+#ifndef USE_DISPLAY_BUFFER
     return this->spr_;
+#endif
 };

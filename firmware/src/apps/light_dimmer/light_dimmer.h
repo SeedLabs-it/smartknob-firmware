@@ -3,6 +3,7 @@
 #include "../../font/NDS1210pt7b.h"
 #include "../../font/Pixel62mr11pt7b.h"
 #include "../../util.h"
+#include "../../display_buffer.h"
 
 const uint8_t LIGHT_DIMMER_APP_MODE_DIMMER = 0;
 const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
@@ -10,14 +11,24 @@ const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
 class LightDimmerApp : public App
 {
 public:
-    LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
+    LightDimmerApp() : App(){};
+#ifdef USE_DISPLAY_BUFFER
+    LightDimmerApp(char *app_id, std::string entity_name);
+    void render();
+#else
+    LightDimmerApp(TFT_eSprite *spr_) : App(spr_){};
     TFT_eSprite *render();
+#endif
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
 
 protected:
     int8_t navigationNext();
+    #ifdef USE_DISPLAY_BUFFER
+    void renderHUEWheel();
+    #else    
     TFT_eSprite *renderHUEWheel();
+    #endif
 
 private:
     int16_t current_position = 0;

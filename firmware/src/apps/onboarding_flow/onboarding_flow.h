@@ -1,11 +1,12 @@
 #pragma once
 #include "../app.h"
-
 #include "../../util.h"
 #include "../../navigation/navigation.h"
 #include "../../notify/motor_notifier/motor_notifier.h"
 #include "../../notify/wifi_notifier/wifi_notifier.h"
 #include "../../events/events.h"
+
+#include "../../display_buffer.h"
 
 // Fonts
 #include "../../font/roboto_thin_bold_24.h"
@@ -34,9 +35,13 @@ class OnboardingFlow
 {
 public:
     OnboardingFlow();
-
+#ifdef USE_DISPLAY_BUFFER
+    void render();
+#else
     OnboardingFlow(TFT_eSprite *spr_);
     TFT_eSprite *render();
+#endif
+
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
@@ -47,6 +52,20 @@ public:
     void triggerMotorConfigUpdate();
 
 private:
+#ifdef USE_DISPLAY_BUFFER
+    void renderWelcomePage();
+    void renderHass1StepPage();
+    void renderHass2StepPage();
+    void renderHass3StepPage();
+    void renderHass4StepPage();
+    void renderHass5StepPage();
+    void renderHass6StepPage();
+    void renderHass7StepPage();
+    void renderHass8StepPage();
+    void renderWiFi1StepPage();
+    void renderDemo1StepPage();
+    void renderAboutPage();
+#else
     TFT_eSprite *renderWelcomePage();
     TFT_eSprite *renderHass1StepPage();
     TFT_eSprite *renderHass2StepPage();
@@ -59,7 +78,7 @@ private:
     TFT_eSprite *renderWiFi1StepPage();
     TFT_eSprite *renderDemo1StepPage();
     TFT_eSprite *renderAboutPage();
-
+#endif
     int32_t current_position = 0;
 
     uint8_t current_page = 0;

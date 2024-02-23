@@ -2,7 +2,11 @@
 
 #include <cstring>
 
+#ifdef USE_DISPLAY_BUFFER
+StopwatchApp::StopwatchApp(std::string entity_name) : App()
+#else
 StopwatchApp::StopwatchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+#endif
 {
 
     this->entity_name = entity_name;
@@ -124,7 +128,11 @@ int8_t StopwatchApp::navigationNext()
     return DONT_NAVIGATE;
 }
 
+#ifdef USE_DISPLAY_BUFFER
+void StopwatchApp::render()
+#else
 TFT_eSprite *StopwatchApp::render()
+#endif
 {
 
     uint16_t center_h = TFT_WIDTH / 2;
@@ -317,5 +325,7 @@ TFT_eSprite *StopwatchApp::render()
         spr_->drawString(buf_, center_h, center_v + 90, 1);
     }
 
-    return this->spr_;
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 };
