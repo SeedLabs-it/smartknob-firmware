@@ -136,13 +136,15 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    if (last_position != current_position)
+    if (last_position != current_position && first_run)
     {
+        is_on = true;
 
         sprintf(new_state.app_id, "%s", app_id);
         cJSON *json = cJSON_CreateObject();
 
-        cJSON_AddNumberToObject(json, "brightness", int(current_brightness * 2.55));
+        cJSON_AddBoolToObject(json, "on", is_on);
+        cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
         uint8_t r, g, b;
@@ -163,14 +165,23 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
     }
 
+    //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
+    first_run = true;
+
     return new_state;
 }
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
+    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
     cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
     cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
     cJSON *rgb_color = cJSON_GetObjectItem(mqtt_state_update.state, "rgb_color");
+
+    if (on != NULL)
+    {
+        is_on = on->valueint;
+    }
 
     if (brightness != NULL)
     {
@@ -178,6 +189,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER && current_brightness != current_position)
         {
             current_position = current_brightness;
+            last_position = current_position;
 
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
@@ -362,7 +374,14 @@ TFT_eSprite *LightDimmerApp::render()
     }
     else
     {
-        background_color = on_background;
+        if (is_on)
+        {
+            background_color = on_background;
+        }
+        else
+        {
+            background_color = off_background;
+        }
         foreground_color = on_lamp_color;
         dot_color = on_background;
     }
