@@ -80,13 +80,25 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
-            if (boot_mode == BOOT_MODE_ONBOARDING)
+            spr_.setTextSize(1);
+
+            switch (os_mode)
             {
+            case Onboarding:
                 onboarding_flow.render()->pushSprite(0, 0);
-            }
-            else if (boot_mode == BOOT_MODE_HASS)
-            {
+                break;
+            case Demo:
+                spr_.setTextDatum(CC_DATUM);
+                spr_.setFreeFont(&NDS1210pt7b);
+                spr_.setTextColor(TFT_WHITE);
+                spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+                spr_.pushSprite(0, 0);
+                break;
+            case Hass:
                 hass_apps.renderActive()->pushSprite(0, 0);
+                break;
+            default:
+                break;
             }
 
             {
@@ -134,12 +146,18 @@ void DisplayTask::log(const char *msg)
 
 void DisplayTask::enableOnboarding()
 {
-    boot_mode = BOOT_MODE_ONBOARDING;
+    os_mode = Onboarding;
+    onboarding_flow.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableHass()
 {
-    boot_mode = BOOT_MODE_HASS;
+    os_mode = Hass;
+}
+
+void DisplayTask::enableDemo()
+{
+    os_mode = Demo;
 }
 
 #endif

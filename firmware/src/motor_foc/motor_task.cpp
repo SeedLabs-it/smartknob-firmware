@@ -9,8 +9,8 @@
 #include "maq430_sensor.h"
 #endif
 
-#include "motors/motor_config.h"
-#include "util.h"
+#include "../motors/motor_config.h"
+#include "../util.h"
 
 static const float DEAD_ZONE_DETENT_PERCENT = 0.2;
 static const float DEAD_ZONE_RAD = 1 * _PI / 180;

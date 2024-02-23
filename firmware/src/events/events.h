@@ -15,14 +15,6 @@ struct WiFiSTAConnecting
     uint8_t tick;
 };
 
-struct MQTTConnecting
-{
-    char host[20];
-    uint16_t port;
-    char user[128];
-    char password[128];
-};
-
 struct WiFiStatus
 {
     /* data */
@@ -51,6 +43,12 @@ struct WebClient
 //     int8_t sta_rssi;
 // };
 
+struct MQTTStateUpdate
+{
+    char *app_id;
+    cJSON *state;
+};
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -58,7 +56,9 @@ union WiFiEventBody
     APClient ap_client;
     WebClient web_client;
     WiFiSTAConnecting wifi_sta_connecting;
-    MQTTConnecting mqtt_connecting;
+    WiFiSTAConnecting wifi_sta_connected;
+    MQTTConfiguration mqtt_connecting;
+    MQTTStateUpdate mqtt_state_update;
 };
 
 // TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED
@@ -71,10 +71,15 @@ enum EventType
     WEB_CLIENT,
     WIFI_STA_CONNECTING,
     WIFI_STA_CONNECTED,
+    WIFI_STA_CONNECTED_NEW_CREDENTIALS,
     WIFI_STA_CONNECTION_FAILED,
     WEB_CLIENT_MQTT,
     MQTT_CREDENTIALS_RECIEVED,
     MQTT_CONNECTING,
+    MQTT_SETUP,
+    MQTT_INIT,
+    MQTT_CONNECTION_FAILED,
+    MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED
 };
 

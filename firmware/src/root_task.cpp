@@ -51,9 +51,6 @@ RootTask::RootTask(
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
 
-    mqtt_status_queue_ = xQueueCreate(1, sizeof(MqttState));
-    assert(mqtt_status_queue_ != NULL);
-
     sensors_status_queue_ = xQueueCreate(100, sizeof(SensorsState));
     assert(sensors_status_queue_ != NULL);
 
@@ -135,7 +132,9 @@ void RootTask::run()
 #endif
 
     plaintext_protocol_.init([this]()
-                             { changeConfig(MENU); },
+                             {
+                                 //  CHANGE MOTOR CONFIG????
+                             },
                              [this]()
                              {
                                  this->strainCalibrationCallback();
@@ -146,9 +145,34 @@ void RootTask::run()
                              },
                              [this]()
                              {
-                                 this->is_onboarding = !this->is_onboarding;
-                                 this->is_onboarding ? display_task_->enableOnboarding() : display_task_->enableHass();
-                                 changeConfig(MENU);
+                                 OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+
+                                 switch (os_config->mode)
+                                 {
+                                 case Onboarding:
+                                     os_config->mode = Demo;
+                                     display_task_->enableDemo();
+                                     //  CHANGE MOTOR CONFIG
+                                     break;
+                                 case Demo:
+                                     os_config->mode = Hass;
+                                     display_task_->enableHass();
+                                     //  CHANGE MOTOR CONFIG
+
+                                     break;
+                                 case Hass:
+                                     os_config->mode = Onboarding;
+                                     display_task_->enableOnboarding();
+                                     break;
+                                 default:
+                                     os_config->mode = Hass;
+                                     display_task_->enableHass();
+                                     //  CHANGE MOTOR CONFIG
+
+                                     break;
+                                 }
+
+                                 this->configuration_->saveOSConfigurationInMemory(*os_config);
                              });
 
     // Start in legacy protocol mode
@@ -181,20 +205,64 @@ void RootTask::run()
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
 
-    // TODO: make this configurable based on config
-    if (SK_UI_BOOT_MODE == 0)
+    os_config_notifier_.setCallback([this](OSMode os_mode)
+                                    {
+                                        OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+                                        os_config->mode = os_mode;
+                                        this->configuration_->saveOSConfiguration(*os_config);
+
+                                        switch (os_config->mode)
+                                        {
+                                        case Onboarding:
+                                            display_task_->enableOnboarding();
+                                            break;
+                                        case Demo:
+                                            display_task_->enableDemo();
+                                            break;
+                                        case Hass:
+                                            display_task_->enableHass();
+                                            break;
+                                        default:
+                                            break;
+                                        } });
+
+    // waiting for config to be loaded
+    bool is_configuration_loaded = false;
+    while (!is_configuration_loaded)
     {
+        log("waiting for configuration");
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        is_configuration_loaded = configuration_ != nullptr;
+        xSemaphoreGive(mutex_);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    switch (configuration_->getOSConfiguration()->mode)
+    {
+    case Onboarding:
         display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+        display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+#if SK_WIFI
         display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+#endif
         display_task_->enableOnboarding();
         display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
-        is_onboarding = true;
-    }
-    else
-    {
+        motor_notifier.loopTick();
+        break;
+
+    case Demo:
+        display_task_->enableDemo();
+        // TODO: update motor config
+        break;
+    case Hass:
         display_task_->enableHass();
-        changeConfig(MENU);
-        is_onboarding = false;
+        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+        display_task_->getHassApps()->triggerMotorConfigUpdate();
+        motor_notifier.loopTick();
+        break;
+
+    default:
+        break;
     }
 
     EntityStateUpdate entity_state_update_to_send;
@@ -212,25 +280,61 @@ void RootTask::run()
         {
             motor_task_.runCalibration();
         }
+#if SK_WIFI
 
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-
-            if (is_onboarding)
+            if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
             }
 
+            if (wifi_event.type == WIFI_STA_CONNECTED_NEW_CREDENTIALS)
+            {
+                WiFiConfiguration wifi_config;
+                strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
+                strcpy(wifi_config.passphrase, wifi_event.body.wifi_sta_connected.passphrase);
+                configuration_->saveWiFiConfiguration(wifi_config);
+            }
+
             // TODO: handle wifi credentials here
             // TODO: handle mqtt credentials here
+#if SK_MQTT
+
+            if (wifi_event.type == WIFI_STA_CONNECTED)
+            {
+                if (configuration_->getOSConfiguration()->mode == Hass)
+                {
+                    MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                    ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+
+                    mqtt_task_->setup(mqtt_config);
+                }
+            }
+
             if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
             {
-#if SK_MQTT
+                MQTTConfiguration mqtt_config;
+                strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
+                mqtt_config.port = wifi_event.body.mqtt_connecting.port;
+                strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
+                strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
+                configuration_->saveMQTTConfiguration(mqtt_config);
                 mqtt_task_->handleEvent(wifi_event);
-#endif
             }
-        }
 
+            if (wifi_event.type == MQTT_SETUP || wifi_event.type == MQTT_INIT || wifi_event.type == MQTT_CONNECTING || wifi_event.type == SK_MQTT_CONNECTED || wifi_event.type == MQTT_CONNECTION_FAILED)
+            {
+                mqtt_task_->handleEvent(wifi_event);
+            }
+
+            if (wifi_event.type == MQTT_STATE_UPDATE)
+            {
+                display_task_->getHassApps()->handleEvent(wifi_event);
+            }
+#endif
+        }
+#endif
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
         {
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;
@@ -283,11 +387,6 @@ void RootTask::run()
             app_state.connectivity_state = latest_connectivity_state_;
         }
 
-        if (xQueueReceive(mqtt_status_queue_, &latest_mqtt_state_, 0) == pdTRUE)
-        {
-            app_state.mqtt_state = latest_mqtt_state_;
-        }
-
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
             ESP_LOGD("root_task", "App sync requested!");
@@ -296,8 +395,7 @@ void RootTask::run()
 
             log("Giving 0.5s for Apps to initialize");
             delay(500);
-
-            changeConfig(MENU);
+            display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
 #endif
         }
@@ -320,7 +418,7 @@ void RootTask::run()
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
-            if (is_onboarding)
+            if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
             }
@@ -352,6 +450,7 @@ void RootTask::run()
         }
 
         motor_notifier.loopTick();
+        os_config_notifier_.loopTick();
 
         updateHardware(app_state);
 
@@ -366,26 +465,6 @@ void RootTask::log(const char *msg)
 
     // Put string in queue (or drop if full to avoid blocking)
     xQueueSendToBack(log_queue_, &msg_str, 0);
-}
-
-void RootTask::changeConfig(int8_t id)
-{
-    if (id == DONT_NAVIGATE)
-    {
-        return;
-    }
-
-    // TODO, think on better design
-    if (id == DONT_NAVIGATE_UPDATE_MOTOR_CONFIG)
-    {
-        applyConfig(hass_apps->getActiveMotorConfig(), false);
-    }
-
-    if (!is_onboarding)
-    {
-        hass_apps->setActive(id);
-        applyConfig(hass_apps->getActiveMotorConfig(), false);
-    }
 }
 
 void RootTask::updateHardware(AppState app_state)
@@ -414,19 +493,17 @@ void RootTask::updateHardware(AppState app_state)
 
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
-
-                if (is_onboarding)
+                NavigationEvent event;
+                event.press = NAVIGATION_EVENT_PRESS_LONG;
+                if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    NavigationEvent event;
-                    event.press = NAVIGATION_EVENT_PRESS_LONG;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
-                    changeConfig(hass_apps->navigationBack());
+                    display_task_->getHassApps()->handleNavigationEvent(event);
                 }
             }
-            /* code */
             break;
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
@@ -435,21 +512,20 @@ void RootTask::updateHardware(AppState app_state)
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
-                /* code */
-                if (is_onboarding)
+                NavigationEvent event;
+                event.press = NAVIGATION_EVENT_PRESS_SHORT;
+                if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    NavigationEvent event;
-                    event.press = NAVIGATION_EVENT_PRESS_SHORT;
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                 }
                 else
                 {
-                    changeConfig(hass_apps->navigationNext());
+                    display_task_->getHassApps()->handleNavigationEvent(event);
                 }
             }
             break;
         case VIRTUAL_BUTTON_LONG_RELEASED:
-            /* code */
+
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
                 log("handling long press released");
@@ -537,6 +613,29 @@ void RootTask::setConfiguration(Configuration *configuration)
             configuration_value_ = configuration_->get();
             configuration_loaded_ = true;
             sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
+
+            configuration_->loadOSConfiguration();
+
+#if SK_WIFI
+            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadWiFiConfiguration())
+            {
+
+                WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
+                // TODO: send event to wifi to start STA part with given credentials
+                wifi_task_->getNotifier()->requestSTA(wifi_config);
+            }
+#endif
+#if SK_MQTT
+            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
+            {
+                MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+
+                // mqtt_task_->setupMQTT(mqtt_config);
+                // DO STUFF WITH MQTT CONFIG!!!
+                // mqtt_task_->getNotifier()->requestMQTT(mqtt_config);
+            }
+#endif
         }
     }
 }
@@ -544,11 +643,6 @@ void RootTask::setConfiguration(Configuration *configuration)
 QueueHandle_t RootTask::getConnectivityStateQueue()
 {
     return connectivity_status_queue_;
-}
-
-QueueHandle_t RootTask::getMqttStateQueue()
-{
-    return mqtt_status_queue_;
 }
 
 QueueHandle_t RootTask::getSensorsStateQueue()

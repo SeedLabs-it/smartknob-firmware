@@ -5,6 +5,8 @@
 #include "app.h"
 #include "menu.h"
 #include "../app_config.h"
+#include "../notify/motor_notifier/motor_notifier.h"
+#include "../navigation/navigation.h"
 
 // include all apps
 #include "apps/3d_printing_chamber/3d_printer_chamber.h"
@@ -34,15 +36,17 @@ public:
     TFT_eSprite *renderActive();
     void setActive(int8_t id);
 
-    uint8_t navigationNext();
-    uint8_t navigationBack();
-    PB_SmartKnobConfig getActiveMotorConfig();
     void setSprite(TFT_eSprite *spr_);
     App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name);
     void updateMenu();
 
     void reload(cJSON *apps_);
     void createOnboarding();
+
+    void setMotorNotifier(MotorNotifier *motor_notifier);
+    void triggerMotorConfigUpdate();
+
+    void handleNavigationEvent(NavigationEvent event);
 
 protected:
     QueueHandle_t mutex;
@@ -57,6 +61,12 @@ protected:
     TFT_eSprite *rendered_spr_;
 
     std::shared_ptr<App> find(uint8_t id);
+    std::shared_ptr<App> find(char *app_slug);
     void lock();
     void unlock();
+
+    PB_SmartKnobConfig root_level_motor_config;
+    PB_SmartKnobConfig blocked_motor_config;
+
+    MotorNotifier *motor_notifier;
 };

@@ -4,10 +4,10 @@
 #include <SimpleFOC.h>
 #include <vector>
 
-#include "configuration.h"
-#include "logger.h"
-#include "proto_gen/smartknob.pb.h"
-#include "task.h"
+#include "../configuration.h"
+#include "../logger.h"
+#include "../proto_gen/smartknob.pb.h"
+#include "../task.h"
 
 enum class CommandType
 {

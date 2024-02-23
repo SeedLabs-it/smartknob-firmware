@@ -6,21 +6,12 @@
 #include <WiFi.h>
 #include <vector>
 #include <map>
-#include <Preferences.h>
 
 #include "logger.h"
 #include "task.h"
 #include "cJSON.h"
-#include "app_config.h"
-#include "events/events.h"
-
-struct MQTTConfig
-{
-    std::string host;
-    uint16_t port;
-    std::string user;
-    std::string password;
-};
+#include "../app_config.h"
+#include "../events/events.h"
 
 class MqttTask : public Task<MqttTask>
 {
@@ -33,8 +24,6 @@ public:
     QueueHandle_t getConnectivityStateQueue();
     QueueHandle_t getEntityStateReceivedQueue();
 
-    void addStateListener(QueueHandle_t queue);
-
     void enqueueEntityStateToSend(EntityStateUpdate);
     void addAppSyncListener(QueueHandle_t queue);
     void setLogger(Logger *logger);
@@ -43,21 +32,22 @@ public:
     void handleEvent(WiFiEvent event);
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
+    bool setup(MQTTConfiguration config);
+    bool connect();
+    bool reconnect();
+    bool init();
+
 protected:
     void run();
 
 private:
-    const char *mqtt_server;
-    uint32_t mqtt_port;
-    const char *mqtt_user;
-    const char *mqtt_password;
+    std::map<std::string, EntityStateUpdate> entity_states_to_send;
 
-    std::vector<QueueHandle_t> state_listeners_;
+    MQTTConfiguration config_;
 
     QueueHandle_t connectivity_status_queue_;
     QueueHandle_t entity_state_to_send_queue_;
     QueueHandle_t shared_events_queue;
-    // QueueHandle_t entity_state_received_queue_;
     std::vector<QueueHandle_t> app_sync_listeners_;
 
     SemaphoreHandle_t mutex_app_sync_;
@@ -66,18 +56,11 @@ private:
     Logger *logger_;
     cJSON *apps;
 
-    Preferences preferences;
-
     ConnectivityState last_connectivity_state_;
-    MqttState mqtt_state_;
-
-    void publishState(const MqttState &state);
 
     void log(const char *msg);
 
-    void setup_mqtt(MQTTConfig config);
-    void reconnect_mqtt();
-    void callback_mqtt(char *topic, byte *payload, unsigned int length);
+    void callback(char *topic, byte *payload, unsigned int length);
 
     void publishAppSync(const cJSON *state);
 

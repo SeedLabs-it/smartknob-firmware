@@ -14,6 +14,12 @@ Configuration::Configuration()
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    wifi_config = WiFiConfiguration();
+    mqtt_config = MQTTConfiguration();
+    loadOSConfiguration();
+    loadWiFiConfiguration();
+    loadMQTTConfiguration();
 }
 
 Configuration::~Configuration()
@@ -122,6 +128,120 @@ bool Configuration::saveToDisk()
     }
 
     return true;
+}
+
+bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
+{
+    // TODO: persist in a file
+    char buf_[512];
+    sprintf(buf_, "saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
+    log(buf_);
+
+    is_wifi_set = true;
+    EEPROM.put(WIFI_SSID_EEPROM_POS, wifi_config_to_save.ssid);
+    EEPROM.put(WIFI_PASSPHRASE_EEPROM_POS, wifi_config_to_save.passphrase);
+    EEPROM.put(WIFI_SET_EEPROM_POS, is_wifi_set);
+
+    return EEPROM.commit();
+}
+
+WiFiConfiguration Configuration::getWiFiConfiguration()
+{
+    return wifi_config;
+}
+
+bool Configuration::loadWiFiConfiguration()
+{
+
+    char buf_[512];
+
+    EEPROM.get(WIFI_SSID_EEPROM_POS, wifi_config.ssid);
+    EEPROM.get(WIFI_PASSPHRASE_EEPROM_POS, wifi_config.passphrase);
+    EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
+
+    sprintf(buf_, "loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
+    log(buf_);
+
+    return is_wifi_set;
+}
+
+bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
+{
+    // TODO: persist in a file
+    char buf_[512];
+    sprintf(buf_, "saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
+    log(buf_);
+
+    is_mqtt_set = true;
+    EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
+    EEPROM.put(MQTT_PORT_EEPROM_POS, mqtt_config_to_save.port);
+    EEPROM.put(MQTT_USER_EEPROM_POS, mqtt_config_to_save.user);
+    EEPROM.put(MQTT_PASS_EEPROM_POS, mqtt_config_to_save.password);
+    EEPROM.put(MQTT_SET_EEPROM_POS, is_mqtt_set);
+
+    return EEPROM.commit();
+}
+
+MQTTConfiguration Configuration::getMQTTConfiguration()
+{
+    return mqtt_config;
+}
+
+bool Configuration::loadMQTTConfiguration()
+{
+    char buf_[512];
+
+    EEPROM.get(MQTT_HOST_EEPROM_POS, mqtt_config.host);
+    EEPROM.get(MQTT_PORT_EEPROM_POS, mqtt_config.port);
+    EEPROM.get(MQTT_USER_EEPROM_POS, mqtt_config.user);
+    EEPROM.get(MQTT_PASS_EEPROM_POS, mqtt_config.password);
+    EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
+
+    sprintf(buf_, "loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
+    log(buf_);
+
+    return is_mqtt_set;
+}
+
+bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
+{
+
+    this->os_config.mode = os_config.mode;
+    char buf_[32];
+    sprintf(buf_, "os mode set to %d", os_config.mode);
+    log(buf_);
+
+    return true;
+}
+
+bool Configuration::saveOSConfiguration(OSConfiguration os_config)
+{
+    EEPROM.put(OS_MODE_EEPROM_POS, os_config.mode);
+
+    return EEPROM.commit();
+}
+
+bool Configuration::loadOSConfiguration()
+{
+    // boot mode
+    EEPROM.get(OS_MODE_EEPROM_POS, os_config.mode);
+
+    if (os_config.mode > Hass)
+    {
+        os_config.mode = Onboarding;
+    }
+
+    if (os_config.mode < 0)
+    {
+        os_config.mode = Onboarding;
+    }
+
+    return true;
+}
+
+OSConfiguration *Configuration::getOSConfiguration()
+{
+    return &os_config;
 }
 
 PB_PersistentConfiguration Configuration::get()
