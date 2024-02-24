@@ -8,9 +8,6 @@ MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_cor
 
     entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
-
-    connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
-    assert(connectivity_status_queue_ != NULL);
 }
 
 MqttTask::~MqttTask()
@@ -60,18 +57,7 @@ void MqttTask::run()
     while (1)
     {
 
-        if (xQueueReceive(connectivity_status_queue_, &connectivity_state_to_process_, 0) == pdTRUE)
-        {
-            if (last_connectivity_state_.ip_address != connectivity_state_to_process_.ip_address) // DOESNT CATCH ALL CHANGES!!
-            {
-                last_connectivity_state_ = connectivity_state_to_process_;
-            }
-            {
-                last_connectivity_state_ = connectivity_state_to_process_;
-            }
-        }
-
-        if (last_connectivity_state_.is_connected)
+        if (is_config_set)
         {
             if (!mqttClient.connected())
             {
@@ -151,7 +137,8 @@ bool MqttTask::setup(MQTTConfiguration config)
                            { this->callback(topic, payload, length); });
 
     publishEvent(event);
-    return true;
+    is_config_set = true;
+    return is_config_set;
 }
 
 bool MqttTask::connect()
@@ -283,11 +270,6 @@ void MqttTask::publishAppSync(const cJSON *state)
     {
         xQueueSend(listener, state, portMAX_DELAY);
     }
-}
-
-QueueHandle_t MqttTask::getConnectivityStateQueue()
-{
-    return connectivity_status_queue_;
 }
 
 void MqttTask::lock()

@@ -21,7 +21,6 @@ public:
     MqttTask(const uint8_t task_core);
     ~MqttTask();
 
-    QueueHandle_t getConnectivityStateQueue();
     QueueHandle_t getEntityStateReceivedQueue();
 
     void enqueueEntityStateToSend(EntityStateUpdate);
@@ -44,8 +43,8 @@ private:
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
 
     MQTTConfiguration config_;
+    bool is_config_set;
 
-    QueueHandle_t connectivity_status_queue_;
     QueueHandle_t entity_state_to_send_queue_;
     QueueHandle_t shared_events_queue;
     std::vector<QueueHandle_t> app_sync_listeners_;
@@ -55,8 +54,6 @@ private:
     PubSubClient mqttClient;
     Logger *logger_;
     cJSON *apps;
-
-    ConnectivityState last_connectivity_state_;
 
     void log(const char *msg);
 
