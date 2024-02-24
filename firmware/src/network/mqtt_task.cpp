@@ -31,10 +31,10 @@ void MqttTask::handleEvent(WiFiEvent event)
         setup(event.body.mqtt_connecting);
     }
 
-    if (event.type == MQTT_SETUP)
-    {
-        connect();
-    }
+    // if (event.type == MQTT_SETUP)
+    // {
+    //     connect();
+    // }
 
     if (event.type == SK_MQTT_CONNECTED)
     {
