@@ -70,12 +70,9 @@ uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b)
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
 
-void uint32ToRGB(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b)
+RGBColor uint32ToRGB(uint32_t color)
 {
-    // Extract red, green, and blue components from the 32-bit color
-    *r = (color >> 8) & 0xF8;
-    *g = (color >> 3) & 0xFC;
-    *b = (color << 3) & 0xF8;
+    return {(color >> 8) & 0xF8, (color >> 3) & 0xFC, (color << 3) & 0xF8};
 }
 
 HEXColor hToHEX(float h)
@@ -156,6 +153,36 @@ HEXColor hToHEX(float h)
     result.b = b;
 
     return result;
+}
+
+HSVColor ToHSV(RGBColor color)
+{
+    double cmax = std::max({color.r, color.g, color.b});
+    double cmin = std::min({color.r, color.g, color.b});
+    double delta = cmax - cmin;
+
+    double h = 0, s = 0, v = 0;
+
+    // Calculating hue
+    if (delta == 0)
+        h = 0;
+    else if (cmax == color.r)
+        h = 60 * ((color.g - color.b) / delta);
+    else if (cmax == color.g)
+        h = 60 * (((color.b - color.r) / delta) + 2);
+    else if (cmax == color.b)
+        h = 60 * (((color.r - color.g) / delta) + 4);
+
+    if (h < 0)
+        h += 360;
+
+    // Calculating saturation
+    if (cmax != 0)
+        s = delta / cmax;
+
+    // Calculating value
+    v = cmax;
+    return {h, s, v};
 }
 
 // Converts a color from HSVA to RGBA

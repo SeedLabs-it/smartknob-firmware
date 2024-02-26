@@ -19,6 +19,20 @@ int sgn(T val)
     return (T(0) < val) - (val < T(0));
 }
 
+struct HSVColor
+{
+    float h;
+    float s;
+    float v;
+};
+
+struct RGBColor
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
 struct HEXColor
 {
     uint8_t r;
@@ -46,6 +60,7 @@ private:
 };
 
 HEXColor hToHEX(float h);
+HSVColor ToHSV(RGBColor color);
 uint32_t ToRGBA(float h);
 uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b);
-void uint32ToRGB(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b);
+RGBColor uint32ToRGB(uint32_t color);

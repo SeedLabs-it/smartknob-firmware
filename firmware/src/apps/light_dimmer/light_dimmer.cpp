@@ -145,13 +145,13 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
-        uint8_t r, g, b;
-        uint32ToRGB(ToRGBA(app_hue_position), &r, &g, &b);
+        // uint8_t r, g, b;
+        RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
 
         cJSON *rgb_array = cJSON_CreateArray();
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(r));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(g));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(b));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.r));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.g));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
         cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
         sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
@@ -205,15 +205,18 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
         uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
 
-        // app_hue_position needs to be updated with correct value
+        HSVColor hsv = ToHSV(RGBColor{r, g, b});
 
-        // if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
-        // {
-        //     current_position = app_hue_position;
+        app_hue_position = hsv.h;
 
-        //     motor_config.position_nonce = app_hue_position;
-        //     motor_config.position = app_hue_position;
-        // }
+        if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
+        {
+            app_hue_position = hsv.h / 2; // UGLY FIX?
+            current_position = app_hue_position;
+
+            motor_config.position_nonce = app_hue_position;
+            motor_config.position = app_hue_position;
+        }
     }
 
     if (brightness != NULL || color_temp != NULL || rgb_color != NULL)
