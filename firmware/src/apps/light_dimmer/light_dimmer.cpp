@@ -66,9 +66,9 @@ int8_t LightDimmerApp::navigationNext()
     case LIGHT_DIMMER_APP_MODE_HUE:
         // todo, check that current temp is more than wanted
         motor_config = PB_SmartKnobConfig{
-            app_hue_position,
+            app_hue_position / 2,
             0,
-            app_hue_position,
+            app_hue_position / 2,
             0,
             -1,
             PI * 2 / 180,
@@ -85,7 +85,6 @@ int8_t LightDimmerApp::navigationNext()
     default:
         break;
     }
-
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
@@ -95,7 +94,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
-
         if (current_position < 0)
         {
             app_hue_position = (360 * 100 + current_position * 2) % 360;
