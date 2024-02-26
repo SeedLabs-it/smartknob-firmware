@@ -137,8 +137,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     // ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
-        ClimateApp *app = new ClimateApp(this->spr_, app_id);
-        app->friendly_name = friendly_name;
+        ClimateApp *app = new ClimateApp(this->spr_, app_id, friendly_name);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
