@@ -136,7 +136,14 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
-        is_on = true;
+        if (current_brightness == 0)
+        {
+            is_on = false;
+        }
+        else
+        {
+            is_on = true;
+        }
 
         sprintf(new_state.app_id, "%s", app_id);
         cJSON *json = cJSON_CreateObject();
