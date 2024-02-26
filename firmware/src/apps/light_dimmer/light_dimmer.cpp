@@ -201,12 +201,12 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
-    // if (color_temp != NULL)
+    // if (color_temp != NULL && cJSON_IsNull(color_temp) == 0
     // {
     //     app_hue_position = color_temp->valueint / 2.55;
     // }
 
-    if (rgb_color != NULL)
+    if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
     {
         uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
@@ -226,7 +226,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
-    if (brightness != NULL || color_temp != NULL || rgb_color != NULL)
+    if (brightness != NULL || (color_temp != NULL && cJSON_IsNull(color_temp) == 0) || (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0))
     {
         adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
 
