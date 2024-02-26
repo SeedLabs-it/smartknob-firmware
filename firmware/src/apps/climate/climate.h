@@ -22,6 +22,7 @@ public:
     ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
 
 protected:
@@ -45,4 +46,6 @@ private:
     long startTime = 0;
 
     void drawDots();
+
+    bool first_run = false;
 };

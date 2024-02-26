@@ -63,6 +63,7 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "mode", mode);
         cJSON_AddNumberToObject(json, "target_temp", wanted_temperature);
+        cJSON_AddNumberToObject(json, "current_temp", current_temperature);
 
         sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
 
@@ -74,7 +75,39 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
         sprintf(new_state.app_slug, "%s", APP_SLUG_CLIMATE);
     }
 
+    //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
+    first_run = true;
+
     return new_state;
+}
+
+void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *mode = cJSON_GetObjectItem(mqtt_state_update.state, "mode");
+    cJSON *target_temp = cJSON_GetObjectItem(mqtt_state_update.state, "target_temp");
+    cJSON *current_temp = cJSON_GetObjectItem(mqtt_state_update.state, "current_temp");
+
+    ESP_LOGD("CLIMATE_APP", "RECEIVED HASS STATE UPDATE");
+    ESP_LOGD("CLIMATE_APP", "mode: %d", mode->valueint);
+    ESP_LOGD("CLIMATE_APP", "target_temperature: %d", target_temp->valueint);
+    ESP_LOGD("CLIMATE_APP", "current_temperature: %d", current_temp->valueint);
+
+    if (mode != NULL)
+    {
+        this->mode = mode->valueint;
+    }
+
+    if (target_temp != NULL)
+    {
+        wanted_temperature = target_temp->valueint;
+        motor_config.position = wanted_temperature;
+        motor_config.position_nonce = wanted_temperature;
+    }
+
+    if (current_temp != NULL)
+    {
+        this->current_temperature = current_temp->valueint;
+    }
 }
 
 void ClimateApp::updateStateFromSystem(AppState state) {}
