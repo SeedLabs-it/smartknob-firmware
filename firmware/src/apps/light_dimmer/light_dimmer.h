@@ -18,6 +18,7 @@ public:
 
 protected:
     int8_t navigationNext();
+    int8_t navigationBack();
     TFT_eSprite *renderHUEWheel();
 
 private:

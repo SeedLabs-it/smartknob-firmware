@@ -88,6 +88,17 @@ int8_t LightDimmerApp::navigationNext()
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
+int8_t LightDimmerApp::navigationBack()
+{
+    first_run = false;
+    if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+    {
+        navigationNext();
+    }
+
+    return App::navigationBack();
+}
+
 EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_position = state.current_position;
