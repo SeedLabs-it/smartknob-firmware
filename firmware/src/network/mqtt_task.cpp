@@ -46,6 +46,7 @@ void MqttTask::run()
 {
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
+    const uint16_t mqtt_pull_interval_ms = 200;
     const uint16_t mqtt_push_interval_ms = 200;
 
     EntityStateUpdate entity_state_to_process_;
@@ -71,7 +72,7 @@ void MqttTask::run()
                 continue;
             }
 
-            if (millis() - mqtt_pull > 1000)
+            if (millis() - mqtt_pull > mqtt_pull_interval_ms)
             {
                 mqttClient.loop();
                 mqtt_pull = millis();
