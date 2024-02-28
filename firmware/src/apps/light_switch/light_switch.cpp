@@ -71,6 +71,19 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
+void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
+
+    if (on != NULL)
+    {
+        current_position = on->valueint;
+
+        motor_config.position_nonce = current_position;
+        motor_config.position = current_position;
+    }
+}
+
 void LightSwitchApp::updateStateFromSystem(AppState state) {}
 
 #ifdef USE_DISPLAY_BUFFER

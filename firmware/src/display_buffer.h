@@ -15,10 +15,9 @@
 
 #define DISPLAY_BUFFER_MAX_SUSPENDABLE_TASKS 20 // Maximum number of tasks that can be suspended and resumed to allow for display drawing high performance
 
-#define DISPLAY_BUFFER_DRAW_DELAY 40 // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
-                                     //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
-
-
+#define DISPLAY_BUFFER_DRAW_DELAY 100                  // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
+                                                       //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
+#define DRAW_SEMAPHORE_TIMEOUT 2000 / portTICK_RATE_MS // The timeout for the draw semaphore
 
 class DisplayBuffer
 {
@@ -32,8 +31,10 @@ public:
         // Init the TFT
 
         tft_.begin();
-        tft_.invertDisplay(1);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        //tft_.invertDisplay(1);
         tft_.setRotation(SK_DISPLAY_ROTATION);
+        tft_.fillScreen(TFT_BLACK);
 
         // Init the buffer
         bufferSpr_.createSprite(TFT_WIDTH, TFT_HEIGHT);
@@ -44,7 +45,6 @@ public:
         tftBufferXSemaphore = xSemaphoreCreateMutex();
 
         // Init the TFT task
-        instance_ = this;
         tftDebugDrawCount = 0;
         lastTftDrawTimeMs = millis();
         xTaskCreate(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL);
@@ -63,13 +63,21 @@ public:
         return DisplayBuffer::instance_;
     }
 
+    void setLogger(Logger *logger)
+    {
+        logger_ = logger;
+        /*if(logger_ != nullptr){
+            logger_->log("Display buffer logger enabled");
+        }*/
+    }
+
     /**
      * Start a draw transaction, this MUST be called before any (mass) drawing operation. It will prevent the TFT from being drawn to while the transaction is active.
      * By calling startDrawTransaction() ... DRAW OPS....endDrawTransaction() you are guaranteed that the TFT will not be drawn with partial graphics on it.
      */
     void startDrawTransaction()
     {
-        xSemaphoreTake(tftBufferXSemaphore, portMAX_DELAY);
+        xSemaphoreTake(tftBufferXSemaphore, DRAW_SEMAPHORE_TIMEOUT);
     }
 
     /**
@@ -112,6 +120,9 @@ public:
     }
 
 private:
+    /* The logger */
+    Logger *logger_ = nullptr;
+
     /* The TFT instance */
     TFT_eSPI tft_ = TFT_eSPI();
 
@@ -164,14 +175,16 @@ protected:
      */
     static void tftTask(void *args)
     {
-        TickType_t xLastWakeTime;
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         const TickType_t xFrequency = portTICK_RATE_MS * DISPLAY_BUFFER_DRAW_DELAY; // 20ms
 
-        BaseType_t xWasDelayed;
+        TickType_t xLastWakeTime;
+
         while (1)
         {
+
             DisplayBuffer::getInstance()->startDrawTransaction();
-            DisplayBuffer::getInstance()->suspendTasks();
+            // DisplayBuffer::getInstance()->suspendTasks();
 #ifdef DEBUG_SCREEN_DRAW
             DisplayBuffer::getInstance()->getTftBuffer()->setCursor(DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_X, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_Y, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_SIZE);
             DisplayBuffer::getInstance()->getTftBuffer()->fillRect(DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_X, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_Y, DISPLAY_BUFFER_DEBUG_SCREEN_RECT_W, DISPLAY_BUFFER_DEBUG_SCREEN_RECT_H, TFT_WHITE);
@@ -181,7 +194,7 @@ protected:
             DisplayBuffer::getInstance()->getTftBuffer()->pushSprite(0, 0);
             lastTftDrawTimeMs = millis();
             DisplayBuffer::getInstance()->endDrawTransaction();
-            DisplayBuffer::getInstance()->resumeTasks();
+            // DisplayBuffer::getInstance()->resumeTasks();
             vTaskDelay(xFrequency);
             xLastWakeTime = xTaskGetTickCount();
         }

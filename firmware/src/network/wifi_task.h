@@ -9,13 +9,13 @@
 #include <mqtt.h>
 #include <Preferences.h>
 
-#include "logger.h"
-#include "proto_gen/smartknob.pb.h"
-#include "task.h"
-#include "app_config.h"
+#include "../logger.h"
+#include "../proto_gen/smartknob.pb.h"
+#include "../task.h"
+#include "../app_config.h"
 
-#include "events/events.h"
-#include "notify/wifi_notifier/wifi_notifier.h"
+#include "../events/events.h"
+#include "../notify/wifi_notifier/wifi_notifier.h"
 
 #include <ElegantOTA.h>
 
@@ -32,6 +32,7 @@ public:
 
     WiFiNotifier *getNotifier();
     QueueHandle_t getWiFiEventsQueue();
+    void handleCommand(WiFiCommand command);
 
 protected:
     void run();
@@ -44,7 +45,6 @@ private:
     Logger *logger_;
     void log(const char *msg);
     WiFiClient wifi_client;
-    void setup_wifi();
     void updateWifiState();
     void publishState(const ConnectivityState &state);
     char buf_[128];
@@ -55,6 +55,7 @@ private:
     void startWebServer();
     bool is_webserver_started = false;
     void startWiFiAP();
+    bool startWiFiSTA(WiFiConfiguration wifi_config);
 
     WiFiNotifier wifi_notifier;
     // websrver handlers

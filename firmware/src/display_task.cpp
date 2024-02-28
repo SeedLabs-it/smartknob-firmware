@@ -93,7 +93,7 @@ void DisplayTask::run()
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
 
-    const uint16_t wanted_fps = 60;
+    const uint16_t wanted_fps = 10;
     uint16_t fps_counter = 0;
 
     while (1)
@@ -102,26 +102,49 @@ void DisplayTask::run()
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             #ifdef USE_DISPLAY_BUFFER
+                displayBuffer->startDrawTransaction();
                 displayBuffer->getTftBuffer()->fillSprite(TFT_BLACK);
+                displayBuffer->getTftBuffer()->setTextSize(1);
             #else
                 spr_.fillSprite(TFT_BLACK);
+                spr_.setTextSize(1);
             #endif
-            if (boot_mode == BOOT_MODE_ONBOARDING)
+            
+
+            switch (os_mode)
             {
+            case Onboarding:
                 #ifdef USE_DISPLAY_BUFFER
                     onboarding_flow.render();
                 #else
                     onboarding_flow.render()->pushSprite(0, 0);
                 #endif
-            }
-            else if (boot_mode == BOOT_MODE_HASS)
-            {
+                break;
+            case Demo:
+                #ifdef USE_DISPLAY_BUFFER
+                    displayBuffer->getTftBuffer()->setTextDatum(CC_DATUM);
+                    displayBuffer->getTftBuffer()->setFreeFont(&NDS1210pt7b);
+                    displayBuffer->getTftBuffer()->setTextColor(TFT_WHITE);
+                    displayBuffer->getTftBuffer()->drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+                #else
+                    spr_.setTextDatum(CC_DATUM);
+                    spr_.setFreeFont(&NDS1210pt7b);
+                    spr_.setTextColor(TFT_WHITE);
+                    spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+                    spr_.pushSprite(0, 0);
+                #endif   
+                break;
+            case Hass:
                 #ifdef USE_DISPLAY_BUFFER
                     hass_apps.render();
                 #else
                     hass_apps.renderActive()->pushSprite(0, 0);
                 #endif
+                break;
+            default:
+                break;
             }
+            displayBuffer->endDrawTransaction();
 
             {
                 SemaphoreGuard lock(mutex_);
@@ -138,7 +161,7 @@ void DisplayTask::run()
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -168,12 +191,18 @@ void DisplayTask::log(const char *msg)
 
 void DisplayTask::enableOnboarding()
 {
-    boot_mode = BOOT_MODE_ONBOARDING;
+    os_mode = Onboarding;
+    onboarding_flow.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableHass()
 {
-    boot_mode = BOOT_MODE_HASS;
+    os_mode = Hass;
+}
+
+void DisplayTask::enableDemo()
+{
+    os_mode = Demo;
 }
 
 #endif

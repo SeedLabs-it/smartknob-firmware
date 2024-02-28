@@ -14,7 +14,7 @@
 #include "apps/apps.h"
 #include "apps/hass/hass_apps.h"
 
-#include "apps/onboarding_flow/onboarding_flow.h"
+#include "onboarding_flow/onboarding_flow.h"
 
 #include <stdint.h>
 #include <display_buffer.h>
@@ -40,6 +40,7 @@ public:
     HassApps *getHassApps();
     void enableOnboarding();
     void enableHass();
+    void enableDemo();
 
     OnboardingFlow *getOnboardingFlow();
 
@@ -69,7 +70,7 @@ private:
     void log(const char *msg);
     char buf_[128];
 
-    uint8_t boot_mode = BOOT_MODE_NOT_SET;
+    OSMode os_mode;
 };
 
 #else

@@ -1,9 +1,9 @@
 #if SK_WIFI
 #include "wifi_task.h"
-#include "semaphore_guard.h"
-#include "util.h"
+#include "../semaphore_guard.h"
+#include "../util.h"
 #include "cJSON.h"
-#include "root_task.h"
+#include "../root_task.h"
 
 #if SK_NETWORKING
 #include "wifi_config.h"
@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 2048 * 2, 1, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 8, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -25,13 +25,33 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 2048 * 2, 1, task_cor
     assert(wifi_events_queue != NULL);
 
     // TODO make this more robust
-    wifi_notifier.setCallback([this]()
-                              { this->startWiFiAP(); this->startWebServer(); });
+    wifi_notifier = WiFiNotifier();
+    wifi_notifier.setCallback([this](WiFiCommand command)
+                              { this->handleCommand(command); });
 }
 
 WifiTask::~WifiTask()
 {
     vSemaphoreDelete(mutex_);
+}
+
+void WifiTask::handleCommand(WiFiCommand command)
+{
+    switch (command.type)
+    {
+    case RequestAP:
+        this->startWiFiAP();
+        this->startWebServer();
+        break;
+    case RequestSTA:
+        if (this->startWiFiSTA(command.body.wifi_sta_config))
+        {
+            this->startWebServer();
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 void OnWiFiEventGlobal(WiFiEvent_t event)
@@ -43,7 +63,7 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
     {
 
     case SYSTEM_EVENT_STA_CONNECTED:
-        Serial.println("ESP32 Connected to WiFi Network");
+        ESP_LOGD("wifi", "ESP32 Connected to WiFi Network");
         break;
     // case SYSTEM_EVENT_AP_START:
     //     Serial.println("ESP32 soft AP started");
@@ -89,69 +109,53 @@ void WifiTask::startWiFiAP()
     publishWiFiEvent(event);
 }
 
-void WifiTask::setup_wifi()
+bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 {
-#if SK_NETWORKING
-    const char *wifi_name = WIFI_SSID;
-    const char *wifi_pass = WIFI_PASSWORD;
-#else
-    const char *wifi_name = "";
-    const char *wifi_pass = "";
-#endif
 
-    // WiFi.persistent(SK_REMEMBER_WIFI);
-    // WiFi.setAutoReconnect(true);
+    WiFiEvent wifi_sta_connecting_event;
 
-    uint8_t tries = 0;
+    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", wifi_config.ssid);
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", wifi_config.passphrase);
+    wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
 
-    char hostname[23] = "";
+    publishWiFiEvent(wifi_sta_connecting_event);
 
-    printf(hostname, "SmartKnob_DevKit_%s", "A2R45C");
+    // TODO: set hostname
 
-    // WiFi.setHostname(hostname);
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.setAutoReconnect(true);
+    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
-    log(hostname);
+    uint8_t max_tries = 20;
 
-    if (SK_UI_BOOT_MODE == 0)
+    while (WiFi.status() != WL_CONNECTED)
     {
-        // onboarding
-        WiFi.mode(WIFI_MODE_APSTA);
-        WiFi.softAP("SmartKnob_DevKit_A2R45C", "smartknob");
-        WiFi.begin(wifi_name, wifi_pass);
-    }
-    else
-    {
+        if (wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries)
+        {
+            break;
+        }
+        delay(1000);
+        wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
+        publishWiFiEvent(wifi_sta_connecting_event);
+        // TODO: retry to connect after X seconds
     }
 
-    // while (WiFi.waitForConnectResult() != WL_CONNECTED && tries < 3) //! UP TRIES WHEN IN PRODUCTION
-    // {
-    //     ESP_LOGD(WIFI_TAG, "Connecting to wifi, attempt: %d", tries);
-    //     // WiFi.begin("Fam Wall", "WallsNetwork989303"); ok so it does store in eeprom by default now as long as persistent is set to true
-    //     WiFi.begin();
-    //     delay(3000);
-    //     tries++;
-    // }
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connection_failed_event;
+        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
+        publishWiFiEvent(wifi_sta_connecting_event);
+        return false;
+    }
 
-    // if (tries >= 3)
-    // {
-    //     ESP_LOGD(WIFI_TAG, "Failed to connect to wifi, starting AP");
-    //     WiFi.mode(WIFI_AP);
-    //     WiFi.softAP("SMARTKNOB-AP", "smartknob");
+    WiFiEvent wifi_sta_connected;
+    wifi_sta_connected.type = WIFI_STA_CONNECTED;
+    strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
+    strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
-    //     while (WiFi.softAPgetStationNum() == 0)
-    //     {
-    //         ESP_LOGD(WIFI_TAG, "Waiting for client to connect to AP");
-    //         delay(1000);
-    //     }
-
-    //     ESP_LOGD(WIFI_TAG, "Client connected to AP");
-    // }
-
-    // if (WiFi.waitForConnectResult() == WL_CONNECTED)
-    // {
-    //     ESP_LOGD(WIFI_TAG, "Connected as: %s", WiFi.localIP().toString().c_str());
-    // }
-    // updateWifiState();
+    publishWiFiEvent(wifi_sta_connected);
+    return true;
 }
 
 void WifiTask::webHandlerWiFiForm()
@@ -200,44 +204,26 @@ void WifiTask::webHandlerWiFiCredentials()
 
     // TODO send event connecting to wifi
 
-    WiFiEvent wifi_sta_connecting_event;
+    WiFiConfiguration wifi_config;
+    sprintf(wifi_config.ssid, "%s", ssid.c_str());
+    sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
 
-    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
-    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", ssid.c_str());
-    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", passphrase.c_str());
-    wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
-
-    publishWiFiEvent(wifi_sta_connecting_event);
-
-    WiFi.begin(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase);
-
-    uint8_t max_tries = 20;
-
-    while (WiFi.status() != WL_CONNECTED)
+    if (startWiFiSTA(wifi_config))
     {
-        if (wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries)
-        {
-            break;
-        }
-        delay(1000);
-        wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
-        publishWiFiEvent(wifi_sta_connecting_event);
-        // TODO: retry to connect after X seconds
-    }
+        WiFiEvent wifi_sta_connected;
+        wifi_sta_connected.type = WIFI_STA_CONNECTED_NEW_CREDENTIALS;
+        sprintf(wifi_sta_connected.body.wifi_sta_connected.ssid, "%s", ssid.c_str());
+        sprintf(wifi_sta_connected.body.wifi_sta_connected.passphrase, "%s", passphrase.c_str());
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        WiFiEvent wifi_sta_connection_failed_event;
-        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
-        publishWiFiEvent(wifi_sta_connecting_event);
+        publishWiFiEvent(wifi_sta_connected);
 
-        server_->sendHeader("Location", "/");
-        server_->send(302, "text/plain", "Invalid WiFi credentials!");
+        server_->sendHeader("Location", "/mqtt");
+        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
     }
     else
     {
-        server_->sendHeader("Location", "/mqtt");
-        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+        server_->sendHeader("Location", "/");
+        server_->send(302, "text/plain", "Invalid WiFi credentials!");
     }
 }
 
@@ -312,7 +298,6 @@ void WifiTask::startWebServer()
 
 void WifiTask::run()
 {
-    // setup_wifi();
 
     static uint32_t last_wifi_status;
 
@@ -325,19 +310,11 @@ void WifiTask::run()
             ElegantOTA.loop();
         }
 
-        // TODO listen for incoming requests for actions
-
-        // TODO make it real event
-        // if (true)
-        // {
-        //     startWiFiAP();
-        // }
-
-        // if (millis() - last_wifi_status > 5000)
-        // {
-        //     updateWifiState();
-        //     last_wifi_status = millis();
-        // }
+        if (millis() - last_wifi_status > 5000)
+        {
+            updateWifiState();
+            last_wifi_status = millis();
+        }
 
         wifi_notifier.loopTick();
 

@@ -158,7 +158,7 @@ void Apps::updateMenu() // BROKEN FOR NOW
 App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name)
 {
 
-    ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
+    // ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         #ifdef USE_DISPLAY_BUFFER
@@ -168,7 +168,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
         app->friendly_name = friendly_name;
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
@@ -180,7 +180,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
         app->friendly_name = friendly_name;
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
@@ -192,7 +192,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
         app->friendly_name = friendly_name;
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
@@ -203,7 +203,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
         #endif
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
@@ -215,7 +215,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
 
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
@@ -227,7 +227,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
         app->friendly_name = friendly_name;
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
@@ -239,7 +239,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         #endif
         app->friendly_name = friendly_name;
         add(position, app);
-        ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
+        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else
@@ -249,30 +249,81 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     return nullptr;
 }
 
-uint8_t Apps::navigationNext()
+void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    return active_app->navigationNext();
-}
+    if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
+    {
+        switch (active_app->navigationNext())
+        {
+        case DONT_NAVIGATE:
+            return;
+            break;
+        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
+            break;
+        default:
+            setActive(active_app->navigationNext());
+            break;
+        }
+        motor_notifier->requestUpdate(active_app->getMotorConfig());
+    }
 
-uint8_t Apps::navigationBack()
-{
-    return active_app->navigationBack();
-}
-
-PB_SmartKnobConfig Apps::getActiveMotorConfig()
-{
-    lock();
-    // TODO MAYBE CHECK IF ACTIVE APP IS NOT NULL
-    PB_SmartKnobConfig motor_config = active_app->getMotorConfig();
-
-    unlock();
-    return motor_config;
+    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    {
+        switch (active_app->navigationBack())
+        {
+        case DONT_NAVIGATE:
+            return;
+            break;
+        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
+            break;
+        default:
+            setActive(active_app->navigationBack());
+            break;
+        }
+        motor_notifier->requestUpdate(active_app->getMotorConfig());
+    }
 }
 
 std::shared_ptr<App> Apps::find(uint8_t id)
 {
     // TODO: add protection with array size
     return apps[id];
+}
+
+std::shared_ptr<App> Apps::find(char *app_id)
+{
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        if (strcmp(it->second->app_id, app_id) == 0)
+        {
+            return it->second;
+        }
+    }
+    return nullptr;
+}
+
+void Apps::setMotorNotifier(MotorNotifier *motor_notifier)
+{
+    this->motor_notifier = motor_notifier;
+
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        it->second->setMotorNotifier(motor_notifier);
+    }
+}
+
+void Apps::triggerMotorConfigUpdate()
+{
+    if (this->motor_notifier != nullptr)
+    {
+        motor_notifier->requestUpdate(active_app->getMotorConfig());
+    }
+    else
+    {
+        ESP_LOGE("onboarding_flow", "motor_notifier is not set");
+    }
 }
 
 void Apps::lock()

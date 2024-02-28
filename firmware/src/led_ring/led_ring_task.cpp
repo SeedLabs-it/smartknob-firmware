@@ -5,8 +5,8 @@
 CRGB leds[NUM_LEDS];
 
 #include "led_ring_task.h"
-#include "semaphore_guard.h"
-#include "util.h"
+#include "../semaphore_guard.h"
+#include "../util.h"
 
 LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 2048 * 2, 1, task_core}
 {

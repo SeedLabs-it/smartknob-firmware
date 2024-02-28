@@ -1,6 +1,7 @@
 #include "onboarding_flow.h"
-#include "./../icons.h"
+#include "apps/icons.h"
 #include "qrcode.h"
+#include "Arduino.h"
 
 OnboardingFlow::OnboardingFlow()
 {
@@ -38,6 +39,10 @@ OnboardingFlow::OnboardingFlow()
         0,
         90,
     };
+
+    #ifdef USE_DISPLAY_BUFFER
+        spr_ = DisplayBuffer::getInstance()->getTftBuffer();
+    #endif
 }
 
 #ifndef USE_DISPLAY_BUFFER
@@ -87,6 +92,10 @@ void OnboardingFlow::triggerMotorConfigUpdate()
     {
         motor_notifier->requestUpdate(root_level_motor_config);
     }
+    else
+    {
+        ESP_LOGE("onboarding_flow", "motor_notifier is not set");
+    }
 }
 
 void OnboardingFlow::setMotorUpdater(MotorNotifier *motor_notifier)
@@ -99,15 +108,20 @@ void OnboardingFlow::setWiFiNotifier(WiFiNotifier *wifi_notifier)
     this->wifi_notifier = wifi_notifier;
 }
 
+void OnboardingFlow::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    this->os_config_notifier = os_config_notifier;
+}
+
 EntityStateUpdate OnboardingFlow::update(AppState state)
 {
     updateStateFromSystem(state);
     return updateStateFromKnob(state.motor_state);
 }
 
+// TODO: rename to generic event
 void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
 {
-
     switch (event.type)
     {
     case WIFI_AP_STARTED:
@@ -156,6 +170,10 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
     case SK_MQTT_CONNECTED:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+        is_onboarding_finished = true;
+        os_config_notifier->setOSMode(Hass);
+        break;
+    case MQTT_STATE_UPDATE:
         break;
     default:
         break;
@@ -229,7 +247,9 @@ TFT_eSprite *OnboardingFlow::renderWelcomePage()
     uint16_t center_width = TFT_WIDTH / 2;
     uint16_t center_height = TFT_HEIGHT / 2;
     uint16_t icon_size = 96;
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "SMART KNOB");
@@ -249,6 +269,9 @@ TFT_eSprite *OnboardingFlow::renderWelcomePage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_width, center_height + 70, 1);
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
 #ifndef USE_DISPLAY_BUFFER
     return this->spr_;
 #endif
@@ -263,7 +286,9 @@ TFT_eSprite *OnboardingFlow::renderHass1StepPage()
     uint16_t center_width = TFT_WIDTH / 2;
     uint16_t center_height = TFT_HEIGHT / 2;
     uint16_t icon_size = 80;
-
+    #ifdef USE_DISPLAY_BUFFER
+       // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "HOME ASSISTANT");
@@ -282,7 +307,9 @@ TFT_eSprite *OnboardingFlow::renderHass1StepPage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_width, center_height + 70, 1);
-
+    #ifdef USE_DISPLAY_BUFFER
+      //  DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
 #ifndef USE_DISPLAY_BUFFER
     return this->spr_;
 #endif
@@ -296,11 +323,15 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
-
-    spr_->setTextDatum(CC_DATUM);
+    
+    
 
     if (!is_wifi_ap_started)
     {
+        #ifdef USE_DISPLAY_BUFFER
+            // DisplayBuffer::getInstance()->startDrawTransaction();
+        #endif
+        spr_->setTextDatum(CC_DATUM);
         sprintf(buf_, "WiFi starting...");
         spr_->setFreeFont(&NDS1210pt7b);
         spr_->setTextColor(accent_text_color);
@@ -310,14 +341,20 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
         spr_->setFreeFont(&NDS125_small);
         spr_->setTextColor(default_text_color);
         spr_->drawString(buf_, center_h, center_v + 50, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-        return this->spr_;
-#endif
+        #ifdef USE_DISPLAY_BUFFER
+            // DisplayBuffer::getInstance()->endDrawTransaction();
+        #endif
+        #ifdef USE_DISPLAY_BUFFER
+            return;
+        #else
+            return this->spr_;
+        #endif
     }
 
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS125_small);
@@ -355,10 +392,12 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
     spr_->drawString("OR CONNECT TO", center_h, TFT_HEIGHT - screen_name_label_h * 4, 1);
     spr_->drawString(wifi_ap_ssid, center_h, TFT_HEIGHT - screen_name_label_h * 3, 1);
     spr_->drawString(wifi_ap_passphrase, center_h, TFT_HEIGHT - screen_name_label_h * 2, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -371,7 +410,9 @@ TFT_eSprite *OnboardingFlow::renderHass3StepPage()
     uint16_t center_horizontal = TFT_WIDTH / 2;
 
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS125_small);
@@ -417,10 +458,12 @@ TFT_eSprite *OnboardingFlow::renderHass3StepPage()
     std::string or_open = "OR OPEN: " + wifiqrcodestring;
     spr_->drawString(or_open.c_str(), center_horizontal, TFT_WIDTH - screen_name_label_h * 4, 1);
     spr_->drawString("IN YOUR BROWSER", center_horizontal, TFT_WIDTH - screen_name_label_h * 3, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -432,7 +475,9 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
@@ -443,10 +488,12 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
 
     spr_->setTextColor(default_text_color);
     spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -458,7 +505,9 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
@@ -474,10 +523,12 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
 
     spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -489,7 +540,9 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
@@ -500,10 +553,12 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
 
     spr_->setTextColor(default_text_color);
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -515,7 +570,9 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
@@ -531,10 +588,12 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
     spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
 
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -547,7 +606,9 @@ TFT_eSprite *OnboardingFlow::renderHass8StepPage()
     uint16_t center_horizontal = TFT_WIDTH / 2;
 
     int8_t screen_name_label_h = spr_->fontHeight(1);
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(2);
     spr_->setFreeFont(&NDS125_small);
@@ -555,10 +616,12 @@ TFT_eSprite *OnboardingFlow::renderHass8StepPage()
 
     spr_->drawString("CONTINUE THE SETUP IN", center_horizontal, center_vertical - screen_name_label_h / 1.8, 1);
     spr_->drawString("HOME ASSISTANT", center_horizontal, center_vertical + screen_name_label_h / 1.8, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -569,7 +632,9 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "WIFI");
@@ -581,10 +646,12 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_h, 185, 1);
-
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -595,7 +662,9 @@ TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "DEMO MODE");
@@ -607,10 +676,13 @@ TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, center_h, 185, 1);
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
 
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -621,7 +693,9 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
     uint16_t center_v = TFT_WIDTH / 2;
-
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->startDrawTransaction();
+    #endif
     spr_->setTextDatum(CL_DATUM);
 
     uint8_t left_padding = 30;
@@ -645,10 +719,13 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
     spr_->drawString(buf_, left_padding, 185, 1);
+    #ifdef USE_DISPLAY_BUFFER
+        // DisplayBuffer::getInstance()->endDrawTransaction();
+    #endif
 
-#ifndef USE_DISPLAY_BUFFER
-    return this->spr_;
-#endif
+    #ifndef USE_DISPLAY_BUFFER
+        return this->spr_;
+    #endif
 }
 
 #ifdef USE_DISPLAY_BUFFER
@@ -657,6 +734,12 @@ void OnboardingFlow::render()
 TFT_eSprite *OnboardingFlow::render()
 #endif
 {
+
+    if (is_onboarding_finished)
+    {
+        return renderHass8StepPage();
+    }
+
     switch (current_page)
     {
     case ONBOARDING_FLOW_PAGE_STEP_WELCOME:

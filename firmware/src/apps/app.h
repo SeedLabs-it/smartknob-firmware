@@ -5,7 +5,9 @@
 #include "../proto_gen/smartknob.pb.h"
 #include "../app_config.h"
 #include "icons.h"
-#include "display_buffer.h"
+#include "../display_buffer.h"
+#include "../events/events.h"
+#include "../notify/motor_notifier/motor_notifier.h"
 
 const char APP_SLUG_CLIMATE[48] = "thermostat";
 const char APP_SLUG_BLINDS[48] = "blinds";
@@ -36,7 +38,11 @@ public:
 #endif
 
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     virtual void updateStateFromSystem(AppState state);
+
+    void setMotorNotifier(MotorNotifier *motor_notifier);
+    void triggerMotorConfigUpdate();
 
     virtual int8_t navigationNext();
     void setNext(int8_t next);
@@ -56,6 +62,7 @@ public:
     const unsigned char *small_icon;
     const unsigned char *big_icon;
     char *friendly_name = "";
+    char *app_id = "";
 
 protected:
     /** Full-size sprite used as a framebuffer */
@@ -63,4 +70,9 @@ protected:
     int8_t back = MENU;
     TFT_eSprite *spr_;
     PB_SmartKnobConfig motor_config;
+
+    PB_SmartKnobConfig root_level_motor_config;
+    PB_SmartKnobConfig blocked_motor_config;
+
+    MotorNotifier *motor_notifier;
 };

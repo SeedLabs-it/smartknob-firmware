@@ -3,14 +3,15 @@
 #include "configuration.h"
 #include "display_task.h"
 #include "root_task.h"
-#include "motor_task.h"
-#include "wifi_task.h"
-#include "sensors_task.h"
-#include "led_ring_task.h"
+#include "motor_foc/motor_task.h"
+#include "network/wifi_task.h"
+#include "sensors/sensors_task.h"
+#include "led_ring/led_ring_task.h"
 
 Configuration config;
 
 #if SK_DISPLAY
+static DisplayBuffer *display_buf = nullptr;
 static DisplayTask display_task(0);
 static DisplayTask *display_task_p = &display_task;
 #else
@@ -49,10 +50,32 @@ RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_
 
 void setup()
 {
-#if SK_DISPLAY
-    display_task.setLogger(&root_task);
-    display_task.begin();
 
+    // TODO: move from eeprom to ffatfs
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        ESP_LOGE("config", "failed to start EEPROM");
+    }
+
+#if SK_DISPLAY
+    
+
+    display_buf = DisplayBuffer::getInstance();
+     
+    //root_task.log("initing display demo in...");
+    //vTaskDelay(1000 / portTICK_PERIOD_MS);
+    //root_task.log("3");
+    //vTaskDelay(1000 / portTICK_PERIOD_MS);
+    //root_task.log("2");
+    //vTaskDelay(1000 / portTICK_PERIOD_MS);
+    //root_task.log("1");
+    //vTaskDelay(1000 / portTICK_PERIOD_MS);
+    //root_task.log("go!");
+    //display_buf->setLogger(&root_task);
+    display_task.setLogger(&root_task);
+   
+    display_task.begin();
+    
     // Connect display to motor_task's knob state feed
     root_task.addListener(display_task.getKnobStateQueue());
 
@@ -91,8 +114,6 @@ void setup()
     // IF WIFI CONNECTED CONNECT MQTT
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
-    wifi_task.addStateListener(mqtt_task.getConnectivityStateQueue());
-    mqtt_task.addStateListener(root_task.getMqttStateQueue());
     mqtt_task.begin();
 #endif
 

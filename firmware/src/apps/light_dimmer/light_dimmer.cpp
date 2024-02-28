@@ -21,7 +21,7 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         1,
         1,
         1.1,
-        "SKDEMO_Light_dimmer",
+        "",
         0,
         {},
         0,
@@ -38,9 +38,11 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
 
 int8_t LightDimmerApp::navigationNext()
 {
-
-    app_state_mode++;
-    if (app_state_mode > LIGHT_DIMMER_APP_MODE_HUE)
+    if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+    {
+        app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
+    }
+    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
         app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
     }
@@ -68,12 +70,12 @@ int8_t LightDimmerApp::navigationNext()
     case LIGHT_DIMMER_APP_MODE_HUE:
         // todo, check that current temp is more than wanted
         motor_config = PB_SmartKnobConfig{
-            current_position,
+            app_hue_position,
             0,
-            (uint8_t)current_position,
+            app_hue_position,
             0,
             -1,
-            1.8 * PI / 180,
+            PI * 2 / 180,
             1,
             1,
             1.1,
@@ -138,31 +140,91 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    // Memoty leak is here
-    // if (last_position != current_position)
-    // {
+    if (last_position != current_position)
+    {
 
-    //     // TODO: find a way how to clean json obj
+        sprintf(new_state.app_id, "%s", app_id);
+        cJSON *json = cJSON_CreateObject();
 
-    //     sprintf(new_state.app_id, "%s", app_id);
-    //     cJSON_AddNumberToObject(json, "brightness", int(current_position * 2.55));
-    //     cJSON_AddNumberToObject(json, "color_temp", 0);
-    //     // cJSON *rgb_array = cJSON_CreateArray();
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(255));
-    //     // cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+        cJSON_AddNumberToObject(json, "brightness", int(current_brightness * 2.55));
+        cJSON_AddNumberToObject(json, "color_temp", 0);
 
-    //     sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+        uint8_t r, g, b;
+        uint32ToRGB(ToRGBA(app_hue_position), &r, &g, &b);
 
-    //     // cJSON_Delete(json);
+        cJSON *rgb_array = cJSON_CreateArray();
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(r));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(g));
+        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(b));
+        cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
-    //     last_position = current_position;
-    //     new_state.changed = true;
-    //     sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
-    // }
+        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+
+        cJSON_Delete(json);
+
+        last_position = current_position;
+        new_state.changed = true;
+        sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_DIMMER);
+    }
 
     return new_state;
+}
+
+void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
+    cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
+    cJSON *rgb_color = cJSON_GetObjectItem(mqtt_state_update.state, "rgb_color");
+
+    if (brightness != NULL)
+    {
+        current_brightness = brightness->valueint / 2.55;
+        if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER && current_brightness != current_position)
+        {
+            current_position = current_brightness;
+
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+        }
+    }
+
+    // if (color_temp != NULL)
+    // {
+    //     app_hue_position = color_temp->valueint / 2.55;
+    // }
+
+    if (rgb_color != NULL)
+    {
+        uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
+        uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
+        uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
+
+        // app_hue_position needs to be updated with correct value
+
+        // if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
+        // {
+        //     current_position = app_hue_position;
+
+        //     motor_config.position_nonce = app_hue_position;
+        //     motor_config.position = app_hue_position;
+        // }
+    }
+
+    if (brightness != NULL || color_temp != NULL || rgb_color != NULL)
+    {
+        adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
+
+        if (current_position == motor_config.min_position && sub_position_unit < 0)
+        {
+            adjusted_sub_position = -logf(1 - sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        }
+        else if (current_position == motor_config.max_position && sub_position_unit > 0)
+        {
+            adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        }
+    }
+
+    // cJSON_Delete(new_state);
 }
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
@@ -193,9 +255,6 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     left_bound = PI / 2;
     right_bound = PI / 2 - range_radians - motor_config.position_width_radians;
 
-    float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
-    float adjusted_angle = raw_angle - adjusted_sub_position;
-
     uint8_t icon_size = 80;
 
     uint16_t offset_vertical = 30;
@@ -207,9 +266,11 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     uint16_t segmetns = 360;
 
-    float position_in_radians = PI / (segmetns) * 2;
+    // 1.8 * PI / 180
 
-    float dot_position = 0;
+    float position_in_radians = PI * 2 / (segmetns);
+
+    float segment_position = 0;
 
     uint32_t segment_color = TFT_WHITE;
 
@@ -218,26 +279,20 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     for (int i = 0; i < segmetns; i++)
     {
-        dot_position = left_bound + position_in_radians * i;
-
-        // segment_color = kelvinToRGB(kelvins);
-
-        segment_color = ToRGBA(i); // spr_->color565(i * 2, i * 2, i * 2);
-
-        // segment_color = i % 2 == 0 ? spr_->color565(255, 255, 255) : spr_->color565(0, 0, 0);
-
+        segment_position = left_bound + position_in_radians * i;
+        segment_color = ToRGBA(i);
         spr_->fillTriangle(
-            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(dot_position - position_in_radians / 2),
-            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(dot_position - position_in_radians / 2),
-            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(dot_position + position_in_radians / 2),
-            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(dot_position + position_in_radians / 2),
+            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(segment_position - position_in_radians / 2),
+            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(segment_position - position_in_radians / 2),
+            TFT_WIDTH / 2 + (screen_radius + 10) * cosf(segment_position + position_in_radians / 2),
+            TFT_HEIGHT / 2 - (screen_radius + 10) * sinf(segment_position + position_in_radians / 2),
             center_h,
             center_v,
             segment_color);
     }
 
     uint32_t current_color = ToRGBA(app_hue_position);
-    spr_->fillCircle(center_h, center_v, 80, color_black);
+    spr_->fillSmoothCircle(center_h, center_v, 80, color_black, color_black);
 
     spr_->fillTriangle(center_h, center_v - 70, center_h - 10, center_v - 55, center_h + 10, center_v - 55, current_color);
 
@@ -348,7 +403,7 @@ TFT_eSprite *LightDimmerApp::render()
         {
             adjusted_angle = right_bound;
         }
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
+        spr_->fillSmoothCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color, foreground_color);
     }
 
 #ifndef USE_DISPLAY_BUFFER
