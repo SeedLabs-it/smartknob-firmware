@@ -18,12 +18,6 @@ static DisplayTask *display_task_p = &display_task;
 static DisplayTask *display_task_p = nullptr;
 #endif
 
-#if SK_DISPLAY_LVGL
-    #include "lvgl_task.h"
-
-    static LvglTask lvgl_task(0);
-    static LvglTask *lvgl_task_p = &lvgl_task;
-#endif
 
 
 #if SK_LEDS
@@ -49,6 +43,17 @@ static MqttTask *mqtt_task_p = &mqtt_task;
 #else
 static MqttTask *mqtt_task_p = nullptr;
 
+#endif
+
+
+
+#if SK_DISPLAY_LVGL
+    #include "lvgl_task.h"
+
+    static LvglTask lvgl_task(0, led_ring_task_p);
+    static LvglTask *lvgl_task_p = &lvgl_task;
+#else
+    static LvglTask *lvgl_task_p = nullptr;    
 #endif
 
 static SensorsTask sensors_task(1);
@@ -83,11 +88,7 @@ void setup()
     root_task.setHassApps(display_task.getHassApps());
 
 #endif
-#if SK_DISPLAY_LVGL
-    lvgl_task_p->setLogger(&root_task);
-    lvgl_task_p->begin();
-    lvgl_task_p->demoLvgl();
-#endif
+
 
 #if SK_LEDS
     led_ring_task_p->begin();
@@ -136,6 +137,14 @@ void setup()
     sensors_task_p->setLogger(&root_task);
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
+
+#if SK_DISPLAY_LVGL
+    lvgl_task_p->setLogger(&root_task);
+    lvgl_task_p->begin();
+
+#endif
+
+    lvgl_task_p->demoLvgl();
 
     // Free up the Arduino loop task
     vTaskDelete(NULL);

@@ -1,20 +1,25 @@
+#if SK_DISPLAY_LVGL
+
 #include "lvgl_task.h"
 #include <lvgl.h>
 
 #define DRAW_BUF_SIZE (SMK_DISP_HOR_RES * SMK_DISP_VER_RES / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf_[DRAW_BUF_SIZE / 4];
-
+TFT_eSPI LvglTask::tft_ = TFT_eSPI();
 lv_display_t *LvglTask::display_ = nullptr;
 
-TFT_eSPI LvglTask::tft_ = TFT_eSPI();
+static LvglTask *lvgl_task_p = nullptr;
 
-LvglTask::LvglTask(const uint8_t task_core) : Task{"Lvgl", 1024 * 12, 1, task_core}
+LvglTask::LvglTask(const uint8_t task_core, LedRingTask *ledRingTask) : Task{"Lvgl", 1024 * 12, 1, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
 
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    ledring_task_ = ledRingTask;
+    lvgl_task_p = this;
 }
 LvglTask::~LvglTask()
 {
@@ -34,16 +39,20 @@ void LvglTask::setLogger(Logger *logger)
 
 void LvglTask::run()
 {
+    
+
     // HERE IS WHERE THE REAL LVGL IS STARTING
-    logger_->log("Starting LVGL task");
-    lv_init();
+    
+    //LvglTask::display_ = lv_tft_espi_create(SMK_DISP_HOR_RES, SMK_DISP_VER_RES, draw_buf_, DRAW_BUF_SIZE);
+    //logger_->log("Display created");
+    
 #if LV_LOG_PRINTF == 0
     lv_log_register_print_cb(LvglTask::lvgl_log_print);
 #endif
     logger_->log("LVGL initialized, initing TFT_eSPI...");
     LvglTask::tft_.begin();
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    // tft_.initDMA();
+    // LvglTask::tft_.initDMA();
     logger_->log("TFT_eSPI initialized, setting up display...");
     LvglTask::tft_.invertDisplay(1);
     LvglTask::tft_.setRotation(0);
@@ -51,7 +60,20 @@ void LvglTask::run()
     LvglTask::tft_.setRotation(0);
     vTaskDelay(200 / portTICK_PERIOD_MS);
     LvglTask::tft_.fillScreen(TFT_BLACK);
-
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    LvglTask::tft_.fillScreen(TFT_RED);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    LvglTask::tft_.fillScreen(TFT_ORANGE);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    LvglTask::tft_.fillScreen(TFT_BLUE);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    LvglTask::tft_.fillScreen(TFT_PURPLE);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    LvglTask::tft_.fillScreen(TFT_BLACK);
+    vTaskDelay(3000/portTICK_PERIOD_MS);
+    logger_->log("Starting LVGL task");
+    lv_init();
+    logger_->log("Started");
     LvglTask::display_ = lv_display_create(SMK_DISP_HOR_RES, SMK_DISP_VER_RES);
 
     logger_->log("Display created, setting up display driver...");
@@ -59,6 +81,12 @@ void LvglTask::run()
     lv_display_set_flush_cb(LvglTask::display_, LvglTask::smk_disp_flush);
     lv_display_set_buffers(LvglTask::display_, (void *)draw_buf_, NULL, sizeof(draw_buf_), LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_default(LvglTask::display_);
+    
+    lv_obj_t *display_obj = nullptr;
+
+    
+    display_obj = lv_screen_active();
+    
 
     logger_->log("Display driver set, LVGL loop starting now...");
     while (1)
@@ -89,14 +117,13 @@ void LvglTask::smk_disp_flush(lv_display_t *display, const lv_area_t *area, uint
 /* Serial debugging */
 void LvglTask::lvgl_log_print(lv_log_level_t level, const char *file)
 {
-    Serial.printf("%s@%d->%s\r\n", file);
-    Serial.flush();
+    lvgl_task_p->logger_->log(file);
 }
 #endif
 
 void LvglTask::demoLvgl()
 {
-    lv_obj_clean(lv_screen_active());
+    //lv_obj_clean(lv_screen_active());
     lv_obj_set_scrollbar_mode(lv_screen_active(), LV_SCROLLBAR_MODE_OFF);
     lv_obj_remove_flag(lv_screen_active(), LV_OBJ_FLAG_SCROLLABLE);
 
@@ -201,3 +228,5 @@ void LvglTask::demoLvgl()
 
     // lv_obj_add_event_cb(valueArc, KnobVHF::vhfEventKnobCallback, LV_EVENT_ALL, nullptr);
 }
+
+#endif

@@ -6,6 +6,7 @@
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
 #include "app_config.h"
+#include "led_ring/led_ring_task.h"
 #include <TFT_eSPI.h>
 #include "smklvgl/smartknob_lvgl.h"
 #include <lvgl.h>
@@ -20,7 +21,12 @@ class LvglTask : public Task<LvglTask>
     friend class Task<LvglTask>; // Allow base Task to invoke protected run()
 
 public:
-    LvglTask(const uint8_t task_core);
+    static TFT_eSPI tft_; /* TFT instance */
+    Logger *logger_;
+    void log(const char *msg);
+    static lv_display_t *display_;
+
+    LvglTask(const uint8_t task_core, LedRingTask *ledRingTask);
     ~LvglTask();
 
     QueueHandle_t getKnobStateQueue();
@@ -41,7 +47,6 @@ public:
     void demoLvgl();
 
 protected:
-    static lv_display_t *display_;
 
     static void smk_disp_flush(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
     static void lvgl_log_print(lv_log_level_t level, const char *file);
@@ -49,11 +54,11 @@ protected:
 
 private:
     QueueHandle_t app_state_queue_;
-    static TFT_eSPI tft_; /* TFT instance */
+    LedRingTask *ledring_task_;
+    
     AppState app_state_;
     SemaphoreHandle_t mutex_;
-    Logger *logger_;
-    void log(const char *msg);
+    
 
     OSMode os_mode;
 };

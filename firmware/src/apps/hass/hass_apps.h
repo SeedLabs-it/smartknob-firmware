@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../apps.h"
 #include "../../display_buffer.h"
 #include "../../events/events.h"
