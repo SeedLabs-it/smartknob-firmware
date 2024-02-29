@@ -14,6 +14,8 @@
 /* clang-format off */
 #if 1 /*Set it to "1" to enable content*/
 
+#define LV_CONF_INCLUDE_SIMPLE 1
+
 #ifndef LV_CONF_H
 #define LV_CONF_H
 
@@ -187,7 +189,7 @@
  *-----------*/
 
 /*Enable the log module*/
-#define LV_USE_LOG 0
+#define LV_USE_LOG 1
 #if LV_USE_LOG
 
     /*How important log should be added:
@@ -197,7 +199,7 @@
     *LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
     *LV_LOG_LEVEL_USER        Only logs added by the user
     *LV_LOG_LEVEL_NONE        Do not log anything*/
-    #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+    #define LV_LOG_LEVEL LV_LOG_LEVEL_INFO
 
     /*1: Print the log with 'printf';
     *0: User need to register a callback with `lv_log_register_print_cb()`*/
@@ -878,7 +880,7 @@
 #define LV_USE_LINUX_DRM        0
 
 /*Interface for TFT_eSPI*/
-#define LV_USE_TFT_ESPI         0
+#define LV_USE_TFT_ESPI         1
 
 /*Driver for evdev input devices*/
 #define LV_USE_EVDEV    0
@@ -899,7 +901,7 @@
 *==================*/
 
 /*Enable the examples to be built with the library*/
-#define LV_BUILD_EXAMPLES 1
+#define LV_BUILD_EXAMPLES 0
 
 /*===================
  * DEMO USAGE

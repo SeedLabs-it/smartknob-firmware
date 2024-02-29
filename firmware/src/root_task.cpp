@@ -16,6 +16,7 @@ RootTask::RootTask(
     const uint8_t task_core,
     MotorTask &motor_task,
     DisplayTask *display_task,
+    LvglTask *lvgl_task,
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
@@ -23,6 +24,7 @@ RootTask::RootTask(
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
+                                 lvgl_task_(lvgl_task),
                                  wifi_task_(wifi_task),
                                  mqtt_task_(mqtt_task),
                                  led_ring_task_(led_ring_task),
@@ -34,6 +36,9 @@ RootTask::RootTask(
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
+#endif
+#if SK_DISPLAY_LVGL
+    assert(lvgl_task != nullptr);
 #endif
 
     trigger_motor_calibration_ = xQueueCreate(1, sizeof(uint8_t *));
@@ -153,22 +158,30 @@ void RootTask::run()
                                  {
                                  case Onboarding:
                                      os_config->mode = Demo;
-                                     display_task_->enableDemo();
+                                     #if SK_DISPLAY
+                                        display_task_->enableDemo();
+                                    #endif
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
                                      os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     #if SK_DISPLAY
+                                        display_task_->enableHass();
+                                    #endif
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
                                  case Hass:
                                      os_config->mode = Onboarding;
-                                     display_task_->enableOnboarding();
+                                     #if SK_DISPLAY
+                                        display_task_->enableOnboarding();
+                                    #endif
                                      break;
                                  default:
                                      os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     #if SK_DISPLAY
+                                        display_task_->enableHass();
+                                    #endif
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -213,16 +226,23 @@ void RootTask::run()
                                         os_config->mode = os_mode;
                                         this->configuration_->saveOSConfiguration(*os_config);
 
+                                        
                                         switch (os_config->mode)
                                         {
                                         case Onboarding:
-                                            display_task_->enableOnboarding();
+                                            #if SK_DISPLAY
+                                                display_task_->enableOnboarding();
+                                            #endif
                                             break;
                                         case Demo:
-                                            display_task_->enableDemo();
+                                            #if SK_DISPLAY
+                                                display_task_->enableDemo();
+                                            #endif
                                             break;
                                         case Hass:
-                                            display_task_->enableHass();
+                                            #if SK_DISPLAY
+                                                display_task_->enableHass();
+                                            #endif
                                             break;
                                         default:
                                             break;
@@ -242,24 +262,31 @@ void RootTask::run()
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
-        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
-        display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
-#if SK_WIFI
-        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
-#endif
-        display_task_->enableOnboarding();
-        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+        #if SK_DISPLAY
+            
+            display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+            display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+    #if SK_WIFI
+            display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+    #endif
+            display_task_->enableOnboarding();
+            display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+        #endif
         motor_notifier.loopTick();
         break;
 
     case Demo:
-        display_task_->enableDemo();
+        #if SK_DISPLAY
+            display_task_->enableDemo();
+        #endif
         // TODO: update motor config
         break;
     case Hass:
-        display_task_->enableHass();
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
+        #if SK_DISPLAY
+            display_task_->enableHass();
+            display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+            display_task_->getHassApps()->triggerMotorConfigUpdate();
+        #endif
         motor_notifier.loopTick();
         break;
 
@@ -288,7 +315,9 @@ void RootTask::run()
         {
             if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
-                display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+                #if SK_DISPLAY
+                    display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+                #endif
             }
 
             if (wifi_event.type == WIFI_STA_CONNECTED_NEW_CREDENTIALS)
@@ -332,7 +361,9 @@ void RootTask::run()
 
             if (wifi_event.type == MQTT_STATE_UPDATE)
             {
-                display_task_->getHassApps()->handleEvent(wifi_event);
+                #if SK_DISPLAY
+                    display_task_->getHassApps()->handleEvent(wifi_event);
+                #endif
             }
 #endif
         }
@@ -397,7 +428,9 @@ void RootTask::run()
 
             log("Giving 0.5s for Apps to initialize");
             delay(500);
-            display_task_->getHassApps()->triggerMotorConfigUpdate();
+            #if SK_DISPLAY
+                display_task_->getHassApps()->triggerMotorConfigUpdate();
+            #endif
             mqtt_task_->unlock();
 #endif
         }
@@ -422,7 +455,9 @@ void RootTask::run()
 
             if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
-                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                #if SK_DISPLAY
+                    entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                #endif
             }
             else
             {
@@ -499,11 +534,15 @@ void RootTask::updateHardware(AppState app_state)
                 event.press = NAVIGATION_EVENT_PRESS_LONG;
                 if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                    #if SK_DISPLAY
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                    #endif
                 }
                 else
                 {
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                    #if SK_DISPLAY
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    #endif
                 }
             }
             break;
@@ -518,11 +557,15 @@ void RootTask::updateHardware(AppState app_state)
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
                 if (configuration_->getOSConfiguration()->mode == Onboarding)
                 {
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                    #if SK_DISPLAY
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                    #endif
                 }
                 else
                 {
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                    #if SK_DISPLAY
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    #endif
                 }
             }
             break;

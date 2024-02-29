@@ -19,7 +19,10 @@ static DisplayTask *display_task_p = nullptr;
 #endif
 
 #if SK_DISPLAY_LVGL
+    #include "lvgl_task.h"
 
+    static LvglTask lvgl_task(0);
+    static LvglTask *lvgl_task_p = &lvgl_task;
 #endif
 
 
@@ -51,7 +54,7 @@ static MqttTask *mqtt_task_p = nullptr;
 static SensorsTask sensors_task(1);
 static SensorsTask *sensors_task_p = &sensors_task;
 
-RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p);
+RootTask root_task(0, motor_task, display_task_p, lvgl_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p);
 
 void setup()
 {
@@ -80,11 +83,18 @@ void setup()
     root_task.setHassApps(display_task.getHassApps());
 
 #endif
+#if SK_DISPLAY_LVGL
+    lvgl_task_p->setLogger(&root_task);
+    lvgl_task_p->begin();
+    lvgl_task_p->demoLvgl();
+#endif
 
 #if SK_LEDS
     led_ring_task_p->begin();
 
-    DisplayBuffer::getInstance()->registerSuspendableTask(led_ring_task_p->getHandle());
+    #if SK_DISPLAY
+        DisplayBuffer::getInstance()->registerSuspendableTask(led_ring_task_p->getHandle());
+    #endif
 #endif
 
     // TODO: remove this. Wait for display task init finishes
@@ -108,7 +118,9 @@ void setup()
     wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
     wifi_task.begin();
-    DisplayBuffer::getInstance()->registerSuspendableTask(wifi_task.getHandle());
+    #if SK_DISPLAY
+        DisplayBuffer::getInstance()->registerSuspendableTask(wifi_task.getHandle());
+    #endif
 #endif
 
 #if SK_MQTT
@@ -116,7 +128,9 @@ void setup()
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
     mqtt_task.begin();
-    DisplayBuffer::getInstance()->registerSuspendableTask(mqtt_task.getHandle());
+    #if SK_DISPLAY
+        DisplayBuffer::getInstance()->registerSuspendableTask(mqtt_task.getHandle());
+    #endif
 #endif
 
     sensors_task_p->setLogger(&root_task);

@@ -68,7 +68,9 @@
         "bitset": "cpp",
         "chrono": "cpp",
         "ratio": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "lv_log.h": "c",
+        "lv_conf_internal.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
