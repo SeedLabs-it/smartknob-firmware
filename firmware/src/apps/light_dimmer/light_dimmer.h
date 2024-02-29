@@ -18,6 +18,7 @@ public:
 
 protected:
     int8_t navigationNext();
+    int8_t navigationBack();
     TFT_eSprite *renderHUEWheel();
 
 private:
@@ -36,4 +37,7 @@ private:
 
     uint16_t app_hue_position = 0;
     uint8_t current_brightness = 0;
+    bool is_on = false;
+
+    bool first_run = false;
 };

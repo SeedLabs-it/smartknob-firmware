@@ -1,13 +1,14 @@
 #include "climate.h"
 
-ClimateApp::ClimateApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
 {
+    this->app_id = app_id;
+    this->friendly_name = friendly_name;
+
     // TODO update this via some API
-    current_temperature = 22;
+    current_temperature = 20;
     // default wanted temp
     wanted_temperature = 25;
-
-    this->entity_name = entity_name;
 
     // TODO, sync motor config with wanted temp on retrival
     motor_config = PB_SmartKnobConfig{
@@ -55,39 +56,75 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    // new_state.entity_name = entity_name;
-    // new_state.new_value = wanted_temperature * 1.0;
-
-    if (last_wanted_temperature != wanted_temperature)
+    if (last_wanted_temperature != state.current_position || last_mode != mode)
     {
+
+        sprintf(new_state.app_id, "%s", app_id);
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "mode", mode);
+        cJSON_AddNumberToObject(json, "target_temp", wanted_temperature);
+        cJSON_AddNumberToObject(json, "current_temp", current_temperature);
+
+        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+
+        cJSON_Delete(json);
+
+        last_mode = mode;
         last_wanted_temperature = wanted_temperature;
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_CLIMATE);
     }
 
+    //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
+    first_run = true;
+
     return new_state;
+}
+
+void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *mode = cJSON_GetObjectItem(mqtt_state_update.state, "mode");
+    cJSON *target_temp = cJSON_GetObjectItem(mqtt_state_update.state, "target_temp");
+    cJSON *current_temp = cJSON_GetObjectItem(mqtt_state_update.state, "current_temp");
+
+    ESP_LOGD("CLIMATE_APP", "RECEIVED HASS STATE UPDATE");
+    ESP_LOGD("CLIMATE_APP", "mode: %d", mode->valueint);
+    ESP_LOGD("CLIMATE_APP", "target_temperature: %d", target_temp->valueint);
+    ESP_LOGD("CLIMATE_APP", "current_temperature: %d", current_temp->valueint);
+
+    if (mode != NULL)
+    {
+        this->mode = mode->valueint;
+    }
+
+    if (target_temp != NULL)
+    {
+        wanted_temperature = target_temp->valueint;
+        motor_config.position = wanted_temperature;
+        motor_config.position_nonce = wanted_temperature;
+    }
+
+    if (current_temp != NULL)
+    {
+        this->current_temperature = current_temp->valueint;
+    }
 }
 
 void ClimateApp::updateStateFromSystem(AppState state) {}
 
 int8_t ClimateApp::navigationNext()
 {
-
-    mode++;
-    if (mode > CLIMATE_APP_MODE_VENTILATION)
-    {
-        mode = CLIMATE_APP_MODE_AUTO;
-    }
-
+    last_mode = mode;
     switch (mode)
     {
     case CLIMATE_APP_MODE_AUTO:
+        mode = CLIMATE_APP_MODE_COOL;
         motor_config = PB_SmartKnobConfig{
             wanted_temperature,
             0,
             wanted_temperature,
             CLIMATE_APP_MIN_TEMP,
-            CLIMATE_APP_MAX_TEMP,
+            current_temperature,
             8.225806452 * PI / 120,
             2,
             1,
@@ -99,28 +136,9 @@ int8_t ClimateApp::navigationNext()
             27,
         };
         break;
-    case CLIMATE_APP_MODE_COOLING:
+    case CLIMATE_APP_MODE_COOL:
         // todo, check that current temp is more than wanted
-        motor_config = PB_SmartKnobConfig{
-            wanted_temperature,
-            0,
-            wanted_temperature,
-            CLIMATE_APP_MIN_TEMP,
-            current_temperature,
-            8.225806452 * PI / 120,
-            2,
-            1,
-            1.1,
-            "",
-            0,
-            {},
-            0,
-            27,
-        };
-        break;
-    case CLIMATE_APP_MODE_HEATING:
-        // todo, check that current temp is less than wanted
-
+        mode = CLIMATE_APP_MODE_HEAT;
         motor_config = PB_SmartKnobConfig{
             wanted_temperature,
             0,
@@ -138,13 +156,34 @@ int8_t ClimateApp::navigationNext()
             27,
         };
         break;
-    case CLIMATE_APP_MODE_VENTILATION:
+    case CLIMATE_APP_MODE_HEAT:
+        // todo, check that current temp is less than wanted
+        mode = CLIMATE_APP_MODE_FAN_ONLY;
         motor_config = PB_SmartKnobConfig{
             wanted_temperature,
             0,
             wanted_temperature,
             current_temperature,
             current_temperature,
+            8.225806452 * PI / 120,
+            2,
+            1,
+            1.1,
+            "",
+            0,
+            {},
+            0,
+            27,
+        };
+        break;
+    case CLIMATE_APP_MODE_FAN_ONLY:
+        mode = CLIMATE_APP_MODE_AUTO;
+        motor_config = PB_SmartKnobConfig{
+            wanted_temperature,
+            0,
+            wanted_temperature,
+            CLIMATE_APP_MIN_TEMP,
+            CLIMATE_APP_MAX_TEMP,
             8.225806452 * PI / 120,
             2,
             1,
@@ -186,7 +225,7 @@ void ClimateApp::drawDots()
     uint8_t dot_radius = 2;
 
     // draw left tick
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
     {
         dot_color = cooling_color_dark;
     }
@@ -194,7 +233,7 @@ void ClimateApp::drawDots()
     float dot_position = left_bound;
     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
 
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
     {
         dot_color = cooling_color_dark;
     }
@@ -206,7 +245,7 @@ void ClimateApp::drawDots()
     {
         if (min_temp + i < current_temperature)
         {
-            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
             {
                 dot_color = cooling_color_dark;
             }
@@ -221,7 +260,7 @@ void ClimateApp::drawDots()
         }
         else
         {
-            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
             {
                 dot_color = heating_color_dark;
             }
@@ -255,29 +294,13 @@ TFT_eSprite *ClimateApp::render()
     float left_bound = PI / 2 + range_radians / 2;
     float right_bound = PI / 2 - range_radians / 2;
     char buf_[64];
-    // information for creating a ticker
-    // TODO: eventually removed when properly linked (this is for demo purposes)
-    long now = millis();
-    long elapsed = now - startTime;
-
-    if (elapsed > 1000)
-    {
-        ESP_LOGD("Climate", "now: %d, startime: %d, elapsed: %d", now, startTime, elapsed);
-        startTime = now;
-        if (current_temperature != wanted_temperature)
-        {
-            int temperature_change_delta = (current_temperature > wanted_temperature) ? -1 : ((current_temperature < wanted_temperature) ? 1 : 0);
-
-            current_temperature = current_temperature + temperature_change_delta;
-        }
-    }
 
     uint32_t text_color;
 
     // Draw min/max numbers
     float min_number_position = left_bound + (range_radians / num_positions) * 1.5;
     sprintf(buf_, "%d", min_temp);
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
     {
         text_color = cooling_color;
     }
@@ -291,7 +314,7 @@ TFT_eSprite *ClimateApp::render()
 
     float max_number_position = right_bound - (range_radians / num_positions) * 1.5;
     sprintf(buf_, "%d", max_temp);
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
     {
         text_color = heating_color;
     }
@@ -326,15 +349,15 @@ TFT_eSprite *ClimateApp::render()
     case CLIMATE_APP_MODE_AUTO:
         auto_color = TFT_WHITE;
         break;
-    case CLIMATE_APP_MODE_COOLING:
+    case CLIMATE_APP_MODE_COOL:
         snowflake_color = TFT_WHITE;
         break;
 
-    case CLIMATE_APP_MODE_HEATING:
+    case CLIMATE_APP_MODE_HEAT:
         fire_color = TFT_WHITE;
         break;
 
-    case CLIMATE_APP_MODE_VENTILATION:
+    case CLIMATE_APP_MODE_FAN_ONLY:
         wind_color = TFT_WHITE;
         break;
 
@@ -348,7 +371,7 @@ TFT_eSprite *ClimateApp::render()
     if (wanted_temperature > current_temperature)
     {
         spr_->setTextColor(heating_color);
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEATING)
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
         {
             fire_color = heating_color;
         }
@@ -368,7 +391,7 @@ TFT_eSprite *ClimateApp::render()
     {
         spr_->setTextColor(TFT_WHITE);
         status = "idle";
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_VENTILATION)
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_FAN_ONLY)
         {
             wind_color = TFT_GREENYELLOW;
             arc_color = TFT_GREENYELLOW;
@@ -393,7 +416,7 @@ TFT_eSprite *ClimateApp::render()
     else
     {
         spr_->setTextColor(cooling_color);
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOLING)
+        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
         {
             snowflake_color = cooling_color;
         }

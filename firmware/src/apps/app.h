@@ -8,7 +8,7 @@
 #include "../events/events.h"
 #include "../notify/motor_notifier/motor_notifier.h"
 
-const char APP_SLUG_CLIMATE[48] = "thermostat";
+const char APP_SLUG_CLIMATE[48] = "climate";
 const char APP_SLUG_BLINDS[48] = "blinds";
 const char APP_SLUG_MUSIC[48] = "music";
 const char APP_SLUG_3D_PRINTER[48] = "3d_printer";
