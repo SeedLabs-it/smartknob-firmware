@@ -121,7 +121,7 @@ TFT_eSprite *MenuApp::render()
     spr_->drawBitmap(center_h - icon_size_active / 2 - 20 - icon_size_inactive, center_v - icon_size_inactive / 2, prev_item->small_icon.icon, icon_size_inactive, icon_size_inactive, next_item->small_icon.color, background);
 
     // right one
-    spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon.icon, icon_size_inactive, icon_size_inactive, next_item->small_icon.color, background);
+   // spr_->drawBitmap(center_h + icon_size_active / 2 + 20, center_v - icon_size_inactive / 2, next_item->small_icon.icon, icon_size_inactive, icon_size_inactive, next_item->small_icon.color, background);
 
     spr_->setTextColor(current_item->screen_name.color);
     spr_->setFreeFont(&Roboto_Thin_24);

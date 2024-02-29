@@ -38,7 +38,10 @@ private:
     unsigned long start_ms;
     bool started = false;
 
+    uint32_t backgrounds[5] = {TFT_BLACK, TFT_RED, TFT_BLUE, TFT_PURPLE, TFT_GREEN};
+    uint8_t current_background = 0;
     uint16_t current_position = 0;
+    uint16_t autoswitchbg_last_sec = 0;
 
     // needed for UI
     char buf_[24];

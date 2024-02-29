@@ -56,6 +56,8 @@ RootTask::RootTask(
 
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    
 }
 
 RootTask::~RootTask()

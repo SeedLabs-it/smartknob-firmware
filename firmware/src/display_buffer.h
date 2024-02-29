@@ -15,9 +15,9 @@
 
 #define DISPLAY_BUFFER_MAX_SUSPENDABLE_TASKS 20 // Maximum number of tasks that can be suspended and resumed to allow for display drawing high performance
 
-#define DISPLAY_BUFFER_DRAW_DELAY 100                  // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
-                                                       //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
-#define DRAW_SEMAPHORE_TIMEOUT 2000 / portTICK_RATE_MS // The timeout for the draw semaphore
+#define DISPLAY_BUFFER_DRAW_DELAY 20         // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
+                                             //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
+#define DRAW_SEMAPHORE_TIMEOUT portMAX_DELAY // The timeout for the draw semaphore
 
 class DisplayBuffer
 {
@@ -27,13 +27,18 @@ public:
      */
     DisplayBuffer()
     {
+        // Init the semaphore
+        tftBufferXSemaphore = xSemaphoreCreateMutex();
 
         // Init the TFT
-
         tft_.begin();
         vTaskDelay(100 / portTICK_PERIOD_MS);
-        //tft_.invertDisplay(1);
-        tft_.setRotation(SK_DISPLAY_ROTATION);
+        // tft_.initDMA();
+        tft_.invertDisplay(1);
+        tft_.setRotation(0);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        tft_.setRotation(0);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         tft_.fillScreen(TFT_BLACK);
 
         // Init the buffer
@@ -41,13 +46,11 @@ public:
         bufferSpr_.setColorDepth(16);
         bufferInitCompleted = true;
 
-        // Init the semaphore
-        tftBufferXSemaphore = xSemaphoreCreateMutex();
-
         // Init the TFT task
         tftDebugDrawCount = 0;
         lastTftDrawTimeMs = millis();
-        xTaskCreate(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL);
+        // xTaskCreate(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL);
+        xTaskCreatePinnedToCore(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL, 0);
     }
 
     /**
@@ -152,8 +155,11 @@ protected:
      */
     void suspendTasks()
     {
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < suspendableTaskCount; i++)
         {
+            /*if (eTaskGetState(suspendableTask[i]) == eSuspended) {
+                continue;
+            }*/
             vTaskSuspend(suspendableTask[i]);
         }
     }
@@ -163,9 +169,11 @@ protected:
      */
     void resumeTasks()
     {
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < suspendableTaskCount; i++)
         {
+            // if (eTaskGetState(suspendableTask[i]) == eSuspended) {
             vTaskResume(suspendableTask[i]);
+            //}
         }
     }
 
@@ -184,7 +192,7 @@ protected:
         {
 
             DisplayBuffer::getInstance()->startDrawTransaction();
-            // DisplayBuffer::getInstance()->suspendTasks();
+            DisplayBuffer::getInstance()->suspendTasks();
 #ifdef DEBUG_SCREEN_DRAW
             DisplayBuffer::getInstance()->getTftBuffer()->setCursor(DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_X, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_Y, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_SIZE);
             DisplayBuffer::getInstance()->getTftBuffer()->fillRect(DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_X, DISPLAY_BUFFER_DEBUG_SCREEN_TEXT_Y, DISPLAY_BUFFER_DEBUG_SCREEN_RECT_W, DISPLAY_BUFFER_DEBUG_SCREEN_RECT_H, TFT_WHITE);
@@ -193,8 +201,8 @@ protected:
 #endif
             DisplayBuffer::getInstance()->getTftBuffer()->pushSprite(0, 0);
             lastTftDrawTimeMs = millis();
+            DisplayBuffer::getInstance()->resumeTasks();
             DisplayBuffer::getInstance()->endDrawTransaction();
-            // DisplayBuffer::getInstance()->resumeTasks();
             vTaskDelay(xFrequency);
             xLastWakeTime = xTaskGetTickCount();
         }

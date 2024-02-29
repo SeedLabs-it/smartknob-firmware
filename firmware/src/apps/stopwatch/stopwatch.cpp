@@ -31,6 +31,8 @@ StopwatchApp::StopwatchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr
     big_icon = stopwatch_80;
     small_icon = stopwatch_40;
     friendly_name = "Stopwatch";
+    current_background = 0;
+    autoswitchbg_last_sec = 0;
 }
 
 void StopwatchApp::clear()
@@ -123,6 +125,11 @@ int8_t StopwatchApp::navigationNext()
         }
 
         last_lap_added++;
+        current_background++;
+        if (current_background > 4)
+        {
+            current_background = 0;
+        }
     }
 
     return DONT_NAVIGATE;
@@ -143,7 +150,7 @@ TFT_eSprite *StopwatchApp::render()
 
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
 
-    uint32_t background = spr_->color565(0, 0, 0);
+    uint32_t background = backgrounds[current_background];
     spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background);
 
     // ESP_LOGD("stopwatch", "%d", percent);
@@ -211,6 +218,8 @@ TFT_eSprite *StopwatchApp::render()
         {
             spr_->fillRect(0, center_v + 70 + (50 - 1 * 50), TFT_WIDTH, TFT_HEIGHT, notify_background);
         }
+        current_background = 0;
+        autoswitchbg_last_sec = 0;
     }
     else if (sub_position_unit > 0)
     {
@@ -271,6 +280,18 @@ TFT_eSprite *StopwatchApp::render()
         stopwatch_ms = diff_ms % 100;
         stopwatch_sec = floor((diff_ms / 1000) % 60);
         stopwatch_hour = floor((diff_ms / (1000 * 60)) % 60);
+        if (stopwatch_sec != autoswitchbg_last_sec)
+        {
+            autoswitchbg_last_sec = stopwatch_sec;
+            current_background++;
+            if (current_background > 4)
+            {
+                current_background = 0;
+            }
+            if(autoswitchbg_last_sec>=59){
+                autoswitchbg_last_sec = 60;
+            }
+        }
     }
 
     spr_->setTextColor(TFT_WHITE);
@@ -325,7 +346,7 @@ TFT_eSprite *StopwatchApp::render()
         spr_->drawString(buf_, center_h, center_v + 90, 1);
     }
 
-    #ifndef USE_DISPLAY_BUFFER
-        return this->spr_;
-    #endif
+#ifndef USE_DISPLAY_BUFFER
+    return this->spr_;
+#endif
 };

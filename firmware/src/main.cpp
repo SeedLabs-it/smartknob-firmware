@@ -61,20 +61,12 @@ void setup()
     
 
     display_buf = DisplayBuffer::getInstance();
-     
-    //root_task.log("initing display demo in...");
-    //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //root_task.log("3");
-    //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //root_task.log("2");
-    //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //root_task.log("1");
-    //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //root_task.log("go!");
-    //display_buf->setLogger(&root_task);
+
     display_task.setLogger(&root_task);
    
     display_task.begin();
+
+    DisplayBuffer::getInstance()->registerSuspendableTask(display_task.getHandle());
     
     // Connect display to motor_task's knob state feed
     root_task.addListener(display_task.getKnobStateQueue());
@@ -86,6 +78,8 @@ void setup()
 
 #if SK_LEDS
     led_ring_task_p->begin();
+
+    DisplayBuffer::getInstance()->registerSuspendableTask(led_ring_task_p->getHandle());
 #endif
 
     // TODO: remove this. Wait for display task init finishes
@@ -103,11 +97,13 @@ void setup()
 
     motor_task.setLogger(&root_task);
     motor_task.begin();
+   
 
 #if SK_WIFI
     wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
     wifi_task.begin();
+    DisplayBuffer::getInstance()->registerSuspendableTask(wifi_task.getHandle());
 #endif
 
 #if SK_MQTT
@@ -115,6 +111,7 @@ void setup()
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
     mqtt_task.begin();
+    DisplayBuffer::getInstance()->registerSuspendableTask(mqtt_task.getHandle());
 #endif
 
     sensors_task_p->setLogger(&root_task);
