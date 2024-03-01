@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TFT_eSPI.h>
+#include "smkn_lvgl/smartknob-LVGL.h"
 
 #define USE_DISPLAY_BUFFER 1
 
@@ -15,9 +15,11 @@
 
 #define DISPLAY_BUFFER_MAX_SUSPENDABLE_TASKS 20 // Maximum number of tasks that can be suspended and resumed to allow for display drawing high performance
 
-#define DISPLAY_BUFFER_DRAW_DELAY 20         // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
+#define DISPLAY_BUFFER_DRAW_DELAY 200        // TFT Draw task delay in ms. NOT USING FPS because I need first to ensure that there are no performance issues.
                                              //  TARGET FPS will be implemented later but I expect having a target FPS it will loads more the MCU when under load.
 #define DRAW_SEMAPHORE_TIMEOUT portMAX_DELAY // The timeout for the draw semaphore
+
+extern TFT_eSPI tft;
 
 class DisplayBuffer
 {
@@ -27,19 +29,10 @@ public:
      */
     DisplayBuffer()
     {
+
         // Init the semaphore
         tftBufferXSemaphore = xSemaphoreCreateMutex();
-
-        // Init the TFT
-        tft_.begin();
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        // tft_.initDMA();
-        tft_.invertDisplay(1);
-        tft_.setRotation(0);
-        vTaskDelay(200 / portTICK_PERIOD_MS);
-        tft_.setRotation(0);
-        vTaskDelay(200 / portTICK_PERIOD_MS);
-        tft_.fillScreen(TFT_BLACK);
+        smartknob_lvgl_init();
 
         // Init the buffer
         bufferSpr_.createSprite(TFT_WIDTH, TFT_HEIGHT);
@@ -50,7 +43,7 @@ public:
         tftDebugDrawCount = 0;
         lastTftDrawTimeMs = millis();
         // xTaskCreate(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL);
-        xTaskCreatePinnedToCore(DisplayBuffer::tftTask, "displayBufferToTftTask", 1024 * 2, NULL, ESP_TASK_MAIN_PRIO, NULL, 0);
+        xTaskCreatePinnedToCore(DisplayBuffer::tftTask, "displayBufferToTftTask", 4096, NULL, ESP_TASK_MAIN_PRIO, NULL, 1);
     }
 
     /**
@@ -122,15 +115,17 @@ public:
         return true;
     }
 
+    
+
 private:
     /* The logger */
     Logger *logger_ = nullptr;
 
     /* The TFT instance */
-    TFT_eSPI tft_ = TFT_eSPI();
+    TFT_eSPI *tft_ = &tft;
 
     /* The real buffer */
-    TFT_eSprite bufferSpr_ = TFT_eSprite(&tft_);
+    TFT_eSprite bufferSpr_ = TFT_eSprite(tft_);
 
     /* The semaphore to control access to the buffer */
     SemaphoreHandle_t tftBufferXSemaphore = NULL;
@@ -183,14 +178,22 @@ protected:
      */
     static void tftTask(void *args)
     {
+
+        while (1)
+        {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+
         vTaskDelay(100 / portTICK_PERIOD_MS);
         const TickType_t xFrequency = portTICK_RATE_MS * DISPLAY_BUFFER_DRAW_DELAY; // 20ms
 
         TickType_t xLastWakeTime;
-
         while (1)
         {
-
+            while (DisplayBuffer::getInstance()->getTftBuffer()->dmaBusy())
+            {
+                vTaskDelay(1);
+            }
             DisplayBuffer::getInstance()->startDrawTransaction();
             DisplayBuffer::getInstance()->suspendTasks();
 #ifdef DEBUG_SCREEN_DRAW
@@ -199,6 +202,7 @@ protected:
             DisplayBuffer::getInstance()->getTftBuffer()->setTextColor(TFT_BLACK);
             DisplayBuffer::getInstance()->getTftBuffer()->printf("Draw #%d", tftDebugDrawCount++);
 #endif
+
             DisplayBuffer::getInstance()->getTftBuffer()->pushSprite(0, 0);
             lastTftDrawTimeMs = millis();
             DisplayBuffer::getInstance()->resumeTasks();

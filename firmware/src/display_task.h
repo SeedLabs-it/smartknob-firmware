@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <display_buffer.h>
 
-
 const uint8_t BOOT_MODE_NOT_SET = 0;
 const uint8_t BOOT_MODE_ONBOARDING = 1;
 const uint8_t BOOT_MODE_HASS = 2;
@@ -44,8 +43,12 @@ public:
 
     OnboardingFlow *getOnboardingFlow();
 
+    static void anim_x_cb(void *var, int32_t v);
+    static void anim_size_cb(void *var, int32_t v);
+
 protected:
     void run();
+    void lvglrun();
 
 private:
 #ifdef USE_DISPLAY_BUFFER

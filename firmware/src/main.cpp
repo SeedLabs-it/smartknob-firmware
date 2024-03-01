@@ -7,6 +7,7 @@
 #include "network/wifi_task.h"
 #include "sensors/sensors_task.h"
 #include "led_ring/led_ring_task.h"
+#include "smkn_lvgl/smartknob-LVGL.h"
 
 Configuration config;
 
@@ -124,6 +125,7 @@ void setup()
 
 void loop()
 {
+
     // char buf[50];
     // static uint32_t last_stack_debug;
     // if (millis() - last_stack_debug > 1000) {
