@@ -19,9 +19,9 @@ MqttTask::~MqttTask()
 void MqttTask::handleEvent(WiFiEvent event)
 {
 
-    if (event.type == MQTT_CREDENTIALS_RECIEVED)
+    switch (event.type)
     {
-
+    case MQTT_CREDENTIALS_RECIEVED:
         ESP_LOGD("mqtt", "%s %d %s %s",
                  event.body.mqtt_connecting.host,
                  event.body.mqtt_connecting.port,
@@ -29,16 +29,12 @@ void MqttTask::handleEvent(WiFiEvent event)
                  event.body.mqtt_connecting.password);
 
         setup(event.body.mqtt_connecting);
-    }
-
-    // if (event.type == MQTT_SETUP)
-    // {
-    //     connect();
-    // }
-
-    if (event.type == SK_MQTT_CONNECTED)
-    {
+        break;
+    case SK_MQTT_CONNECTED:
         init();
+        break;
+    default:
+        break;
     }
 }
 
@@ -65,7 +61,12 @@ void MqttTask::run()
             {
 
                 WiFiEvent event;
+                WiFiEventBody wifi_event_body;
+                wifi_event_body.mqtt_error.connection_retry_count = retry_count + 1;
+
                 event.type = MQTT_CONNECTION_FAILED;
+                event.body = wifi_event_body;
+                // event.sent_at = millis();
                 publishEvent(event);
 
                 disconnect();
@@ -86,6 +87,9 @@ void MqttTask::run()
                     continue;
                 }
                 retry_count = 0;
+                WiFiEvent reset_error;
+                reset_error.type = RESET_ERROR;
+                publishEvent(reset_error);
             }
 
             if (millis() - mqtt_pull > mqtt_pull_interval_ms)

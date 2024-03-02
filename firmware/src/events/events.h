@@ -49,6 +49,11 @@ struct MQTTStateUpdate
     cJSON *state;
 };
 
+struct MqttError
+{
+    uint8_t connection_retry_count;
+};
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -58,6 +63,7 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connecting;
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
+    MqttError mqtt_error;
     MQTTStateUpdate mqtt_state_update;
 };
 
@@ -82,7 +88,8 @@ enum EventType
     MQTT_INIT,
     MQTT_CONNECTION_FAILED,
     MQTT_STATE_UPDATE,
-    SK_MQTT_CONNECTED
+    SK_MQTT_CONNECTED,
+    RESET_ERROR
 };
 
 // TODO: rename to generic event?
@@ -90,4 +97,5 @@ struct WiFiEvent
 {
     EventType type;
     WiFiEventBody body;
+    uint32_t sent_at = millis();
 };

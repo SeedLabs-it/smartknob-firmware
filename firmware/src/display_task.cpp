@@ -32,6 +32,11 @@ HassApps *DisplayTask::getHassApps()
     return &hass_apps;
 }
 
+MqttErrorFlow *DisplayTask::getMqttErrorFlow()
+{
+    return &mqtt_error_flow;
+}
+
 void DisplayTask::run()
 {
     tft_.begin();
@@ -63,6 +68,8 @@ void DisplayTask::run()
 
     onboarding_flow = OnboardingFlow(&spr_);
 
+    mqtt_error_flow = MqttErrorFlow(&spr_);
+
     AppState app_state;
 
     spr_.setTextDatum(CC_DATUM);
@@ -82,23 +89,30 @@ void DisplayTask::run()
             spr_.fillSprite(TFT_BLACK);
             spr_.setTextSize(1);
 
-            switch (os_mode)
+            if (error_mode == NO_ERROR)
             {
-            case Onboarding:
-                onboarding_flow.render()->pushSprite(0, 0);
-                break;
-            case Demo:
-                spr_.setTextDatum(CC_DATUM);
-                spr_.setFreeFont(&NDS1210pt7b);
-                spr_.setTextColor(TFT_WHITE);
-                spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-                spr_.pushSprite(0, 0);
-                break;
-            case Hass:
-                hass_apps.renderActive()->pushSprite(0, 0);
-                break;
-            default:
-                break;
+                switch (os_mode)
+                {
+                case Onboarding:
+                    onboarding_flow.render()->pushSprite(0, 0);
+                    break;
+                case Demo:
+                    spr_.setTextDatum(CC_DATUM);
+                    spr_.setFreeFont(&NDS1210pt7b);
+                    spr_.setTextColor(TFT_WHITE);
+                    spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+                    spr_.pushSprite(0, 0);
+                    break;
+                case Hass:
+                    hass_apps.renderActive()->pushSprite(0, 0);
+                    break;
+                default:
+                    break;
+                }
+            }
+            else
+            {
+                mqtt_error_flow.render()->pushSprite(0, 0);
             }
 
             {
@@ -160,4 +174,18 @@ void DisplayTask::enableDemo()
     os_mode = Demo;
 }
 
+void DisplayTask::enableMqttErrorFlow()
+{
+    error_mode = MQTT_ERROR;
+}
+
+ErrorMode DisplayTask::getErrorMode()
+{
+    return error_mode;
+}
+
+void DisplayTask::resetErrorMode()
+{
+    error_mode = NO_ERROR;
+}
 #endif

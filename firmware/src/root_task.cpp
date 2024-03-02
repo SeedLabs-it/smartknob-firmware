@@ -265,6 +265,9 @@ void RootTask::run()
         break;
     }
 
+    display_task_->getMqttErrorFlow()->setMotorNotifier(&motor_notifier);
+    // display_task_->getMqttErrorFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+
     EntityStateUpdate entity_state_update_to_send;
 
     // Value between [0, 65536] for brightness when not engaging with knob
@@ -301,8 +304,15 @@ void RootTask::run()
             // TODO: handle mqtt credentials here
 #if SK_MQTT
 
-            if (wifi_event.type == WIFI_STA_CONNECTED)
+            switch (wifi_event.type)
             {
+            case RESET_ERROR:
+                if (configuration_->getOSConfiguration()->mode == Hass)
+                {
+                    display_task_->resetErrorMode();
+                }
+                break;
+            case WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
@@ -310,10 +320,8 @@ void RootTask::run()
 
                     mqtt_task_->setup(mqtt_config);
                 }
-            }
-
-            if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
-            {
+                break;
+            case MQTT_CREDENTIALS_RECIEVED:
                 MQTTConfiguration mqtt_config;
                 strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
                 mqtt_config.port = wifi_event.body.mqtt_connecting.port;
@@ -321,16 +329,19 @@ void RootTask::run()
                 strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
                 configuration_->saveMQTTConfiguration(mqtt_config);
                 mqtt_task_->handleEvent(wifi_event);
-            }
-
-            if (wifi_event.type == MQTT_SETUP || wifi_event.type == MQTT_INIT || wifi_event.type == MQTT_CONNECTING || wifi_event.type == SK_MQTT_CONNECTED || wifi_event.type == MQTT_CONNECTION_FAILED)
-            {
-                mqtt_task_->handleEvent(wifi_event);
-            }
-
-            if (wifi_event.type == MQTT_STATE_UPDATE)
-            {
+                break;
+            case MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
+                break;
+            case MQTT_CONNECTION_FAILED:
+            case MQTT_RETRY_LIMIT_REACHED:
+                display_task_->enableMqttErrorFlow();
+                display_task_->getMqttErrorFlow()->handleEvent(wifi_event);
+                break;
+
+            default:
+                mqtt_task_->handleEvent(wifi_event);
+                break;
             }
 #endif
         }
@@ -495,13 +506,28 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_LONG;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+
+                //! GET ACTIVE FLOW? SO WE DONT HAVE DIFFERENT
+                // display_task_->getActiveFlow()->handleNavigationEvent(event);
+                switch (display_task_->getErrorMode())
                 {
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                case NO_ERROR:
+                    switch (configuration_->getOSConfiguration()->mode)
+                    {
+                    case Onboarding:
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        break;
+                    case Hass:
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    default:
+                        break;
+                    }
+                    break;
+                case MQTT_ERROR:
+                    display_task_->getMqttErrorFlow()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;
