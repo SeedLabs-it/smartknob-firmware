@@ -32,7 +32,9 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
     bool setup(MQTTConfiguration config);
+    bool reset();
     bool connect();
+    bool disconnect();
     bool reconnect();
     bool init();
 
@@ -44,6 +46,7 @@ private:
 
     MQTTConfiguration config_;
     bool is_config_set;
+    uint8_t retry_count = 0;
 
     QueueHandle_t entity_state_to_send_queue_;
     QueueHandle_t shared_events_queue;
@@ -51,7 +54,7 @@ private:
 
     SemaphoreHandle_t mutex_app_sync_;
     WiFiClient wifi_client;
-    PubSubClient mqttClient;
+    PubSubClient mqtt_client;
     Logger *logger_;
     cJSON *apps;
 

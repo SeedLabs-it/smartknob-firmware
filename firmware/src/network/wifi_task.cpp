@@ -267,6 +267,7 @@ void WifiTask::webHandlerMQTTCredentials()
 void WifiTask::startWebServer()
 {
     server_ = new WebServer(80);
+    ElegantOTA.begin(server_);
 
     // TODO: do local files rendering
     // TODO: make this page work async with animations on UI
