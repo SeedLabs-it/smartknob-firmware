@@ -131,7 +131,7 @@ void RootTask::run()
 #if SK_MQTT
     mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #endif
-    display_task_->getMqttErrorFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     plaintext_protocol_.init([this]()
                              {
@@ -265,9 +265,9 @@ void RootTask::run()
         break;
     }
 
-    display_task_->getMqttErrorFlow()->setMotorNotifier(&motor_notifier);
+    display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
 
-    // display_task_->getMqttErrorFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+    // display_task_->getErrorHandlingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     EntityStateUpdate entity_state_update_to_send;
 
@@ -357,8 +357,8 @@ void RootTask::run()
             case MQTT_RETRY_LIMIT_REACHED:
                 if (wifi_event.sent_at < task_started_at - 1000) // give mqtt 1000ms to connect at start before displaying error.
                 {
-                    display_task_->enableMqttErrorFlow();
-                    display_task_->getMqttErrorFlow()->handleEvent(wifi_event);
+                    display_task_->enableErrorHandlingFlow();
+                    display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 }
                 break;
 
@@ -547,7 +547,7 @@ void RootTask::updateHardware(AppState app_state)
                     }
                     break;
                 case MQTT_ERROR:
-                    display_task_->getMqttErrorFlow()->handleNavigationEvent(event);
+                    display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
                     break;
@@ -578,7 +578,7 @@ void RootTask::updateHardware(AppState app_state)
                     }
                     break;
                 case MQTT_ERROR:
-                    display_task_->getMqttErrorFlow()->handleNavigationEvent(event);
+                    display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
                     break;

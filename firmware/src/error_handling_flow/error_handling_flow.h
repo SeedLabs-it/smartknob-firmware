@@ -12,11 +12,11 @@
 #include "font/NDS1210pt7b.h"
 #include "font/NDS125_small.h"
 
-class MqttErrorFlow
+class ErrorHandlingFlow
 {
 public:
-    MqttErrorFlow();
-    MqttErrorFlow(TFT_eSprite *spr_);
+    ErrorHandlingFlow();
+    ErrorHandlingFlow(TFT_eSprite *spr_);
 
     TFT_eSprite *render();
     // EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);

@@ -1,15 +1,15 @@
-#include "mqtt_error_flow.h"
+#include "error_handling_flow.h"
 
-MqttErrorFlow::MqttErrorFlow()
+ErrorHandlingFlow::ErrorHandlingFlow()
 {
 }
 
-MqttErrorFlow::MqttErrorFlow(TFT_eSprite *spr)
+ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr)
 {
     spr_ = spr;
 }
 
-void MqttErrorFlow::handleEvent(WiFiEvent event)
+void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
     latest_event = event;
     switch (event.type)
@@ -27,7 +27,7 @@ void MqttErrorFlow::handleEvent(WiFiEvent event)
     }
 }
 
-void MqttErrorFlow::handleNavigationEvent(NavigationEvent event)
+void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
 {
     switch (event.press)
     {
@@ -46,7 +46,7 @@ void MqttErrorFlow::handleNavigationEvent(NavigationEvent event)
     }
 }
 
-TFT_eSprite *MqttErrorFlow::render()
+TFT_eSprite *ErrorHandlingFlow::render()
 {
     switch (error_type)
     {
@@ -71,7 +71,7 @@ TFT_eSprite *MqttErrorFlow::render()
     }
 }
 
-TFT_eSprite *MqttErrorFlow::renderMqttConnectionFailed()
+TFT_eSprite *ErrorHandlingFlow::renderMqttConnectionFailed()
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -97,7 +97,7 @@ TFT_eSprite *MqttErrorFlow::renderMqttConnectionFailed()
     return this->spr_;
 }
 
-TFT_eSprite *MqttErrorFlow::renderMqttRetryLimitReached()
+TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -150,17 +150,17 @@ TFT_eSprite *MqttErrorFlow::renderMqttRetryLimitReached()
     return this->spr_;
 }
 
-void MqttErrorFlow::setMotorNotifier(MotorNotifier *motor_notifier)
+void ErrorHandlingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {
     this->motor_notifier = motor_notifier;
 }
 
-void MqttErrorFlow::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+void ErrorHandlingFlow::setSharedEventsQueue(QueueHandle_t shared_events_queue)
 {
     this->shared_events_queue = shared_events_queue;
 }
 
-void MqttErrorFlow::publishEvent(WiFiEvent event)
+void ErrorHandlingFlow::publishEvent(WiFiEvent event)
 {
     xQueueSendToBack(shared_events_queue, &event, 0);
 }

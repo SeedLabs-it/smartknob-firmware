@@ -32,9 +32,9 @@ HassApps *DisplayTask::getHassApps()
     return &hass_apps;
 }
 
-MqttErrorFlow *DisplayTask::getMqttErrorFlow()
+ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 {
-    return &mqtt_error_flow;
+    return &error_handling_flow;
 }
 
 void DisplayTask::run()
@@ -68,7 +68,7 @@ void DisplayTask::run()
 
     onboarding_flow = OnboardingFlow(&spr_);
 
-    mqtt_error_flow = MqttErrorFlow(&spr_);
+    error_handling_flow = ErrorHandlingFlow(&spr_);
 
     AppState app_state;
 
@@ -112,7 +112,7 @@ void DisplayTask::run()
             }
             else if (error_type == MQTT_ERROR)
             {
-                mqtt_error_flow.render()->pushSprite(0, 0);
+                error_handling_flow.render()->pushSprite(0, 0);
             }
 
             {
@@ -175,7 +175,7 @@ void DisplayTask::enableDemo()
     os_mode = Demo;
 }
 
-void DisplayTask::enableMqttErrorFlow()
+void DisplayTask::enableErrorHandlingFlow()
 {
     error_type = MQTT_ERROR;
 }

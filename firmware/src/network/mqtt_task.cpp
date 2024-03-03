@@ -149,6 +149,10 @@ void MqttTask::run()
 
 bool MqttTask::setup(MQTTConfiguration config)
 {
+    if (is_config_set)
+    {
+        reset();
+    }
     WiFiEvent event;
     event.type = MQTT_SETUP;
     sprintf(event.body.mqtt_connecting.host, "%s", config.host);

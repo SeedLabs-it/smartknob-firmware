@@ -15,7 +15,7 @@
 #include "apps/hass/hass_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
-#include "network/error_handling/mqtt_error_flow.h"
+#include "error_handling_flow/error_handling_flow.h"
 
 const uint8_t BOOT_MODE_NOT_SET = 0;
 const uint8_t BOOT_MODE_ONBOARDING = 1;
@@ -40,10 +40,10 @@ public:
     void enableHass();
     void enableDemo();
 
-    void enableMqttErrorFlow();
+    void enableErrorHandlingFlow();
 
     OnboardingFlow *getOnboardingFlow();
-    MqttErrorFlow *getMqttErrorFlow();
+    ErrorHandlingFlow *getErrorHandlingFlow();
 
     ErrorType getErrorType();
     void resetError();
@@ -60,7 +60,7 @@ private:
 
     // TODO: put under private
     OnboardingFlow onboarding_flow;
-    MqttErrorFlow mqtt_error_flow;
+    ErrorHandlingFlow error_handling_flow;
 
     QueueHandle_t app_state_queue_;
 
