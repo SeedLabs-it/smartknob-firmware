@@ -33,6 +33,10 @@ void MqttTask::handleEvent(WiFiEvent event)
     case SK_MQTT_CONNECTED:
         init();
         break;
+    case RESET_ERROR:
+        retry_count = 0;
+        ESP_LOGD("mqtt", "Resetting error count");
+        break;
     default:
         break;
     }
@@ -55,6 +59,7 @@ void MqttTask::run()
 
     while (1)
     {
+
         if (is_config_set && retry_count < 3)
         {
             if (retry_count < 3 && millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected())
@@ -62,7 +67,8 @@ void MqttTask::run()
 
                 WiFiEvent event;
                 WiFiEventBody wifi_event_body;
-                wifi_event_body.mqtt_error.connection_retry_count = retry_count + 1;
+                wifi_event_body.error.type = MQTT_ERROR;
+                wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
 
                 event.type = MQTT_CONNECTION_FAILED;
                 event.body = wifi_event_body;

@@ -130,6 +130,7 @@ void RootTask::run()
 #if SK_MQTT
     mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #endif
+    display_task_->getMqttErrorFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     plaintext_protocol_.init([this]()
                              {
@@ -246,7 +247,6 @@ void RootTask::run()
         display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 #endif
         display_task_->enableOnboarding();
-        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
         motor_notifier.loopTick();
         break;
 
@@ -255,9 +255,8 @@ void RootTask::run()
         // TODO: update motor config
         break;
     case Hass:
-        display_task_->enableHass();
         display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
+        display_task_->enableHass();
         motor_notifier.loopTick();
         break;
 
@@ -266,6 +265,7 @@ void RootTask::run()
     }
 
     display_task_->getMqttErrorFlow()->setMotorNotifier(&motor_notifier);
+
     // display_task_->getMqttErrorFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     EntityStateUpdate entity_state_update_to_send;
@@ -307,10 +307,29 @@ void RootTask::run()
             switch (wifi_event.type)
             {
             case RESET_ERROR:
-                if (configuration_->getOSConfiguration()->mode == Hass)
+                switch (configuration_->getOSConfiguration()->mode)
                 {
-                    display_task_->resetErrorMode();
+                case Onboarding:
+                    display_task_->enableOnboarding();
+                    break;
+                case Hass:
+                    display_task_->enableHass();
+                    break;
+                default:
+                    break;
                 }
+
+                switch (wifi_event.body.error.type)
+                {
+                case WIFI_ERROR:
+                    break;
+                case MQTT_ERROR:
+                    mqtt_task_->handleEvent(wifi_event); // this or a new function in mqtt_task?
+                    break;
+                default:
+                    break;
+                }
+                display_task_->resetError();
                 break;
             case WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
@@ -509,7 +528,7 @@ void RootTask::updateHardware(AppState app_state)
 
                 //! GET ACTIVE FLOW? SO WE DONT HAVE DIFFERENT
                 // display_task_->getActiveFlow()->handleNavigationEvent(event);
-                switch (display_task_->getErrorMode())
+                switch (display_task_->getErrorType())
                 {
                 case NO_ERROR:
                     switch (configuration_->getOSConfiguration()->mode)
@@ -540,13 +559,25 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+                switch (display_task_->getErrorType())
                 {
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                case NO_ERROR:
+                    switch (configuration_->getOSConfiguration()->mode)
+                    {
+                    case Onboarding:
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        break;
+                    case Hass:
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    default:
+                        break;
+                    }
+                    break;
+                case MQTT_ERROR:
+                    display_task_->getMqttErrorFlow()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;

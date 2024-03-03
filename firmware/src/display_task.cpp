@@ -89,7 +89,7 @@ void DisplayTask::run()
             spr_.fillSprite(TFT_BLACK);
             spr_.setTextSize(1);
 
-            if (error_mode == NO_ERROR)
+            if (error_type == NO_ERROR)
             {
                 switch (os_mode)
                 {
@@ -110,7 +110,7 @@ void DisplayTask::run()
                     break;
                 }
             }
-            else
+            else if (error_type == MQTT_ERROR)
             {
                 mqtt_error_flow.render()->pushSprite(0, 0);
             }
@@ -167,6 +167,7 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
+    hass_apps.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
@@ -176,16 +177,16 @@ void DisplayTask::enableDemo()
 
 void DisplayTask::enableMqttErrorFlow()
 {
-    error_mode = MQTT_ERROR;
+    error_type = MQTT_ERROR;
 }
 
-ErrorMode DisplayTask::getErrorMode()
+ErrorType DisplayTask::getErrorType()
 {
-    return error_mode;
+    return error_type;
 }
 
-void DisplayTask::resetErrorMode()
+void DisplayTask::resetError()
 {
-    error_mode = NO_ERROR;
+    error_type = NO_ERROR;
 }
 #endif

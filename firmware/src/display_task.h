@@ -45,8 +45,8 @@ public:
     OnboardingFlow *getOnboardingFlow();
     MqttErrorFlow *getMqttErrorFlow();
 
-    ErrorMode getErrorMode();
-    void resetErrorMode();
+    ErrorType getErrorType();
+    void resetError();
 
 protected:
     void run();
@@ -72,7 +72,7 @@ private:
     char buf_[128];
 
     OSMode os_mode;
-    ErrorMode error_mode;
+    ErrorType error_type;
 };
 
 #else

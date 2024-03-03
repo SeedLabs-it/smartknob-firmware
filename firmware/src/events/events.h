@@ -49,9 +49,33 @@ struct MQTTStateUpdate
     cJSON *state;
 };
 
-struct MqttError
+struct WiFiError
 {
-    uint8_t connection_retry_count;
+};
+
+struct MQTTError
+{
+    uint8_t retry_count;
+    // char *error_message;
+};
+
+enum ErrorType
+{
+    NO_ERROR,
+    WIFI_ERROR,
+    MQTT_ERROR
+};
+
+union ErrorBody
+{
+    WiFiError wifi_error;
+    MQTTError mqtt_error;
+};
+
+struct Error
+{
+    ErrorType type;
+    ErrorBody body;
 };
 
 union WiFiEventBody
@@ -63,8 +87,8 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connecting;
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
-    MqttError mqtt_error;
     MQTTStateUpdate mqtt_state_update;
+    Error error;
 };
 
 // TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED
