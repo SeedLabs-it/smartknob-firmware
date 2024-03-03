@@ -117,14 +117,14 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
 {
     switch (event.type)
     {
-    case WIFI_AP_STARTED:
+    case SK_WIFI_AP_STARTED:
         is_wifi_ap_started = true;
         sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
         sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
         sprintf(wifi_qr_code, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
 
         break;
-    case AP_CLIENT:
+    case SK_AP_CLIENT:
         is_wifi_ap_client_connected = event.body.ap_client.connected;
         if (is_wifi_ap_client_connected)
         {
@@ -135,7 +135,7 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
         }
         break;
-    case WEB_CLIENT:
+    case SK_WEB_CLIENT:
         is_web_client_connected = event.body.ap_client.connected;
         if (is_web_client_connected)
         {
@@ -147,16 +147,16 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
         }
         break;
-    case WIFI_STA_CONNECTING:
+    case SK_WIFI_STA_CONNECTING:
         sta_connecting_tick = event.body.wifi_sta_connecting.tick;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
         sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
         break;
-    case WEB_CLIENT_MQTT:
+    case SK_WEB_CLIENT_MQTT:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
-    case MQTT_CONNECTING:
+    case SK_MQTT_CONNECTING:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         break;
@@ -166,7 +166,7 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         is_onboarding_finished = true;
         os_config_notifier->setOSMode(Hass);
         break;
-    case MQTT_STATE_UPDATE:
+    case SK_MQTT_STATE_UPDATE:
         break;
     default:
         break;

@@ -69,14 +69,14 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
     //     Serial.println("ESP32 soft AP started");
     //     break;
     case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-        wifi_event.type = AP_CLIENT;
+        wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = true;
 
         xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
         break;
     case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
 
-        wifi_event.type = AP_CLIENT;
+        wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = false;
 
         xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
@@ -98,7 +98,7 @@ void WifiTask::startWiFiAP()
     WiFi.softAP(ssid, passphrase);
 
     WiFiEvent event;
-    event.type = WIFI_AP_STARTED;
+    event.type = SK_WIFI_AP_STARTED;
 
     strcpy(event.body.wifi_ap_started.ssid, ssid);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
@@ -114,7 +114,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 
     WiFiEvent wifi_sta_connecting_event;
 
-    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+    wifi_sta_connecting_event.type = SK_WIFI_STA_CONNECTING;
     sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", wifi_config.ssid);
     sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", wifi_config.passphrase);
     wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
@@ -144,13 +144,13 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     if (WiFi.status() != WL_CONNECTED)
     {
         WiFiEvent wifi_sta_connection_failed_event;
-        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
+        wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
         publishWiFiEvent(wifi_sta_connecting_event);
         return false;
     }
 
     WiFiEvent wifi_sta_connected;
-    wifi_sta_connected.type = WIFI_STA_CONNECTED;
+    wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
@@ -161,7 +161,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 void WifiTask::webHandlerWiFiForm()
 {
     WiFiEvent event;
-    event.type = WEB_CLIENT;
+    event.type = SK_WEB_CLIENT;
     event.body.web_client.connected = true;
 
     publishWiFiEvent(event);
@@ -182,7 +182,7 @@ void WifiTask::webHandlerWiFiForm()
 void WifiTask::webHandlerMQTTForm()
 {
     WiFiEvent event;
-    event.type = WEB_CLIENT_MQTT;
+    event.type = SK_WEB_CLIENT_MQTT;
     publishWiFiEvent(event);
 
     server_->send(200, "text/html", "<form action='/submit' method='get'>"
@@ -211,7 +211,7 @@ void WifiTask::webHandlerWiFiCredentials()
     if (startWiFiSTA(wifi_config))
     {
         WiFiEvent wifi_sta_connected;
-        wifi_sta_connected.type = WIFI_STA_CONNECTED_NEW_CREDENTIALS;
+        wifi_sta_connected.type = SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS;
         sprintf(wifi_sta_connected.body.wifi_sta_connected.ssid, "%s", ssid.c_str());
         sprintf(wifi_sta_connected.body.wifi_sta_connected.passphrase, "%s", passphrase.c_str());
 
@@ -235,7 +235,7 @@ void WifiTask::webHandlerMQTTCredentials()
     String mqtt_password = server_->arg("mqtt_password");
 
     WiFiEvent event;
-    event.type = MQTT_CREDENTIALS_RECIEVED;
+    event.type = SK_MQTT_CREDENTIALS_RECIEVED;
     sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());

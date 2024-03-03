@@ -21,7 +21,7 @@ void MqttTask::handleEvent(WiFiEvent event)
 
     switch (event.type)
     {
-    case MQTT_CREDENTIALS_RECIEVED:
+    case SK_MQTT_CREDENTIALS_RECIEVED:
         ESP_LOGD("mqtt", "%s %d %s %s",
                  event.body.mqtt_connecting.host,
                  event.body.mqtt_connecting.port,
@@ -33,7 +33,7 @@ void MqttTask::handleEvent(WiFiEvent event)
     case SK_MQTT_CONNECTED:
         init();
         break;
-    case RESET_ERROR:
+    case SK_RESET_ERROR:
         retry_count = 0;
         ESP_LOGD("mqtt", "Resetting error count");
         break;
@@ -73,7 +73,7 @@ void MqttTask::run()
                     wifi_event_body.error.type = MQTT_ERROR;
                     wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
 
-                    event.type = MQTT_CONNECTION_FAILED;
+                    event.type = SK_MQTT_CONNECTION_FAILED;
                     event.body = wifi_event_body;
                     event.sent_at = millis();
                     publishEvent(event);
@@ -88,7 +88,7 @@ void MqttTask::run()
                     {
                         log("Retry limit reached...");
                         WiFiEvent event;
-                        event.type = MQTT_RETRY_LIMIT_REACHED;
+                        event.type = SK_MQTT_RETRY_LIMIT_REACHED;
                         publishEvent(event);
                     }
                     continue;
@@ -96,7 +96,7 @@ void MqttTask::run()
                 has_been_connected = true;
                 retry_count = 0;
                 WiFiEvent reset_error;
-                reset_error.type = RESET_ERROR;
+                reset_error.type = SK_RESET_ERROR;
                 publishEvent(reset_error);
             }
 
@@ -154,7 +154,7 @@ bool MqttTask::setup(MQTTConfiguration config)
         reset();
     }
     WiFiEvent event;
-    event.type = MQTT_SETUP;
+    event.type = SK_MQTT_SETUP;
     sprintf(event.body.mqtt_connecting.host, "%s", config.host);
     event.body.mqtt_connecting.port = config.port;
     sprintf(event.body.mqtt_connecting.user, "%s", config.user);
@@ -178,7 +178,7 @@ bool MqttTask::setup(MQTTConfiguration config)
 bool MqttTask::reset()
 {
     WiFiEvent event;
-    event.type = MQTT_RESET;
+    event.type = SK_MQTT_RESET;
 
     retry_count = 0;
     is_config_set = false;
@@ -220,7 +220,7 @@ bool MqttTask::connect()
     else
     {
         WiFiEvent event;
-        event.type = MQTT_CONNECTION_FAILED;
+        event.type = SK_MQTT_CONNECTION_FAILED;
         publishEvent(event);
         log("MQTT connection failed");
     }
@@ -250,7 +250,7 @@ bool MqttTask::init()
     mqtt_client.loop();
 
     WiFiEvent mqtt_connected_event;
-    mqtt_connected_event.type = MQTT_INIT;
+    mqtt_connected_event.type = SK_MQTT_INIT;
     publishEvent(mqtt_connected_event);
     return true;
 }
@@ -295,7 +295,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         state_update.state = new_state;
 
         WiFiEvent event;
-        event.type = MQTT_STATE_UPDATE;
+        event.type = SK_MQTT_STATE_UPDATE;
         event.body.mqtt_state_update = state_update;
 
         publishEvent(event);

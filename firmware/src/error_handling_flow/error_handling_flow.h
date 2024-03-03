@@ -19,9 +19,6 @@ public:
     ErrorHandlingFlow(TFT_eSprite *spr_);
 
     TFT_eSprite *render();
-    // EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
-    // void updateStateFromSystem(AppState state);
-    // EntityStateUpdate update(AppState state);
     void handleNavigationEvent(NavigationEvent event);
     void handleEvent(WiFiEvent event);
     void setMotorNotifier(MotorNotifier *motor_notifier);
@@ -49,9 +46,9 @@ private:
         0,
         0,
         0,
-        PI, // ! THIS HAS TO BE SET TO A NON ZERO VALUE? DISABLES FUTURE CONFIGS OTHERWISE
+        PI,
         0,
-        0,
+        1,
         0.5,
         "",
         0,

@@ -11,16 +11,17 @@ ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr)
 
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
+    motor_notifier->requestUpdate(blocked_motor_config);
     latest_event = event;
     switch (event.type)
     {
-    case MQTT_CONNECTION_FAILED:
+    case SK_MQTT_CONNECTION_FAILED:
+    case SK_MQTT_RETRY_LIMIT_REACHED:
         error_type = MQTT_ERROR;
-        motor_notifier->requestUpdate(blocked_motor_config);
         break;
-    case MQTT_RETRY_LIMIT_REACHED:
-        error_type = MQTT_ERROR;
-        motor_notifier->requestUpdate(blocked_motor_config);
+    case SK_WIFI_STA_CONNECTION_FAILED:
+    case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+        error_type = WIFI_ERROR;
         break;
     default:
         break;
@@ -32,10 +33,10 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
     switch (event.press)
     {
     case NAVIGATION_EVENT_PRESS_SHORT:
-        if (error_type == MQTT_ERROR && latest_event.type == MQTT_RETRY_LIMIT_REACHED)
+        if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
             WiFiEvent reset_error;
-            reset_error.type = RESET_ERROR;
+            reset_error.type = SK_RESET_ERROR;
             reset_error.body.error.type = error_type;
             error_type = NO_ERROR;
             publishEvent(reset_error);
@@ -56,10 +57,10 @@ TFT_eSprite *ErrorHandlingFlow::render()
     case MQTT_ERROR:
         switch (latest_event.type)
         {
-        case MQTT_CONNECTION_FAILED:
+        case SK_MQTT_CONNECTION_FAILED:
             return renderMqttConnectionFailed();
             break;
-        case MQTT_RETRY_LIMIT_REACHED:
+        case SK_MQTT_RETRY_LIMIT_REACHED:
             return renderMqttRetryLimitReached();
             break;
         default:
@@ -80,17 +81,20 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttConnectionFailed()
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
     spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(accent_text_color);
+    spr_->setTextColor(default_text_color);
 
     sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
-    spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
+    spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 1.6, 1);
 
     sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);
-    spr_->drawString(buf_, center_horizontal, screen_name_label_h * 2, 1);
+    spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 0.6, 1);
 
     // spr_->drawString("CONTINUE IN", center_horizontal, center_vertical - screen_name_label_h, 1);
-    spr_->drawString("Connection failed", center_horizontal, center_vertical + screen_name_label_h, 1);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->setTextColor(accent_text_color);
+    spr_->drawString("Connection failed", center_horizontal, center_vertical + screen_name_label_h * 2, 1);
 
+    spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
@@ -105,7 +109,7 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
-    spr_->setFreeFont(&NDS1210pt7b);
+    // spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 
     QRCode qrcode;
@@ -119,7 +123,8 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
     }
     else
     {
-        wifiqrcodestring = "http://10.0.0.1/mqtt"; // TODO: fetch real ip address
+        sprintf(buf_, "http://%s/mqtt", WiFi.localIP().toString().c_str());
+        wifiqrcodestring = buf_;
     }
 
     qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcodestring.c_str());
@@ -130,7 +135,7 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
     int qrCodeHeight = qrcode.size * moduleSize;
 
     int startX = center_horizontal - qrCodeWidth / 2;
-    int startY = center_vertical - qrCodeHeight;
+    int startY = center_vertical - qrCodeHeight / 1.4;
 
     for (uint8_t y = 0; y < qrcode.size; y++)
     {
@@ -142,8 +147,10 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
             }
         }
     }
-    spr_->drawString("Retry limit reached", center_horizontal, center_vertical + screen_name_label_h, 1);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->drawString("Retry limit reached", center_horizontal, center_vertical + screen_name_label_h * 2, 1);
 
+    spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 

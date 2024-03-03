@@ -293,7 +293,7 @@ void RootTask::run()
                 display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
             }
 
-            if (wifi_event.type == WIFI_STA_CONNECTED_NEW_CREDENTIALS)
+            if (wifi_event.type == SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS)
             {
                 WiFiConfiguration wifi_config;
                 strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
@@ -307,7 +307,7 @@ void RootTask::run()
 
             switch (wifi_event.type)
             {
-            case RESET_ERROR:
+            case SK_RESET_ERROR:
                 switch (configuration_->getOSConfiguration()->mode)
                 {
                 case Onboarding:
@@ -332,7 +332,7 @@ void RootTask::run()
                 }
                 display_task_->resetError();
                 break;
-            case WIFI_STA_CONNECTED:
+            case SK_WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
@@ -341,7 +341,7 @@ void RootTask::run()
                     mqtt_task_->setup(mqtt_config);
                 }
                 break;
-            case MQTT_CREDENTIALS_RECIEVED:
+            case SK_MQTT_CREDENTIALS_RECIEVED:
                 MQTTConfiguration mqtt_config;
                 strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
                 mqtt_config.port = wifi_event.body.mqtt_connecting.port;
@@ -350,11 +350,11 @@ void RootTask::run()
                 configuration_->saveMQTTConfiguration(mqtt_config);
                 mqtt_task_->handleEvent(wifi_event);
                 break;
-            case MQTT_STATE_UPDATE:
+            case SK_MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
-            case MQTT_CONNECTION_FAILED:
-            case MQTT_RETRY_LIMIT_REACHED:
+            case SK_MQTT_CONNECTION_FAILED:
+            case SK_MQTT_RETRY_LIMIT_REACHED:
                 if (wifi_event.sent_at < task_started_at - 1000) // give mqtt 1000ms to connect at start before displaying error.
                 {
                     display_task_->enableErrorHandlingFlow();
