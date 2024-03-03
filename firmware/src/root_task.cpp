@@ -123,6 +123,7 @@ void RootTask::verboseToggleCallback()
 
 void RootTask::run()
 {
+    uint8_t task_started_at = millis();
     stream_.begin();
 
     motor_task_.addListener(knob_state_queue_);
@@ -354,8 +355,11 @@ void RootTask::run()
                 break;
             case MQTT_CONNECTION_FAILED:
             case MQTT_RETRY_LIMIT_REACHED:
-                display_task_->enableMqttErrorFlow();
-                display_task_->getMqttErrorFlow()->handleEvent(wifi_event);
+                if (wifi_event.sent_at < task_started_at - 1000) // give mqtt 1000ms to connect at start before displaying error.
+                {
+                    display_task_->enableMqttErrorFlow();
+                    display_task_->getMqttErrorFlow()->handleEvent(wifi_event);
+                }
                 break;
 
             default:

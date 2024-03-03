@@ -12,7 +12,6 @@ MqttErrorFlow::MqttErrorFlow(TFT_eSprite *spr)
 void MqttErrorFlow::handleEvent(WiFiEvent event)
 {
     latest_event = event;
-    latest_event_received_at = millis();
     switch (event.type)
     {
     case MQTT_CONNECTION_FAILED:
@@ -83,7 +82,7 @@ TFT_eSprite *MqttErrorFlow::renderMqttConnectionFailed()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 
-    sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event_received_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
+    sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
     spr_->drawString(buf_, center_horizontal, screen_name_label_h, 1);
 
     sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);

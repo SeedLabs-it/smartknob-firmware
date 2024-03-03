@@ -57,28 +57,29 @@ void MqttTask::run()
 
     static uint32_t message_count = 0;
 
+    static bool has_been_connected = false;
+
     while (1)
     {
 
         if (is_config_set && retry_count < 3)
         {
-            if (retry_count < 3 && millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected())
+            if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected())
             {
+                if (!has_been_connected || retry_count > 0)
+                {
+                    WiFiEvent event;
+                    WiFiEventBody wifi_event_body;
+                    wifi_event_body.error.type = MQTT_ERROR;
+                    wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
 
-                WiFiEvent event;
-                WiFiEventBody wifi_event_body;
-                wifi_event_body.error.type = MQTT_ERROR;
-                wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
-
-                event.type = MQTT_CONNECTION_FAILED;
-                event.body = wifi_event_body;
-                // event.sent_at = millis();
-                publishEvent(event);
+                    event.type = MQTT_CONNECTION_FAILED;
+                    event.body = wifi_event_body;
+                    event.sent_at = millis();
+                    publishEvent(event);
+                }
 
                 disconnect();
-
-                ESP_LOGD("mqtt", "Retrying MQTT connection...");
-                ESP_LOGD("mqtt", "retry_count: %d", retry_count + 1);
 
                 if (!connect())
                 {
@@ -92,6 +93,7 @@ void MqttTask::run()
                     }
                     continue;
                 }
+                has_been_connected = true;
                 retry_count = 0;
                 WiFiEvent reset_error;
                 reset_error.type = RESET_ERROR;
@@ -226,6 +228,7 @@ bool MqttTask::disconnect()
     wifi_client.flush();
     mqtt_client.disconnect();
     mqtt_client.flush();
+    mqtt_client.loop();
     return true;
 }
 

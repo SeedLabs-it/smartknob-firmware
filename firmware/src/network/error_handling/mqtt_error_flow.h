@@ -37,7 +37,6 @@ private:
 
     int32_t current_position = 0;
     WiFiEvent latest_event;
-    uint32_t latest_event_received_at = 0;
     ErrorType error_type = NO_ERROR;
 
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
@@ -53,7 +52,7 @@ private:
         PI, // ! THIS HAS TO BE SET TO A NON ZERO VALUE? DISABLES FUTURE CONFIGS OTHERWISE
         0,
         0,
-        0,
+        0.5,
         "",
         0,
         {},
