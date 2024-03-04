@@ -155,8 +155,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     os_config->mode = Onboarding;
+                                     display_task_->enableOnboarding();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -255,13 +255,6 @@ void RootTask::run()
         break;
 
     case Demo:
-        display_task_->enableHass();
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
-        motor_notifier.loopTick();
-        // display_task_->enableDemo();
-        // // TODO: update motor config
-        break;
     case Hass:
         display_task_->enableHass();
 
