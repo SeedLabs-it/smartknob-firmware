@@ -51,3 +51,22 @@ void HassApps::handleEvent(WiFiEvent event)
     }
     unlock();
 }
+
+void HassApps::handleNavigationEvent(NavigationEvent event)
+{
+    ESP_LOGD("HASS_APPS", "WTF!!!!!!!!!!!!!!!! %d", active_id);
+    if (event.press == NAVIGATION_EVENT_PRESS_LONG && active_id == MENU)
+    {
+        os_config_notifier->setOSMode(Onboarding);
+    }
+
+    if (event.press != NAVIGATION_EVENT_PRESS_LONG || active_id != MENU)
+    {
+        Apps::handleNavigationEvent(event);
+    }
+}
+
+void HassApps::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    this->os_config_notifier = os_config_notifier;
+}

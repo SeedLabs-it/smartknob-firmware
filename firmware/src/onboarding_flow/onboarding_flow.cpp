@@ -163,7 +163,7 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
     case SK_MQTT_CONNECTED:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
-        is_onboarding_finished = true;
+        // is_onboarding_finished = true;
         os_config_notifier->setOSMode(Hass);
         break;
     case MQTT_STATE_UPDATE:
@@ -185,6 +185,10 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
             wifi_notifier->requestAP();
 
             motor_notifier->requestUpdate(blocked_motor_config);
+            break;
+        case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:
+            os_config_notifier->setOSMode(Demo);
+            // is_onboarding_finished = true;
             break;
 
         default:

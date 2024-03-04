@@ -88,12 +88,12 @@ void DisplayTask::run()
                 onboarding_flow.render()->pushSprite(0, 0);
                 break;
             case Demo:
-                spr_.setTextDatum(CC_DATUM);
-                spr_.setFreeFont(&NDS1210pt7b);
-                spr_.setTextColor(TFT_WHITE);
-                spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-                spr_.pushSprite(0, 0);
-                break;
+                // spr_.setTextDatum(CC_DATUM);
+                // spr_.setFreeFont(&NDS1210pt7b);
+                // spr_.setTextColor(TFT_WHITE);
+                // spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+                // spr_.pushSprite(0, 0);
+                // break;
             case Hass:
                 hass_apps.renderActive()->pushSprite(0, 0);
                 break;
@@ -153,6 +153,7 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
+    hass_apps.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
