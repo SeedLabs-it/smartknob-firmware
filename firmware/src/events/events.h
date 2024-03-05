@@ -12,7 +12,7 @@ struct WiFiSTAConnecting
 {
     char ssid[128];
     char passphrase[128];
-    uint8_t tick;
+    uint8_t retry_count;
 };
 
 struct WiFiStatus
@@ -51,12 +51,12 @@ struct MQTTStateUpdate
 
 struct WiFiError
 {
+    uint8_t retry_count;
 };
 
 struct MQTTError
 {
     uint8_t retry_count;
-    // char *error_message;
 };
 
 enum ErrorType
@@ -99,6 +99,8 @@ enum EventType
     SK_WIFI_STATUS,
     SK_AP_CLIENT,
     SK_WEB_CLIENT,
+    SK_WIFI_STA_TRY_NEW_CREDENTIALS,
+    SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED,
     SK_WIFI_STA_CONNECTING,
     SK_WIFI_STA_CONNECTED,
     SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS,

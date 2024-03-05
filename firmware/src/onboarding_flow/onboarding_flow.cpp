@@ -115,6 +115,7 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
 // TODO: rename to generic event
 void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
 {
+    latest_event = event;
     switch (event.type)
     {
     case SK_WIFI_AP_STARTED:
@@ -147,11 +148,15 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
         }
         break;
-    case SK_WIFI_STA_CONNECTING:
-        sta_connecting_tick = event.body.wifi_sta_connecting.tick;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
+        sta_connecting_tick = event.body.wifi_sta_connecting.retry_count;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
         sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
+        break;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
+        new_credentials_failed = true;
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
         break;
     case SK_WEB_CLIENT_MQTT:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
@@ -414,6 +419,16 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
+
+    if (new_credentials_failed)
+    {
+        spr_->setFreeFont(&NDS125_small);
+        spr_->setTextColor(default_text_color);
+
+        spr_->drawString("Connection failed with provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 2, 1);
+        spr_->drawString("Please try again.", center_horizontal, center_vertical + screen_name_label_h * 1.6, 1);
+    }
+
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 
@@ -439,7 +454,8 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->drawString(wifi_sta_ssid, center_horizontal, center_vertical + screen_name_label_h, 1);
 
-    sprintf(buf_, "%ds", sta_connecting_tick);
+    // sprintf(buf_, "%ds", sta_connecting_tick);
+    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);
 

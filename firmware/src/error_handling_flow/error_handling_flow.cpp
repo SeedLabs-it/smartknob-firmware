@@ -58,21 +58,36 @@ TFT_eSprite *ErrorHandlingFlow::render()
         switch (latest_event.type)
         {
         case SK_MQTT_CONNECTION_FAILED:
-            return renderMqttConnectionFailed();
+            return renderConnectionFailed();
             break;
         case SK_MQTT_RETRY_LIMIT_REACHED:
-            return renderMqttRetryLimitReached();
+            return renderRetryLimitReached();
             break;
         default:
+            spr_->drawString("MQTT ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
             return spr_;
         }
         break;
+    case WIFI_ERROR:
+        switch (latest_event.type)
+        {
+        case SK_WIFI_STA_CONNECTION_FAILED:
+            return renderConnectionFailed();
+            break;
+        case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+            return renderRetryLimitReached();
+            break;
+        default:
+            spr_->drawString("WIFI ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+            return spr_;
+        }
     default:
+        spr_->drawString("ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
         return spr_;
     }
 }
 
-TFT_eSprite *ErrorHandlingFlow::renderMqttConnectionFailed()
+TFT_eSprite *ErrorHandlingFlow::renderConnectionFailed()
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -86,22 +101,49 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttConnectionFailed()
     sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
     spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 1.6, 1);
 
-    sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);
+    switch (error_type)
+    {
+    case MQTT_ERROR:
+        sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);
+
+        break;
+    case WIFI_ERROR:
+        sprintf(buf_, "Retry %d", latest_event.body.error.body.wifi_error.retry_count);
+        break;
+    default:
+        sprintf(buf_, "No retry count.");
+        break;
+    }
+
     spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 0.6, 1);
 
-    // spr_->drawString("CONTINUE IN", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString("Connection failed", center_horizontal, center_vertical + screen_name_label_h * 2, 1);
+
+    sprintf(buf_, "Connection failed");
+    spr_->drawString(buf_, center_horizontal, center_vertical + screen_name_label_h * 2, 1);
 
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+
+    switch (error_type)
+    {
+    case MQTT_ERROR:
+        sprintf(buf_, "MQTT");
+        break;
+    case WIFI_ERROR:
+        sprintf(buf_, "WIFI");
+        break;
+    default:
+        sprintf(buf_, "ERROR");
+        break;
+    }
+    spr_->drawString(buf_, center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
     return this->spr_;
 }
 
-TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
+TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
 {
     uint16_t center_vertical = TFT_HEIGHT / 2;
     uint16_t center_horizontal = TFT_WIDTH / 2;
@@ -152,7 +194,18 @@ TFT_eSprite *ErrorHandlingFlow::renderMqttRetryLimitReached()
 
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+    switch (error_type)
+    {
+    case MQTT_ERROR:
+        spr_->drawString("MQTT", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+        break;
+    case WIFI_ERROR:
+        spr_->drawString("WIFI", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+        break;
+    default:
+        spr_->drawString("ERROR", center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+        break;
+    }
 
     return this->spr_;
 }

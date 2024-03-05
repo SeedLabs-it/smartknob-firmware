@@ -352,7 +352,9 @@ void RootTask::run()
                 break;
             case SK_MQTT_CONNECTION_FAILED:
             case SK_MQTT_RETRY_LIMIT_REACHED:
-                if (wifi_event.sent_at < task_started_at - 1000) // give mqtt 1000ms to connect at start before displaying error.
+            case SK_WIFI_STA_CONNECTION_FAILED:
+            case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+                if (wifi_event.sent_at < task_started_at - 1000) // give stuff 1000ms to connect at start before displaying errors.
                 {
                     display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -360,7 +362,7 @@ void RootTask::run()
                 break;
 
             default:
-                mqtt_task_->handleEvent(wifi_event);
+                // mqtt_task_->handleEvent(wifi_event);
                 break;
             }
 #endif

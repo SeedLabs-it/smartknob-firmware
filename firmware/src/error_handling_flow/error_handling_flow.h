@@ -62,6 +62,6 @@ private:
 
     QueueHandle_t shared_events_queue;
 
-    TFT_eSprite *renderMqttConnectionFailed();
-    TFT_eSprite *renderMqttRetryLimitReached();
+    TFT_eSprite *renderConnectionFailed();
+    TFT_eSprite *renderRetryLimitReached();
 };
