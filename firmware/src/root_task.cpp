@@ -155,8 +155,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     os_config->mode = Onboarding;
+                                     display_task_->enableOnboarding();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -217,8 +217,8 @@ void RootTask::run()
                                             display_task_->enableOnboarding();
                                             break;
                                         case Demo:
-                                            display_task_->enableDemo();
-                                            break;
+                                            // display_task_->enableDemo();
+                                            // break;
                                         case Hass:
                                             display_task_->enableHass();
                                             break;
@@ -237,6 +237,10 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    display_task_->getHassApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getHassApps()->triggerMotorConfigUpdate();
+
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
@@ -251,13 +255,9 @@ void RootTask::run()
         break;
 
     case Demo:
-        display_task_->enableDemo();
-        // TODO: update motor config
-        break;
     case Hass:
         display_task_->enableHass();
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
+
         motor_notifier.loopTick();
         break;
 
@@ -495,13 +495,19 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_LONG;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+                switch (configuration_->getOSConfiguration()->mode)
                 {
+                case Onboarding:
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
+                    break;
+                case Demo:
+                    // display_task_->getHassApps()->handleNavigationEvent(event);
+                    // break;
+                case Hass:
                     display_task_->getHassApps()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;
@@ -514,13 +520,19 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+                switch (configuration_->getOSConfiguration()->mode)
                 {
+                case Onboarding:
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
+                    break;
+                case Demo:
+                    // display_task_->getHassApps()->handleNavigationEvent(event);
+                    // break;
+                case Hass:
                     display_task_->getHassApps()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;

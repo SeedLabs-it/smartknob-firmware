@@ -52,57 +52,40 @@ void DisplayTask::run()
     spr_->setTextColor(0xFFFF, TFT_BLACK);
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextColor(TFT_WHITE);
-
-    unsigned long last_rendering_ms = millis();
-    unsigned long last_fps_check = millis();
-
-    const uint16_t wanted_fps = 20;
-    uint16_t fps_counter = 0;
+    
 
     while (1)
     {
+        DisplayBuffer::getInstance()->startDrawTransaction();
+        spr_->fillSprite(TFT_BLACK);
+        spr_->setTextSize(1);
 
-        if (millis() - last_rendering_ms > 1000 / wanted_fps)
+        switch (os_mode)
         {
-            DisplayBuffer::getInstance()->startDrawTransaction();
-            spr_->fillSprite(TFT_BLACK);
-            spr_->setTextSize(1);
+        case Onboarding:
+            onboarding_flow.render();
+            break;
+        case Demo:
+            // spr_.setTextDatum(CC_DATUM);
+            // spr_.setFreeFont(&NDS1210pt7b);
+            // spr_.setTextColor(TFT_WHITE);
+            // spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+            // spr_.pushSprite(0, 0);
+            // break;
+        case Hass:
+            hass_apps.renderActive();
+            break;
+        default:
+            break;
+        }
+        DisplayBuffer::getInstance()->endDrawTransaction();
 
-            switch (os_mode)
-            {
-            case Onboarding:
-                onboarding_flow.render();
-                break;
-            case Demo:
-                spr_->setTextDatum(CC_DATUM);
-                spr_->setFreeFont(&NDS1210pt7b);
-                spr_->setTextColor(TFT_WHITE);
-                spr_->drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-                break;
-            case Hass:
-                hass_apps.renderActive();
-                break;
-            default:
-                break;
-            }
-            DisplayBuffer::getInstance()->endDrawTransaction();
-
-            {
-                SemaphoreGuard lock(mutex_);
-                ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
-            }
-            last_rendering_ms = millis();
-
-            fps_counter++;
-            if (last_fps_check + 1000 < millis())
-            {
-                // ESP_LOGD("display_task.cpp", "Screen real FPS %d", fps_counter);
-                fps_counter = 0;
-                last_fps_check = millis();
-            }
+        {
+            SemaphoreGuard lock(mutex_);
+            ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(25));
     }
 }
 
@@ -139,6 +122,7 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
+    hass_apps.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()

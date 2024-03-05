@@ -177,7 +177,7 @@ protected:
     static void tftTask(void *args)
     {
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(25 / portTICK_PERIOD_MS);
         const TickType_t xFrequency = portTICK_RATE_MS * DISPLAY_BUFFER_DRAW_DELAY; // 20ms
 
         TickType_t xLastWakeTime;

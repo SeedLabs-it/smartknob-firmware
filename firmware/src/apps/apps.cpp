@@ -83,6 +83,7 @@ void Apps::setActive(int8_t id)
     if (id == MENU)
     {
         active_app = menu;
+        active_id = MENU;
         unlock();
         return;
     }
