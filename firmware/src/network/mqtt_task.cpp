@@ -189,13 +189,6 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     sprintf(mqtt_try_new_credentials.body.mqtt_connecting.user, "%s", config.user);
     sprintf(mqtt_try_new_credentials.body.mqtt_connecting.password, "%s", config.password);
 
-    ESP_LOGD("mqtt", "!!!! %d %s %d %s %s !!!!",
-             mqtt_try_new_credentials.type,
-             mqtt_try_new_credentials.body.mqtt_connecting.host,
-             mqtt_try_new_credentials.body.mqtt_connecting.port,
-             mqtt_try_new_credentials.body.mqtt_connecting.user,
-             mqtt_try_new_credentials.body.mqtt_connecting.password);
-
     publishEvent(mqtt_try_new_credentials);
 
     wifi_client.setTimeout(10);
@@ -208,14 +201,11 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     uint8_t max_tries = 3;
 
-    // while (!mqtt_client.connected())
-    while (true)
-
+    while (!mqtt_client.connected())
     {
         ESP_LOGD("mqtt", "Trying to connect to MQTT with new credentials");
         delay(10000);
-        // if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
-        if (false)
+        if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
         {
             ESP_LOGD("mqtt", "MQTT client connected");
             WiFiEvent mqtt_connected;
