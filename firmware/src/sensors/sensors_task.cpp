@@ -217,6 +217,7 @@ void SensorsTask::run()
             lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
 
             // looks at the lower part of the sensor spectrum (0 = dark)
+
             luminosity_adjustment = min(1.0f, lux_avg);
 
             sensors_state.illumination.lux = lux;
