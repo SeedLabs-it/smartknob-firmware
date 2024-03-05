@@ -35,7 +35,7 @@ HassApps *DisplayTask::getHassApps()
 
 void DisplayTask::run()
 {
-     spr_ = DisplayBuffer::getInstance()->getTftBuffer();
+    spr_ = DisplayBuffer::getInstance()->getTftBuffer();
 
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
@@ -53,7 +53,6 @@ void DisplayTask::run()
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextColor(TFT_WHITE);
 
-
     while (1)
     {
         DisplayBuffer::getInstance()->startDrawTransaction();
@@ -63,17 +62,17 @@ void DisplayTask::run()
         switch (os_mode)
         {
         case Onboarding:
-            onboarding_flow.render()->pushSprite(0, 0);
+            onboarding_flow.render();
             break;
         case Demo:
             spr_->setTextDatum(CC_DATUM);
             spr_->setFreeFont(&NDS1210pt7b);
             spr_->setTextColor(TFT_WHITE);
             spr_->drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-            spr_->pushSprite(0, 0);
+            // spr_->pushSprite(0, 0);
             break;
         case Hass:
-            hass_apps.renderActive()->pushSprite(0, 0);
+            hass_apps.renderActive();
             break;
         default:
             break;
@@ -84,7 +83,6 @@ void DisplayTask::run()
             SemaphoreGuard lock(mutex_);
             ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
         }
-    
 
         vTaskDelay(pdMS_TO_TICKS(25));
     }
@@ -123,6 +121,7 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
+    hass_apps.triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()

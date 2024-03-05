@@ -237,33 +237,29 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+    display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+#if SK_WIFI
+    display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+#endif
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
-        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
-        display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
-#if SK_WIFI
-        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
-#endif
         display_task_->enableOnboarding();
-        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
-        motor_notifier.loopTick();
         break;
-
     case Demo:
         display_task_->enableDemo();
-        // TODO: update motor config
         break;
     case Hass:
         display_task_->enableHass();
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
-        motor_notifier.loopTick();
         break;
 
     default:
         break;
     }
+    motor_notifier.loopTick();
 
     EntityStateUpdate entity_state_update_to_send;
 
@@ -275,7 +271,6 @@ void RootTask::run()
     AppState app_state = {};
     while (1)
     {
-
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();
