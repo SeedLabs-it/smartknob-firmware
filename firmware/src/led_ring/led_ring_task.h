@@ -55,6 +55,9 @@ private:
     void renderEffectSnake();
     void renderEffectStaticColor();
     void renderEffectLightHouse();
+    void renderTrailEffect();
+    void renderFadeInEffect();
+    void renderFadeOutEffect();
 };
 
 #else
