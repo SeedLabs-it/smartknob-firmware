@@ -162,7 +162,6 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
     case SK_MQTT_TRY_NEW_CREDENTIALS:
-        ESP_LOGD("OnboardingFlow", "SK_MQTT_TRY_NEW_CREDENTIALS");
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
         break;
@@ -175,6 +174,7 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
     //     sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
     //     break;
     case SK_MQTT_CONNECTED:
+        ESP_LOGD("OnboardingFlow", "SK_MQTT_CONNECTED");
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         is_onboarding_finished = true;

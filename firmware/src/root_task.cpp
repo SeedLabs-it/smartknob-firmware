@@ -19,7 +19,7 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("RootTask", 1024 * 12, ESP_TASK_MAIN_PRIO, task_core),
+    SensorsTask *sensors_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
@@ -284,6 +284,7 @@ void RootTask::run()
 #if SK_WIFI
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
+            ESP_LOGD("root_task", "WiFi event: %d", wifi_event.type);
             if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 display_task_->getOnboardingFlow()->handleEvent(wifi_event);

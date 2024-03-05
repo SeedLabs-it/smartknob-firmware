@@ -247,12 +247,6 @@ void WifiTask::webHandlerMQTTCredentials()
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
 
-    ESP_LOGD("mqtt", "%s %d %s %s",
-             event.body.mqtt_connecting.host,
-             event.body.mqtt_connecting.port,
-             event.body.mqtt_connecting.user,
-             event.body.mqtt_connecting.password);
-
     publishWiFiEvent(event);
 
     // preferences.begin("mqtt", false);

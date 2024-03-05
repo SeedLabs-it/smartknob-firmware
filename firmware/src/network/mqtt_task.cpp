@@ -189,10 +189,10 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
         reset();
     }
 
-    WiFiEvent mqtt_try_new_credentials;
-    mqtt_try_new_credentials.type = SK_MQTT_TRY_NEW_CREDENTIALS;
-    mqtt_try_new_credentials.body.mqtt_connecting = config;
-    publishEvent(mqtt_try_new_credentials);
+    WiFiEvent event;
+    event.type = SK_MQTT_TRY_NEW_CREDENTIALS;
+    event.body.mqtt_connecting = config;
+    publishEvent(event);
 
     wifi_client.setTimeout(5);
 
@@ -204,21 +204,24 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     uint8_t max_tries = 6;
     uint8_t try_count = 0;
+
     while (1)
     {
         if (try_count >= max_tries)
         {
-            WiFiEvent mqtt_try_new_credentials_failed;
-            mqtt_try_new_credentials_failed.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
-            publishEvent(mqtt_try_new_credentials_failed);
+            // WiFiEvent mqtt_try_new_credentials_failed;
+            event.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
+            publishEvent(event);
             return false;
         }
         else if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
         {
-            WiFiEvent mqtt_connected;
-            mqtt_try_new_credentials.type = SK_MQTT_CONNECTED;
-            mqtt_try_new_credentials.body.mqtt_connecting = config;
-            publishEvent(mqtt_connected);
+            // WiFiEvent mqtt_connected;
+            event.type = SK_MQTT_CONNECTED;
+            // event.body.mqtt_connecting = config;
+            publishEvent(event);
+
+            delay(100);
 
             config_ = config;
             is_config_set = true;
