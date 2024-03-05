@@ -2,6 +2,7 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
+#include "display_buffer.h"
 
 #include "cJSON.h"
 
@@ -34,44 +35,28 @@ HassApps *DisplayTask::getHassApps()
 
 void DisplayTask::run()
 {
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
-    tft_.fillScreen(TFT_BLACK);
-
+    
+    spr_ = DisplayBuffer::getInstance()->getTftBuffer();
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
     log("push menu sprite: ok");
 
-    spr_.setColorDepth(16);
+    hass_apps = HassApps(spr_);
 
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
-    {
-        log("ERROR: sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
-    }
-    else
-    {
-        log("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
-
-    hass_apps = HassApps(&spr_);
-
-    onboarding_flow = OnboardingFlow(&spr_);
+    onboarding_flow = OnboardingFlow(spr_);
 
     AppState app_state;
 
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
+    spr_->setTextColor(0xFFFF, TFT_BLACK);
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextColor(TFT_WHITE);
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
 
-    const uint16_t wanted_fps = 60;
+    const uint16_t wanted_fps = 20;
     uint16_t fps_counter = 0;
 
     while (1)
@@ -79,27 +64,28 @@ void DisplayTask::run()
 
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
-            spr_.fillSprite(TFT_BLACK);
-            spr_.setTextSize(1);
+            DisplayBuffer::getInstance()->startDrawTransaction();
+            spr_->fillSprite(TFT_BLACK);
+            spr_->setTextSize(1);
 
             switch (os_mode)
             {
             case Onboarding:
-                onboarding_flow.render()->pushSprite(0, 0);
+                onboarding_flow.render();
                 break;
             case Demo:
-                spr_.setTextDatum(CC_DATUM);
-                spr_.setFreeFont(&NDS1210pt7b);
-                spr_.setTextColor(TFT_WHITE);
-                spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-                spr_.pushSprite(0, 0);
+                spr_->setTextDatum(CC_DATUM);
+                spr_->setFreeFont(&NDS1210pt7b);
+                spr_->setTextColor(TFT_WHITE);
+                spr_->drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
                 break;
             case Hass:
-                hass_apps.renderActive()->pushSprite(0, 0);
+                hass_apps.renderActive();
                 break;
             default:
                 break;
             }
+            DisplayBuffer::getInstance()->endDrawTransaction();
 
             {
                 SemaphoreGuard lock(mutex_);
@@ -116,7 +102,7 @@ void DisplayTask::run()
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
