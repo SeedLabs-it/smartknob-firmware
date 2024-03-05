@@ -126,7 +126,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.setAutoReconnect(false);
 
-    uint8_t max_tries = 3;
+    uint8_t max_tries = 6;
     uint8_t retry_count = 0;
 
     WiFiEvent wifi_sta_connecting;
@@ -155,7 +155,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
             return false;
         }
 
-        delay(10000);
+        delay(5000);
         retry_count++;
     }
 
