@@ -7,6 +7,7 @@
 #include "network/wifi_task.h"
 #include "sensors/sensors_task.h"
 #include "led_ring/led_ring_task.h"
+#include "display_buffer.h"
 
 Configuration config;
 
@@ -88,10 +89,17 @@ void setup()
     motor_task.setLogger(&root_task);
     motor_task.begin();
 
+    #if SUSPENDABLE_TASKS
+        DisplayBuffer::getInstance()->registerSuspendableTask(motor_task.getHandle());
+    #endif
+
 #if SK_WIFI
     wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
     wifi_task.begin();
+    #if SUSPENDABLE_TASKS
+        DisplayBuffer::getInstance()->registerSuspendableTask(wifi_task_p->getHandle());
+    #endif
 #endif
 
 #if SK_MQTT
@@ -99,12 +107,18 @@ void setup()
     mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
     mqtt_task.begin();
+    #if SUSPENDABLE_TASKS
+        DisplayBuffer::getInstance()->registerSuspendableTask(mqtt_task_p->getHandle());
+    #endif
+
 #endif
 
     sensors_task_p->setLogger(&root_task);
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
-
+    #if SUSPENDABLE_TASKS
+        DisplayBuffer::getInstance()->registerSuspendableTask(sensors_task_p->getHandle());
+    #endif
     // Free up the Arduino loop task
     vTaskDelete(NULL);
 }

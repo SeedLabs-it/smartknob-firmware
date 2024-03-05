@@ -188,10 +188,14 @@ protected:
                 vTaskDelay(1);
             }
             DisplayBuffer::getInstance()->startDrawTransaction();
-            DisplayBuffer::getInstance()->suspendTasks();
+            #if SUSPENDABLE_TASKS
+                DisplayBuffer::getInstance()->suspendTasks();
+            #endif
             DisplayBuffer::getInstance()->getTftBuffer()->pushSprite(0, 0);
             lastTftDrawTimeMs = millis();
-            DisplayBuffer::getInstance()->resumeTasks();
+            #if SUSPENDABLE_TASKS
+                DisplayBuffer::getInstance()->resumeTasks();
+            #endif
             DisplayBuffer::getInstance()->endDrawTransaction();
             vTaskDelay(xFrequency);
             xLastWakeTime = xTaskGetTickCount();
