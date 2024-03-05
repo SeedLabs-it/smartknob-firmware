@@ -239,35 +239,32 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+    display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+#if SK_WIFI
+    display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+#endif
+
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
+
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
-        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
-        display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
-#if SK_WIFI
-        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
-#endif
         display_task_->enableOnboarding();
-        motor_notifier.loopTick();
         break;
-
     case Demo:
         display_task_->enableDemo();
-        // TODO: update motor config
         break;
     case Hass:
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
         display_task_->enableHass();
-        motor_notifier.loopTick();
         break;
 
     default:
         break;
     }
 
-    display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
-
-    // display_task_->getErrorHandlingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+    motor_notifier.loopTick();
 
     EntityStateUpdate entity_state_update_to_send;
 
