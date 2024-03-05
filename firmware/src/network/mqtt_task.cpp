@@ -24,20 +24,9 @@ void MqttTask::handleCommand(MqttCommand command)
 {
     switch (command.type)
     {
-    case RequestConnect:
-        ESP_LOGD("mqtt", "RequestConnect");
+    case RequestSetupConnect:
         this->setupAndConnectNewCredentials(command.body.mqtt_config);
         break;
-    // case RequestAP:
-    //     this->startWiFiAP();
-    //     this->startWebServer();
-    //     break;
-    // case RequestSTA:
-    //     if (this->startWiFiSTA(command.body.wifi_sta_config))
-    //     {
-    //         this->startWebServer();
-    //     }
-    //     break;
     default:
         break;
     }
@@ -48,10 +37,6 @@ void MqttTask::handleEvent(WiFiEvent event)
 
     switch (event.type)
     {
-    // case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
-    //     // setup(event.body.mqtt_connecting);
-    //     this->setupAndConnectNewCredentials(event.body.mqtt_connecting);
-    //     break;
     case SK_MQTT_CONNECTED:
         init();
         break;
@@ -206,14 +191,10 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     WiFiEvent mqtt_try_new_credentials;
     mqtt_try_new_credentials.type = SK_MQTT_TRY_NEW_CREDENTIALS;
-    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
-    mqtt_try_new_credentials.body.mqtt_connecting.port = config.port;
-    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.user, "%s", config.user);
-    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.password, "%s", config.password);
-
+    mqtt_try_new_credentials.body.mqtt_connecting = config;
     publishEvent(mqtt_try_new_credentials);
 
-    wifi_client.setTimeout(10);
+    wifi_client.setTimeout(5);
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
@@ -221,31 +202,29 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
-    uint8_t max_tries = 3;
+    uint8_t max_tries = 6;
+    uint8_t try_count = 0;
     while (1)
     {
-        if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
-        {
-            WiFiEvent mqtt_connected;
-            mqtt_try_new_credentials.type = SK_MQTT_CONNECTED;
-            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
-            mqtt_try_new_credentials.body.mqtt_connecting.port = config.port;
-            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.user, "%s", config.user);
-            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.password, "%s", config.password);
-            publishEvent(mqtt_connected);
-
-            config_ = config;
-            is_config_set = true;
-            return true;
-        }
-        else if (retry_count > max_tries)
+        if (try_count >= max_tries)
         {
             WiFiEvent mqtt_try_new_credentials_failed;
             mqtt_try_new_credentials_failed.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
             publishEvent(mqtt_try_new_credentials_failed);
             return false;
         }
-        retry_count++;
+        else if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
+        {
+            WiFiEvent mqtt_connected;
+            mqtt_try_new_credentials.type = SK_MQTT_CONNECTED;
+            mqtt_try_new_credentials.body.mqtt_connecting = config;
+            publishEvent(mqtt_connected);
+
+            config_ = config;
+            is_config_set = true;
+            return true;
+        }
+        try_count++;
     }
 
     return false;

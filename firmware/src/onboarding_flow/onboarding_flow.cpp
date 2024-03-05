@@ -115,7 +115,6 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
 // TODO: rename to generic event
 void OnboardingFlow::handleEvent(WiFiEvent event)
 {
-    ESP_LOGD("ONBOARDING_FLOW", "handleEvent");
     latest_event = event;
     switch (event.type)
     {

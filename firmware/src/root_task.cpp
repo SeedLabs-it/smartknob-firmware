@@ -282,13 +282,8 @@ void RootTask::run()
             motor_task_.runCalibration();
         }
 #if SK_WIFI
-
-        // ESP_LOGD("ROOT_TASK", "CHECKING STATUS ROOT_TASK!!!!!!!!!!!!!!!!!");
-
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            ESP_LOGD("mqtt", "Received event");
-            ESP_LOGD("mqtt", "Event type: %d", wifi_event.type);
             if (configuration_->getOSConfiguration()->mode == Onboarding)
             {
                 display_task_->getOnboardingFlow()->handleEvent(wifi_event);
@@ -325,7 +320,6 @@ void RootTask::run()
                 case WIFI_ERROR:
                     break;
                 case MQTT_ERROR:
-                    // mqtt_task_->handleEvent(wifi_event); // this or a new function in mqtt_task?
                     break;
                 default:
                     break;
@@ -341,15 +335,6 @@ void RootTask::run()
                     mqtt_task_->setup(mqtt_config);
                 }
                 break;
-            // case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
-            // mqtt_task_->handleEvent(wifi_event);
-            // MQTTConfiguration mqtt_config;
-            // strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
-            // mqtt_config.port = wifi_event.body.mqtt_connecting.port;
-            // strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
-            // strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
-            // configuration_->saveMQTTConfiguration(mqtt_config);
-            // break;
             case SK_MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
@@ -363,18 +348,16 @@ void RootTask::run()
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 }
                 break;
+            case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
+                mqtt_task_->getNotifier()->requestSetupAndConnect(wifi_event.body.mqtt_connecting);
+                break;
+            case SK_MQTT_CONNECTED:
+                ESP_LOGD("root_task", "MQTT_CONNECTED");
+                configuration_->saveMQTTConfiguration(wifi_event.body.mqtt_connecting);
+                break;
 
             default:
-                ESP_LOGD("mqtt", "SEND TO MQTT TASK");
-                // if (wifi_event.type == SK_MQTT_NEW_CREDENTIALS_RECIEVED)
-                //     break;
-                // mqtt_task_->handleEvent(wifi_event);
-                if (wifi_event.type == SK_MQTT_NEW_CREDENTIALS_RECIEVED)
-                    mqtt_task_->getNotifier()->requestConnect(wifi_event.body.mqtt_connecting);
-                else
-                    mqtt_task_->handleEvent(wifi_event);
-                // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
-                // display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
+                mqtt_task_->handleEvent(wifi_event);
                 break;
             }
 #endif

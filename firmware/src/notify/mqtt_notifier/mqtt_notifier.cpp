@@ -11,46 +11,46 @@ void MqttNotifier::setCallback(MqttNotifierCallback callback)
     this->callback = callback;
 }
 
-void MqttNotifier::requestConnect(MQTTConfiguration mqtt_config)
+void MqttNotifier::requestSetupAndConnect(MQTTConfiguration mqtt_config)
 {
     MqttCommand command;
-    command.type = RequestConnect;
+    command.type = RequestSetupConnect;
     command.body.mqtt_config = mqtt_config;
 
     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
 }
 
-void MqttNotifier::requestDisconnect()
-{
-    MqttCommand command;
-    command.type = RequestDisconnect;
+// void MqttNotifier::requestDisconnect()
+// {
+//     MqttCommand command;
+//     command.type = RequestDisconnect;
 
-    xQueueSendToBack(mqtt_notifications_queue, &command, 0);
-}
+//     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
+// }
 
-void MqttNotifier::requestReconnect()
-{
-    MqttCommand command;
-    command.type = RequestReconnect;
+// void MqttNotifier::requestReconnect()
+// {
+//     MqttCommand command;
+//     command.type = RequestReconnect;
 
-    xQueueSendToBack(mqtt_notifications_queue, &command, 0);
-}
+//     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
+// }
 
-void MqttNotifier::requestInit()
-{
-    MqttCommand command;
-    command.type = RequestInit;
+// void MqttNotifier::requestInit()
+// {
+//     MqttCommand command;
+//     command.type = RequestInit;
 
-    xQueueSendToBack(mqtt_notifications_queue, &command, 0);
-}
+//     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
+// }
 
-void MqttNotifier::requestReset()
-{
-    MqttCommand command;
-    command.type = RequestReset;
+// void MqttNotifier::requestReset()
+// {
+//     MqttCommand command;
+//     command.type = RequestReset;
 
-    xQueueSendToBack(mqtt_notifications_queue, &command, 0);
-}
+//     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
+// }
 
 void MqttNotifier::loopTick()
 {
