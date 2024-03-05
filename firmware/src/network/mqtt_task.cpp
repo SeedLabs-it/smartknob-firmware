@@ -2,12 +2,16 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 3, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
     entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
+
+    mqtt_notifier = MqttNotifier();
+    mqtt_notifier.setCallback([this](MqttCommand command)
+                              { this->handleCommand(command); });
 }
 
 MqttTask::~MqttTask()
@@ -16,21 +20,38 @@ MqttTask::~MqttTask()
     vSemaphoreDelete(mutex_app_sync_);
 }
 
+void MqttTask::handleCommand(MqttCommand command)
+{
+    switch (command.type)
+    {
+    case RequestConnect:
+        ESP_LOGD("mqtt", "RequestConnect");
+        this->setupAndConnectNewCredentials(command.body.mqtt_config);
+        break;
+    // case RequestAP:
+    //     this->startWiFiAP();
+    //     this->startWebServer();
+    //     break;
+    // case RequestSTA:
+    //     if (this->startWiFiSTA(command.body.wifi_sta_config))
+    //     {
+    //         this->startWebServer();
+    //     }
+    //     break;
+    default:
+        break;
+    }
+}
+
 void MqttTask::handleEvent(WiFiEvent event)
 {
 
     switch (event.type)
     {
-    case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
-        ESP_LOGD("mqtt", "%s %d %s %s",
-                 event.body.mqtt_connecting.host,
-                 event.body.mqtt_connecting.port,
-                 event.body.mqtt_connecting.user,
-                 event.body.mqtt_connecting.password);
-
-        // setup(event.body.mqtt_connecting);
-        setupAndConnectNewCredentials(event.body.mqtt_connecting);
-        break;
+    // case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
+    //     // setup(event.body.mqtt_connecting);
+    //     this->setupAndConnectNewCredentials(event.body.mqtt_connecting);
+    //     break;
     case SK_MQTT_CONNECTED:
         init();
         break;
@@ -62,7 +83,6 @@ void MqttTask::run()
 
     while (1)
     {
-
         if (is_config_set && retry_count < 3)
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected())
@@ -144,6 +164,7 @@ void MqttTask::run()
             }
         }
 
+        mqtt_notifier.loopTick();
         delay(5);
     }
 }
@@ -182,6 +203,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     {
         reset();
     }
+
     WiFiEvent mqtt_try_new_credentials;
     mqtt_try_new_credentials.type = SK_MQTT_TRY_NEW_CREDENTIALS;
     sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
@@ -200,14 +222,10 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
                             { this->callback(topic, payload, length); });
 
     uint8_t max_tries = 3;
-
-    while (!mqtt_client.connected())
+    while (1)
     {
-        ESP_LOGD("mqtt", "Trying to connect to MQTT with new credentials");
-        delay(10000);
         if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
         {
-            ESP_LOGD("mqtt", "MQTT client connected");
             WiFiEvent mqtt_connected;
             mqtt_try_new_credentials.type = SK_MQTT_CONNECTED;
             sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
@@ -220,15 +238,13 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
             is_config_set = true;
             return true;
         }
-        else if (retry_count >= max_tries)
+        else if (retry_count > max_tries)
         {
-            ESP_LOGD("mqtt", "MQTT connection failed");
             WiFiEvent mqtt_try_new_credentials_failed;
             mqtt_try_new_credentials_failed.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
             publishEvent(mqtt_try_new_credentials_failed);
             return false;
         }
-        ESP_LOGD("mqtt", "MQTT connection failed, retrying in 10s");
         retry_count++;
     }
 
@@ -390,6 +406,11 @@ void MqttTask::enqueueEntityStateToSend(EntityStateUpdate state)
 void MqttTask::setLogger(Logger *logger)
 {
     logger_ = logger;
+}
+
+MqttNotifier *MqttTask::getNotifier()
+{
+    return &mqtt_notifier;
 }
 
 void MqttTask::log(const char *msg)

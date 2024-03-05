@@ -83,7 +83,6 @@ void DisplayTask::run()
 
     while (1)
     {
-
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);

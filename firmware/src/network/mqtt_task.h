@@ -12,7 +12,7 @@
 #include "cJSON.h"
 #include "../app_config.h"
 #include "../events/events.h"
-
+#include "notify/mqtt_notifier/mqtt_notifier.h"
 class MqttTask : public Task<MqttTask>
 {
     friend class Task<MqttTask>; // Allow base Task to invoke protected run()
@@ -29,15 +29,18 @@ public:
     void unlock();
     cJSON *getApps();
     void handleEvent(WiFiEvent event);
+    void handleCommand(MqttCommand command);
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
     bool setup(MQTTConfiguration config);
-    bool setupAndConnectNewCredentials(MQTTConfiguration config);
+
     bool reset();
     bool connect();
     bool disconnect();
     bool reconnect();
     bool init();
+
+    MqttNotifier *getNotifier();
 
 protected:
     void run();
@@ -59,6 +62,8 @@ private:
     Logger *logger_;
     cJSON *apps;
 
+    MqttNotifier mqtt_notifier;
+
     void log(const char *msg);
 
     void callback(char *topic, byte *payload, unsigned int length);
@@ -66,6 +71,8 @@ private:
     void publishAppSync(const cJSON *state);
 
     void publishEvent(WiFiEvent event);
+
+    bool setupAndConnectNewCredentials(MQTTConfiguration config);
 
     void lock();
 };

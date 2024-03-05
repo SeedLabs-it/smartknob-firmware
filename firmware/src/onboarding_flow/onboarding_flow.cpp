@@ -115,6 +115,7 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
 // TODO: rename to generic event
 void OnboardingFlow::handleEvent(WiFiEvent event)
 {
+    ESP_LOGD("ONBOARDING_FLOW", "handleEvent");
     latest_event = event;
     switch (event.type)
     {
@@ -465,7 +466,7 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     spr_->drawString(wifi_sta_ssid, center_horizontal, center_vertical + screen_name_label_h, 1);
 
     // sprintf(buf_, "%ds", sta_connecting_tick);
-    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
+    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 30 = 10*3 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);
 
@@ -484,7 +485,7 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
 
-    if (new_wifi_credentials_failed)
+    if (new_mqtt_credentials_failed)
     {
         spr_->setFreeFont(&NDS125_small);
         spr_->setTextColor(default_text_color);
@@ -519,7 +520,7 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
     spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->drawString(mqtt_server, center_horizontal, center_vertical + screen_name_label_h, 1);
 
-    sprintf(buf_, "%ds", mqtt_connecting_tick);
+    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 30=10*3 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);
 

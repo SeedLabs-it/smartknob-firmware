@@ -19,7 +19,7 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("RootTask", 1024 * 10, 1, task_core),
+    SensorsTask *sensors_task) : Task("RootTask", 1024 * 12, ESP_TASK_MAIN_PRIO, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
@@ -283,13 +283,16 @@ void RootTask::run()
         }
 #if SK_WIFI
 
+        // ESP_LOGD("ROOT_TASK", "CHECKING STATUS ROOT_TASK!!!!!!!!!!!!!!!!!");
+
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            ESP_LOGD("mqtt", "Publishing event");
+            ESP_LOGD("mqtt", "Received event");
             ESP_LOGD("mqtt", "Event type: %d", wifi_event.type);
-            // if (configuration_->getOSConfiguration()->mode == Onboarding)
-            // {
-            // }
+            if (configuration_->getOSConfiguration()->mode == Onboarding)
+            {
+                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+            }
 
             if (wifi_event.type == SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS)
             {
@@ -362,8 +365,14 @@ void RootTask::run()
                 break;
 
             default:
-                mqtt_task_->handleEvent(wifi_event);
-                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                ESP_LOGD("mqtt", "SEND TO MQTT TASK");
+                // if (wifi_event.type == SK_MQTT_NEW_CREDENTIALS_RECIEVED)
+                //     break;
+                // mqtt_task_->handleEvent(wifi_event);
+                if (wifi_event.type == SK_MQTT_NEW_CREDENTIALS_RECIEVED)
+                    mqtt_task_->getNotifier()->requestConnect(wifi_event.body.mqtt_connecting);
+                else
+                    mqtt_task_->handleEvent(wifi_event);
                 // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
                 // display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 break;
