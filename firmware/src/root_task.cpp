@@ -285,10 +285,11 @@ void RootTask::run()
 
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            if (configuration_->getOSConfiguration()->mode == Onboarding)
-            {
-                display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
-            }
+            ESP_LOGD("mqtt", "Publishing event");
+            ESP_LOGD("mqtt", "Event type: %d", wifi_event.type);
+            // if (configuration_->getOSConfiguration()->mode == Onboarding)
+            // {
+            // }
 
             if (wifi_event.type == SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS)
             {
@@ -301,7 +302,6 @@ void RootTask::run()
             // TODO: handle wifi credentials here
             // TODO: handle mqtt credentials here
 #if SK_MQTT
-
             switch (wifi_event.type)
             {
             case SK_RESET_ERROR:
@@ -322,7 +322,7 @@ void RootTask::run()
                 case WIFI_ERROR:
                     break;
                 case MQTT_ERROR:
-                    mqtt_task_->handleEvent(wifi_event); // this or a new function in mqtt_task?
+                    // mqtt_task_->handleEvent(wifi_event); // this or a new function in mqtt_task?
                     break;
                 default:
                     break;
@@ -338,15 +338,15 @@ void RootTask::run()
                     mqtt_task_->setup(mqtt_config);
                 }
                 break;
-            case SK_MQTT_CREDENTIALS_RECIEVED:
-                MQTTConfiguration mqtt_config;
-                strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
-                mqtt_config.port = wifi_event.body.mqtt_connecting.port;
-                strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
-                strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
-                configuration_->saveMQTTConfiguration(mqtt_config);
-                mqtt_task_->handleEvent(wifi_event);
-                break;
+            // case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
+            // mqtt_task_->handleEvent(wifi_event);
+            // MQTTConfiguration mqtt_config;
+            // strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
+            // mqtt_config.port = wifi_event.body.mqtt_connecting.port;
+            // strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
+            // strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
+            // configuration_->saveMQTTConfiguration(mqtt_config);
+            // break;
             case SK_MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
@@ -362,7 +362,10 @@ void RootTask::run()
                 break;
 
             default:
-                // mqtt_task_->handleEvent(wifi_event);
+                mqtt_task_->handleEvent(wifi_event);
+                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                // display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 break;
             }
 #endif

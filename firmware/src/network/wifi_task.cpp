@@ -241,13 +241,13 @@ void WifiTask::webHandlerMQTTCredentials()
     String mqtt_password = server_->arg("mqtt_password");
 
     WiFiEvent event;
-    event.type = SK_MQTT_CREDENTIALS_RECIEVED;
+    event.type = SK_MQTT_NEW_CREDENTIALS_RECIEVED;
     sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
 
-    ESP_LOGD("wifi", "%s %d %s %s",
+    ESP_LOGD("mqtt", "%s %d %s %s",
              event.body.mqtt_connecting.host,
              event.body.mqtt_connecting.port,
              event.body.mqtt_connecting.user,

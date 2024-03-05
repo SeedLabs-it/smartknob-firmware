@@ -42,7 +42,7 @@ public:
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
     void handleNavigationEvent(NavigationEvent event);
-    void handleWiFiEvent(WiFiEvent event);
+    void handleEvent(WiFiEvent event);
     void setMotorUpdater(MotorNotifier *motor_notifier);
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
@@ -83,7 +83,8 @@ private:
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
 
     bool is_onboarding_finished = false;
-    bool new_credentials_failed = false;
+    bool new_wifi_credentials_failed = false;
+    bool new_mqtt_credentials_failed = false;
 
     // wifi AP variables
     bool is_wifi_ap_started = false;

@@ -21,14 +21,15 @@ void MqttTask::handleEvent(WiFiEvent event)
 
     switch (event.type)
     {
-    case SK_MQTT_CREDENTIALS_RECIEVED:
+    case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
         ESP_LOGD("mqtt", "%s %d %s %s",
                  event.body.mqtt_connecting.host,
                  event.body.mqtt_connecting.port,
                  event.body.mqtt_connecting.user,
                  event.body.mqtt_connecting.password);
 
-        setup(event.body.mqtt_connecting);
+        // setup(event.body.mqtt_connecting);
+        setupAndConnectNewCredentials(event.body.mqtt_connecting);
         break;
     case SK_MQTT_CONNECTED:
         init();
@@ -173,6 +174,75 @@ bool MqttTask::setup(MQTTConfiguration config)
     publishEvent(event);
     is_config_set = true;
     return is_config_set;
+}
+
+bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
+{
+    if (is_config_set)
+    {
+        reset();
+    }
+    WiFiEvent mqtt_try_new_credentials;
+    mqtt_try_new_credentials.type = SK_MQTT_TRY_NEW_CREDENTIALS;
+    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
+    mqtt_try_new_credentials.body.mqtt_connecting.port = config.port;
+    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.user, "%s", config.user);
+    sprintf(mqtt_try_new_credentials.body.mqtt_connecting.password, "%s", config.password);
+
+    ESP_LOGD("mqtt", "!!!! %d %s %d %s %s !!!!",
+             mqtt_try_new_credentials.type,
+             mqtt_try_new_credentials.body.mqtt_connecting.host,
+             mqtt_try_new_credentials.body.mqtt_connecting.port,
+             mqtt_try_new_credentials.body.mqtt_connecting.user,
+             mqtt_try_new_credentials.body.mqtt_connecting.password);
+
+    publishEvent(mqtt_try_new_credentials);
+
+    wifi_client.setTimeout(10);
+
+    mqtt_client.setClient(wifi_client);
+    mqtt_client.setServer(config.host, config.port);
+    mqtt_client.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
+                            { this->callback(topic, payload, length); });
+
+    uint8_t max_tries = 3;
+
+    // while (!mqtt_client.connected())
+    while (true)
+
+    {
+        ESP_LOGD("mqtt", "Trying to connect to MQTT with new credentials");
+        delay(10000);
+        // if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
+        if (false)
+        {
+            ESP_LOGD("mqtt", "MQTT client connected");
+            WiFiEvent mqtt_connected;
+            mqtt_try_new_credentials.type = SK_MQTT_CONNECTED;
+            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.host, "%s", config.host);
+            mqtt_try_new_credentials.body.mqtt_connecting.port = config.port;
+            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.user, "%s", config.user);
+            sprintf(mqtt_try_new_credentials.body.mqtt_connecting.password, "%s", config.password);
+            publishEvent(mqtt_connected);
+
+            config_ = config;
+            is_config_set = true;
+            return true;
+        }
+        else if (retry_count >= max_tries)
+        {
+            ESP_LOGD("mqtt", "MQTT connection failed");
+            WiFiEvent mqtt_try_new_credentials_failed;
+            mqtt_try_new_credentials_failed.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
+            publishEvent(mqtt_try_new_credentials_failed);
+            return false;
+        }
+        ESP_LOGD("mqtt", "MQTT connection failed, retrying in 10s");
+        retry_count++;
+    }
+
+    return false;
 }
 
 bool MqttTask::reset()
@@ -369,6 +439,7 @@ void MqttTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
 
 void MqttTask::publishEvent(WiFiEvent event)
 {
+    event.sent_at = millis();
     xQueueSendToBack(shared_events_queue, &event, 0);
 }
 

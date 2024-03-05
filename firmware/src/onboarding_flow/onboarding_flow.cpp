@@ -113,7 +113,7 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
 }
 
 // TODO: rename to generic event
-void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
+void OnboardingFlow::handleEvent(WiFiEvent event)
 {
     latest_event = event;
     switch (event.type)
@@ -155,16 +155,25 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
         break;
     case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
-        new_credentials_failed = true;
+        new_wifi_credentials_failed = true;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
         break;
     case SK_WEB_CLIENT_MQTT:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
-    case SK_MQTT_CONNECTING:
-        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
+    case SK_MQTT_TRY_NEW_CREDENTIALS:
+        ESP_LOGD("OnboardingFlow", "SK_MQTT_TRY_NEW_CREDENTIALS");
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
         break;
+    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+        new_mqtt_credentials_failed = true;
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
+        break;
+    // case SK_MQTT_CONNECTING:
+    //     current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
+    //     sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+    //     break;
     case SK_MQTT_CONNECTED:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
@@ -420,13 +429,14 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
 
-    if (new_credentials_failed)
+    if (new_wifi_credentials_failed)
     {
         spr_->setFreeFont(&NDS125_small);
         spr_->setTextColor(default_text_color);
 
-        spr_->drawString("Connection failed with provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 2, 1);
-        spr_->drawString("Please try again.", center_horizontal, center_vertical + screen_name_label_h * 1.6, 1);
+        spr_->drawString("Connection failed with", center_horizontal, center_vertical - screen_name_label_h * 3.7, 1);
+        spr_->drawString("provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 3.2, 1);
+        spr_->drawString("Please try again.", center_horizontal, center_vertical - screen_name_label_h * 2.5, 1);
     }
 
     spr_->setFreeFont(&NDS1210pt7b);
@@ -473,6 +483,17 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
+
+    if (new_wifi_credentials_failed)
+    {
+        spr_->setFreeFont(&NDS125_small);
+        spr_->setTextColor(default_text_color);
+
+        spr_->drawString("Connection failed with", center_horizontal, center_vertical - screen_name_label_h * 3.7, 1);
+        spr_->drawString("provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 3.2, 1);
+        spr_->drawString("Please try again.", center_horizontal, center_vertical - screen_name_label_h * 2.5, 1);
+    }
+
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 

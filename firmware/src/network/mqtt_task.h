@@ -32,6 +32,7 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
     bool setup(MQTTConfiguration config);
+    bool setupAndConnectNewCredentials(MQTTConfiguration config);
     bool reset();
     bool connect();
     bool disconnect();
