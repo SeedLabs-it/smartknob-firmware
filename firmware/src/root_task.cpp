@@ -608,6 +608,7 @@ void RootTask::updateHardware(AppState app_state)
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);
+        // ESP_LOGD("LED", "------------------- : %d, %d, %d, %f", effect_settings.effect_id, brightness, app_state.screen_state.MIN_LCD_BRIGHTNESS, latest_sensors_state_.illumination.lux_adj);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);

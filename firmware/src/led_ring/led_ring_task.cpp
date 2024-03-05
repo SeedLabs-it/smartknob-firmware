@@ -5,8 +5,7 @@
 CRGB leds[NUM_LEDS];
 uint8_t ledsBrightness[NUM_LEDS];
 
-uint8_t FULL_BRIGHTNESS = 255;
-uint8_t HALF_BRIGHTNESS = 128;
+uint8_t FULL_BRIGHTNESS = 127;
 
 #include "led_ring_task.h"
 #include "../semaphore_guard.h"
@@ -99,21 +98,33 @@ void LedRingTask::renderTrailEffect()
 void LedRingTask::renderEffectLightHouse()
 {
     const uint32_t frame_ms = 100;
-    ledsBrightness[0] = 0;
-    if (millis() - effect_statuses[0].last_updated_ms > frame_ms)
+
+    bool exitCriteriaMet = false;
+    while (exitCriteriaMet == false)
     {
-
-        leds[0].setRGB(0, 255, 255);
-
+        exitCriteriaMet = true;
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             if (i == 0)
             {
-                continue;
+                if (ledsBrightness[0] < FULL_BRIGHTNESS)
+                {
+                    leds[0].setRGB(0, ledsBrightness[0], ledsBrightness[0]);
+                    ledsBrightness[0]++;
+                    exitCriteriaMet = false;
+                }
             }
-            leds[i].setRGB(0, 0, 0);
+            else
+            {
+                if (ledsBrightness[i] > 0)
+                {
+                    leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
+                    ledsBrightness[i]--;
+                    exitCriteriaMet = false;
+                }
+            }
         }
-        effect_statuses[0].last_updated_ms = millis();
+
         FastLED.show();
     }
 }
@@ -129,7 +140,7 @@ void LedRingTask::renderEffectStaticColor()
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             leds[i].setColorCode(effect_settings.effect_main_color);
-            ledsBrightness[i] = HALF_BRIGHTNESS;
+            ledsBrightness[i] = FULL_BRIGHTNESS;
         }
 
         effect_statuses[1].last_updated_ms = millis();
@@ -139,72 +150,67 @@ void LedRingTask::renderEffectStaticColor()
 
 void LedRingTask::renderFadeInEffect()
 {
+    uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
+    // Extract RGB components from colorCode
+    uint8_t r = (colorCode >> 16) & 0xFF;
+    uint8_t g = (colorCode >> 8) & 0xFF;
+    uint8_t b = colorCode & 0xFF;
 
-    // Initialize brightness at the lowest level for fade-in effect
-    uint8_t brightness = 0;
-
-    while (ledsBrightness[0] < HALF_BRIGHTNESS) // Increase brightness until it reaches full level
+    bool exitCriteriaMet = false;    // this is true when all the leds are at full brightness.
+    while (exitCriteriaMet == false) // Increase brightness until it reaches full level
     {
-        uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
-        // Extract RGB components from colorCode
-        uint8_t r = (colorCode >> 16) & 0xFF;
-        uint8_t g = (colorCode >> 8) & 0xFF;
-        uint8_t b = colorCode & 0xFF;
-
+        exitCriteriaMet = true;
         // Scale RGB values by current brightness level to achieve the fade-in effect
-        r = (r * brightness) / HALF_BRIGHTNESS;
-        g = (g * brightness) / HALF_BRIGHTNESS;
-        b = (b * brightness) / HALF_BRIGHTNESS;
-
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             // Set the color of each LED in the array with the current brightness level
-            leds[i].setRGB(r, g, b);
-            ledsBrightness[i] = brightness;
+            if (ledsBrightness[i] < FULL_BRIGHTNESS)
+            {
+                exitCriteriaMet = false;
+                leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                               (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                               (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
+                ledsBrightness[i]++;
+            }
         }
 
         // Show the LEDs with the updated brightness level
         FastLED.show();
 
         // Increase brightness for the next frame, until it reaches 255 (full brightness)
-        brightness++;
-        ESP_LOGI("LED", "Received Fade In Effect request %d", brightness);
-
-        vTaskDelay(pdMS_TO_TICKS(15)); // Wait a bit before increasing the brightness again
     }
 }
 void LedRingTask::renderFadeOutEffect()
 {
 
-    uint8_t brightness = HALF_BRIGHTNESS; // Start with full brightness
-    while (ledsBrightness[0] > 0)         // avoid to loop through the effect if you are already at level.
+    uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
+    // Extract RGB components from colorCode
+    uint8_t r = (colorCode >> 16) & 0xFF;
+    uint8_t g = (colorCode >> 8) & 0xFF;
+    uint8_t b = colorCode & 0xFF;
+
+    bool exitCriteriaMet = false;    // This becomes true when all the LEDs are at minimum brightness.
+    while (exitCriteriaMet == false) // Decrease brightness until it reaches zero level
     {
-        uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
-        // Extract RGB components from colorCode
-        uint8_t r = (colorCode >> 16) & 0xFF;
-        uint8_t g = (colorCode >> 8) & 0xFF;
-        uint8_t b = colorCode & 0xFF;
-
-        // Scale RGB values by current brightness level
-        r = (r * brightness) / HALF_BRIGHTNESS;
-        g = (g * brightness) / HALF_BRIGHTNESS;
-        b = (b * brightness) / HALF_BRIGHTNESS;
-
+        exitCriteriaMet = true;
+        // Scale RGB values by current brightness level to achieve the fade-out effect
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
-            // Assuming your LEDs array supports setting colors via RGB values directly
-            leds[i].setRGB(r, g, b);
-            ledsBrightness[i] = brightness;
+            // Decrease the color brightness of each LED in the array towards zero
+            if (ledsBrightness[i] > 0)
+            {
+                exitCriteriaMet = false;
+                ledsBrightness[i]--;
+                leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                               (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                               (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
+            }
         }
 
-        // Show the LEDs
+        // Show the LEDs with the updated brightness level
         FastLED.show();
 
-        // Decrease brightness for the next frame, stop at 0 to avoid underflow
-        if (brightness > 0)
-        {
-            brightness--;
-        }
+        // The loop continues until all LEDs have been dimmed to zero brightness
     }
 }
 
