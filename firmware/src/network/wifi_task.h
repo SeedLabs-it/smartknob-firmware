@@ -34,12 +34,22 @@ public:
     QueueHandle_t getWiFiEventsQueue();
     void handleCommand(WiFiCommand command);
 
+    void mqttConnected(bool connected);
+    void retryMqtt(bool retry);
+
+    void resetRetryCount();
+
 protected:
     void run();
 
 private:
     WiFiConfiguration config_;
     bool is_config_set;
+
+    bool mqtt_connected;
+    bool retry_mqtt;
+
+    uint8_t retry_count = 0;
 
     std::vector<QueueHandle_t> state_listeners_;
 

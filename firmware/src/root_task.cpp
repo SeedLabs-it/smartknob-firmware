@@ -320,16 +320,8 @@ void RootTask::run()
                 default:
                     break;
                 }
-
-                switch (wifi_event.body.error.type)
-                {
-                case WIFI_ERROR:
-                    break;
-                case MQTT_ERROR:
-                    break;
-                default:
-                    break;
-                }
+                wifi_task_->resetRetryCount();
+                mqtt_task_->handleEvent(wifi_event);
                 display_task_->resetError();
                 break;
             case SK_WIFI_STA_CONNECTED:
@@ -346,7 +338,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
+                if (wifi_event.sent_at > task_started_at + 1000) // give stuff 3000ms to connect at start before displaying errors.
                 {
                     display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -357,6 +349,12 @@ void RootTask::run()
                 break;
             case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
                 configuration_->saveMQTTConfiguration(wifi_event.body.mqtt_connecting);
+                wifi_task_->retryMqtt(true);     //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                wifi_task_->mqttConnected(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                break;
+            case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+                wifi_task_->retryMqtt(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                // wifi_task_->getNotifier()->requestRetryMQTT(); //! FOR SOME REASON DIDNT WORK WITH NOTIFIER HMM
                 break;
 
             default:
@@ -813,6 +811,12 @@ void RootTask::logEnumName(EventType type)
         break;
     case SK_RESET_ERROR:
         ESP_LOGD("EVENT TYPE ENUM", "SK_RESET_ERROR");
+        break;
+    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_TRY_NEW_CREDENTIALS_FAILED");
+        break;
+    case SK_MQTT_TRY_NEW_CREDENTIALS:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_TRY_NEW_CREDENTIALS");
         break;
     default:
         ESP_LOGD("EVENT TYPE ENUM", "UNKNOWN, %d", type);

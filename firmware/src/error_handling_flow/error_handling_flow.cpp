@@ -12,16 +12,17 @@ ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr)
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
     motor_notifier->requestUpdate(blocked_motor_config);
-    latest_event = event;
     switch (event.type)
     {
     case SK_MQTT_CONNECTION_FAILED:
     case SK_MQTT_RETRY_LIMIT_REACHED:
         error_type = MQTT_ERROR;
+        latest_event = event;
         break;
     case SK_WIFI_STA_CONNECTION_FAILED:
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         error_type = WIFI_ERROR;
+        latest_event = event;
         break;
     default:
         break;
@@ -34,6 +35,14 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
     {
     case NAVIGATION_EVENT_PRESS_SHORT:
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
+        {
+            WiFiEvent reset_error;
+            reset_error.type = SK_RESET_ERROR;
+            reset_error.body.error.type = error_type;
+            error_type = NO_ERROR;
+            publishEvent(reset_error);
+        }
+        else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
             WiFiEvent reset_error;
             reset_error.type = SK_RESET_ERROR;

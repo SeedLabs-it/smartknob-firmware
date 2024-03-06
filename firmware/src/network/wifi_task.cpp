@@ -28,6 +28,8 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 6, 1, task_cor
     wifi_notifier = WiFiNotifier();
     wifi_notifier.setCallback([this](WiFiCommand command)
                               { this->handleCommand(command); });
+
+    WiFi.setAutoReconnect(true);
 }
 
 WifiTask::~WifiTask()
@@ -55,9 +57,18 @@ void WifiTask::handleCommand(WiFiCommand command)
             this->startWebServer();
         }
         break;
+    case RequestRetryMQTT:
+        ESP_LOGD(WIFI_TAG, "Retry MQTT connection");
+        retry_mqtt = true;
+        break;
     default:
         break;
     }
+}
+
+void WifiTask::resetRetryCount()
+{
+    retry_count = 0;
 }
 
 void OnWiFiEventGlobal(WiFiEvent_t event)
@@ -126,49 +137,50 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     publishWiFiEvent(wifi_sta_connecting_event);
 
     WiFi.mode(WIFI_MODE_APSTA);
-    WiFi.setAutoReconnect(true);
     WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
-    uint8_t max_tries = 6;
+    uint8_t max_tries = 3;
     uint8_t retry_count = 0;
 
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        if (WiFi.begin(wifi_config.ssid, wifi_config.passphrase) == WL_CONNECTED)
-        {
-            break;
-        }
-        else if (retry_count >= max_tries)
-        {
-            WiFiEvent wifi_event;
-            wifi_event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
-            publishWiFiEvent(wifi_event);
-            return false;
-        }
+    // while (WiFi.status() != WL_CONNECTED)
+    // {
+    //     if (WiFi.begin(wifi_config.ssid, wifi_config.passphrase) == WL_CONNECTED)
+    //     {
+    //         break;
+    //     }
+    //     else if (retry_count >= max_tries)
+    //     {
+    //         WiFiEvent wifi_event;
+    //         wifi_event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
+    //         publishWiFiEvent(wifi_event);
+    //         return false;
+    //     }
 
-        delay(5000);
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            WiFiEvent wifi_event;
-            wifi_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-            wifi_event.body.error.body.wifi_error.retry_count = retry_count + 1;
-            publishWiFiEvent(wifi_event);
-        }
-        retry_count++;
-    }
+    //     delay(10000);
+    //     if (WiFi.status() != WL_CONNECTED)
+    //     {
+    //         WiFiEvent wifi_event;
+    //         wifi_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+    //         wifi_event.body.error.body.wifi_error.retry_count = retry_count + 1;
+    //         publishWiFiEvent(wifi_event);
+    //     }
+    //     retry_count++;
+    // }
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        WiFiEvent wifi_sta_connection_failed_event;
-        wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-        publishWiFiEvent(wifi_sta_connecting_event);
-        return false;
-    }
+    // if (WiFi.status() != WL_CONNECTED)
+    // {
+    //     WiFiEvent wifi_sta_connection_failed_event;
+    //     wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+    //     publishWiFiEvent(wifi_sta_connecting_event);
+    //     return false;
+    // }
 
     WiFiEvent wifi_sta_connected;
     wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+
+    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
     config_ = wifi_config;
     is_config_set = true;
@@ -297,6 +309,7 @@ void WifiTask::webHandlerWiFiCredentials()
 
 void WifiTask::webHandlerMQTTCredentials()
 {
+    retry_mqtt = false;
     String mqtt_server = server_->arg("mqtt_server");
     uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
     String mqtt_user = server_->arg("mqtt_user");
@@ -311,7 +324,29 @@ void WifiTask::webHandlerMQTTCredentials()
 
     publishWiFiEvent(event);
 
-    // server_->send(200, "text/html", "MQTT setup complete!");
+    // server_->send(200, "text/html", "MQTT credentials recieved!");
+
+    while (!retry_mqtt)
+    {
+        delay(100);
+    }
+    if (mqtt_connected)
+    {
+        server_->send(200, "text/html", "Setup complete!");
+        return;
+    }
+    server_->sendHeader("Location", "/mqtt");
+    server_->send(302, "text/plain", "Connecting to MQTT with provided credentials failed!");
+}
+
+void WifiTask::mqttConnected(bool connected)
+{
+    mqtt_connected = connected;
+}
+
+void WifiTask::retryMqtt(bool retry)
+{
+    retry_mqtt = retry;
 }
 
 void WifiTask::startWebServer()
@@ -330,15 +365,14 @@ void WifiTask::startWebServer()
 
     server_->on("/submit", [this]()
                 {
-                    if (server_->arg("setup_type") == "wifi")
-                    {
-                    this->webHandlerWiFiCredentials();
-
-                    }
-                    else if (server_->arg("setup_type") == "mqtt")
-                    {
-                    this->webHandlerMQTTCredentials();
-                    } });
+        if (server_->arg("setup_type") == "wifi")
+        {
+            this->webHandlerWiFiCredentials();
+        }
+        else if (server_->arg("setup_type") == "mqtt")
+        {
+            this->webHandlerMQTTCredentials();
+        } });
 
     server_->begin();
 
@@ -351,10 +385,11 @@ void WifiTask::run()
 {
 
     static uint32_t last_wifi_status;
+    static uint32_t last_wifi_status_new;
+    bool has_been_connected = false;
 
     while (1)
     {
-
         if (is_webserver_started) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
         {
             server_->handleClient();
@@ -365,13 +400,66 @@ void WifiTask::run()
         {
             updateWifiState();
             last_wifi_status = millis();
+        }
 
-            if (!WiFi.isConnected())
+        // if (millis() - last_wifi_status_new > 1000 && !WiFi.isConnected() && retry_count < 3)
+        // {
+        //     WiFiEvent event;
+        //     WiFiEventBody wifi_event_body;
+        //     wifi_event_body.error.type = WIFI_ERROR;
+        //     wifi_event_body.error.body.wifi_error.retry_count = retry_count + 1;
+
+        //     event.type = SK_WIFI_STA_CONNECTION_FAILED;
+        //     event.body = wifi_event_body;
+        //     publishWiFiEvent(event);
+        //     last_wifi_status_new = millis();
+        //     retry_count++;
+        // }
+
+        if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
+        {
+            ESP_LOGD(WIFI_TAG, "WiFi status: %d", WiFi.status());
+            ESP_LOGD(WIFI_TAG, "WiFi connected: %d", WiFi.isConnected());
+            ESP_LOGD(WIFI_TAG, "Retry count: %d", retry_count);
+            ESP_LOGD(WIFI_TAG, "last_wifi_status_new: %d", last_wifi_status_new);
+
+            WiFi.begin(config_.ssid, config_.passphrase);
+            while (WiFi.status() != WL_CONNECTED)
             {
-                WiFiEvent wifi_sta_connection_failed_event;
-                wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-                publishWiFiEvent(wifi_sta_connection_failed_event);
+                if (!has_been_connected || retry_count > 0)
+                {
+                    WiFiEvent event;
+                    WiFiEventBody wifi_event_body;
+                    wifi_event_body.error.type = WIFI_ERROR;
+                    wifi_event_body.error.body.wifi_error.retry_count = retry_count + 1;
+
+                    event.type = SK_WIFI_STA_CONNECTION_FAILED;
+                    event.body = wifi_event_body;
+                    event.sent_at = millis();
+                    publishWiFiEvent(event);
+                }
+
+                if (retry_count > 2)
+                {
+                    WiFi.disconnect();
+                    log("Retry limit reached...");
+                    WiFiEvent event;
+                    event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
+                    publishWiFiEvent(event);
+                    break;
+                }
+                delay(10000);
+                retry_count++;
             }
+            if (WiFi.status() == WL_CONNECTED)
+            {
+                has_been_connected = true;
+                retry_count = 0;
+                WiFiEvent reset_error;
+                reset_error.type = SK_RESET_ERROR;
+                publishWiFiEvent(reset_error);
+            }
+            last_wifi_status_new = millis();
         }
 
         wifi_notifier.loopTick();

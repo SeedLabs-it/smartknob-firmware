@@ -10,6 +10,7 @@ enum WiFiCommandType
     RequestAP,
     RequestSTA,
     RequestNewSTA,
+    RequestRetryMQTT,
 };
 
 union WiFiCommandBody
@@ -32,6 +33,7 @@ public:
     void requestAP();
     void requestSTA(WiFiConfiguration wifi_config);
     void requestNewSTA(WiFiConfiguration wifi_config);
+    void requestRetryMQTT();
     void loopTick();
     void setCallback(WiFiNotifierCallback callback);
 

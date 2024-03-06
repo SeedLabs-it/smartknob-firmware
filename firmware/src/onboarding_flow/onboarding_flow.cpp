@@ -169,8 +169,7 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         new_mqtt_credentials_failed = true;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
-    case SK_MQTT_CONNECTED:
-        ESP_LOGD("OnboardingFlow", "SK_MQTT_CONNECTED");
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         is_onboarding_finished = true;
