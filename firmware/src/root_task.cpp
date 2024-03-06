@@ -254,7 +254,7 @@ void RootTask::run()
         break;
     case Demo:
         os_config_notifier_.setOSMode(Onboarding);
-        display_task_->enableOnboarding();
+        // display_task_->enableOnboarding();
         break;
     case Hass:
         display_task_->enableHass();

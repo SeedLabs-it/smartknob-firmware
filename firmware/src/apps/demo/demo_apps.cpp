@@ -12,8 +12,8 @@ void DemoApps::handleNavigationEvent(NavigationEvent event)
         if (active_id == MENU)
         {
             os_config_notifier->setOSMode(Onboarding);
+            return;
         }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
     }
     Apps::handleNavigationEvent(event);
 }
