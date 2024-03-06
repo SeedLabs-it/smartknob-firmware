@@ -49,6 +49,12 @@ void WifiTask::handleCommand(WiFiCommand command)
             this->startWebServer();
         }
         break;
+    case RequestNewSTA:
+        if (this->startNewWiFiSTA(command.body.wifi_sta_config))
+        {
+            this->startWebServer();
+        }
+        break;
     default:
         break;
     }
@@ -112,17 +118,64 @@ void WifiTask::startWiFiAP()
 bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 {
 
-    // WiFiEvent wifi_sta_connecting_event;
+    WiFiEvent wifi_sta_connecting_event;
 
-    // wifi_sta_connecting_event.type = SK_WIFI_STA_CONNECTING;
-    // sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", wifi_config.ssid);
-    // sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", wifi_config.passphrase);
-    // wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
+    wifi_sta_connecting_event.type = SK_WIFI_STA_CONNECTING;
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", wifi_config.ssid);
+    sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", wifi_config.passphrase);
+    publishWiFiEvent(wifi_sta_connecting_event);
 
-    // publishWiFiEvent(wifi_sta_connecting_event);
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.setAutoReconnect(true);
+    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
-    // TODO: set hostname
+    uint8_t max_tries = 6;
+    uint8_t retry_count = 0;
 
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        if (WiFi.begin(wifi_config.ssid, wifi_config.passphrase) == WL_CONNECTED)
+        {
+            break;
+        }
+        else if (retry_count >= max_tries)
+        {
+            WiFiEvent wifi_event;
+            wifi_event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
+            publishWiFiEvent(wifi_event);
+            return false;
+        }
+
+        delay(5000);
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            WiFiEvent wifi_event;
+            wifi_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+            wifi_event.body.error.body.wifi_error.retry_count = retry_count + 1;
+            publishWiFiEvent(wifi_event);
+        }
+        retry_count++;
+    }
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connection_failed_event;
+        wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+        publishWiFiEvent(wifi_sta_connecting_event);
+        return false;
+    }
+
+    WiFiEvent wifi_sta_connected;
+    wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
+    strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
+    strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+
+    publishWiFiEvent(wifi_sta_connected);
+    return true;
+}
+
+bool WifiTask::startNewWiFiSTA(WiFiConfiguration wifi_config)
+{
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.setAutoReconnect(false);
 
@@ -133,7 +186,6 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     strcpy(wifi_sta_connecting.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connecting.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
     wifi_sta_connecting.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS;
-    // wifi_sta_connecting.body.wifi_sta_connecting.retry_count = retry_count + 1;
     publishWiFiEvent(wifi_sta_connecting);
 
     while (WiFi.status() != WL_CONNECTED)
@@ -318,10 +370,10 @@ void WifiTask::run()
 
             // if (!WiFi.isConnected())
             // {
-            //     // ESP_LOGD("wifi", "WiFi not connected");
-            //     // WiFiEvent wifi_sta_connection_failed_event;
-            //     // wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-            //     // publishWiFiEvent(wifi_sta_connection_failed_event);
+            //     ESP_LOGD("wifi", "WiFi not connected");
+            //     WiFiEvent wifi_sta_connection_failed_event;
+            //     wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+            //     publishWiFiEvent(wifi_sta_connection_failed_event);
             // }
         }
 

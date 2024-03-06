@@ -284,25 +284,30 @@ void RootTask::run()
 #if SK_WIFI
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            ESP_LOGD("root_task", "WiFi event: %d", wifi_event.type);
-            if (configuration_->getOSConfiguration()->mode == Onboarding)
+            logEnumName(wifi_event.type);
+
+            switch (configuration_->getOSConfiguration()->mode)
             {
+            case Onboarding:
                 display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                break;
+            case Demo:
+            case Hass:
+                display_task_->getHassApps()->handleEvent(wifi_event);
+                break;
+            default:
+                break;
             }
 
-            if (wifi_event.type == SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS)
+            switch (wifi_event.type)
             {
+            case SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS:
                 WiFiConfiguration wifi_config;
                 strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
                 strcpy(wifi_config.passphrase, wifi_event.body.wifi_sta_connected.passphrase);
                 configuration_->saveWiFiConfiguration(wifi_config);
-            }
-
-            // TODO: handle wifi credentials here
-            // TODO: handle mqtt credentials here
+                break;
 #if SK_MQTT
-            switch (wifi_event.type)
-            {
             case SK_RESET_ERROR:
                 switch (configuration_->getOSConfiguration()->mode)
                 {
@@ -332,8 +337,10 @@ void RootTask::run()
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                     ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+                    ESP_LOGD("root_task", "WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
-                    mqtt_task_->setup(mqtt_config);
+                    // mqtt_task_->setup(mqtt_config);
+                    mqtt_task_->getNotifier()->requestConnect(mqtt_config);
                 }
                 break;
             case SK_MQTT_STATE_UPDATE:
@@ -343,7 +350,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                if (wifi_event.sent_at < task_started_at - 1000) // give stuff 1000ms to connect at start before displaying errors.
+                if (wifi_event.sent_at > task_started_at + 5000) // give stuff 5000ms to connect at start before displaying errors.
                 {
                     display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -352,7 +359,7 @@ void RootTask::run()
             case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
                 mqtt_task_->getNotifier()->requestSetupAndConnect(wifi_event.body.mqtt_connecting);
                 break;
-            case SK_MQTT_CONNECTED:
+            case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
                 ESP_LOGD("root_task", "MQTT_CONNECTED");
                 configuration_->saveMQTTConfiguration(wifi_event.body.mqtt_connecting);
                 break;
@@ -360,8 +367,9 @@ void RootTask::run()
             default:
                 mqtt_task_->handleEvent(wifi_event);
                 break;
-            }
+
 #endif
+            }
         }
 #endif
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
@@ -689,7 +697,7 @@ void RootTask::setConfiguration(Configuration *configuration)
 
                 // mqtt_task_->setupMQTT(mqtt_config);
                 // DO STUFF WITH MQTT CONFIG!!!
-                // mqtt_task_->getNotifier()->requestMQTT(mqtt_config);
+                // mqtt_task_->getNotifier()->requestConnect(mqtt_config); // ! DONT CONNECT MQTT HERE WAIT FOR WIFI TO CONNECT
             }
 #endif
         }
@@ -736,4 +744,83 @@ void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
     remote_controlled_ = from_remote;
     latest_config_ = config;
     motor_task_.setConfig(config);
+}
+
+void RootTask::logEnumName(EventType type)
+{
+    switch (type)
+    {
+    case SK_WIFI_STA_CONNECTED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTED");
+        break;
+    case SK_WIFI_STA_CONNECTION_FAILED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTION_FAILED");
+        break;
+    case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_RETRY_LIMIT_REACHED");
+        break;
+    case SK_WIFI_AP_STARTED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_AP_STARTED");
+        break;
+    case SK_WIFI_STATUS:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STATUS");
+        break;
+    case SK_AP_CLIENT:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_AP_CLIENT");
+        break;
+    case SK_WEB_CLIENT:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WEB_CLIENT");
+        break;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_TRY_NEW_CREDENTIALS");
+        break;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED");
+        break;
+    case SK_WIFI_STA_CONNECTING:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTING");
+        break;
+    case SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS");
+        break;
+    case SK_WEB_CLIENT_MQTT:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_WEB_CLIENT_MQTT");
+        break;
+    case SK_MQTT_STATE_UPDATE:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_STATE_UPDATE");
+        break;
+    case SK_MQTT_CONNECTION_FAILED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTION_FAILED");
+        break;
+    case SK_MQTT_RETRY_LIMIT_REACHED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_RETRY_LIMIT_REACHED");
+        break;
+    case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_NEW_CREDENTIALS_RECIEVED");
+        break;
+    case SK_MQTT_CONNECTING:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTING");
+        break;
+    case SK_MQTT_SETUP:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_SETUP");
+        break;
+    case SK_MQTT_RESET:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_RESET");
+        break;
+    case SK_MQTT_INIT:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_INIT");
+        break;
+    case SK_MQTT_CONNECTED:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTED");
+        break;
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTED_NEW_CREDENTIALS");
+        break;
+    case SK_RESET_ERROR:
+        ESP_LOGD("EVENT TYPE ENUM", "SK_RESET_ERROR");
+        break;
+    default:
+        ESP_LOGD("EVENT TYPE ENUM", "UNKNOWN, %d", type);
+        break;
+    }
 }

@@ -113,4 +113,7 @@ private:
     void publishState();
     void applyConfig(PB_SmartKnobConfig config, bool from_remote);
     void publish(const AppState &state);
+
+    //! REMOVE
+    void logEnumName(EventType type);
 };

@@ -4,6 +4,7 @@
 enum MqttCommandType
 {
     RequestSetupConnect,
+    RequestConnect,
     // RequestDisconnect,
     // RequestReconnect,
     // RequestInit,
@@ -28,6 +29,7 @@ class MqttNotifier
 public:
     MqttNotifier();
     void requestSetupAndConnect(MQTTConfiguration mqtt_config);
+    void requestConnect(MQTTConfiguration mqtt_config);
     // void requestDisconnect();
     // void requestReconnect();
     // void requestInit();

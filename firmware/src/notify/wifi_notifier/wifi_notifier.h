@@ -9,6 +9,7 @@ enum WiFiCommandType
 {
     RequestAP,
     RequestSTA,
+    RequestNewSTA,
 };
 
 union WiFiCommandBody
@@ -28,13 +29,10 @@ class WiFiNotifier
 {
 public:
     WiFiNotifier();
-    // enqueues new request to start wifi AP
     void requestAP();
-    // enqieies new request to start wifi STA
     void requestSTA(WiFiConfiguration wifi_config);
-    // pull one message from the queue and apply with callback
+    void requestNewSTA(WiFiConfiguration wifi_config);
     void loopTick();
-    // set callbacks
     void setCallback(WiFiNotifierCallback callback);
 
 private:

@@ -109,7 +109,7 @@ void DisplayTask::run()
                     break;
                 }
             }
-            else if (error_type == MQTT_ERROR)
+            else
             {
                 error_handling_flow.render()->pushSprite(0, 0);
             }

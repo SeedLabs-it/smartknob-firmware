@@ -27,6 +27,9 @@ void MqttTask::handleCommand(MqttCommand command)
     case RequestSetupConnect:
         this->setupAndConnectNewCredentials(command.body.mqtt_config);
         break;
+    case RequestConnect:
+        this->setup(command.body.mqtt_config);
+        break;
     default:
         break;
     }
@@ -38,6 +41,7 @@ void MqttTask::handleEvent(WiFiEvent event)
     switch (event.type)
     {
     case SK_MQTT_CONNECTED:
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
         init();
         break;
     case SK_RESET_ERROR:
@@ -156,6 +160,8 @@ void MqttTask::run()
 
 bool MqttTask::setup(MQTTConfiguration config)
 {
+    ESP_LOGD("mqtt", "Setting up MQTT");
+    ESP_LOGD("mqtt", "Host: %s, Port: %d", config.host, config.port);
     if (is_config_set)
     {
         reset();
@@ -216,12 +222,8 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
         }
         else if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
         {
-            // WiFiEvent mqtt_connected;
-            event.type = SK_MQTT_CONNECTED;
-            // event.body.mqtt_connecting = config;
+            event.type = SK_MQTT_CONNECTED_NEW_CREDENTIALS;
             publishEvent(event);
-
-            delay(100);
 
             config_ = config;
             is_config_set = true;
@@ -259,12 +261,12 @@ bool MqttTask::connect()
     if (config_.user == "")
     {
         log("Connecting to MQTT without credentials");
-        mqtt_connected = mqtt_client.connect("smartknob");
+        mqtt_connected = mqtt_client.connect("SKDK_A2R45C");
     }
     else
     {
         log("Connecting to MQTT with credentials");
-        mqtt_connected = mqtt_client.connect("smartknob", config_.user, config_.password);
+        mqtt_connected = mqtt_client.connect("SKDK_A2R45C", config_.user, config_.password);
     }
 
     if (mqtt_connected)

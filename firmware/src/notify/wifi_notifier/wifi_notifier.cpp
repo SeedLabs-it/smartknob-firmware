@@ -29,6 +29,16 @@ void WiFiNotifier::requestSTA(WiFiConfiguration wifi_config)
     xQueueSendToBack(wifi_notifications_queue, &command, 0);
 }
 
+void WiFiNotifier::requestNewSTA(WiFiConfiguration wifi_config)
+{
+    WiFiCommand command;
+    command.type = RequestNewSTA;
+    strcpy(command.body.wifi_sta_config.ssid, wifi_config.ssid);
+    strcpy(command.body.wifi_sta_config.passphrase, wifi_config.passphrase);
+
+    xQueueSendToBack(wifi_notifications_queue, &command, 0);
+}
+
 void WiFiNotifier::loopTick()
 {
     if (xQueueReceive(wifi_notifications_queue, &recieved_command, 0) == pdTRUE)

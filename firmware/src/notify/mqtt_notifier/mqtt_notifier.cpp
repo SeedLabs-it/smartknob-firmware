@@ -20,6 +20,15 @@ void MqttNotifier::requestSetupAndConnect(MQTTConfiguration mqtt_config)
     xQueueSendToBack(mqtt_notifications_queue, &command, 0);
 }
 
+void MqttNotifier::requestConnect(MQTTConfiguration mqtt_config)
+{
+    MqttCommand command;
+    command.type = RequestConnect;
+    command.body.mqtt_config = mqtt_config;
+
+    xQueueSendToBack(mqtt_notifications_queue, &command, 0);
+}
+
 // void MqttNotifier::requestDisconnect()
 // {
 //     MqttCommand command;
