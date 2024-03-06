@@ -155,8 +155,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     os_config->mode = Onboarding;
+                                     display_task_->enableOnboarding();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -237,33 +237,34 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+    display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+#if SK_WIFI
+    display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+#endif
+
+    display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
-        display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
-        display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
-#if SK_WIFI
-        display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
-#endif
         display_task_->enableOnboarding();
-        display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
-        motor_notifier.loopTick();
         break;
-
     case Demo:
-        display_task_->enableDemo();
-        // TODO: update motor config
+        os_config_notifier_.setOSMode(Onboarding);
+        // display_task_->enableOnboarding();
         break;
     case Hass:
         display_task_->enableHass();
-        display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
-        display_task_->getHassApps()->triggerMotorConfigUpdate();
-        motor_notifier.loopTick();
         break;
 
     default:
         break;
     }
+
+    motor_notifier.loopTick();
 
     EntityStateUpdate entity_state_update_to_send;
 
@@ -428,13 +429,19 @@ void RootTask::run()
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
-            if (configuration_->getOSConfiguration()->mode == Onboarding)
+            switch (configuration_->getOSConfiguration()->mode)
             {
+            case Onboarding:
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
-            }
-            else
-            {
+                break;
+            case Demo:
+                entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
+                break;
+            case Hass:
                 entity_state_update_to_send = hass_apps->update(app_state);
+                break;
+            default:
+                break;
             }
 
 #if SK_MQTT
@@ -505,13 +512,19 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_LONG;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+                switch (configuration_->getOSConfiguration()->mode)
                 {
+                case Onboarding:
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
+                    break;
+                case Demo:
+                    display_task_->getDemoApps()->handleNavigationEvent(event);
+                    break;
+                case Hass:
                     display_task_->getHassApps()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;
@@ -524,13 +537,19 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                if (configuration_->getOSConfiguration()->mode == Onboarding)
+                switch (configuration_->getOSConfiguration()->mode)
                 {
+                case Onboarding:
                     display_task_->getOnboardingFlow()->handleNavigationEvent(event);
-                }
-                else
-                {
+                    break;
+                case Demo:
+                    display_task_->getDemoApps()->handleNavigationEvent(event);
+                    break;
+                case Hass:
                     display_task_->getHassApps()->handleNavigationEvent(event);
+                    break;
+                default:
+                    break;
                 }
             }
             break;
