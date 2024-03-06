@@ -620,6 +620,8 @@ TFT_eSprite *OnboardingFlow::render()
         return renderAboutPage();
 
     default:
+        current_page = ONBOARDING_FLOW_PAGE_STEP_WELCOME;
+        return renderWelcomePage();
         break;
     }
 
