@@ -44,10 +44,8 @@ protected:
     void run();
 
 private:
-    TFT_eSPI tft_ = TFT_eSPI();
-
     /** Full-size sprite used as a framebuffer */
-    TFT_eSprite spr_ = TFT_eSprite(&tft_);
+    TFT_eSprite *spr_ = nullptr;
     HassApps hass_apps;
 
     // TODO: put under private
