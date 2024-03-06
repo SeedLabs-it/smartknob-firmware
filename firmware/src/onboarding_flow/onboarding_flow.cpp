@@ -186,6 +186,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 
             motor_notifier->requestUpdate(blocked_motor_config);
             break;
+        case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:
+            os_config_notifier->setOSMode(Demo);
+            break;
 
         default:
             break;
