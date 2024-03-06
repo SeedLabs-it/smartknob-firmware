@@ -5,10 +5,6 @@ enum MqttCommandType
 {
     RequestSetupConnect,
     RequestConnect,
-    // RequestDisconnect,
-    // RequestReconnect,
-    // RequestInit,
-    // RequestReset,
 };
 
 union MqttCommandBody
@@ -30,10 +26,6 @@ public:
     MqttNotifier();
     void requestSetupAndConnect(MQTTConfiguration mqtt_config);
     void requestConnect(MQTTConfiguration mqtt_config);
-    // void requestDisconnect();
-    // void requestReconnect();
-    // void requestInit();
-    // void requestReset();
     void loopTick();
     void setCallback(MqttNotifierCallback callback);
 

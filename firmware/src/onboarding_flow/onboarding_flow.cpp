@@ -169,10 +169,6 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         new_mqtt_credentials_failed = true;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
-    // case SK_MQTT_CONNECTING:
-    //     current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
-    //     sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
-    //     break;
     case SK_MQTT_CONNECTED:
         ESP_LOGD("OnboardingFlow", "SK_MQTT_CONNECTED");
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
@@ -383,7 +379,6 @@ TFT_eSprite *OnboardingFlow::renderHass3StepPage()
     QRCode qrcode;
     uint8_t qrcodeVersion = 6;
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    // ESP_LOGD("HassSetupApp", "AP IP: %s", state.connectivity_state.ap_ip_address.toString().c_str());
     std::string wifiqrcodestring = "";
     if (is_wifi_ap_client_connected)
     {
@@ -464,7 +459,6 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->drawString(wifi_sta_ssid, center_horizontal, center_vertical + screen_name_label_h, 1);
 
-    // sprintf(buf_, "%ds", sta_connecting_tick);
     sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 30 = 10*3 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);

@@ -160,8 +160,6 @@ void MqttTask::run()
 
 bool MqttTask::setup(MQTTConfiguration config)
 {
-    ESP_LOGD("mqtt", "Setting up MQTT");
-    ESP_LOGD("mqtt", "Host: %s, Port: %d", config.host, config.port);
     if (is_config_set)
     {
         reset();

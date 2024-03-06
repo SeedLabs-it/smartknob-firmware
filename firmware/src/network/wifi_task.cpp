@@ -170,6 +170,9 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
+    config_ = wifi_config;
+    is_config_set = true;
+
     publishWiFiEvent(wifi_sta_connected);
     return true;
 }
@@ -196,7 +199,14 @@ bool WifiTask::startNewWiFiSTA(WiFiConfiguration wifi_config)
             strcpy(wifi_sta_connecting.body.wifi_sta_connected.ssid, wifi_config.ssid);
             strcpy(wifi_sta_connecting.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
             wifi_sta_connecting.type = SK_WIFI_STA_CONNECTED;
+
+            config_ = wifi_config;
+            is_config_set = true;
+
             publishWiFiEvent(wifi_sta_connecting);
+
+            server_->send(200, "text/html", "Setup complete!");
+
             return true;
         }
         else if (retry_count >= max_tries)
@@ -266,7 +276,7 @@ void WifiTask::webHandlerWiFiCredentials()
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
 
-    if (startWiFiSTA(wifi_config))
+    if (startNewWiFiSTA(wifi_config))
     {
         WiFiEvent wifi_sta_connected;
         wifi_sta_connected.type = SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS;
@@ -301,19 +311,7 @@ void WifiTask::webHandlerMQTTCredentials()
 
     publishWiFiEvent(event);
 
-    // preferences.begin("mqtt", false);
-    // preferences.clear();
-
-    // preferences.putString("mqtt_server", mqtt_server);
-    // preferences.putUInt("mqtt_port", mqtt_port);
-    // preferences.putString("mqtt_user", mqtt_user);
-    // preferences.putString("mqtt_password", mqtt_password);
-
-    // preferences.end();
-
-    // WiFi.mode(WIFI_STA);
-    // WiFi.softAPdisconnect(true);
-    server_->send(200, "text/html", "MQTT setup complete!");
+    // server_->send(200, "text/html", "MQTT setup complete!");
 }
 
 void WifiTask::startWebServer()
@@ -357,24 +355,23 @@ void WifiTask::run()
     while (1)
     {
 
-        if (is_webserver_started)
+        if (is_webserver_started) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
         {
             server_->handleClient();
             ElegantOTA.loop();
         }
 
-        if (millis() - last_wifi_status > 5000)
+        if (is_config_set && millis() - last_wifi_status > 5000)
         {
             updateWifiState();
             last_wifi_status = millis();
 
-            // if (!WiFi.isConnected())
-            // {
-            //     ESP_LOGD("wifi", "WiFi not connected");
-            //     WiFiEvent wifi_sta_connection_failed_event;
-            //     wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-            //     publishWiFiEvent(wifi_sta_connection_failed_event);
-            // }
+            if (!WiFi.isConnected())
+            {
+                WiFiEvent wifi_sta_connection_failed_event;
+                wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
+                publishWiFiEvent(wifi_sta_connection_failed_event);
+            }
         }
 
         wifi_notifier.loopTick();

@@ -38,6 +38,9 @@ protected:
     void run();
 
 private:
+    WiFiConfiguration config_;
+    bool is_config_set;
+
     std::vector<QueueHandle_t> state_listeners_;
 
     PB_SmartKnobState state_;

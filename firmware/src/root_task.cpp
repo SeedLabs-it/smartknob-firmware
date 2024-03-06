@@ -336,10 +336,6 @@ void RootTask::run()
                 if (configuration_->getOSConfiguration()->mode == Hass)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                    ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
-                    ESP_LOGD("root_task", "WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-                    // mqtt_task_->setup(mqtt_config);
                     mqtt_task_->getNotifier()->requestConnect(mqtt_config);
                 }
                 break;
@@ -350,7 +346,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                if (wifi_event.sent_at > task_started_at + 5000) // give stuff 5000ms to connect at start before displaying errors.
+                if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
                     display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -360,7 +356,6 @@ void RootTask::run()
                 mqtt_task_->getNotifier()->requestSetupAndConnect(wifi_event.body.mqtt_connecting);
                 break;
             case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
-                ESP_LOGD("root_task", "MQTT_CONNECTED");
                 configuration_->saveMQTTConfiguration(wifi_event.body.mqtt_connecting);
                 break;
 
