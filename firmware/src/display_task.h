@@ -13,6 +13,7 @@
 
 #include "apps/apps.h"
 #include "apps/hass/hass_apps.h"
+#include "apps/demo/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
 #include "error_handling_flow/error_handling_flow.h"
@@ -34,6 +35,8 @@ public:
     void setBrightness(uint16_t brightness);
     void setLogger(Logger *logger);
     void setApps(Apps apps);
+    OnboardingFlow *getOnboardingFlow();
+    DemoApps *getDemoApps();
     HassApps *getHassApps();
 
     void enableOnboarding();
@@ -42,7 +45,6 @@ public:
 
     void enableErrorHandlingFlow();
 
-    OnboardingFlow *getOnboardingFlow();
     ErrorHandlingFlow *getErrorHandlingFlow();
 
     ErrorType getErrorType();
@@ -56,10 +58,10 @@ private:
 
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
-    HassApps hass_apps;
 
-    // TODO: put under private
     OnboardingFlow onboarding_flow;
+    DemoApps demo_apps;
+    HassApps hass_apps;
     ErrorHandlingFlow error_handling_flow;
 
     QueueHandle_t app_state_queue_;

@@ -157,8 +157,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Hass;
-                                     display_task_->enableHass();
+                                     os_config->mode = Onboarding;
+                                     display_task_->enableOnboarding();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -245,8 +245,10 @@ void RootTask::run()
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 #endif
 
-    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
+    display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
     switch (configuration_->getOSConfiguration()->mode)
     {
@@ -254,7 +256,8 @@ void RootTask::run()
         display_task_->enableOnboarding();
         break;
     case Demo:
-        display_task_->enableDemo();
+        os_config_notifier_.setOSMode(Onboarding);
+        // display_task_->enableOnboarding();
         break;
     case Hass:
         display_task_->enableHass();
@@ -389,12 +392,17 @@ void RootTask::run()
             app_state.screen_state.has_been_engaged = false;
         }
 #if SK_ALS
-        float targetLuminosity = latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS;
+        // We are multiplying the current luminosity of the enviroment (0,1 range)
+        // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+        // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+        // [0, MIN_LCD_BRIGHTNESS]
+        uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
         if (app_state.screen_state.has_been_engaged == false &&
             abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
             millis() > app_state.screen_state.awake_until)
         {
-            if (app_state.screen_state.brightness < (targetLuminosity))
+            if ((app_state.screen_state.brightness < targetLuminosity))
             {
                 app_state.screen_state.brightness = (targetLuminosity);
             }
@@ -403,6 +411,11 @@ void RootTask::run()
                 // TODO: I don't like this decay function. It's too slow for delta too small
                 app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
             }
+        }
+        else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+        {
+            // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
+            app_state.screen_state.brightness = (targetLuminosity);
         }
 #endif
 #if !SK_ALS
@@ -448,13 +461,19 @@ void RootTask::run()
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
 
-            if (configuration_->getOSConfiguration()->mode == Onboarding)
+            switch (configuration_->getOSConfiguration()->mode)
             {
+            case Onboarding:
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
-            }
-            else
-            {
+                break;
+            case Demo:
+                entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
+                break;
+            case Hass:
                 entity_state_update_to_send = hass_apps->update(app_state);
+                break;
+            default:
+                break;
             }
 
 #if SK_MQTT
@@ -536,6 +555,9 @@ void RootTask::updateHardware(AppState app_state)
                     case Onboarding:
                         display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
+                    case Demo:
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
+                        break;
                     case Hass:
                         display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
@@ -566,6 +588,9 @@ void RootTask::updateHardware(AppState app_state)
                     {
                     case Onboarding:
                         display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        break;
+                    case Demo:
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case Hass:
                         display_task_->getHassApps()->handleNavigationEvent(event);
@@ -611,33 +636,51 @@ void RootTask::updateHardware(AppState app_state)
 
     if (led_ring_task_ != nullptr)
     {
-        // ESP_LOGD("root_task", "%d", brightness);
         EffectSettings effect_settings;
+        // THERE ARE 3 potential range of the display
+        // 1- Engaged
+        // 2- Not Engaged and enviroment brightness is high
+        // 3- Not engaged and enviroment brightness is low
+        // The following code is coreographing the different led states as :
+        // if 1: led ring is fully on
+        // if 2: led ring is fully off.
+        // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
 
-        if (brightness < 2000)
+        if (brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS)
         {
-            effect_settings.effect_id = 2;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_accent_color = (255 << 16) | (255 << 8) | 255;
-            effect_settings.effect_main_color = (255 << 16) | (255 << 8) | 255;
-            led_ring_task_->setEffect(effect_settings);
-        }
-        else
-        {
-            effect_settings.effect_id = 1;
+            // case 1. FADE-IN led
+            effect_settings.effect_id = 4; // FADE-IN
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
 
             // TODO: add conversion from HUE to RGB
             // latest_config_.led_hue;
-
-            effect_settings.effect_accent_color = (128 << 16) | (0 << 8) | 128;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 0;
+            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
             led_ring_task_->setEffect(effect_settings);
         }
+        else if (brightness == app_state.screen_state.MIN_LCD_BRIGHTNESS)
+        {
+            // case 2. FADE-OUT led
+            effect_settings.effect_id = 5;
+            effect_settings.effect_start_pixel = 0;
+            effect_settings.effect_end_pixel = NUM_LEDS;
+            effect_settings.effect_accent_pixel = 0;
+            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            led_ring_task_->setEffect(effect_settings);
+        }
+        else
+        {
+            // case 3 - Beacon
+            effect_settings.effect_id = 2;
+            effect_settings.effect_start_pixel = 0;
+            effect_settings.effect_end_pixel = NUM_LEDS;
+            effect_settings.effect_accent_pixel = 0;
+            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            led_ring_task_->setEffect(effect_settings);
+        }
+        led_ring_task_->setEffect(effect_settings);
+        // ESP_LOGD("LED", "------------------- : %d, %d, %d, %f", effect_settings.effect_id, brightness, app_state.screen_state.MIN_LCD_BRIGHTNESS, latest_sensors_state_.illumination.lux_adj);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);

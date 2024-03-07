@@ -1,3 +1,4 @@
+#pragma once
 #include "../apps.h"
 #include "../../events/events.h"
 

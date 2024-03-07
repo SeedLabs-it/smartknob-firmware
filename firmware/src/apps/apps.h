@@ -53,7 +53,7 @@ protected:
     std::map<uint8_t, std::shared_ptr<App>> apps;
     std::shared_ptr<Menu> menu = nullptr;
 
-    uint8_t active_id = 0;
+    int8_t active_id = 0;
 
     TFT_eSprite *spr_ = nullptr;
     std::shared_ptr<App> active_app = nullptr;

@@ -27,6 +27,11 @@ OnboardingFlow *DisplayTask::getOnboardingFlow()
     return &onboarding_flow;
 }
 
+DemoApps *DisplayTask::getDemoApps()
+{
+    return &demo_apps;
+}
+
 HassApps *DisplayTask::getHassApps()
 {
     return &hass_apps;
@@ -64,9 +69,11 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    hass_apps = HassApps(&spr_);
-
     onboarding_flow = OnboardingFlow(&spr_);
+
+    demo_apps = DemoApps(&spr_);
+
+    hass_apps = HassApps(&spr_);
 
     error_handling_flow = ErrorHandlingFlow(&spr_);
 
@@ -96,11 +103,7 @@ void DisplayTask::run()
                     onboarding_flow.render()->pushSprite(0, 0);
                     break;
                 case Demo:
-                    spr_.setTextDatum(CC_DATUM);
-                    spr_.setFreeFont(&NDS1210pt7b);
-                    spr_.setTextColor(TFT_WHITE);
-                    spr_.drawString("DEMO", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-                    spr_.pushSprite(0, 0);
+                    demo_apps.renderActive()->pushSprite(0, 0);
                     break;
                 case Hass:
                     hass_apps.renderActive()->pushSprite(0, 0);
@@ -163,15 +166,16 @@ void DisplayTask::enableOnboarding()
     onboarding_flow.triggerMotorConfigUpdate();
 }
 
+void DisplayTask::enableDemo()
+{
+    os_mode = Demo;
+    demo_apps.triggerMotorConfigUpdate();
+}
+
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
     hass_apps.triggerMotorConfigUpdate();
-}
-
-void DisplayTask::enableDemo()
-{
-    os_mode = Demo;
 }
 
 void DisplayTask::enableErrorHandlingFlow()

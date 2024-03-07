@@ -195,6 +195,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 
             motor_notifier->requestUpdate(blocked_motor_config);
             break;
+        case ONBOARDING_FLOW_PAGE_STEP_DEMO_1:
+            os_config_notifier->setOSMode(Demo);
+            break;
 
         default:
             break;
@@ -223,6 +226,11 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
     // TODO adapt for subviews if needed
     current_position = state.current_position;
 
+    if (current_position >= 5)
+    {
+        current_position = current_page;
+    }
+
     // this works only at the top menu
     if (current_page < 5)
     {
@@ -232,6 +240,9 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
         root_level_motor_config.position_nonce = current_position;
         root_level_motor_config.position = current_position;
     }
+
+    root_level_motor_config.position_nonce = current_position;
+    root_level_motor_config.position = current_position;
 
     EntityStateUpdate new_state;
 
@@ -647,6 +658,8 @@ TFT_eSprite *OnboardingFlow::render()
         return renderAboutPage();
 
     default:
+        current_page = ONBOARDING_FLOW_PAGE_STEP_WELCOME;
+        return renderWelcomePage();
         break;
     }
 

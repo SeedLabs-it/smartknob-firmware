@@ -45,7 +45,7 @@ struct IlluminationState
 {
     float lux;
     float lux_avg;
-    float lux_adj;
+    float lux_adj; // a value between 0 and 1.
 };
 
 // TODO: rename fields to follow the convention
