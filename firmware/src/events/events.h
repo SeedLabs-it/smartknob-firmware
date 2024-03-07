@@ -119,7 +119,8 @@ enum EventType
     SK_MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED,
     SK_MQTT_CONNECTED_NEW_CREDENTIALS,
-    SK_RESET_ERROR
+    SK_RESET_ERROR,
+    SK_DISMISS_ERROR
 };
 
 // TODO: rename to generic event?

@@ -128,11 +128,6 @@ void RootTask::run()
 
     motor_task_.addListener(knob_state_queue_);
 
-#if SK_MQTT
-    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
-#endif
-    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
-
     plaintext_protocol_.init([this]()
                              {
                                  //  CHANGE MOTOR CONFIG????
@@ -243,6 +238,11 @@ void RootTask::run()
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#if SK_MQTT
+    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#endif
 #endif
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
@@ -325,6 +325,11 @@ void RootTask::run()
                 }
                 wifi_task_->resetRetryCount();
                 mqtt_task_->handleEvent(wifi_event);
+                display_task_->resetError();
+                break;
+            case SK_DISMISS_ERROR:
+                // wifi_task_->resetRetryCount();
+                // mqtt_task_->handleEvent(wifi_event);
                 display_task_->resetError();
                 break;
             case SK_WIFI_STA_CONNECTED:

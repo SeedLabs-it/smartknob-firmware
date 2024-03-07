@@ -31,24 +31,34 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 
 void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
 {
+    WiFiEvent send_event;
+    send_event.body.error.type = error_type;
     switch (event.press)
     {
     case NAVIGATION_EVENT_PRESS_SHORT:
+        send_event.type = SK_RESET_ERROR;
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
-            WiFiEvent reset_error;
-            reset_error.type = SK_RESET_ERROR;
-            reset_error.body.error.type = error_type;
             error_type = NO_ERROR;
-            publishEvent(reset_error);
+            publishEvent(send_event);
         }
         else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
-            WiFiEvent reset_error;
-            reset_error.type = SK_RESET_ERROR;
-            reset_error.body.error.type = error_type;
             error_type = NO_ERROR;
-            publishEvent(reset_error);
+            publishEvent(send_event);
+        }
+        break;
+    case NAVIGATION_EVENT_PRESS_LONG:
+        send_event.type = SK_DISMISS_ERROR;
+        if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
+        {
+            error_type = NO_ERROR;
+            publishEvent(send_event);
+        }
+        else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
+        {
+            error_type = NO_ERROR;
+            publishEvent(send_event);
         }
         break;
     default:

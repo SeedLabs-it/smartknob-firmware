@@ -46,7 +46,8 @@ void MqttTask::handleEvent(WiFiEvent event)
         break;
     case SK_RESET_ERROR:
         retry_count = 0;
-        ESP_LOGD("mqtt", "Resetting error count");
+        break;
+    case SK_DISMISS_ERROR:
         break;
     default:
         break;
