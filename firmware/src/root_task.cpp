@@ -152,8 +152,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Onboarding;
-                                     display_task_->enableOnboarding();
+                                     os_config->mode = Hass;
+                                     display_task_->enableHass();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
