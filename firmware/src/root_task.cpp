@@ -341,7 +341,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                if (wifi_event.sent_at > task_started_at + 1000) // give stuff 3000ms to connect at start before displaying errors.
+                if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
                     display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -357,7 +357,7 @@ void RootTask::run()
                 break;
             case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
                 wifi_task_->retryMqtt(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
-                // wifi_task_->getNotifier()->requestRetryMQTT(); //! FOR SOME REASON DIDNT WORK WITH NOTIFIER HMM
+                // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
 
             default:
