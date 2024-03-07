@@ -196,7 +196,7 @@ TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
     int qrCodeHeight = qrcode.size * moduleSize;
 
     int startX = center_horizontal - qrCodeWidth / 2;
-    int startY = center_vertical - qrCodeHeight / 1.4;
+    int startY = center_vertical - qrCodeHeight / 1.6;
 
     for (uint8_t y = 0; y < qrcode.size; y++)
     {
@@ -208,8 +208,11 @@ TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
             }
         }
     }
+
     spr_->setFreeFont(&NDS125_small);
-    spr_->drawString("Retry limit reached", center_horizontal, center_vertical + screen_name_label_h * 2, 1);
+    spr_->drawString("Retry limit reached", center_horizontal, center_vertical - screen_name_label_h * 3.4, 1);
+    spr_->drawString("Press to retry", center_horizontal, center_vertical - screen_name_label_h * 2.8, 1);
+    spr_->drawString("Hold to dismiss", center_horizontal, center_vertical + screen_name_label_h * 2, 1);
 
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
