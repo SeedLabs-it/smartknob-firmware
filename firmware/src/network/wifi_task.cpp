@@ -139,42 +139,6 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
-    uint8_t max_tries = 3;
-    uint8_t retry_count = 0;
-
-    // while (WiFi.status() != WL_CONNECTED)
-    // {
-    //     if (WiFi.begin(wifi_config.ssid, wifi_config.passphrase) == WL_CONNECTED)
-    //     {
-    //         break;
-    //     }
-    //     else if (retry_count >= max_tries)
-    //     {
-    //         WiFiEvent wifi_event;
-    //         wifi_event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
-    //         publishWiFiEvent(wifi_event);
-    //         return false;
-    //     }
-
-    //     delay(10000);
-    //     if (WiFi.status() != WL_CONNECTED)
-    //     {
-    //         WiFiEvent wifi_event;
-    //         wifi_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-    //         wifi_event.body.error.body.wifi_error.retry_count = retry_count + 1;
-    //         publishWiFiEvent(wifi_event);
-    //     }
-    //     retry_count++;
-    // }
-
-    // if (WiFi.status() != WL_CONNECTED)
-    // {
-    //     WiFiEvent wifi_sta_connection_failed_event;
-    //     wifi_sta_connection_failed_event.type = SK_WIFI_STA_CONNECTION_FAILED;
-    //     publishWiFiEvent(wifi_sta_connecting_event);
-    //     return false;
-    // }
-
     WiFiEvent wifi_sta_connected;
     wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
@@ -192,10 +156,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 bool WifiTask::startNewWiFiSTA(WiFiConfiguration wifi_config)
 {
     WiFi.mode(WIFI_MODE_APSTA);
-    WiFi.setAutoReconnect(false);
-
-    uint8_t max_tries = 6;
-    uint8_t retry_count = 0;
+    WiFi.setAutoReconnect(true);
 
     WiFiEvent wifi_sta_connecting;
     strcpy(wifi_sta_connecting.body.wifi_sta_connected.ssid, wifi_config.ssid);
@@ -203,37 +164,37 @@ bool WifiTask::startNewWiFiSTA(WiFiConfiguration wifi_config)
     wifi_sta_connecting.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS;
     publishWiFiEvent(wifi_sta_connecting);
 
-    while (WiFi.status() != WL_CONNECTED)
+    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
+
+    uint32_t timeout_at = millis() + 30000;
+
+    while (WiFi.status() != WL_CONNECTED && timeout_at > millis())
     {
-        if (WiFi.begin(wifi_config.ssid, wifi_config.passphrase) == WL_CONNECTED)
-        {
-            WiFiEvent wifi_sta_connecting;
-            strcpy(wifi_sta_connecting.body.wifi_sta_connected.ssid, wifi_config.ssid);
-            strcpy(wifi_sta_connecting.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
-            wifi_sta_connecting.type = SK_WIFI_STA_CONNECTED;
-
-            config_ = wifi_config;
-            is_config_set = true;
-
-            publishWiFiEvent(wifi_sta_connecting);
-
-            server_->send(200, "text/html", "Setup complete!");
-
-            return true;
-        }
-        else if (retry_count >= max_tries)
-        {
-            WiFiEvent wifi_event;
-            wifi_event.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED;
-            publishWiFiEvent(wifi_event);
-            return false;
-        }
-
-        delay(5000);
-        retry_count++;
+        delay(250);
     }
 
-    return true;
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connected;
+        strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
+        strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+        wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
+
+        config_ = wifi_config;
+        is_config_set = true;
+
+        publishWiFiEvent(wifi_sta_connected);
+
+        return true;
+    }
+
+    WiFi.disconnect();
+
+    WiFiEvent wifi_event;
+    wifi_event.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED;
+    publishWiFiEvent(wifi_event);
+
+    return false;
 }
 
 void WifiTask::webHandlerWiFiForm()
@@ -401,20 +362,6 @@ void WifiTask::run()
             updateWifiState();
             last_wifi_status = millis();
         }
-
-        // if (millis() - last_wifi_status_new > 1000 && !WiFi.isConnected() && retry_count < 3)
-        // {
-        //     WiFiEvent event;
-        //     WiFiEventBody wifi_event_body;
-        //     wifi_event_body.error.type = WIFI_ERROR;
-        //     wifi_event_body.error.body.wifi_error.retry_count = retry_count + 1;
-
-        //     event.type = SK_WIFI_STA_CONNECTION_FAILED;
-        //     event.body = wifi_event_body;
-        //     publishWiFiEvent(event);
-        //     last_wifi_status_new = millis();
-        //     retry_count++;
-        // }
 
         if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
         {
