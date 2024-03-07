@@ -51,12 +51,6 @@ void WifiTask::handleCommand(WiFiCommand command)
             this->startWebServer();
         }
         break;
-    case RequestNewSTA:
-        if (this->startNewWiFiSTA(command.body.wifi_sta_config))
-        {
-            this->startWebServer();
-        }
-        break;
     case RequestRetryMQTT:
         ESP_LOGD(WIFI_TAG, "Retry MQTT connection");
         retry_mqtt = true;
@@ -144,8 +138,6 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
-    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
-
     config_ = wifi_config;
     is_config_set = true;
 
@@ -153,7 +145,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     return true;
 }
 
-bool WifiTask::startNewWiFiSTA(WiFiConfiguration wifi_config)
+bool WifiTask::tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config)
 {
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.setAutoReconnect(true);
@@ -249,7 +241,7 @@ void WifiTask::webHandlerWiFiCredentials()
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
 
-    if (startNewWiFiSTA(wifi_config))
+    if (tryNewCredentialsWiFiSTA(wifi_config))
     {
         WiFiEvent wifi_sta_connected;
         wifi_sta_connected.type = SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS;

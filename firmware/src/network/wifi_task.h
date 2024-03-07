@@ -69,7 +69,7 @@ private:
     bool is_webserver_started = false;
     void startWiFiAP();
     bool startWiFiSTA(WiFiConfiguration wifi_config);
-    bool startNewWiFiSTA(WiFiConfiguration wifi_config);
+    bool tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config);
 
     WiFiNotifier wifi_notifier;
     // websrver handlers

@@ -198,7 +198,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     event.body.mqtt_connecting = config;
     publishEvent(event);
 
-    wifi_client.setTimeout(5);
+    wifi_client.setTimeout(15); // 30s timeoutn didnt work, threw error (Software caused connection abort)
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
@@ -206,30 +206,25 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
-    uint8_t max_tries = 6;
-    uint8_t try_count = 0;
+    uint32_t timeout_at = millis() + 30000;
 
-    while (1)
+    while (!mqtt_client.connect("SKDK_A2R45C", config.user, config.password) && timeout_at > millis())
     {
-        if (try_count >= max_tries)
-        {
-            // WiFiEvent mqtt_try_new_credentials_failed;
-            event.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
-            publishEvent(event);
-            return false;
-        }
-        else if (mqtt_client.connect("SKDK_A2R45C", config.user, config.password))
-        {
-            event.type = SK_MQTT_CONNECTED_NEW_CREDENTIALS;
-            publishEvent(event);
-
-            config_ = config;
-            is_config_set = true;
-            return true;
-        }
-        try_count++;
+        delay(0); // DO NOTHING
     }
 
+    if (mqtt_client.connected())
+    {
+        event.type = SK_MQTT_CONNECTED_NEW_CREDENTIALS;
+        publishEvent(event);
+
+        config_ = config;
+        is_config_set = true;
+        return true;
+    }
+
+    event.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
+    publishEvent(event);
     return false;
 }
 
