@@ -29,14 +29,6 @@ void WiFiNotifier::requestSTA(WiFiConfiguration wifi_config)
     xQueueSendToBack(wifi_notifications_queue, &command, 0);
 }
 
-void WiFiNotifier::requestRetryMQTT()
-{
-    WiFiCommand command;
-    command.type = RequestRetryMQTT;
-
-    xQueueSendToBack(wifi_notifications_queue, &command, 0);
-}
-
 void WiFiNotifier::loopTick()
 {
     if (xQueueReceive(wifi_notifications_queue, &recieved_command, 0) == pdTRUE)

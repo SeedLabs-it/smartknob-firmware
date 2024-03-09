@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 3, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 6, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
@@ -203,12 +203,13 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
-    mqtt_client.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setBufferSize(SK_MQTT_BUFFER_SIZE); // ADD BUFFER SIZE TO CONFIG? NO?
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
     uint32_t timeout_at = millis() + 30000;
 
+    // TODO: Create and use knob id
     while (!mqtt_client.connect("SKDK_A2R45C", config.user, config.password) && timeout_at > millis())
     {
         delay(0); // DO NOTHING
@@ -255,11 +256,13 @@ bool MqttTask::connect()
     if (config_.user == "")
     {
         log("Connecting to MQTT without credentials");
+        // TODO: Create and use knob id
         mqtt_connected = mqtt_client.connect("SKDK_A2R45C");
     }
     else
     {
         log("Connecting to MQTT with credentials");
+        // TODO: Create and use knob id
         mqtt_connected = mqtt_client.connect("SKDK_A2R45C", config_.user, config_.password);
     }
 

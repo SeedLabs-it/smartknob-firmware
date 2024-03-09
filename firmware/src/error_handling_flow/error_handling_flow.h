@@ -27,6 +27,8 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
+    ErrorType getErrorType();
+
 private:
     TFT_eSprite *spr_ = NULL;
 

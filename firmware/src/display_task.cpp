@@ -95,7 +95,7 @@ void DisplayTask::run()
             spr_.fillSprite(TFT_BLACK);
             spr_.setTextSize(1);
 
-            if (error_type == NO_ERROR)
+            if (error_handling_flow.getErrorType() == NO_ERROR)
             {
                 switch (os_mode)
                 {
@@ -176,20 +176,5 @@ void DisplayTask::enableHass()
 {
     os_mode = Hass;
     hass_apps.triggerMotorConfigUpdate();
-}
-
-void DisplayTask::enableErrorHandlingFlow()
-{
-    error_type = MQTT_ERROR;
-}
-
-ErrorType DisplayTask::getErrorType()
-{
-    return error_type;
-}
-
-void DisplayTask::resetError()
-{
-    error_type = NO_ERROR;
 }
 #endif

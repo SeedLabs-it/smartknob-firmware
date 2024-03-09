@@ -120,7 +120,10 @@ enum EventType
     SK_MQTT_CONNECTED,
     SK_MQTT_CONNECTED_NEW_CREDENTIALS,
     SK_RESET_ERROR,
-    SK_DISMISS_ERROR
+    SK_DISMISS_ERROR,
+
+    SK_MQTT_ERROR,
+    SK_WIFI_ERROR,
 };
 
 // TODO: rename to generic event?

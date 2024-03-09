@@ -287,14 +287,14 @@ void RootTask::run()
 #if SK_WIFI
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            logEnumName(wifi_event.type);
-
             switch (configuration_->getOSConfiguration()->mode)
             {
             case Onboarding:
                 display_task_->getOnboardingFlow()->handleEvent(wifi_event);
                 break;
             case Demo:
+                display_task_->getDemoApps()->handleEvent(wifi_event);
+                break;
             case Hass:
                 display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
@@ -325,12 +325,11 @@ void RootTask::run()
                 }
                 wifi_task_->resetRetryCount();
                 mqtt_task_->handleEvent(wifi_event);
-                display_task_->resetError();
+                display_task_->getErrorHandlingFlow()->handleEvent(wifi_event); // if reset error or dismiss error is triggered elsewhere.
                 break;
             case SK_DISMISS_ERROR:
                 // wifi_task_->resetRetryCount();
                 // mqtt_task_->handleEvent(wifi_event);
-                display_task_->resetError();
                 break;
             case SK_WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
@@ -348,7 +347,6 @@ void RootTask::run()
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
                 if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
-                    display_task_->enableErrorHandlingFlow();
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 }
                 break;
@@ -552,7 +550,7 @@ void RootTask::updateHardware(AppState app_state)
 
                 //! GET ACTIVE FLOW? SO WE DONT HAVE DIFFERENT
                 // display_task_->getActiveFlow()->handleNavigationEvent(event);
-                switch (display_task_->getErrorType())
+                switch (display_task_->getErrorHandlingFlow()->getErrorType())
                 {
                 case NO_ERROR:
                     switch (configuration_->getOSConfiguration()->mode)
@@ -586,7 +584,7 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                switch (display_task_->getErrorType())
+                switch (display_task_->getErrorHandlingFlow()->getErrorType())
                 {
                 case NO_ERROR:
                     switch (configuration_->getOSConfiguration()->mode)
@@ -785,89 +783,4 @@ void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
     remote_controlled_ = from_remote;
     latest_config_ = config;
     motor_task_.setConfig(config);
-}
-
-void RootTask::logEnumName(EventType type)
-{
-    switch (type)
-    {
-    case SK_WIFI_STA_CONNECTED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTED");
-        break;
-    case SK_WIFI_STA_CONNECTION_FAILED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTION_FAILED");
-        break;
-    case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_RETRY_LIMIT_REACHED");
-        break;
-    case SK_WIFI_AP_STARTED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_AP_STARTED");
-        break;
-    case SK_WIFI_STATUS:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STATUS");
-        break;
-    case SK_AP_CLIENT:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_AP_CLIENT");
-        break;
-    case SK_WEB_CLIENT:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WEB_CLIENT");
-        break;
-    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_TRY_NEW_CREDENTIALS");
-        break;
-    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED");
-        break;
-    case SK_WIFI_STA_CONNECTING:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTING");
-        break;
-    case SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS");
-        break;
-    case SK_WEB_CLIENT_MQTT:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_WEB_CLIENT_MQTT");
-        break;
-    case SK_MQTT_STATE_UPDATE:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_STATE_UPDATE");
-        break;
-    case SK_MQTT_CONNECTION_FAILED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTION_FAILED");
-        break;
-    case SK_MQTT_RETRY_LIMIT_REACHED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_RETRY_LIMIT_REACHED");
-        break;
-    case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_NEW_CREDENTIALS_RECIEVED");
-        break;
-    case SK_MQTT_CONNECTING:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTING");
-        break;
-    case SK_MQTT_SETUP:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_SETUP");
-        break;
-    case SK_MQTT_RESET:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_RESET");
-        break;
-    case SK_MQTT_INIT:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_INIT");
-        break;
-    case SK_MQTT_CONNECTED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTED");
-        break;
-    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_CONNECTED_NEW_CREDENTIALS");
-        break;
-    case SK_RESET_ERROR:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_RESET_ERROR");
-        break;
-    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_TRY_NEW_CREDENTIALS_FAILED");
-        break;
-    case SK_MQTT_TRY_NEW_CREDENTIALS:
-        ESP_LOGD("EVENT TYPE ENUM", "SK_MQTT_TRY_NEW_CREDENTIALS");
-        break;
-    default:
-        ESP_LOGD("EVENT TYPE ENUM", "UNKNOWN, %d", type);
-        break;
-    }
 }

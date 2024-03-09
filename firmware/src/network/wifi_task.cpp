@@ -51,10 +51,6 @@ void WifiTask::handleCommand(WiFiCommand command)
             this->startWebServer();
         }
         break;
-    case RequestRetryMQTT:
-        ESP_LOGD(WIFI_TAG, "Retry MQTT connection");
-        retry_mqtt = true;
-        break;
     default:
         break;
     }
@@ -336,7 +332,7 @@ void WifiTask::startWebServer()
 
 void WifiTask::run()
 {
-
+    // TODO: set hostname
     static uint32_t last_wifi_status;
     static uint32_t last_wifi_status_new;
     bool has_been_connected = false;

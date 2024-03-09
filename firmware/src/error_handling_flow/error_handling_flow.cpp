@@ -11,6 +11,7 @@ ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr)
 
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
+    WiFiEvent send_event;
     motor_notifier->requestUpdate(blocked_motor_config);
     switch (event.type)
     {
@@ -18,11 +19,21 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     case SK_MQTT_RETRY_LIMIT_REACHED:
         error_type = MQTT_ERROR;
         latest_event = event;
+
+        send_event.type = SK_MQTT_ERROR;
+        publishEvent(send_event);
         break;
     case SK_WIFI_STA_CONNECTION_FAILED:
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         error_type = WIFI_ERROR;
         latest_event = event;
+
+        send_event.type = SK_WIFI_ERROR;
+        publishEvent(send_event);
+        break;
+    case SK_DISMISS_ERROR:
+    case SK_RESET_ERROR:
+        error_type = NO_ERROR;
         break;
     default:
         break;
@@ -39,12 +50,10 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
         send_event.type = SK_RESET_ERROR;
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
-            error_type = NO_ERROR;
             publishEvent(send_event);
         }
         else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
-            error_type = NO_ERROR;
             publishEvent(send_event);
         }
         break;
@@ -52,12 +61,10 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
         send_event.type = SK_DISMISS_ERROR;
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
-            error_type = NO_ERROR;
             publishEvent(send_event);
         }
         else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
-            error_type = NO_ERROR;
             publishEvent(send_event);
         }
         break;
@@ -244,5 +251,11 @@ void ErrorHandlingFlow::setSharedEventsQueue(QueueHandle_t shared_events_queue)
 
 void ErrorHandlingFlow::publishEvent(WiFiEvent event)
 {
+    event.sent_at = millis();
     xQueueSendToBack(shared_events_queue, &event, 0);
+}
+
+ErrorType ErrorHandlingFlow::getErrorType()
+{
+    return error_type;
 }

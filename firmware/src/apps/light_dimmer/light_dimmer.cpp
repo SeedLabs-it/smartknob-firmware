@@ -164,7 +164,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
-        uint8_t r, g, b;
         RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
 
         cJSON *rgb_array = cJSON_CreateArray();

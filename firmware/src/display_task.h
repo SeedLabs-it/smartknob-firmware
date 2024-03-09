@@ -43,12 +43,9 @@ public:
     void enableHass();
     void enableDemo();
 
-    void enableErrorHandlingFlow();
-
     ErrorHandlingFlow *getErrorHandlingFlow();
 
-    ErrorType getErrorType();
-    void resetError();
+    void enableErrorHandlingFlow();
 
 protected:
     void run();
