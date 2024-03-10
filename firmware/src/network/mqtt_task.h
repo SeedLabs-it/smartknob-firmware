@@ -48,9 +48,13 @@ protected:
 private:
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
 
+    std::map<std::string, std::string> unacknowledged_ids;
+
     MQTTConfiguration config_;
     bool is_config_set;
     uint8_t retry_count = 0;
+
+    bool hass_init_acknowledged = false;
 
     QueueHandle_t entity_state_to_send_queue_;
     QueueHandle_t shared_events_queue;
@@ -63,6 +67,8 @@ private:
     cJSON *apps;
 
     MqttNotifier mqtt_notifier;
+
+    std::string generatePayloadId();
 
     void log(const char *msg);
 
