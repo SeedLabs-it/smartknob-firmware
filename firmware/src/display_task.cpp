@@ -109,6 +109,7 @@ void DisplayTask::run()
                     hass_apps.renderActive()->pushSprite(0, 0);
                     break;
                 default:
+                    spr_.pushSprite(0, 0);
                     break;
                 }
             }
