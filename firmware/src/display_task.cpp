@@ -37,6 +37,11 @@ HassApps *DisplayTask::getHassApps()
     return &hass_apps;
 }
 
+ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
+{
+    return &error_handling_flow;
+}
+
 void DisplayTask::run()
 {
     tft_.begin();
@@ -70,6 +75,8 @@ void DisplayTask::run()
 
     hass_apps = HassApps(&spr_);
 
+    error_handling_flow = ErrorHandlingFlow(&spr_);
+
     AppState app_state;
 
     spr_.setTextDatum(CC_DATUM);
@@ -83,25 +90,31 @@ void DisplayTask::run()
 
     while (1)
     {
-
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
             spr_.fillSprite(TFT_BLACK);
             spr_.setTextSize(1);
 
-            switch (os_mode)
+            if (error_handling_flow.getErrorType() == NO_ERROR)
             {
-            case Onboarding:
-                onboarding_flow.render()->pushSprite(0, 0);
-                break;
-            case Demo:
-                demo_apps.renderActive()->pushSprite(0, 0);
-                break;
-            case Hass:
-                hass_apps.renderActive()->pushSprite(0, 0);
-                break;
-            default:
-                break;
+                switch (os_mode)
+                {
+                case Onboarding:
+                    onboarding_flow.render()->pushSprite(0, 0);
+                    break;
+                case Demo:
+                    demo_apps.renderActive()->pushSprite(0, 0);
+                    break;
+                case Hass:
+                    hass_apps.renderActive()->pushSprite(0, 0);
+                    break;
+                default:
+                    break;
+                }
+            }
+            else
+            {
+                error_handling_flow.render()->pushSprite(0, 0);
             }
 
             {
@@ -164,5 +177,4 @@ void DisplayTask::enableHass()
     os_mode = Hass;
     hass_apps.triggerMotorConfigUpdate();
 }
-
 #endif

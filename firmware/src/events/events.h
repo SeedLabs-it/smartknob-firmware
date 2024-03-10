@@ -12,7 +12,7 @@ struct WiFiSTAConnecting
 {
     char ssid[128];
     char passphrase[128];
-    uint8_t tick;
+    uint8_t retry_count;
 };
 
 struct WiFiStatus
@@ -49,6 +49,35 @@ struct MQTTStateUpdate
     cJSON *state;
 };
 
+struct WiFiError
+{
+    uint8_t retry_count;
+};
+
+struct MQTTError
+{
+    uint8_t retry_count;
+};
+
+enum ErrorType
+{
+    NO_ERROR,
+    WIFI_ERROR,
+    MQTT_ERROR
+};
+
+union ErrorBody
+{
+    WiFiError wifi_error;
+    MQTTError mqtt_error;
+};
+
+struct Error
+{
+    ErrorType type;
+    ErrorBody body;
+};
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -59,28 +88,42 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
+    Error error;
 };
 
-// TODO, think events more careful, for example add MQTT_CREDENTIALS_RECIEVED
+// TODO, think events more careful, for example add SK_MQTT_CREDENTIALS_RECIEVED
 // TODO add uniq prefix, clashing with some events
 enum EventType
 {
-    WIFI_AP_STARTED = 1,
-    WIFI_STATUS,
-    AP_CLIENT,
-    WEB_CLIENT,
-    WIFI_STA_CONNECTING,
-    WIFI_STA_CONNECTED,
-    WIFI_STA_CONNECTED_NEW_CREDENTIALS,
-    WIFI_STA_CONNECTION_FAILED,
-    WEB_CLIENT_MQTT,
-    MQTT_CREDENTIALS_RECIEVED,
-    MQTT_CONNECTING,
-    MQTT_SETUP,
-    MQTT_INIT,
-    MQTT_CONNECTION_FAILED,
-    MQTT_STATE_UPDATE,
-    SK_MQTT_CONNECTED
+    SK_WIFI_AP_STARTED = 1,
+    SK_WIFI_STATUS,
+    SK_AP_CLIENT,
+    SK_WEB_CLIENT,
+    SK_WIFI_STA_TRY_NEW_CREDENTIALS,
+    SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED,
+    SK_WIFI_STA_CONNECTING,
+    SK_WIFI_STA_CONNECTED,
+    SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS,
+    SK_WIFI_STA_CONNECTION_FAILED,
+    SK_WIFI_STA_RETRY_LIMIT_REACHED,
+    SK_WEB_CLIENT_MQTT,
+    SK_MQTT_TRY_NEW_CREDENTIALS,
+    SK_MQTT_TRY_NEW_CREDENTIALS_FAILED,
+    SK_MQTT_NEW_CREDENTIALS_RECIEVED,
+    SK_MQTT_CONNECTING,
+    SK_MQTT_SETUP,
+    SK_MQTT_RESET,
+    SK_MQTT_RETRY_LIMIT_REACHED,
+    SK_MQTT_INIT,
+    SK_MQTT_CONNECTION_FAILED,
+    SK_MQTT_STATE_UPDATE,
+    SK_MQTT_CONNECTED,
+    SK_MQTT_CONNECTED_NEW_CREDENTIALS,
+    SK_RESET_ERROR,
+    SK_DISMISS_ERROR,
+
+    SK_MQTT_ERROR,
+    SK_WIFI_ERROR,
 };
 
 // TODO: rename to generic event?
@@ -88,4 +131,5 @@ struct WiFiEvent
 {
     EventType type;
     WiFiEventBody body;
+    uint32_t sent_at = millis();
 };

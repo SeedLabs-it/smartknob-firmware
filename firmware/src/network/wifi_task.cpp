@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 8, 1, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 6, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -28,6 +28,8 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 8, 1, task_cor
     wifi_notifier = WiFiNotifier();
     wifi_notifier.setCallback([this](WiFiCommand command)
                               { this->handleCommand(command); });
+
+    WiFi.setAutoReconnect(true);
 }
 
 WifiTask::~WifiTask()
@@ -54,6 +56,11 @@ void WifiTask::handleCommand(WiFiCommand command)
     }
 }
 
+void WifiTask::resetRetryCount()
+{
+    retry_count = 0;
+}
+
 void OnWiFiEventGlobal(WiFiEvent_t event)
 {
 
@@ -69,14 +76,14 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
     //     Serial.println("ESP32 soft AP started");
     //     break;
     case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-        wifi_event.type = AP_CLIENT;
+        wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = true;
 
         xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
         break;
     case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
 
-        wifi_event.type = AP_CLIENT;
+        wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = false;
 
         xQueueSendToBack(wifi_events_queue, &wifi_event, 0);
@@ -98,7 +105,7 @@ void WifiTask::startWiFiAP()
     WiFi.softAP(ssid, passphrase);
 
     WiFiEvent event;
-    event.type = WIFI_AP_STARTED;
+    event.type = SK_WIFI_AP_STARTED;
 
     strcpy(event.body.wifi_ap_started.ssid, ssid);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
@@ -114,54 +121,74 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
 
     WiFiEvent wifi_sta_connecting_event;
 
-    wifi_sta_connecting_event.type = WIFI_STA_CONNECTING;
+    wifi_sta_connecting_event.type = SK_WIFI_STA_CONNECTING;
     sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.ssid, "%s", wifi_config.ssid);
     sprintf(wifi_sta_connecting_event.body.wifi_sta_connecting.passphrase, "%s", wifi_config.passphrase);
-    wifi_sta_connecting_event.body.wifi_sta_connecting.tick = 0;
-
     publishWiFiEvent(wifi_sta_connecting_event);
 
-    // TODO: set hostname
-
     WiFi.mode(WIFI_MODE_APSTA);
-    WiFi.setAutoReconnect(true);
     WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
 
-    uint8_t max_tries = 20;
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        if (wifi_sta_connecting_event.body.wifi_sta_connecting.tick > max_tries)
-        {
-            break;
-        }
-        delay(1000);
-        wifi_sta_connecting_event.body.wifi_sta_connecting.tick++;
-        publishWiFiEvent(wifi_sta_connecting_event);
-        // TODO: retry to connect after X seconds
-    }
-
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        WiFiEvent wifi_sta_connection_failed_event;
-        wifi_sta_connection_failed_event.type = WIFI_STA_CONNECTION_FAILED;
-        publishWiFiEvent(wifi_sta_connecting_event);
-        return false;
-    }
-
     WiFiEvent wifi_sta_connected;
-    wifi_sta_connected.type = WIFI_STA_CONNECTED;
+    wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+
+    config_ = wifi_config;
+    is_config_set = true;
 
     publishWiFiEvent(wifi_sta_connected);
     return true;
 }
 
+bool WifiTask::tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config)
+{
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.setAutoReconnect(true);
+
+    WiFiEvent wifi_sta_connecting;
+    strcpy(wifi_sta_connecting.body.wifi_sta_connected.ssid, wifi_config.ssid);
+    strcpy(wifi_sta_connecting.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+    wifi_sta_connecting.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS;
+    publishWiFiEvent(wifi_sta_connecting);
+
+    WiFi.begin(wifi_config.ssid, wifi_config.passphrase);
+
+    uint32_t timeout_at = millis() + 30000;
+
+    while (WiFi.status() != WL_CONNECTED && timeout_at > millis())
+    {
+        delay(250);
+    }
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        WiFiEvent wifi_sta_connected;
+        strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
+        strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
+        wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
+
+        config_ = wifi_config;
+        is_config_set = true;
+
+        publishWiFiEvent(wifi_sta_connected);
+
+        return true;
+    }
+
+    WiFi.disconnect();
+
+    WiFiEvent wifi_event;
+    wifi_event.type = SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED;
+    publishWiFiEvent(wifi_event);
+
+    return false;
+}
+
 void WifiTask::webHandlerWiFiForm()
 {
     WiFiEvent event;
-    event.type = WEB_CLIENT;
+    event.type = SK_WEB_CLIENT;
     event.body.web_client.connected = true;
 
     publishWiFiEvent(event);
@@ -182,7 +209,7 @@ void WifiTask::webHandlerWiFiForm()
 void WifiTask::webHandlerMQTTForm()
 {
     WiFiEvent event;
-    event.type = WEB_CLIENT_MQTT;
+    event.type = SK_WEB_CLIENT_MQTT;
     publishWiFiEvent(event);
 
     server_->send(200, "text/html", "<form action='/submit' method='get'>"
@@ -199,6 +226,8 @@ void WifiTask::webHandlerWiFiCredentials()
 {
     // TODO: redo wifi reconnection
 
+    WiFi.disconnect();
+
     String ssid = server_->arg("ssid");
     String passphrase = server_->arg("password");
 
@@ -208,10 +237,10 @@ void WifiTask::webHandlerWiFiCredentials()
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
 
-    if (startWiFiSTA(wifi_config))
+    if (tryNewCredentialsWiFiSTA(wifi_config))
     {
         WiFiEvent wifi_sta_connected;
-        wifi_sta_connected.type = WIFI_STA_CONNECTED_NEW_CREDENTIALS;
+        wifi_sta_connected.type = SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS;
         sprintf(wifi_sta_connected.body.wifi_sta_connected.ssid, "%s", ssid.c_str());
         sprintf(wifi_sta_connected.body.wifi_sta_connected.passphrase, "%s", passphrase.c_str());
 
@@ -229,44 +258,50 @@ void WifiTask::webHandlerWiFiCredentials()
 
 void WifiTask::webHandlerMQTTCredentials()
 {
+    retry_mqtt = false;
     String mqtt_server = server_->arg("mqtt_server");
     uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
     String mqtt_user = server_->arg("mqtt_user");
     String mqtt_password = server_->arg("mqtt_password");
 
     WiFiEvent event;
-    event.type = MQTT_CREDENTIALS_RECIEVED;
+    event.type = SK_MQTT_NEW_CREDENTIALS_RECIEVED;
     sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
 
-    ESP_LOGD("wifi", "%s %d %s %s",
-             event.body.mqtt_connecting.host,
-             event.body.mqtt_connecting.port,
-             event.body.mqtt_connecting.user,
-             event.body.mqtt_connecting.password);
-
     publishWiFiEvent(event);
 
-    // preferences.begin("mqtt", false);
-    // preferences.clear();
+    // server_->send(200, "text/html", "MQTT credentials recieved!");
 
-    // preferences.putString("mqtt_server", mqtt_server);
-    // preferences.putUInt("mqtt_port", mqtt_port);
-    // preferences.putString("mqtt_user", mqtt_user);
-    // preferences.putString("mqtt_password", mqtt_password);
+    while (!retry_mqtt)
+    {
+        delay(100);
+    }
+    if (mqtt_connected)
+    {
+        server_->send(200, "text/html", "Setup complete!");
+        return;
+    }
+    server_->sendHeader("Location", "/mqtt");
+    server_->send(302, "text/plain", "Connecting to MQTT with provided credentials failed!");
+}
 
-    // preferences.end();
+void WifiTask::mqttConnected(bool connected)
+{
+    mqtt_connected = connected;
+}
 
-    // WiFi.mode(WIFI_STA);
-    // WiFi.softAPdisconnect(true);
-    server_->send(200, "text/html", "MQTT setup complete!");
+void WifiTask::retryMqtt(bool retry)
+{
+    retry_mqtt = retry;
 }
 
 void WifiTask::startWebServer()
 {
     server_ = new WebServer(80);
+    ElegantOTA.begin(server_);
 
     // TODO: do local files rendering
     // TODO: make this page work async with animations on UI
@@ -279,15 +314,14 @@ void WifiTask::startWebServer()
 
     server_->on("/submit", [this]()
                 {
-                    if (server_->arg("setup_type") == "wifi")
-                    {
-                    this->webHandlerWiFiCredentials();
-
-                    }
-                    else if (server_->arg("setup_type") == "mqtt")
-                    {
-                    this->webHandlerMQTTCredentials();
-                    } });
+        if (server_->arg("setup_type") == "wifi")
+        {
+            this->webHandlerWiFiCredentials();
+        }
+        else if (server_->arg("setup_type") == "mqtt")
+        {
+            this->webHandlerMQTTCredentials();
+        } });
 
     server_->begin();
 
@@ -298,22 +332,69 @@ void WifiTask::startWebServer()
 
 void WifiTask::run()
 {
-
+    // TODO: set hostname
     static uint32_t last_wifi_status;
+    static uint32_t last_wifi_status_new;
+    bool has_been_connected = false;
 
     while (1)
     {
-
-        if (is_webserver_started)
+        if (is_webserver_started) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
         {
             server_->handleClient();
             ElegantOTA.loop();
         }
 
-        if (millis() - last_wifi_status > 5000)
+        if (is_config_set && millis() - last_wifi_status > 5000)
         {
             updateWifiState();
             last_wifi_status = millis();
+        }
+
+        if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
+        {
+            ESP_LOGD(WIFI_TAG, "WiFi status: %d", WiFi.status());
+            ESP_LOGD(WIFI_TAG, "WiFi connected: %d", WiFi.isConnected());
+            ESP_LOGD(WIFI_TAG, "Retry count: %d", retry_count);
+            ESP_LOGD(WIFI_TAG, "last_wifi_status_new: %d", last_wifi_status_new);
+
+            WiFi.begin(config_.ssid, config_.passphrase);
+            while (WiFi.status() != WL_CONNECTED)
+            {
+                if (!has_been_connected || retry_count > 0)
+                {
+                    WiFiEvent event;
+                    WiFiEventBody wifi_event_body;
+                    wifi_event_body.error.type = WIFI_ERROR;
+                    wifi_event_body.error.body.wifi_error.retry_count = retry_count + 1;
+
+                    event.type = SK_WIFI_STA_CONNECTION_FAILED;
+                    event.body = wifi_event_body;
+                    event.sent_at = millis();
+                    publishWiFiEvent(event);
+                }
+
+                if (retry_count > 2)
+                {
+                    WiFi.disconnect();
+                    log("Retry limit reached...");
+                    WiFiEvent event;
+                    event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
+                    publishWiFiEvent(event);
+                    break;
+                }
+                delay(10000);
+                retry_count++;
+            }
+            if (WiFi.status() == WL_CONNECTED)
+            {
+                has_been_connected = true;
+                retry_count = 0;
+                WiFiEvent reset_error;
+                reset_error.type = SK_RESET_ERROR;
+                publishWiFiEvent(reset_error);
+            }
+            last_wifi_status_new = millis();
         }
 
         wifi_notifier.loopTick();
@@ -400,6 +481,7 @@ QueueHandle_t WifiTask::getWiFiEventsQueue()
 
 void WifiTask::publishWiFiEvent(WiFiEvent event)
 {
+    event.sent_at = millis();
     xQueueSendToBack(wifi_events_queue, &event, 0);
 }
 

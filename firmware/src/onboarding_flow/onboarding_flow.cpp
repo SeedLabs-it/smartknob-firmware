@@ -113,18 +113,19 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
 }
 
 // TODO: rename to generic event
-void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
+void OnboardingFlow::handleEvent(WiFiEvent event)
 {
+    latest_event = event;
     switch (event.type)
     {
-    case WIFI_AP_STARTED:
+    case SK_WIFI_AP_STARTED:
         is_wifi_ap_started = true;
         sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
         sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
         sprintf(wifi_qr_code, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
 
         break;
-    case AP_CLIENT:
+    case SK_AP_CLIENT:
         is_wifi_ap_client_connected = event.body.ap_client.connected;
         if (is_wifi_ap_client_connected)
         {
@@ -135,7 +136,7 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
         }
         break;
-    case WEB_CLIENT:
+    case SK_WEB_CLIENT:
         is_web_client_connected = event.body.ap_client.connected;
         if (is_web_client_connected)
         {
@@ -147,26 +148,34 @@ void OnboardingFlow::handleWiFiEvent(WiFiEvent event)
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
         }
         break;
-    case WIFI_STA_CONNECTING:
-        sta_connecting_tick = event.body.wifi_sta_connecting.tick;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
+        sta_connecting_tick = event.body.wifi_sta_connecting.retry_count;
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
         sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
         break;
-    case WEB_CLIENT_MQTT:
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
+        new_wifi_credentials_failed = true;
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
+        break;
+    case SK_WEB_CLIENT_MQTT:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
         break;
-    case MQTT_CONNECTING:
-        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
+    case SK_MQTT_TRY_NEW_CREDENTIALS:
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
         break;
-    case SK_MQTT_CONNECTED:
+    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+        new_mqtt_credentials_failed = true;
+        current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
+        break;
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         is_onboarding_finished = true;
         os_config_notifier->setOSMode(Hass);
         break;
-    case MQTT_STATE_UPDATE:
+    case SK_MQTT_STATE_UPDATE:
         break;
     default:
         break;
@@ -424,6 +433,17 @@ TFT_eSprite *OnboardingFlow::renderHass4StepPage()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
+
+    if (new_wifi_credentials_failed)
+    {
+        spr_->setFreeFont(&NDS125_small);
+        spr_->setTextColor(default_text_color);
+
+        spr_->drawString("Connection failed with", center_horizontal, center_vertical - screen_name_label_h * 3.7, 1);
+        spr_->drawString("provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 3.2, 1);
+        spr_->drawString("Please try again.", center_horizontal, center_vertical - screen_name_label_h * 2.5, 1);
+    }
+
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 
@@ -449,7 +469,7 @@ TFT_eSprite *OnboardingFlow::renderHass5StepPage()
     spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->drawString(wifi_sta_ssid, center_horizontal, center_vertical + screen_name_label_h, 1);
 
-    sprintf(buf_, "%ds", sta_connecting_tick);
+    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 30 = 10*3 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);
 
@@ -467,6 +487,17 @@ TFT_eSprite *OnboardingFlow::renderHass6StepPage()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
+
+    if (new_mqtt_credentials_failed)
+    {
+        spr_->setFreeFont(&NDS125_small);
+        spr_->setTextColor(default_text_color);
+
+        spr_->drawString("Connection failed with", center_horizontal, center_vertical - screen_name_label_h * 3.7, 1);
+        spr_->drawString("provided credentials.", center_horizontal, center_vertical - screen_name_label_h * 3.2, 1);
+        spr_->drawString("Please try again.", center_horizontal, center_vertical - screen_name_label_h * 2.5, 1);
+    }
+
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
 
@@ -492,7 +523,7 @@ TFT_eSprite *OnboardingFlow::renderHass7StepPage()
     spr_->drawString("CONNECTING TO", center_horizontal, center_vertical - screen_name_label_h, 1);
     spr_->drawString(mqtt_server, center_horizontal, center_vertical + screen_name_label_h, 1);
 
-    sprintf(buf_, "%ds", mqtt_connecting_tick);
+    sprintf(buf_, "%ds", max(0, 30 - (int)((millis() - latest_event.sent_at) / 1000))); // 30=10*3 should be same as wifi_client timeout in mqtt_task.cpp
 
     spr_->setTextColor(default_text_color);
 

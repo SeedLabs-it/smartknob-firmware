@@ -16,6 +16,7 @@
 #include "apps/demo/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
+#include "error_handling_flow/error_handling_flow.h"
 
 const uint8_t BOOT_MODE_NOT_SET = 0;
 const uint8_t BOOT_MODE_ONBOARDING = 1;
@@ -37,9 +38,14 @@ public:
     OnboardingFlow *getOnboardingFlow();
     DemoApps *getDemoApps();
     HassApps *getHassApps();
+
     void enableOnboarding();
     void enableHass();
     void enableDemo();
+
+    ErrorHandlingFlow *getErrorHandlingFlow();
+
+    void enableErrorHandlingFlow();
 
 protected:
     void run();
@@ -53,6 +59,7 @@ private:
     OnboardingFlow onboarding_flow;
     DemoApps demo_apps;
     HassApps hass_apps;
+    ErrorHandlingFlow error_handling_flow;
 
     QueueHandle_t app_state_queue_;
 
@@ -64,6 +71,7 @@ private:
     char buf_[128];
 
     OSMode os_mode;
+    ErrorType error_type;
 };
 
 #else

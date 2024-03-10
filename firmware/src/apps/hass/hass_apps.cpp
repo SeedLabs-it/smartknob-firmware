@@ -32,7 +32,7 @@ void HassApps::handleEvent(WiFiEvent event)
 
     switch (event.type)
     {
-    case MQTT_STATE_UPDATE:
+    case SK_MQTT_STATE_UPDATE:
         app = find(event.body.mqtt_state_update.app_id);
         if (app != nullptr)
         {

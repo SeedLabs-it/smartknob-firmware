@@ -157,13 +157,13 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         }
 
         sprintf(new_state.app_id, "%s", app_id);
+
         cJSON *json = cJSON_CreateObject();
 
         cJSON_AddBoolToObject(json, "on", is_on);
         cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
-        // uint8_t r, g, b;
         RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
 
         cJSON *rgb_array = cJSON_CreateArray();
@@ -172,8 +172,10 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
         cJSON_AddItemToObject(json, "rgb_color", rgb_array);
 
-        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+        char *json_string = cJSON_PrintUnformatted(json);
+        sprintf(new_state.state, "%s", json_string);
 
+        cJSON_free(json_string);
         cJSON_Delete(json);
 
         last_position = current_position;

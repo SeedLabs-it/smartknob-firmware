@@ -2,12 +2,16 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 2048 * 2, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 6, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
     entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
+
+    mqtt_notifier = MqttNotifier();
+    mqtt_notifier.setCallback([this](MqttCommand command)
+                              { this->handleCommand(command); });
 }
 
 MqttTask::~MqttTask()
@@ -16,29 +20,37 @@ MqttTask::~MqttTask()
     vSemaphoreDelete(mutex_app_sync_);
 }
 
+void MqttTask::handleCommand(MqttCommand command)
+{
+    switch (command.type)
+    {
+    case RequestSetupConnect:
+        this->setupAndConnectNewCredentials(command.body.mqtt_config);
+        break;
+    case RequestConnect:
+        this->setup(command.body.mqtt_config);
+        break;
+    default:
+        break;
+    }
+}
+
 void MqttTask::handleEvent(WiFiEvent event)
 {
 
-    if (event.type == MQTT_CREDENTIALS_RECIEVED)
+    switch (event.type)
     {
-
-        ESP_LOGD("mqtt", "%s %d %s %s",
-                 event.body.mqtt_connecting.host,
-                 event.body.mqtt_connecting.port,
-                 event.body.mqtt_connecting.user,
-                 event.body.mqtt_connecting.password);
-
-        setup(event.body.mqtt_connecting);
-    }
-
-    // if (event.type == MQTT_SETUP)
-    // {
-    //     connect();
-    // }
-
-    if (event.type == SK_MQTT_CONNECTED)
-    {
+    case SK_MQTT_CONNECTED:
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
         init();
+        break;
+    case SK_RESET_ERROR:
+        retry_count = 0;
+        break;
+    case SK_DISMISS_ERROR:
+        break;
+    default:
+        break;
     }
 }
 
@@ -49,32 +61,59 @@ void MqttTask::run()
     const uint16_t mqtt_pull_interval_ms = 200;
     const uint16_t mqtt_push_interval_ms = 200;
 
-    EntityStateUpdate entity_state_to_process_;
-
-    ConnectivityState connectivity_state_to_process_;
+    static EntityStateUpdate entity_state_to_process_;
 
     static uint32_t last_mqtt_state_sent;
 
+    static String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
+
+    static uint32_t message_count = 0;
+
+    static bool has_been_connected = false;
+
     while (1)
     {
-
-        if (is_config_set)
+        if (is_config_set && retry_count < 3)
         {
-            if (!mqttClient.connected())
+            if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
-                WiFiEvent event;
-                event.type = MQTT_CONNECTION_FAILED;
-                publishEvent(event);
+                if (!has_been_connected || retry_count > 0)
+                {
+                    WiFiEvent event;
+                    WiFiEventBody wifi_event_body;
+                    wifi_event_body.error.type = MQTT_ERROR;
+                    wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
 
-                log("Retrying MQTT connection..."); // TODO: add retry limit?
-                connect();
-                delay(3000);
-                continue;
+                    event.type = SK_MQTT_CONNECTION_FAILED;
+                    event.body = wifi_event_body;
+                    event.sent_at = millis();
+                    publishEvent(event);
+                }
+
+                disconnect();
+
+                if (!connect())
+                {
+                    retry_count++;
+                    if (retry_count > 2)
+                    {
+                        log("Retry limit reached...");
+                        WiFiEvent event;
+                        event.type = SK_MQTT_RETRY_LIMIT_REACHED;
+                        publishEvent(event);
+                    }
+                    continue;
+                }
+                has_been_connected = true;
+                retry_count = 0;
+                WiFiEvent reset_error;
+                reset_error.type = SK_RESET_ERROR;
+                publishEvent(reset_error);
             }
 
             if (millis() - mqtt_pull > mqtt_pull_interval_ms)
             {
-                mqttClient.loop();
+                mqtt_client.loop();
                 mqtt_pull = millis();
             }
 
@@ -100,15 +139,14 @@ void MqttTask::run()
                         cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
                         cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
-                        char buf_[128];
-                        sprintf(buf_, "smartknob/%s/from_knob", WiFi.macAddress().c_str());
+                        char *json_string = cJSON_PrintUnformatted(json);
+                        mqtt_client.publish(topic.c_str(), json_string);
 
-                        mqttClient.publish(buf_, cJSON_PrintUnformatted(json));
-
-                        entity_states_to_send[i.first]
-                            .sent = true;
-
+                        cJSON_free(json_string);
                         cJSON_Delete(json);
+
+                        last_mqtt_state_sent = millis();
+                        entity_states_to_send[i.first].sent = true;
                     }
                 }
 
@@ -116,14 +154,19 @@ void MqttTask::run()
             }
         }
 
+        mqtt_notifier.loopTick();
         delay(5);
     }
 }
 
 bool MqttTask::setup(MQTTConfiguration config)
 {
+    if (is_config_set)
+    {
+        reset();
+    }
     WiFiEvent event;
-    event.type = MQTT_SETUP;
+    event.type = SK_MQTT_SETUP;
     sprintf(event.body.mqtt_connecting.host, "%s", config.host);
     event.body.mqtt_connecting.port = config.port;
     sprintf(event.body.mqtt_connecting.user, "%s", config.user);
@@ -131,17 +174,74 @@ bool MqttTask::setup(MQTTConfiguration config)
 
     config_ = config;
 
-    mqttClient.setClient(wifi_client);
-    mqttClient.setServer(config_.host, config_.port);
-    mqttClient.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
-    mqttClient.setKeepAlive(60);
-    mqttClient.setSocketTimeout(60);
-    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
-                           { this->callback(topic, payload, length); });
+    wifi_client.setTimeout(10);
+
+    mqtt_client.setClient(wifi_client);
+    mqtt_client.setServer(config_.host, config_.port);
+    mqtt_client.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
+                            { this->callback(topic, payload, length); });
 
     publishEvent(event);
     is_config_set = true;
     return is_config_set;
+}
+
+bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
+{
+    if (is_config_set)
+    {
+        reset();
+    }
+
+    WiFiEvent event;
+    event.type = SK_MQTT_TRY_NEW_CREDENTIALS;
+    event.body.mqtt_connecting = config;
+    publishEvent(event);
+
+    wifi_client.setTimeout(15); // 30s timeoutn didnt work, threw error (Software caused connection abort)
+
+    mqtt_client.setClient(wifi_client);
+    mqtt_client.setServer(config.host, config.port);
+    mqtt_client.setBufferSize(SK_MQTT_BUFFER_SIZE); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
+                            { this->callback(topic, payload, length); });
+
+    uint32_t timeout_at = millis() + 30000;
+
+    // TODO: Create and use knob id
+    while (!mqtt_client.connect("SKDK_A2R45C", config.user, config.password) && timeout_at > millis())
+    {
+        delay(0); // DO NOTHING
+    }
+
+    if (mqtt_client.connected())
+    {
+        event.type = SK_MQTT_CONNECTED_NEW_CREDENTIALS;
+        publishEvent(event);
+
+        config_ = config;
+        is_config_set = true;
+        return true;
+    }
+
+    event.type = SK_MQTT_TRY_NEW_CREDENTIALS_FAILED;
+    publishEvent(event);
+    return false;
+}
+
+bool MqttTask::reset()
+{
+    WiFiEvent event;
+    event.type = SK_MQTT_RESET;
+
+    retry_count = 0;
+    is_config_set = false;
+    wifi_client.flush();
+    mqtt_client.disconnect();
+    publishEvent(event);
+
+    return true;
 }
 
 bool MqttTask::connect()
@@ -156,12 +256,14 @@ bool MqttTask::connect()
     if (config_.user == "")
     {
         log("Connecting to MQTT without credentials");
-        mqtt_connected = mqttClient.connect("smartknob");
+        // TODO: Create and use knob id
+        mqtt_connected = mqtt_client.connect("SKDK_A2R45C");
     }
     else
     {
         log("Connecting to MQTT with credentials");
-        mqtt_connected = mqttClient.connect("smartknob", config_.user, config_.password);
+        // TODO: Create and use knob id
+        mqtt_connected = mqtt_client.connect("SKDK_A2R45C", config_.user, config_.password);
     }
 
     if (mqtt_connected)
@@ -175,28 +277,37 @@ bool MqttTask::connect()
     else
     {
         WiFiEvent event;
-        event.type = MQTT_CONNECTION_FAILED;
+        event.type = SK_MQTT_CONNECTION_FAILED;
         publishEvent(event);
         log("MQTT connection failed");
     }
     return false;
 }
 
+bool MqttTask::disconnect()
+{
+    wifi_client.flush();
+    mqtt_client.disconnect();
+    mqtt_client.flush();
+    mqtt_client.loop();
+    return true;
+}
+
 bool MqttTask::init()
 {
     char buf_[128];
     sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
-    mqttClient.subscribe(buf_);
+    mqtt_client.subscribe(buf_);
 
     cJSON *json = cJSON_CreateObject();
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
-    mqttClient.publish("smartknob/init", cJSON_PrintUnformatted(json));
+    mqtt_client.publish("smartknob/init", cJSON_PrintUnformatted(json));
     cJSON_Delete(json);
 
-    mqttClient.loop();
+    mqtt_client.loop();
 
     WiFiEvent mqtt_connected_event;
-    mqtt_connected_event.type = MQTT_INIT;
+    mqtt_connected_event.type = SK_MQTT_INIT;
     publishEvent(mqtt_connected_event);
     return true;
 }
@@ -224,7 +335,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         cJSON_AddStringToObject(json, "type", "acknowledgement");
         cJSON_AddStringToObject(json, "data", "sync");
 
-        mqttClient.publish(buf_, cJSON_PrintUnformatted(json));
+        mqtt_client.publish(buf_, cJSON_PrintUnformatted(json));
 
         publishAppSync(apps);
     }
@@ -241,7 +352,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         state_update.state = new_state;
 
         WiFiEvent event;
-        event.type = MQTT_STATE_UPDATE;
+        event.type = SK_MQTT_STATE_UPDATE;
         event.body.mqtt_state_update = state_update;
 
         publishEvent(event);
@@ -276,6 +387,11 @@ void MqttTask::enqueueEntityStateToSend(EntityStateUpdate state)
 void MqttTask::setLogger(Logger *logger)
 {
     logger_ = logger;
+}
+
+MqttNotifier *MqttTask::getNotifier()
+{
+    return &mqtt_notifier;
 }
 
 void MqttTask::log(const char *msg)
@@ -315,6 +431,7 @@ void MqttTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
 
 void MqttTask::publishEvent(WiFiEvent event)
 {
+    event.sent_at = millis();
     xQueueSendToBack(shared_events_queue, &event, 0);
 }
 

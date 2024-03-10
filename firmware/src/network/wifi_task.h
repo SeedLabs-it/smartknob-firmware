@@ -34,10 +34,23 @@ public:
     QueueHandle_t getWiFiEventsQueue();
     void handleCommand(WiFiCommand command);
 
+    void mqttConnected(bool connected);
+    void retryMqtt(bool retry);
+
+    void resetRetryCount();
+
 protected:
     void run();
 
 private:
+    WiFiConfiguration config_;
+    bool is_config_set;
+
+    bool mqtt_connected;
+    bool retry_mqtt;
+
+    uint8_t retry_count = 0;
+
     std::vector<QueueHandle_t> state_listeners_;
 
     PB_SmartKnobState state_;
@@ -56,6 +69,7 @@ private:
     bool is_webserver_started = false;
     void startWiFiAP();
     bool startWiFiSTA(WiFiConfiguration wifi_config);
+    bool tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config);
 
     WiFiNotifier wifi_notifier;
     // websrver handlers

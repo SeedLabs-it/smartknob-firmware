@@ -19,7 +19,7 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("RootTask", 1024 * 10, 1, task_core),
+    SensorsTask *sensors_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
                                  stream_(),
                                  motor_task_(motor_task),
                                  display_task_(display_task),
@@ -123,13 +123,10 @@ void RootTask::verboseToggleCallback()
 
 void RootTask::run()
 {
+    uint8_t task_started_at = millis();
     stream_.begin();
 
     motor_task_.addListener(knob_state_queue_);
-
-#if SK_MQTT
-    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
-#endif
 
     plaintext_protocol_.init([this]()
                              {
@@ -155,8 +152,8 @@ void RootTask::run()
                                      //  CHANGE MOTOR CONFIG
                                      break;
                                  case Demo:
-                                     os_config->mode = Onboarding;
-                                     display_task_->enableOnboarding();
+                                     os_config->mode = Hass;
+                                     display_task_->enableHass();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
@@ -241,8 +238,14 @@ void RootTask::run()
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#if SK_MQTT
+    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+#endif
 #endif
 
+    display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
@@ -282,58 +285,90 @@ void RootTask::run()
             motor_task_.runCalibration();
         }
 #if SK_WIFI
-
         if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
         {
-            if (configuration_->getOSConfiguration()->mode == Onboarding)
+            switch (configuration_->getOSConfiguration()->mode)
             {
-                display_task_->getOnboardingFlow()->handleWiFiEvent(wifi_event);
+            case Onboarding:
+                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                break;
+            case Demo:
+                display_task_->getDemoApps()->handleEvent(wifi_event);
+                break;
+            case Hass:
+                display_task_->getHassApps()->handleEvent(wifi_event);
+                break;
+            default:
+                break;
             }
 
-            if (wifi_event.type == WIFI_STA_CONNECTED_NEW_CREDENTIALS)
+            switch (wifi_event.type)
             {
+            case SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS:
                 WiFiConfiguration wifi_config;
                 strcpy(wifi_config.ssid, wifi_event.body.wifi_sta_connected.ssid);
                 strcpy(wifi_config.passphrase, wifi_event.body.wifi_sta_connected.passphrase);
                 configuration_->saveWiFiConfiguration(wifi_config);
-            }
-
-            // TODO: handle wifi credentials here
-            // TODO: handle mqtt credentials here
+                break;
 #if SK_MQTT
-
-            if (wifi_event.type == WIFI_STA_CONNECTED)
-            {
+            case SK_RESET_ERROR:
+                switch (configuration_->getOSConfiguration()->mode)
+                {
+                case Onboarding:
+                    display_task_->enableOnboarding();
+                    break;
+                case Hass:
+                    display_task_->enableHass();
+                    break;
+                default:
+                    break;
+                }
+                wifi_task_->resetRetryCount();
+                mqtt_task_->handleEvent(wifi_event);
+                display_task_->getErrorHandlingFlow()->handleEvent(wifi_event); // if reset error or dismiss error is triggered elsewhere.
+                break;
+            case SK_DISMISS_ERROR:
+                // wifi_task_->resetRetryCount();
+                // mqtt_task_->handleEvent(wifi_event);
+                break;
+            case SK_WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                    ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
-
-                    mqtt_task_->setup(mqtt_config);
+                    mqtt_task_->getNotifier()->requestConnect(mqtt_config);
                 }
-            }
-
-            if (wifi_event.type == MQTT_CREDENTIALS_RECIEVED)
-            {
-                MQTTConfiguration mqtt_config;
-                strcpy(mqtt_config.host, wifi_event.body.mqtt_connecting.host);
-                mqtt_config.port = wifi_event.body.mqtt_connecting.port;
-                strcpy(mqtt_config.user, wifi_event.body.mqtt_connecting.user);
-                strcpy(mqtt_config.password, wifi_event.body.mqtt_connecting.password);
-                configuration_->saveMQTTConfiguration(mqtt_config);
-                mqtt_task_->handleEvent(wifi_event);
-            }
-
-            if (wifi_event.type == MQTT_SETUP || wifi_event.type == MQTT_INIT || wifi_event.type == MQTT_CONNECTING || wifi_event.type == SK_MQTT_CONNECTED || wifi_event.type == MQTT_CONNECTION_FAILED)
-            {
-                mqtt_task_->handleEvent(wifi_event);
-            }
-
-            if (wifi_event.type == MQTT_STATE_UPDATE)
-            {
+                break;
+            case SK_MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
-            }
+                break;
+            case SK_MQTT_CONNECTION_FAILED:
+            case SK_MQTT_RETRY_LIMIT_REACHED:
+            case SK_WIFI_STA_CONNECTION_FAILED:
+            case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+                if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
+                {
+                    display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
+                }
+                break;
+            case SK_MQTT_NEW_CREDENTIALS_RECIEVED:
+                mqtt_task_->getNotifier()->requestSetupAndConnect(wifi_event.body.mqtt_connecting);
+                break;
+            case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
+                configuration_->saveMQTTConfiguration(wifi_event.body.mqtt_connecting);
+                wifi_task_->retryMqtt(true);     //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                wifi_task_->mqttConnected(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                break;
+            case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+                wifi_task_->retryMqtt(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
+                // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
+                break;
+
+            default:
+                mqtt_task_->handleEvent(wifi_event);
+                break;
+
 #endif
+            }
         }
 #endif
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
@@ -512,16 +547,28 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_LONG;
-                switch (configuration_->getOSConfiguration()->mode)
+
+                //! GET ACTIVE FLOW? SO WE DONT HAVE DIFFERENT
+                // display_task_->getActiveFlow()->handleNavigationEvent(event);
+                switch (display_task_->getErrorHandlingFlow()->getErrorType())
                 {
-                case Onboarding:
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                case NO_ERROR:
+                    switch (configuration_->getOSConfiguration()->mode)
+                    {
+                    case Onboarding:
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        break;
+                    case Demo:
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
+                        break;
+                    case Hass:
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    default:
+                        break;
+                    }
                     break;
-                case Demo:
-                    display_task_->getDemoApps()->handleNavigationEvent(event);
-                    break;
-                case Hass:
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                case MQTT_ERROR:
+                    display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
                     break;
@@ -537,16 +584,25 @@ void RootTask::updateHardware(AppState app_state)
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
                 NavigationEvent event;
                 event.press = NAVIGATION_EVENT_PRESS_SHORT;
-                switch (configuration_->getOSConfiguration()->mode)
+                switch (display_task_->getErrorHandlingFlow()->getErrorType())
                 {
-                case Onboarding:
-                    display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                case NO_ERROR:
+                    switch (configuration_->getOSConfiguration()->mode)
+                    {
+                    case Onboarding:
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        break;
+                    case Demo:
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
+                        break;
+                    case Hass:
+                        display_task_->getHassApps()->handleNavigationEvent(event);
+                    default:
+                        break;
+                    }
                     break;
-                case Demo:
-                    display_task_->getDemoApps()->handleNavigationEvent(event);
-                    break;
-                case Hass:
-                    display_task_->getHassApps()->handleNavigationEvent(event);
+                case MQTT_ERROR:
+                    display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
                     break;
@@ -680,7 +736,7 @@ void RootTask::setConfiguration(Configuration *configuration)
 
                 // mqtt_task_->setupMQTT(mqtt_config);
                 // DO STUFF WITH MQTT CONFIG!!!
-                // mqtt_task_->getNotifier()->requestMQTT(mqtt_config);
+                // mqtt_task_->getNotifier()->requestConnect(mqtt_config); // ! DONT CONNECT MQTT HERE WAIT FOR WIFI TO CONNECT
             }
 #endif
         }
