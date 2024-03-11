@@ -29,6 +29,8 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 6, 1, task_cor
     wifi_notifier.setCallback([this](WiFiCommand command)
                               { this->handleCommand(command); });
 
+    WiFi.setHostname(MqttTask::getKnobId().c_str());
+    WiFi.softAPsetHostname(MqttTask::getKnobId().c_str());
     WiFi.setAutoReconnect(true);
 }
 
