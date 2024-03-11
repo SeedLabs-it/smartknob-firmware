@@ -95,19 +95,18 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 
 void WifiTask::startWiFiAP()
 {
-
-    char ssid[12] = "SKDK_A2R45C";
+    std::string ssid = MqttTask::getKnobId();
     char passphrase[9] = "12345678";
 
     // TODO, randomise hostname and password
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.onEvent(OnWiFiEventGlobal);
-    WiFi.softAP(ssid, passphrase);
+    WiFi.softAP(ssid.c_str(), passphrase);
 
     WiFiEvent event;
     event.type = SK_WIFI_AP_STARTED;
 
-    strcpy(event.body.wifi_ap_started.ssid, ssid);
+    strcpy(event.body.wifi_ap_started.ssid, ssid.c_str());
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
     // DEBUG: added delay for testing, remove this on release

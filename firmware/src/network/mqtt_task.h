@@ -42,6 +42,8 @@ public:
 
     MqttNotifier *getNotifier();
 
+    static std::string getKnobId();
+
 protected:
     void run();
 

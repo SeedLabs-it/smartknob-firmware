@@ -210,7 +210,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     uint32_t timeout_at = millis() + 30000;
 
     // TODO: Create and use knob id
-    while (!mqtt_client.connect("SKDK_A2R45C", config.user, config.password) && timeout_at > millis())
+    while (!mqtt_client.connect(getKnobId().c_str(), config.user, config.password) && timeout_at > millis())
     {
         delay(0); // DO NOTHING
     }
@@ -257,13 +257,13 @@ bool MqttTask::connect()
     {
         log("Connecting to MQTT without credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect("SKDK_A2R45C");
+        mqtt_connected = mqtt_client.connect(getKnobId().c_str());
     }
     else
     {
         log("Connecting to MQTT with credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect("SKDK_A2R45C", config_.user, config_.password);
+        mqtt_connected = mqtt_client.connect(getKnobId().c_str(), config_.user, config_.password);
     }
 
     if (mqtt_connected)
@@ -371,6 +371,24 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     }
 
     cJSON_free(json_root);
+}
+
+std::string MqttTask::getKnobId()
+{
+    std::string mac_address = std::string(WiFi.macAddress().c_str());
+
+    mac_address.erase(
+        std::remove_if(
+            mac_address.begin(),
+            mac_address.end(),
+            [](char c)
+            {
+                return c == ':';
+            }),
+        mac_address.end());
+
+    ESP_LOGD(MQTT_TAG, "KNOB ID: %s", std::string("SKDK_" + mac_address.substr(0, 6)).c_str());
+    return std::string("SKDK_" + mac_address.substr(0, 6));
 }
 
 cJSON *MqttTask::getApps()
