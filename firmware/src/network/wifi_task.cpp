@@ -198,12 +198,7 @@ void WifiTask::webHandlerWiFiForm()
     //     server_->sendHeader("Location", "/mqtt");
     //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
     // } else {
-    server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                    "SSID: <input type='text' name='ssid'><br>"
-                                    "Password: <input type='text' name='password'><br>"
-                                    "<input type='hidden' name='setup_type' value='wifi'>"
-                                    "<input type='submit' value='Submit'>"
-                                    "</form>");
+    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f; /* Dark background color */color: #fff; /* Text color */font-family: Arial, sans-serif;padding: 20px; /* Add some padding */}form {background-color: #333; /* Dark form background color */padding: 20px;border-radius: 10px;max-width: 400px; /* Set max width for better mobile experience */margin: 0 auto; /* Center aligning horizontally */}input[type='text'], input[type='submit'] {width: calc(100% - 12px); /* Adjusting width to match form */margin-bottom: 10px; /* Spacing between form elements */padding: 10px;box-sizing: border-box; /* Ensure padding is included in width */}input[type='submit'] {background-color: #4CAF50; /* Green submit button */border: none;border-radius: 4px;cursor: pointer;}input[type='submit']:hover {background-color: #45a049; /* Darker green on hover */}</style></head><body><form action='/submit' method='get'><label for='ssid'>SSID:</label><br><input type='text' id='ssid' name='ssid'><br><label for='password'>Password:</label><br><input type='text' id='password' name='password'><br><input type='hidden' name='setup_type' value='wifi'><input type='submit' value='Submit'></form></body></html>)");
 }
 
 void WifiTask::webHandlerMQTTForm()
@@ -212,14 +207,7 @@ void WifiTask::webHandlerMQTTForm()
     event.type = SK_WEB_CLIENT_MQTT;
     publishWiFiEvent(event);
 
-    server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                    "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
-                                    "MQTT PORT: <input type='number' name='mqtt_port'><br>"
-                                    "MQTT USER: <input type='text' name='mqtt_user'><br>"
-                                    "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
-                                    "<input type='hidden' name='setup_type' value='mqtt'>"
-                                    "<input type='submit' value='Submit'>"
-                                    "</form>");
+    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f; /* Dark background color */color: #fff; /* Text color */font-family: Arial, sans-serif;padding: 20px; /* Add some padding */}form {background-color: #333; /* Dark form background color */padding: 20px;border-radius: 10px;max-width: 400px; /* Set max width for better mobile experience */margin: 0 auto; /* Center aligning horizontally */}input[type='text'], input[type='number'], input[type='submit'] {width: calc(100% - 12px); /* Adjusting width to match form */margin-bottom: 10px; /* Spacing between form elements */padding: 10px;box-sizing: border-box; /* Ensure padding is included in width */}input[type='submit'] {background-color: #4CAF50; /* Green submit button */border: none;border-radius: 4px;cursor: pointer;}input[type='submit']:hover {background-color: #45a049; /* Darker green on hover */}</style></head><body><form action='/submit' method='get'><label for='mqtt_server'>MQTT SERVER:</label><br><input type='text' id='mqtt_server' name='mqtt_server'><br><label for='mqtt_port'>MQTT PORT:</label><br><input type='number' id='mqtt_port' name='mqtt_port'><br><label for='mqtt_user'>MQTT USER:</label><br><input type='text' id='mqtt_user' name='mqtt_user'><br><label for='mqtt_password'>MQTT PASSWORD:</label><br><input type='text' id='mqtt_password' name='mqtt_password'><br><input type='hidden' name='setup_type' value='mqtt'><input type='submit' value='Submit'></form></body></html>)");
 }
 
 void WifiTask::webHandlerWiFiCredentials()
