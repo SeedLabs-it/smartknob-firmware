@@ -74,8 +74,7 @@ TFT_eSprite *HassApps::renderWaitingForHass()
     int8_t screen_name_label_h = spr_->fontHeight(1);
 
     spr_->drawString("Waiting for", center_horizontal, center_vertical - screen_name_label_h, 1);
-    spr_->drawString("Home Assistant", center_horizontal, center_vertical, 1);
-    spr_->drawString("to sync apps.", center_horizontal, center_vertical + screen_name_label_h, 1);
+    spr_->drawString("Home Assistant sync.", center_horizontal, center_vertical, 1);
 
     return this->spr_;
 }
