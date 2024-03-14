@@ -48,6 +48,23 @@ public:
 
     void handleNavigationEvent(NavigationEvent event);
 
+    PB_SmartKnobConfig blocked_motor_config = PB_SmartKnobConfig{
+        0,
+        0,
+        0,
+        0,
+        0,
+        PI,
+        0,
+        1,
+        0.5,
+        "",
+        0,
+        {},
+        0,
+        0,
+    };
+
 protected:
     QueueHandle_t mutex;
     std::map<uint8_t, std::shared_ptr<App>> apps;
@@ -66,7 +83,6 @@ protected:
     void unlock();
 
     PB_SmartKnobConfig root_level_motor_config;
-    PB_SmartKnobConfig blocked_motor_config;
 
     MotorNotifier *motor_notifier;
 };

@@ -41,7 +41,11 @@ EntityStateUpdate Apps::update(AppState state)
 {
     // TODO: update with AppState
     lock();
-    // TODO: check if active_app is not null
+    if (active_app == nullptr)
+    {
+        unlock();
+        return EntityStateUpdate();
+    }
     EntityStateUpdate new_state_update = active_app->updateStateFromKnob(state.motor_state);
     active_app->updateStateFromSystem(state);
 
@@ -127,6 +131,7 @@ void Apps::updateMenu() // BROKEN FOR NOW
 
         position++;
     }
+
     unlock();
     setActive(MENU);
 }
@@ -266,7 +271,15 @@ void Apps::triggerMotorConfigUpdate()
 {
     if (this->motor_notifier != nullptr)
     {
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
+        if (active_app != nullptr)
+        {
+            motor_notifier->requestUpdate(active_app->getMotorConfig());
+        }
+        else
+        {
+            motor_notifier->requestUpdate(blocked_motor_config);
+            ESP_LOGE("onboarding_flow", "no active app");
+        }
     }
     else
     {
