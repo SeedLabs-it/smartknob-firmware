@@ -376,8 +376,6 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "acknowledgement") == 0)
     {
-        log("acknowledgement received");
-
         cJSON *acknowledge_id = cJSON_GetObjectItem(json_root, "acknowledge_id");
         cJSON *acknowledge_type = cJSON_GetObjectItem(json_root, "acknowledge_type");
 
