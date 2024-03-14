@@ -262,7 +262,7 @@ TFT_eSprite *OnboardingFlow::renderWelcomePage()
     sprintf(buf_, "SMART KNOB");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, center_width, center_height - 90, 1);
+    spr_->drawString(buf_, center_width, center_height - 92, 1);
 
     // TODO move this to a constant of software/hardware
     sprintf(buf_, "DEV KIT V%d.%d", 0, 1);
@@ -270,12 +270,12 @@ TFT_eSprite *OnboardingFlow::renderWelcomePage()
     spr_->setTextColor(default_text_color);
     spr_->drawString(buf_, center_width, center_height - 68, 1);
 
-    spr_->drawBitmap(center_width - icon_size / 2, center_height - icon_size / 2, seedlabs_logo, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
+    spr_->drawBitmap(center_width - icon_size / 2, (center_height - icon_size / 2) - 2, seedlabs_logo, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
 
     sprintf(buf_, "ROTATE TO START");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_width, center_height + 70, 1);
+    spr_->drawString(buf_, center_width, center_height + 66, 1);
 
     return this->spr_;
 }
@@ -302,7 +302,7 @@ TFT_eSprite *OnboardingFlow::renderHass1StepPage()
     sprintf(buf_, "PRESS TO CONFIGURE");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, center_width, center_height + 70, 1);
+    spr_->drawString(buf_, center_width, center_height + 66, 1);
 
     return this->spr_;
 }
@@ -554,8 +554,9 @@ TFT_eSprite *OnboardingFlow::renderHass8StepPage()
 
 TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_h = TFT_HEIGHT / 2;
     uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t icon_size = 80;
 
     spr_->setTextDatum(CC_DATUM);
 
@@ -563,6 +564,8 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString(buf_, center_h, 50, 1);
+
+    spr_->drawBitmap(center_v - icon_size / 2, (center_h - icon_size / 2) - 2, wifi_conn_80, icon_size, icon_size, TFT_WHITE, TFT_BLACK);
 
     sprintf(buf_, "PRESS TO CONFIGURE");
     spr_->setFreeFont(&NDS1210pt7b);
@@ -573,15 +576,30 @@ TFT_eSprite *OnboardingFlow::renderWiFi1StepPage()
 }
 TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_h = TFT_HEIGHT / 2;
     uint16_t center_v = TFT_WIDTH / 2;
-
+    uint16_t icon_size = 80;
     spr_->setTextDatum(CC_DATUM);
 
     sprintf(buf_, "DEMO MODE");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString(buf_, center_h, 50, 1);
+
+    uint32_t colors[6] = {TFT_BLUE, TFT_PURPLE, TFT_RED, TFT_YELLOW, TFT_GREENYELLOW, TFT_GREEN};
+    float angle_step = 2 * PI / 6;
+    float circle_radius = 24; // Adjust as needed
+    uint8_t small_circle_radius = 8;
+
+    for (uint16_t i = 0; i < 6; i++)
+    {
+        int16_t x;
+        int16_t y;
+        x = center_h + circle_radius * sinf((i + 3) * angle_step);
+        y = center_h + circle_radius * cosf((i + 3) * angle_step);
+
+        spr_->fillCircle(x, y, small_circle_radius, colors[i]);
+    }
 
     sprintf(buf_, "PRESS TO START");
     spr_->setFreeFont(&NDS1210pt7b);
@@ -593,31 +611,30 @@ TFT_eSprite *OnboardingFlow::renderDemo1StepPage()
 TFT_eSprite *OnboardingFlow::renderAboutPage()
 {
     uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_HEIGHT / 2;
 
-    spr_->setTextDatum(CL_DATUM);
-
+    spr_->setTextDatum(CC_DATUM);
     uint8_t left_padding = 30;
 
     sprintf(buf_, "FIRMWARE 0.1b");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, left_padding, 50, 1);
+    spr_->drawString(buf_, center_h, 85, 1);
 
     sprintf(buf_, "HARDWARE: %s", "DEVKIT V0.1");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, left_padding, 80, 1);
+    spr_->drawString(buf_, center_h, 115, 1);
 
     sprintf(buf_, "WIFI: %s", "NOT CONNECTED");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
-    spr_->drawString(buf_, left_padding, 110, 1);
+    spr_->drawString(buf_, center_h, 145, 1);
 
     sprintf(buf_, "SEEDLABS.IT®");
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(accent_text_color);
-    spr_->drawString(buf_, left_padding, 185, 1);
+    spr_->drawString(buf_, center_h, 175, 1);
 
     return this->spr_;
 }
