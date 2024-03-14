@@ -58,6 +58,7 @@ void MqttTask::run()
 {
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
+    static uint32_t mqtt_init_interval;
     const uint16_t mqtt_pull_interval_ms = 200;
     const uint16_t mqtt_push_interval_ms = 200;
 
@@ -128,18 +129,21 @@ void MqttTask::run()
 
             if (millis() - mqtt_push > mqtt_push_interval_ms)
             {
-
                 // iterate over all items in the map and push all not pushed yet
                 for (auto i : entity_states_to_send)
                 {
                     if (!entity_states_to_send[i.first].sent)
                     {
+                        std::string m_id = generatePayloadId();
                         cJSON *json = cJSON_CreateObject();
+                        cJSON_AddStringToObject(json, "id", m_id.c_str());
                         cJSON_AddStringToObject(json, "type", "state_update");
                         cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
                         cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
                         char *json_string = cJSON_PrintUnformatted(json);
+
+                        unacknowledged_ids.insert(std::make_pair(m_id, "state_update"));
                         mqtt_client.publish(topic.c_str(), json_string);
 
                         cJSON_free(json_string);
@@ -151,6 +155,12 @@ void MqttTask::run()
                 }
 
                 mqtt_push = millis();
+            }
+
+            if (millis() - mqtt_init_interval > 10000 && !hass_init_acknowledged)
+            {
+                init();
+                mqtt_init_interval = millis();
             }
         }
 
@@ -165,6 +175,7 @@ bool MqttTask::setup(MQTTConfiguration config)
     {
         reset();
     }
+
     WiFiEvent event;
     event.type = SK_MQTT_SETUP;
     sprintf(event.body.mqtt_connecting.host, "%s", config.host);
@@ -210,7 +221,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     uint32_t timeout_at = millis() + 30000;
 
     // TODO: Create and use knob id
-    while (!mqtt_client.connect(getKnobId().c_str(), config.user, config.password) && timeout_at > millis())
+    while (!mqtt_client.connect(config.knob_id, config.user, config.password) && timeout_at > millis())
     {
         delay(0); // DO NOTHING
     }
@@ -257,13 +268,14 @@ bool MqttTask::connect()
     {
         log("Connecting to MQTT without credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect(getKnobId().c_str());
+
+        mqtt_connected = mqtt_client.connect(config_.knob_id);
     }
     else
     {
         log("Connecting to MQTT with credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect(getKnobId().c_str(), config_.user, config_.password);
+        mqtt_connected = mqtt_client.connect(config_.knob_id, config_.user, config_.password);
     }
 
     if (mqtt_connected)
@@ -299,8 +311,13 @@ bool MqttTask::init()
     sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
     mqtt_client.subscribe(buf_);
 
+    std::string m_id = generatePayloadId();
+
     cJSON *json = cJSON_CreateObject();
+    cJSON_AddStringToObject(json, "id", m_id.c_str());
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
+
+    unacknowledged_ids.insert(std::make_pair(m_id, "init"));
     mqtt_client.publish("smartknob/init", cJSON_PrintUnformatted(json));
     cJSON_Delete(json);
 
@@ -360,35 +377,29 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "acknowledgement") == 0)
     {
-        // log("acknowledgement received");
+        cJSON *acknowledge_id = cJSON_GetObjectItem(json_root, "acknowledge_id");
+        cJSON *acknowledge_type = cJSON_GetObjectItem(json_root, "acknowledge_type");
 
-        // cJSON *type = cJSON_GetObjectItem(json_root, "type");
+        if (unacknowledged_ids.find(acknowledge_id->valuestring) != unacknowledged_ids.end())
+        {
+            unacknowledged_ids.erase(acknowledge_id->valuestring);
 
-        // if (strcmp(type->valuestring, "init") == 0)
-        // {
-        //     log("init acknowledgement received");
-        // }
+            if (strcmp(acknowledge_type->valuestring, "init") == 0)
+            {
+                hass_init_acknowledged = true;
+            }
+        }
     }
 
     cJSON_free(json_root);
 }
 
-std::string MqttTask::getKnobId()
+std::string MqttTask::generatePayloadId()
 {
-    std::string mac_address = std::string(WiFi.macAddress().c_str());
-
-    mac_address.erase(
-        std::remove_if(
-            mac_address.begin(),
-            mac_address.end(),
-            [](char c)
-            {
-                return c == ':';
-            }),
-        mac_address.end());
-
-    ESP_LOGD(MQTT_TAG, "KNOB ID: %s", std::string("SKDK_" + mac_address.substr(0, 6)).c_str());
-    return std::string("SKDK_" + mac_address.substr(0, 6));
+    unsigned long currentTime = millis();
+    char hexBuffer[9];                        // Since millis() returns a 32-bit value, we need 8 characters for hexadecimal representation plus one for null terminator
+    sprintf(hexBuffer, "%08lX", currentTime); // Convert unsigned long to hexadecimal string
+    return std::string(hexBuffer);
 }
 
 cJSON *MqttTask::getApps()

@@ -3,6 +3,8 @@
 #include <FFat.h>
 #include <PacketSerial.h>
 
+#include <WiFi.h>
+
 #include "proto_gen/smartknob.pb.h"
 
 #include "logger.h"
@@ -48,6 +50,7 @@ struct WiFiConfiguration
 {
     char ssid[128];
     char passphrase[128];
+    char knob_id[64];
 };
 
 struct MQTTConfiguration
@@ -56,6 +59,7 @@ struct MQTTConfiguration
     uint16_t port;
     char user[64];
     char password[64];
+    char knob_id[64];
 };
 
 enum OSMode
@@ -92,6 +96,7 @@ public:
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
     OSConfiguration *getOSConfiguration();
+    std::string getKnobId();
 
 private:
     SemaphoreHandle_t mutex_;
@@ -109,6 +114,8 @@ private:
     uint8_t buffer_[PB_PersistentConfiguration_size];
 
     void log(const char *msg);
+
+    std::string knob_id;
 };
 class FatGuard
 {

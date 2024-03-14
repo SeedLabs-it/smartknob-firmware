@@ -51,3 +51,30 @@ void HassApps::handleEvent(WiFiEvent event)
     }
     unlock();
 }
+
+TFT_eSprite *HassApps::renderActive()
+{
+    if (active_app == nullptr && apps.size() == 0)
+    {
+        return renderWaitingForHass();
+    }
+    return Apps::renderActive();
+}
+
+TFT_eSprite *HassApps::renderWaitingForHass()
+{
+    uint16_t center_vertical = TFT_HEIGHT / 2;
+    uint16_t center_horizontal = TFT_WIDTH / 2;
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->setTextColor(default_text_color);
+
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->drawString("Waiting for", center_horizontal, center_vertical - screen_name_label_h, 1);
+    spr_->drawString("Home Assistant sync.", center_horizontal, center_vertical, 1);
+
+    return this->spr_;
+}

@@ -29,8 +29,6 @@ WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 6, 1, task_cor
     wifi_notifier.setCallback([this](WiFiCommand command)
                               { this->handleCommand(command); });
 
-    WiFi.setHostname(MqttTask::getKnobId().c_str());
-    WiFi.softAPsetHostname(MqttTask::getKnobId().c_str());
     WiFi.setAutoReconnect(true);
 }
 
@@ -97,18 +95,17 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 
 void WifiTask::startWiFiAP()
 {
-    std::string ssid = MqttTask::getKnobId();
     char passphrase[9] = "12345678";
 
     // TODO, randomise hostname and password
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.onEvent(OnWiFiEventGlobal);
-    WiFi.softAP(ssid.c_str(), passphrase);
+    WiFi.softAP(WiFi.getHostname(), passphrase);
 
     WiFiEvent event;
     event.type = SK_WIFI_AP_STARTED;
 
-    strcpy(event.body.wifi_ap_started.ssid, ssid.c_str());
+    strcpy(event.body.wifi_ap_started.ssid, WiFi.getHostname());
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
     // DEBUG: added delay for testing, remove this on release
@@ -199,12 +196,7 @@ void WifiTask::webHandlerWiFiForm()
     //     server_->sendHeader("Location", "/mqtt");
     //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
     // } else {
-    server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                    "SSID: <input type='text' name='ssid'><br>"
-                                    "Password: <input type='text' name='password'><br>"
-                                    "<input type='hidden' name='setup_type' value='wifi'>"
-                                    "<input type='submit' value='Submit'>"
-                                    "</form>");
+    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form action='/submit' method='get'><h2>WIFI</h2><label for='ssid'>SSID</label><input type='text' id='ssid' name='ssid'><label for='password'>Password</label><input type='text' id='password' name='password'><input type='hidden' name='setup_type' value='wifi'><input type='submit' value='Submit'></form></body></html>)");
 }
 
 void WifiTask::webHandlerMQTTForm()
@@ -213,14 +205,7 @@ void WifiTask::webHandlerMQTTForm()
     event.type = SK_WEB_CLIENT_MQTT;
     publishWiFiEvent(event);
 
-    server_->send(200, "text/html", "<form action='/submit' method='get'>"
-                                    "MQTT SERVER: <input type='text' name='mqtt_server'><br>"
-                                    "MQTT PORT: <input type='number' name='mqtt_port'><br>"
-                                    "MQTT USER: <input type='text' name='mqtt_user'><br>"
-                                    "MQTT PASSWORD: <input type='text' name='mqtt_password'><br>"
-                                    "<input type='hidden' name='setup_type' value='mqtt'>"
-                                    "<input type='submit' value='Submit'>"
-                                    "</form>");
+    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form action='/submit' method='get'><h2>MQTT</h2><label for='mqtt_server'>SERVER</label><input type='text' id='mqtt_server' name='mqtt_server'><label for='mqtt_port'>PORT</label><input type='number' id='mqtt_port' name='mqtt_port'><div><label for='toggle_mqtt' style='font-weight: normal;'>Toggle Username/Password</label><input type='checkbox' id='toggle_mqtt' onclick='toggleMqttFields();'></div><div id='mqtt_fields' style='display: none;'><label for='mqtt_user'>USER</label><input type='text' id='mqtt_user' name='mqtt_user'><label for='mqtt_password'>PASSWORD</label><input type='text' id='mqtt_password' name='mqtt_password'></div><input type='hidden' name='setup_type' value='mqtt'><input type='submit' value='Submit'></form><script>function toggleMqttFields() {var mqttFields = document.getElementById('mqtt_fields');if (mqttFields.style.display === 'none') {mqttFields.style.display = 'block';} else {mqttFields.style.display = 'none';}}</script></body></html>)");
 }
 
 void WifiTask::webHandlerWiFiCredentials()
@@ -282,7 +267,7 @@ void WifiTask::webHandlerMQTTCredentials()
     }
     if (mqtt_connected)
     {
-        server_->send(200, "text/html", "Setup complete!");
+        server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form><h2>Setup done, continue in Home Assistant!</h2></form></body></html>)");
         return;
     }
     server_->sendHeader("Location", "/mqtt");
