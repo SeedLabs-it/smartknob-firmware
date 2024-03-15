@@ -43,6 +43,18 @@ int8_t BlindsApp::navigationNext()
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
+void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *position = cJSON_GetObjectItem(mqtt_state_update.state, "position");
+
+    if (position != NULL)
+    {
+        current_closed_position = position->valueint / 5;
+        motor_config.position = current_closed_position;
+        motor_config.position_nonce = current_closed_position;
+    }
+}
+
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     current_closed_position = state.current_position;

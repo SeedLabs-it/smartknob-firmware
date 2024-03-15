@@ -21,11 +21,6 @@ void HassApps::sync(cJSON *json_apps)
     SettingsApp *settings_app = new SettingsApp(this->spr_);
     add(app_position, settings_app);
 
-    app_position++;
-
-    BlindsApp *blinds_app = new BlindsApp(this->spr_, "blinds", "Blinds");
-    add(app_position, blinds_app);
-
     updateMenu();
     // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }

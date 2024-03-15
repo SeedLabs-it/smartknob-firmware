@@ -11,6 +11,7 @@ public:
     TFT_eSprite *render();
     int8_t navigationNext();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
 
 private:
