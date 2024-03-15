@@ -32,7 +32,6 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : A
 
     big_icon = hvac_80;
     small_icon = hvac_40;
-    friendly_name = "Climate";
 }
 
 EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
