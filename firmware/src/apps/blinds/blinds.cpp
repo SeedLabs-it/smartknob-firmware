@@ -59,7 +59,6 @@ void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
-
     if (state_sent_from_hass)
     {
         state_sent_from_hass = false;
