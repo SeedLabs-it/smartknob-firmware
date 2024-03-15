@@ -396,8 +396,8 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 std::string MqttTask::generatePayloadId()
 {
     unsigned long currentTime = millis();
-    char hexBuffer[9];                        // Since millis() returns a 32-bit value, we need 8 characters for hexadecimal representation plus one for null terminator
-    sprintf(hexBuffer, "%08lX", currentTime); // Convert unsigned long to hexadecimal string
+    char hexBuffer[9];
+    sprintf(hexBuffer, "%08lX", currentTime);
     return std::string(hexBuffer);
 }
 
