@@ -158,8 +158,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
-        BlindsApp *app = new BlindsApp(this->spr_, app_id);
-        app->friendly_name = friendly_name;
+        BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
