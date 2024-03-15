@@ -96,7 +96,7 @@ public:
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
     OSConfiguration *getOSConfiguration();
-    std::string getKnobId();
+    const char *getKnobId();
 
 private:
     SemaphoreHandle_t mutex_;

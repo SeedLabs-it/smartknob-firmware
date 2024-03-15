@@ -1,11 +1,12 @@
 #pragma once
 
 #include <stdint.h>
+#include "configuration.h"
 
-struct WiFiAPStarted
+struct WiFiAPStarted : public WiFiConfiguration
 {
-    char ssid[128];
-    char passphrase[128];
+    // char ssid[128];
+    // char passphrase[128];
 };
 
 struct WiFiSTAConnecting

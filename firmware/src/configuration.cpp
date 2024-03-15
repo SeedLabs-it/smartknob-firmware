@@ -22,7 +22,6 @@ Configuration::Configuration()
     loadMQTTConfiguration();
 
     std::string mac_address = std::string(WiFi.macAddress().c_str());
-
     mac_address.erase(
         std::remove_if(
             mac_address.begin(),
@@ -33,10 +32,7 @@ Configuration::Configuration()
             }),
         mac_address.end());
 
-    knob_id = std::string("SKDK_" + mac_address.substr(0, 6));
-
-    WiFi.setHostname(knob_id.c_str());
-    WiFi.softAPsetHostname(knob_id.c_str());
+    sprintf(wifi_config.knob_id, "%s", std::string("SKDK_" + mac_address.substr(mac_address.length() - 6)).c_str());
 }
 
 Configuration::~Configuration()
@@ -44,9 +40,9 @@ Configuration::~Configuration()
     vSemaphoreDelete(mutex_);
 }
 
-std::string Configuration::getKnobId()
+const char *Configuration::getKnobId()
 {
-    return knob_id;
+    return wifi_config.knob_id;
 }
 
 bool Configuration::loadFromDisk()

@@ -39,6 +39,8 @@ public:
 
     void resetRetryCount();
 
+    void setHostname(const char *hostname);
+
 protected:
     void run();
 

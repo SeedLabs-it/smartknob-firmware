@@ -210,7 +210,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     event.body.mqtt_connecting = config;
     publishEvent(event);
 
-    wifi_client.setTimeout(15); // 30s timeoutn didnt work, threw error (Software caused connection abort)
+    wifi_client.setTimeout(15); // 30s timeout didnt work, threw error (Software caused connection abort)
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
@@ -220,10 +220,10 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     uint32_t timeout_at = millis() + 30000;
 
-    // TODO: Create and use knob id
+    disconnect();
     while (!mqtt_client.connect(config.knob_id, config.user, config.password) && timeout_at > millis())
     {
-        delay(0); // DO NOTHING
+        delay(10); // DO NOTHING
     }
 
     if (mqtt_client.connected())

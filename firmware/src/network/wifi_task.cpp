@@ -37,6 +37,13 @@ WifiTask::~WifiTask()
     vSemaphoreDelete(mutex_);
 }
 
+void WifiTask::setHostname(const char *hostname)
+{
+    sprintf(config_.knob_id, "%s", hostname);
+    ESP_LOGD(WIFI_TAG, "Setting hostname to: %s", hostname);
+    WiFi.setHostname(hostname);
+}
+
 void WifiTask::handleCommand(WiFiCommand command)
 {
     switch (command.type)
@@ -100,12 +107,12 @@ void WifiTask::startWiFiAP()
     // TODO, randomise hostname and password
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.onEvent(OnWiFiEventGlobal);
-    WiFi.softAP(WiFi.getHostname(), passphrase);
+    WiFi.softAP(config_.knob_id, passphrase);
 
     WiFiEvent event;
     event.type = SK_WIFI_AP_STARTED;
 
-    strcpy(event.body.wifi_ap_started.ssid, WiFi.getHostname());
+    strcpy(event.body.wifi_ap_started.ssid, config_.knob_id);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
     // DEBUG: added delay for testing, remove this on release
@@ -256,6 +263,7 @@ void WifiTask::webHandlerMQTTCredentials()
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+    sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
 
     publishWiFiEvent(event);
 

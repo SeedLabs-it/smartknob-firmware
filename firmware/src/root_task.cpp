@@ -237,6 +237,7 @@ void RootTask::run()
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
+    wifi_task_->setHostname(configuration_->getKnobId());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
@@ -279,7 +280,6 @@ void RootTask::run()
     AppState app_state = {};
     while (1)
     {
-
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();
