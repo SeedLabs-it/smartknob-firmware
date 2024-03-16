@@ -7,7 +7,7 @@
 class LightSwitchApp : public App
 {
 public:
-    LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
+    LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);

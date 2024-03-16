@@ -1,9 +1,10 @@
 #include "climate.h"
 
-ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
     this->app_id = app_id;
     this->friendly_name = friendly_name;
+    // this->entity_id = entity_id;
 
     // TODO update this via some API
     current_temperature = 20;
@@ -63,6 +64,7 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
     {
 
         sprintf(new_state.app_id, "%s", app_id);
+        // sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "mode", mode);
         cJSON_AddNumberToObject(json, "target_temp", wanted_temperature);

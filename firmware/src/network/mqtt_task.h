@@ -13,6 +13,12 @@
 #include "../app_config.h"
 #include "../events/events.h"
 #include "notify/mqtt_notifier/mqtt_notifier.h"
+
+// struct EntityStateId
+// {
+//     std::string entity_id;
+//     std::string app_id;
+// };
 class MqttTask : public Task<MqttTask>
 {
     friend class Task<MqttTask>; // Allow base Task to invoke protected run()
@@ -51,6 +57,7 @@ private:
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
 
     std::map<std::string, std::string> unacknowledged_ids;
+    std::map<std::string, EntityStateUpdate> unacknowledged_states;
 
     MQTTConfiguration config_;
     bool is_config_set;

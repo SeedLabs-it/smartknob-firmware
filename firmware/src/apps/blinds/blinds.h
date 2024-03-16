@@ -7,7 +7,7 @@
 class BlindsApp : public App
 {
 public:
-    BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
+    BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
     TFT_eSprite *render();
     int8_t navigationNext();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);

@@ -1,11 +1,10 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    // sprintf(author, "%s", "Beethoven");
-    // sprintf(track, "%s", "Moonlight Sonata");
     this->app_id = app_id;
     this->friendly_name = friendly_name;
+    this->entity_id = entity_id;
 
     motor_config = PB_SmartKnobConfig{
         0,
@@ -57,6 +56,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     if (last_position != current_position)
     {
         sprintf(new_state.app_id, "%s", app_id);
+        sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddBoolToObject(json, "on", current_position > 0);
 

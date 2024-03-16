@@ -11,9 +11,10 @@ void HassApps::sync(cJSON *json_apps)
 
         cJSON *json_app_slug = cJSON_GetObjectItemCaseSensitive(json_app_, "app_slug");
         cJSON *json_app_id = cJSON_GetObjectItemCaseSensitive(json_app_, "app_id");
+        cJSON *json_entity_id = cJSON_GetObjectItemCaseSensitive(json_app_, "entity_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app_, "friendly_name");
 
-        loadApp(app_position, json_app_slug->valuestring, json_app_id->valuestring, json_friendly_name->valuestring);
+        loadApp(app_position, json_app_slug->valuestring, json_app_id->valuestring, json_friendly_name->valuestring, "test");
 
         app_position++;
     }

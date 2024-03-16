@@ -1,9 +1,10 @@
 #include "blinds.h"
 
-BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
     this->app_id = app_id;
     this->friendly_name = friendly_name;
+    this->entity_id = entity_id;
 
     motor_config = PB_SmartKnobConfig{
         15,
@@ -75,6 +76,7 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
     if (last_closed_position != current_closed_position && !state_sent_from_hass)
     {
         sprintf(new_state.app_id, "%s", app_id);
+        sprintf(new_state.entity_id, "%s", entity_id);
 
         cJSON *json = cJSON_CreateObject();
 

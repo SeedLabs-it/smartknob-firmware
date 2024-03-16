@@ -93,6 +93,7 @@ struct AppState
 struct EntityStateUpdate
 {
     char app_id[256] = "";
+    char entity_id[256] = "";
     char state[256] = "";
     char app_slug[48] = "";
     bool changed = false;

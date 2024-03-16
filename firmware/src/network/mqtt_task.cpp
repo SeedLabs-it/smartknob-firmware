@@ -149,6 +149,7 @@ void MqttTask::run()
                         char *json_string = cJSON_PrintUnformatted(json);
 
                         unacknowledged_ids.insert(std::make_pair(m_id, "state_update"));
+                        unacknowledged_states.insert(std::make_pair(m_id, entity_states_to_send[i.first]));
                         mqtt_client.publish(topic.c_str(), json_string);
 
                         cJSON_free(json_string);
@@ -392,6 +393,10 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
             if (strcmp(acknowledge_type->valuestring, "init") == 0)
             {
                 hass_init_acknowledged = true;
+            }
+
+            else if (strcmp(acknowledge_type->valuestring, "state_update") == 0)
+            {
             }
         }
     }
