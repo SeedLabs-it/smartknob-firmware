@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "type": "PlatformIO",
+            "task": "Upload and Monitor (seedlabs_devkit_onboarding)",
+            "problemMatcher": [
+                "$platformio"
+            ],
+            "label": "PlatformIO: Upload and Monitor (seedlabs_devkit_onboarding)"
+        }
+    ]
+}

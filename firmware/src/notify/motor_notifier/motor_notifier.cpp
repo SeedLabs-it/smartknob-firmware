@@ -4,7 +4,7 @@ MotorNotifier::MotorNotifier(MotorUpdaterCallback callback)
 {
     this->callback = callback;
 
-    motor_updates_queue = xQueueCreate(2, sizeof(PB_SmartKnobConfig));
+    motor_updates_queue = xQueueCreate(5, sizeof(PB_SmartKnobConfig));
     assert(motor_updates_queue != NULL);
 }
 

@@ -1,8 +1,10 @@
 #include "blinds.h"
 
-BlindsApp::BlindsApp(TFT_eSprite *spr_, char *entity_name) : App(spr_)
+BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
 {
-    this->entity_name = entity_name;
+    this->app_id = app_id;
+    this->friendly_name = friendly_name;
+
     motor_config = PB_SmartKnobConfig{
         15,
         0,
@@ -22,24 +24,68 @@ BlindsApp::BlindsApp(TFT_eSprite *spr_, char *entity_name) : App(spr_)
 
     big_icon = shades_80;
     small_icon = shades_40;
-    friendly_name = "Shades";
+}
+
+int8_t BlindsApp::navigationNext()
+{
+    motor_config.position_nonce = motor_config.position;
+    motor_notifier->requestUpdate(motor_config);
+
+    if (motor_config.position == 0)
+    {
+        motor_config.position = 20;
+    }
+    else if (motor_config.position > 0)
+    {
+        motor_config.position = 0;
+    }
+
+    motor_config.position_nonce = motor_config.position;
+
+    return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
+}
+
+void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+{
+    cJSON *position = cJSON_GetObjectItem(mqtt_state_update.state, "position");
+
+    if (position != NULL)
+    {
+        current_closed_position = (20 - position->valueint / 5);
+        motor_config.position = current_closed_position;
+        motor_config.position_nonce = current_closed_position;
+        state_sent_from_hass = true;
+    }
 }
 
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    EntityStateUpdate new_state;
+    if (state_sent_from_hass)
+    {
+        state_sent_from_hass = false;
+        return new_state;
+    }
+
     current_closed_position = state.current_position;
 
-    // needed to next reload of App
     motor_config.position_nonce = current_closed_position;
     motor_config.position = current_closed_position;
 
-    EntityStateUpdate new_state;
-
-    // new_state.entity_name = entity_name;
-    // new_state.new_value = current_closed_position * 5.0; // 5 percent per position
-
-    if (last_closed_position != current_closed_position)
+    if (last_closed_position != current_closed_position && !state_sent_from_hass)
     {
+        sprintf(new_state.app_id, "%s", app_id);
+
+        cJSON *json = cJSON_CreateObject();
+
+        cJSON_AddNumberToObject(json, "position", (20 - current_closed_position) * 5);
+
+        char *json_str = cJSON_PrintUnformatted(json);
+        sprintf(new_state.state, "%s", json_str);
+
+        cJSON_free(json_str);
+        cJSON_Delete(json);
+
         last_closed_position = current_closed_position;
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_BLINDS);

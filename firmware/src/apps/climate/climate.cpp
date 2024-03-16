@@ -32,11 +32,16 @@ ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : A
 
     big_icon = hvac_80;
     small_icon = hvac_40;
-    friendly_name = "Climate";
 }
 
 EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    EntityStateUpdate new_state;
+    if (state_sent_from_hass)
+    {
+        state_sent_from_hass = false;
+        return new_state;
+    }
     wanted_temperature = state.current_position;
 
     // needed to next reload of App
@@ -53,8 +58,6 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
     {
         adjusted_sub_position = logf(1 + state.sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
-
-    EntityStateUpdate new_state;
 
     if (last_wanted_temperature != state.current_position || last_mode != mode)
     {
@@ -107,6 +110,11 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     if (current_temp != NULL)
     {
         this->current_temperature = current_temp->valueint;
+    }
+
+    if (mode != NULL || target_temp != NULL || current_temp != NULL)
+    {
+        state_sent_from_hass = true;
     }
 }
 

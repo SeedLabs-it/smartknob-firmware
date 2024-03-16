@@ -66,5 +66,7 @@ protected:
     PB_SmartKnobConfig root_level_motor_config;
     PB_SmartKnobConfig blocked_motor_config;
 
+    bool state_sent_from_hass = false;
+
     MotorNotifier *motor_notifier;
 };

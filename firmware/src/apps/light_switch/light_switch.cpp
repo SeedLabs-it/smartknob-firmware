@@ -30,6 +30,13 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
 
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    EntityStateUpdate new_state;
+    if (state_sent_from_hass)
+    {
+        state_sent_from_hass = false;
+        return new_state;
+    }
+
     current_position = state.current_position;
     sub_position_unit = state.sub_position_unit;
     // // needed to next reload of App
@@ -46,8 +53,6 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     {
         adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
-
-    EntityStateUpdate new_state;
 
     if (last_position != current_position)
     {
@@ -77,6 +82,7 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
         motor_config.position_nonce = current_position;
         motor_config.position = current_position;
+        state_sent_from_hass = true;
     }
 }
 

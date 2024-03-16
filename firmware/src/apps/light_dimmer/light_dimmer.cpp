@@ -101,6 +101,14 @@ int8_t LightDimmerApp::navigationBack()
 
 EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    EntityStateUpdate new_state;
+
+    if (state_sent_from_hass)
+    {
+        state_sent_from_hass = false;
+        return new_state;
+    }
+
     current_position = state.current_position;
 
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
@@ -143,8 +151,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
 
-    EntityStateUpdate new_state;
-
     if (last_position != current_position && first_run)
     {
         if (current_brightness == 0)
@@ -185,12 +191,12 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
     first_run = true;
-
     return new_state;
 }
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
+
     cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
     cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
     cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
@@ -203,7 +209,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (brightness != NULL)
     {
-        current_brightness = brightness->valueint / 2.55;
+        current_brightness = round(brightness->valueint / 2.55);
         if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER && current_brightness != current_position)
         {
             current_position = current_brightness;
@@ -251,6 +257,11 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         {
             adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
         }
+    }
+
+    if (on != NULL || brightness != NULL || color_temp != NULL || rgb_color != NULL)
+    {
+        state_sent_from_hass = true;
     }
 
     // cJSON_Delete(new_state);
