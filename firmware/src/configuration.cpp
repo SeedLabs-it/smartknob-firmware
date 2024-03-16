@@ -20,11 +20,30 @@ Configuration::Configuration()
     loadOSConfiguration();
     loadWiFiConfiguration();
     loadMQTTConfiguration();
+
+    std::string mac_address = std::string(WiFi.macAddress().c_str());
+    mac_address.erase(
+        std::remove_if(
+            mac_address.begin(),
+            mac_address.end(),
+            [](char c)
+            {
+                return c == ':';
+            }),
+        mac_address.end());
+
+    sprintf(wifi_config.knob_id, "%s", std::string("SKDK_" + mac_address.substr(mac_address.length() - 6)).c_str());
+    sprintf(mqtt_config.knob_id, "%s", wifi_config.knob_id);
 }
 
 Configuration::~Configuration()
 {
     vSemaphoreDelete(mutex_);
+}
+
+const char *Configuration::getKnobId()
+{
+    return wifi_config.knob_id;
 }
 
 bool Configuration::loadFromDisk()

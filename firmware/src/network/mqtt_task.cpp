@@ -20,6 +20,11 @@ MqttTask::~MqttTask()
     vSemaphoreDelete(mutex_app_sync_);
 }
 
+void MqttTask::setConfig(MQTTConfiguration config)
+{
+    config_ = config;
+}
+
 void MqttTask::handleCommand(MqttCommand command)
 {
     switch (command.type)
@@ -210,7 +215,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
     event.body.mqtt_connecting = config;
     publishEvent(event);
 
-    wifi_client.setTimeout(15); // 30s timeoutn didnt work, threw error (Software caused connection abort)
+    wifi_client.setTimeout(15); // 30s timeout didnt work, threw error (Software caused connection abort)
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
@@ -220,10 +225,10 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     uint32_t timeout_at = millis() + 30000;
 
-    // TODO: Create and use knob id
-    while (!mqtt_client.connect("SKDK_A2R45C", config.user, config.password) && timeout_at > millis())
+    disconnect();
+    while (!mqtt_client.connect(config.knob_id, config.user, config.password) && timeout_at > millis())
     {
-        delay(0); // DO NOTHING
+        delay(10); // DO NOTHING
     }
 
     if (mqtt_client.connected())
@@ -268,13 +273,14 @@ bool MqttTask::connect()
     {
         log("Connecting to MQTT without credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect("SKDK_A2R45C");
+
+        mqtt_connected = mqtt_client.connect(config_.knob_id);
     }
     else
     {
         log("Connecting to MQTT with credentials");
         // TODO: Create and use knob id
-        mqtt_connected = mqtt_client.connect("SKDK_A2R45C", config_.user, config_.password);
+        mqtt_connected = mqtt_client.connect(config_.knob_id, config_.user, config_.password);
     }
 
     if (mqtt_connected)

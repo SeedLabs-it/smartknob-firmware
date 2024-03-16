@@ -39,6 +39,8 @@ public:
 
     void resetRetryCount();
 
+    void setConfig(WiFiConfiguration config);
+
 protected:
     void run();
 

@@ -37,6 +37,12 @@ WifiTask::~WifiTask()
     vSemaphoreDelete(mutex_);
 }
 
+void WifiTask::setConfig(WiFiConfiguration config)
+{
+    config_ = config;
+    // is_config_set = true;
+}
+
 void WifiTask::handleCommand(WiFiCommand command)
 {
     switch (command.type)
@@ -95,19 +101,17 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 
 void WifiTask::startWiFiAP()
 {
-
-    char ssid[12] = "SKDK_A2R45C";
     char passphrase[9] = "12345678";
 
     // TODO, randomise hostname and password
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.onEvent(OnWiFiEventGlobal);
-    WiFi.softAP(ssid, passphrase);
+    WiFi.softAP(config_.knob_id, passphrase);
 
     WiFiEvent event;
     event.type = SK_WIFI_AP_STARTED;
 
-    strcpy(event.body.wifi_ap_started.ssid, ssid);
+    strcpy(event.body.wifi_ap_started.ssid, config_.knob_id);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
     // DEBUG: added delay for testing, remove this on release
@@ -224,6 +228,7 @@ void WifiTask::webHandlerWiFiCredentials()
     WiFiConfiguration wifi_config;
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
+    sprintf(wifi_config.knob_id, "%s", config_.knob_id);
 
     if (tryNewCredentialsWiFiSTA(wifi_config))
     {
@@ -258,6 +263,8 @@ void WifiTask::webHandlerMQTTCredentials()
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+    ESP_LOGD(WIFI_TAG, "MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
+    sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
 
     publishWiFiEvent(event);
 

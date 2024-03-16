@@ -42,6 +42,8 @@ public:
 
     MqttNotifier *getNotifier();
 
+    void setConfig(MQTTConfiguration config);
+
 protected:
     void run();
 
