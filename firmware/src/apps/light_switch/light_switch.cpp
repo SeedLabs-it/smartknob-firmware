@@ -7,9 +7,9 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
     sprintf(this->entity_id, "%s", entity_id);
 
     motor_config = PB_SmartKnobConfig{
+        current_position,
         0,
-        0,
-        0,
+        current_position,
         0,
         1,
         60 * PI / 180,
@@ -53,7 +53,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
 
-    if (last_position != current_position)
+    if (last_position != current_position && first_run)
     {
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
@@ -69,6 +69,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
     }
 
+    first_run = true;
     return new_state;
 }
 
@@ -78,7 +79,9 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (on != NULL)
     {
+        ESP_LOGD("LIGHT_SWITCH", "ON: %d", on->valueint);
         current_position = on->valueint;
+        last_position = current_position;
 
         motor_config.position_nonce = current_position;
         motor_config.position = current_position;

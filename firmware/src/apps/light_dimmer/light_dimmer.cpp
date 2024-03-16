@@ -207,6 +207,13 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     if (on != NULL)
     {
         is_on = on->valueint;
+        if (brightness == NULL && is_on == 1)
+        {
+            current_brightness = 3; // 3 = 1%
+
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+        }
     }
 
     if (brightness != NULL)

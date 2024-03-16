@@ -37,19 +37,12 @@ void HassApps::handleEvent(WiFiEvent event)
     case SK_MQTT_STATE_UPDATE:
         if (event.body.mqtt_state_update.all == true)
         {
-            // std::shared_ptr<App>[] active_app = findAllAppsNeedingUpdate();
             for (auto &app : apps)
             {
-                // ESP_LOGD("HASS_APPS", "ENTITY_ID_1: %s", app.second->entity_id);
-                // ESP_LOGD("HASS_APPS", "ENTITY_ID_2: %s", event.body.mqtt_state_update.entity_id);
 
                 if (strcmp(app.second->app_id, event.body.mqtt_state_update.app_id) != 0 && strcmp(app.second->entity_id, event.body.mqtt_state_update.entity_id) == 0)
                 {
-                    ESP_LOGD("HASS_APPS", "APP ID: %s", app.second->app_id);
-                    ESP_LOGD("HASS_APPS", "ENTITY ID: %s", app.second->entity_id);
-                    // // ESP_LOGD("HASS_APPS", "STATE: %s", event.body.mqtt_state_update.state->valuestring);
                     app.second->updateStateFromHASS(event.body.mqtt_state_update);
-                    // motor_notifier->requestUpdate(app.second->getMotorConfig());
                 }
             }
             // motor_notifier->requestUpdate(active_app->getMotorConfig());

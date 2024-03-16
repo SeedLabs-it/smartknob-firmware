@@ -402,11 +402,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
             {
                 if (unacknowledged_states.find(acknowledge_id->valuestring) != unacknowledged_states.end())
                 {
-                    // get entity id from state, update apps with state
                     EntityStateUpdate state = unacknowledged_states[acknowledge_id->valuestring];
-
-                    ESP_LOGD("MQTT", "STATE UPDATE ACKNOWLEDGED");
-                    ESP_LOGD("MQTT", "APP ID: %s", state.app_id);
 
                     MQTTStateUpdate state_update;
                     state_update.all = true;
