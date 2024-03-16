@@ -3,10 +3,11 @@
 #include <stdint.h>
 #include "configuration.h"
 
-struct WiFiAPStarted : public WiFiConfiguration
+struct WiFiAPStarted
 {
-    // char ssid[128];
-    // char passphrase[128];
+    char ssid[128];
+    char passphrase[128];
+    char knob_id[64];
 };
 
 struct WiFiSTAConnecting

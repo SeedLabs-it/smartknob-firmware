@@ -37,11 +37,10 @@ WifiTask::~WifiTask()
     vSemaphoreDelete(mutex_);
 }
 
-void WifiTask::setHostname(const char *hostname)
+void WifiTask::setConfig(WiFiConfiguration config)
 {
-    sprintf(config_.knob_id, "%s", hostname);
-    ESP_LOGD(WIFI_TAG, "Setting hostname to: %s", hostname);
-    WiFi.setHostname(hostname);
+    config_ = config;
+    // is_config_set = true;
 }
 
 void WifiTask::handleCommand(WiFiCommand command)
@@ -229,6 +228,7 @@ void WifiTask::webHandlerWiFiCredentials()
     WiFiConfiguration wifi_config;
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
+    sprintf(wifi_config.knob_id, "%s", config_.knob_id);
 
     if (tryNewCredentialsWiFiSTA(wifi_config))
     {
@@ -263,6 +263,7 @@ void WifiTask::webHandlerMQTTCredentials()
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+    ESP_LOGD(WIFI_TAG, "MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
     sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
 
     publishWiFiEvent(event);

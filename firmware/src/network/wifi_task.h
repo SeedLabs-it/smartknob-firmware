@@ -39,7 +39,7 @@ public:
 
     void resetRetryCount();
 
-    void setHostname(const char *hostname);
+    void setConfig(WiFiConfiguration config);
 
 protected:
     void run();

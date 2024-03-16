@@ -237,11 +237,12 @@ void RootTask::run()
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
-    wifi_task_->setHostname(configuration_->getKnobId());
+    wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #if SK_MQTT
+    mqtt_task_->setConfig(configuration_->getMQTTConfiguration());
     mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #endif
 #endif

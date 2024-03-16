@@ -20,6 +20,11 @@ MqttTask::~MqttTask()
     vSemaphoreDelete(mutex_app_sync_);
 }
 
+void MqttTask::setConfig(MQTTConfiguration config)
+{
+    config_ = config;
+}
+
 void MqttTask::handleCommand(MqttCommand command)
 {
     switch (command.type)
