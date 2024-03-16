@@ -368,10 +368,13 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         log("state_update received");
 
         cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
+        cJSON *entity_id = cJSON_GetObjectItem(json_root, "entity_id");
         cJSON *new_state = cJSON_GetObjectItem(json_root, "new_state");
 
         MQTTStateUpdate state_update;
-        state_update.app_id = app_id->valuestring;
+        state_update.all = false;
+        sprintf(state_update.app_id, "%s", app_id->valuestring);
+        sprintf(state_update.entity_id, "%s", entity_id->valuestring);
         state_update.state = new_state;
 
         WiFiEvent event;
@@ -397,6 +400,28 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
             else if (strcmp(acknowledge_type->valuestring, "state_update") == 0)
             {
+                if (unacknowledged_states.find(acknowledge_id->valuestring) != unacknowledged_states.end())
+                {
+                    // get entity id from state, update apps with state
+                    EntityStateUpdate state = unacknowledged_states[acknowledge_id->valuestring];
+
+                    ESP_LOGD("MQTT", "STATE UPDATE ACKNOWLEDGED");
+                    ESP_LOGD("MQTT", "APP ID: %s", state.app_id);
+
+                    MQTTStateUpdate state_update;
+                    state_update.all = true;
+                    sprintf(state_update.app_id, "%s", state.app_id);
+                    sprintf(state_update.entity_id, "%s", state.entity_id);
+                    state_update.state = cJSON_Parse(state.state);
+
+                    WiFiEvent event;
+                    event.type = SK_MQTT_STATE_UPDATE;
+                    event.body.mqtt_state_update = state_update;
+
+                    publishEvent(event);
+
+                    unacknowledged_states.erase(acknowledge_id->valuestring);
+                }
             }
         }
     }

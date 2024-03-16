@@ -47,7 +47,9 @@ struct WebClient
 
 struct MQTTStateUpdate
 {
-    char *app_id;
+    bool all;
+    char app_id[64];
+    char entity_id[64];
     cJSON *state;
 };
 

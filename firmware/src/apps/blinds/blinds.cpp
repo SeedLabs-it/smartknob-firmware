@@ -2,9 +2,9 @@
 
 BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    this->app_id = app_id;
-    this->friendly_name = friendly_name;
-    this->entity_id = entity_id;
+    sprintf(this->app_id, "%s", app_id);
+    sprintf(this->friendly_name, "%s", friendly_name);
+    sprintf(this->entity_id, "%s", entity_id);
 
     motor_config = PB_SmartKnobConfig{
         15,
