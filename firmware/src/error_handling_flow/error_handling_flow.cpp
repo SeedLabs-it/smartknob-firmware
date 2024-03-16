@@ -44,6 +44,7 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
 {
     WiFiEvent send_event;
     send_event.body.error.type = error_type;
+
     switch (event.press)
     {
     case NAVIGATION_EVENT_PRESS_SHORT:
