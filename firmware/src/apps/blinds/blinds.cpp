@@ -28,6 +28,8 @@ BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App
 
 int8_t BlindsApp::navigationNext()
 {
+    motor_config.position_nonce = motor_config.position;
+    motor_notifier->requestUpdate(motor_config);
 
     if (motor_config.position == 0)
     {
@@ -38,7 +40,7 @@ int8_t BlindsApp::navigationNext()
         motor_config.position = 0;
     }
 
-    motor_config.position_nonce = motor_config.position + rand() % 255 - motor_config.position;
+    motor_config.position_nonce = motor_config.position;
 
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
