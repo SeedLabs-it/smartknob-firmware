@@ -328,10 +328,6 @@ void RootTask::run()
                 mqtt_task_->handleEvent(wifi_event);
                 display_task_->getErrorHandlingFlow()->handleEvent(wifi_event); // if reset error or dismiss error is triggered elsewhere.
                 break;
-            case SK_DISMISS_ERROR:
-                // wifi_task_->resetRetryCount();
-                // mqtt_task_->handleEvent(wifi_event);
-                break;
             case SK_WIFI_STA_CONNECTED:
                 if (configuration_->getOSConfiguration()->mode == Hass)
                 {
@@ -341,6 +337,23 @@ void RootTask::run()
                 break;
             case SK_MQTT_STATE_UPDATE:
                 display_task_->getHassApps()->handleEvent(wifi_event);
+                break;
+            case SK_DISMISS_ERROR:
+                display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
+                switch (configuration_->getOSConfiguration()->mode)
+                {
+                case Onboarding:
+                    display_task_->enableOnboarding();
+                    break;
+                case Demo:
+                    display_task_->enableDemo();
+                    break;
+                case Hass:
+                    display_task_->enableHass();
+                    break;
+                default:
+                    break;
+                }
                 break;
             case SK_MQTT_CONNECTION_FAILED:
             case SK_MQTT_RETRY_LIMIT_REACHED:
@@ -569,6 +582,7 @@ void RootTask::updateHardware(AppState app_state)
                     }
                     break;
                 case MQTT_ERROR:
+                case WIFI_ERROR:
                     display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
@@ -603,6 +617,7 @@ void RootTask::updateHardware(AppState app_state)
                     }
                     break;
                 case MQTT_ERROR:
+                case WIFI_ERROR:
                     display_task_->getErrorHandlingFlow()->handleNavigationEvent(event);
                     break;
                 default:
