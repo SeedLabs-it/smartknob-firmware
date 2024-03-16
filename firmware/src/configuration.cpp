@@ -33,7 +33,7 @@ Configuration::Configuration()
         mac_address.end());
 
     sprintf(wifi_config.knob_id, "%s", std::string("SKDK_" + mac_address.substr(mac_address.length() - 6)).c_str());
-    sprintf(mqtt_config.knob_id, "%s", std::string("SKDK_" + mac_address.substr(mac_address.length() - 6)).c_str());
+    sprintf(mqtt_config.knob_id, "%s", wifi_config.knob_id);
 }
 
 Configuration::~Configuration()
