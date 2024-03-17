@@ -352,10 +352,11 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "sync") == 0)
     {
+        cJSON *json_root_ = cJSON_Parse((char *)payload);
         log("sync");
 
         lock();
-        apps = cJSON_GetObjectItem(json_root, "apps");
+        apps = cJSON_GetObjectItem(json_root_, "apps"); //! THIS APPS OBJECT NEEDS TO BE FIXED!!! WAS CAUSING MEMORY LEAK BEFORE WHEN USING json_root instead of json_root_
         unlock();
 
         // DELAY TO MAKE SURE APPS ARE INITIALIZED?
@@ -425,7 +426,6 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
                     sprintf(state_update.app_id, "%s", state.app_id);
                     sprintf(state_update.entity_id, "%s", state.entity_id);
                     sprintf(state_update.state, "%s", state.state);
-                    // state_update.state = cJSON_Parse(state.state);
 
                     WiFiEvent event;
                     event.type = SK_MQTT_STATE_UPDATE;
@@ -439,7 +439,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         }
     }
 
-    // cJSON_Delete(json_root);
+    cJSON_Delete(json_root);
 }
 
 cJSON *MqttTask::getApps()
