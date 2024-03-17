@@ -278,9 +278,22 @@ void RootTask::run()
     float currentSubPosition;
     WiFiEvent wifi_event;
 
+    long last_system_temperature_check = 0;
+    float last_system_temperature = 0;
+
     AppState app_state = {};
     while (1)
     {
+
+        if (millis() - last_system_temperature_check > 1000)
+        {
+            temp_sensor_read_celsius(&last_system_temperature);
+            sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
+            log(buf_);
+
+            last_system_temperature_check = millis();
+        }
+
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();
