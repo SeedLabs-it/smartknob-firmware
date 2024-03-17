@@ -168,7 +168,7 @@ void MqttTask::run()
 
             if (millis() - mqtt_init_interval > 10000 && !hass_init_acknowledged)
             {
-                // init();
+                init();
                 mqtt_init_interval = millis();
             }
         }
