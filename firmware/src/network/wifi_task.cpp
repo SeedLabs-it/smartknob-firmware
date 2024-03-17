@@ -433,12 +433,15 @@ void WifiTask::updateWifiState()
         WiFi.isConnected(),
         WiFi.RSSI(),
         signal_strenth_status,
-        WiFi.SSID().c_str(),
-        WiFi.localIP().toString().c_str(),
+        "",
+        "",
         WiFi.getMode() == WIFI_AP ? true : false,
         WiFi.softAPIP(),
         WiFi.softAPgetStationNum() > 0 ? true : false,
     };
+
+    sprintf(state.ssid, "%s", WiFi.SSID().c_str());
+    sprintf(state.ip_address, "%s", WiFi.localIP().toString().c_str());
 
     publishState(state);
 }
