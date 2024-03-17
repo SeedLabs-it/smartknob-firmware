@@ -2,10 +2,11 @@
 #include "cJSON.h"
 #include <cstring>
 
-LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    this->app_id = app_id;
-    this->friendly_name = friendly_name;
+    sprintf(this->app_id, "%s", app_id);
+    sprintf(this->friendly_name, "%s", friendly_name);
+    sprintf(this->entity_id, "%s", entity_id);
 
     motor_config = PB_SmartKnobConfig{
         current_brightness,
@@ -163,6 +164,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         }
 
         sprintf(new_state.app_id, "%s", app_id);
+        sprintf(new_state.entity_id, "%s", entity_id);
 
         cJSON *json = cJSON_CreateObject();
 
@@ -196,15 +198,22 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-
-    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
-    cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
-    cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
-    cJSON *rgb_color = cJSON_GetObjectItem(mqtt_state_update.state, "rgb_color");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *on = cJSON_GetObjectItem(new_state, "on");
+    cJSON *brightness = cJSON_GetObjectItem(new_state, "brightness");
+    cJSON *color_temp = cJSON_GetObjectItem(new_state, "color_temp");
+    cJSON *rgb_color = cJSON_GetObjectItem(new_state, "rgb_color");
 
     if (on != NULL)
     {
         is_on = on->valueint;
+        if (brightness == NULL && is_on == 1)
+        {
+            current_brightness = 3; // 3 = 1%
+
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+        }
     }
 
     if (brightness != NULL)
@@ -264,7 +273,8 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         state_sent_from_hass = true;
     }
 
-    // cJSON_Delete(new_state);
+    // cJSON_free(new_state);
+    cJSON_Delete(new_state);
 }
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}

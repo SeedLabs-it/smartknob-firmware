@@ -40,13 +40,15 @@ void Apps::clear()
 EntityStateUpdate Apps::update(AppState state)
 {
     // TODO: update with AppState
+    EntityStateUpdate new_state_update;
     lock();
     if (active_app == nullptr)
     {
         unlock();
-        return EntityStateUpdate();
+        return new_state_update;
     }
-    EntityStateUpdate new_state_update = active_app->updateStateFromKnob(state.motor_state);
+
+    new_state_update = active_app->updateStateFromKnob(state.motor_state);
     active_app->updateStateFromSystem(state);
 
     unlock();
@@ -137,13 +139,13 @@ void Apps::updateMenu() // BROKEN FOR NOW
 }
 
 // settings and menu apps kept aside for a reason. We will add them manually later
-App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name)
+// TODO: create struct for data passed to each app.
+App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
 {
-
     // ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
-        ClimateApp *app = new ClimateApp(this->spr_, app_id, friendly_name);
+        ClimateApp *app = new ClimateApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
@@ -151,28 +153,29 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
     {
         PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
-        app->friendly_name = friendly_name;
+        // app->friendly_name = friendly_name;
+        sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
-        BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name);
+        BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name);
+        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name);
+        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name, entity_id);
 
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
@@ -181,7 +184,8 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);
-        app->friendly_name = friendly_name;
+        // app->friendly_name = friendly_name;
+        sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
@@ -189,7 +193,8 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
-        app->friendly_name = friendly_name;
+        // app->friendly_name = friendly_name;
+        sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;

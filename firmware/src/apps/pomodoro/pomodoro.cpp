@@ -27,7 +27,8 @@ PomodoroApp::PomodoroApp(TFT_eSprite *spr_) : App(spr_), state(PomodoroState::ID
 
     big_icon = stopwatch_80;
     small_icon = stopwatch_40;
-    friendly_name = "Pomodoro";
+    // friendly_name = "Pomodoro";
+    sprintf(friendly_name, "%s", "Pomodoro");
 }
 
 int8_t PomodoroApp::navigationNext()

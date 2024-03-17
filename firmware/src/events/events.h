@@ -47,8 +47,10 @@ struct WebClient
 
 struct MQTTStateUpdate
 {
-    char *app_id;
-    cJSON *state;
+    bool all;
+    char app_id[64];
+    char entity_id[64];
+    char state[256];
 };
 
 struct WiFiError

@@ -37,7 +37,7 @@ public:
     void setActive(int8_t id);
 
     void setSprite(TFT_eSprite *spr_);
-    App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name);
+    App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id);
     void updateMenu();
 
     void reload(cJSON *apps_);

@@ -1,23 +1,22 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    // sprintf(author, "%s", "Beethoven");
-    // sprintf(track, "%s", "Moonlight Sonata");
-    this->app_id = app_id;
-    this->friendly_name = friendly_name;
+    sprintf(this->app_id, "%s", app_id);
+    sprintf(this->friendly_name, "%s", friendly_name);
+    sprintf(this->entity_id, "%s", entity_id);
 
     motor_config = PB_SmartKnobConfig{
+        current_position,
         0,
-        0,
-        0,
+        current_position,
         0,
         1,
         60 * PI / 180,
         1,
         1,
         0.55, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
-        "SKDEMO_Light_switch",
+        "",   // Change the type of app_id from char to char*
         0,
         {},
         0,
@@ -54,14 +53,17 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
 
-    if (last_position != current_position)
+    if (last_position != current_position && first_run)
     {
         sprintf(new_state.app_id, "%s", app_id);
+        sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddBoolToObject(json, "on", current_position > 0);
 
-        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+        char *json_string = cJSON_PrintUnformatted(json);
+        sprintf(new_state.state, "%s", json_string);
 
+        cJSON_free(json_string);
         cJSON_Delete(json);
 
         last_position = current_position;
@@ -69,21 +71,24 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
     }
 
+    first_run = true;
     return new_state;
 }
 
 void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *on = cJSON_GetObjectItem(new_state, "on");
 
     if (on != NULL)
     {
         current_position = on->valueint;
-
-        motor_config.position_nonce = current_position;
         motor_config.position = current_position;
+        motor_config.position_nonce = current_position + 1; // TODO: LOOK INTO THIS WEIRD WORK AROUND (NEEDED FOR LIGHT SWITCH NOT TO TOGGLE STATE OF LIGHT TO OFF IF SET TO ON IN HASS, KINDA)
         state_sent_from_hass = true;
     }
+
+    cJSON_Delete(new_state);
 }
 
 void LightSwitchApp::updateStateFromSystem(AppState state) {}

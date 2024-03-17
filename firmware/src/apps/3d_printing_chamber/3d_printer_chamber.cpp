@@ -30,7 +30,8 @@ PrinterChamberApp::PrinterChamberApp(TFT_eSprite *spr_, char *entity_name) : App
 
     big_icon = printer_80;
     small_icon = printer_40;
-    friendly_name = "3D Printer";
+    // friendly_name = "3D Printer";
+    sprintf(friendly_name, "%s", "3D Printer");
 }
 
 EntityStateUpdate PrinterChamberApp::updateStateFromKnob(PB_SmartKnobState state)

@@ -1,9 +1,13 @@
 #include "climate.h"
 
-ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    this->app_id = app_id;
-    this->friendly_name = friendly_name;
+    // this->app_id = app_id;
+    // this->friendly_name = friendly_name;
+    // this->entity_id = entity_id;
+    sprintf(this->app_id, "%s", app_id);
+    sprintf(this->friendly_name, "%s", friendly_name);
+    sprintf(this->entity_id, "%s", entity_id);
 
     // TODO update this via some API
     current_temperature = 20;
@@ -63,13 +67,16 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
     {
 
         sprintf(new_state.app_id, "%s", app_id);
+        // sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "mode", mode);
         cJSON_AddNumberToObject(json, "target_temp", wanted_temperature);
         cJSON_AddNumberToObject(json, "current_temp", current_temperature);
 
-        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+        char *json_string = cJSON_PrintUnformatted(json);
+        sprintf(new_state.state, "%s", json_string);
 
+        cJSON_free(json_string);
         cJSON_Delete(json);
 
         last_mode = mode;
@@ -86,9 +93,10 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    cJSON *mode = cJSON_GetObjectItem(mqtt_state_update.state, "mode");
-    cJSON *target_temp = cJSON_GetObjectItem(mqtt_state_update.state, "target_temp");
-    cJSON *current_temp = cJSON_GetObjectItem(mqtt_state_update.state, "current_temp");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *mode = cJSON_GetObjectItem(new_state, "mode");
+    cJSON *target_temp = cJSON_GetObjectItem(new_state, "target_temp");
+    cJSON *current_temp = cJSON_GetObjectItem(new_state, "current_temp");
 
     ESP_LOGD("CLIMATE_APP", "RECEIVED HASS STATE UPDATE");
     ESP_LOGD("CLIMATE_APP", "mode: %d", mode->valueint);
@@ -116,6 +124,8 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     {
         state_sent_from_hass = true;
     }
+
+    cJSON_Delete(new_state);
 }
 
 void ClimateApp::updateStateFromSystem(AppState state) {}

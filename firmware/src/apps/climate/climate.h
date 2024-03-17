@@ -19,7 +19,7 @@ const uint8_t CLIMATE_APP_MAX_TEMP = 35;
 class ClimateApp : public App
 {
 public:
-    ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name);
+    ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);

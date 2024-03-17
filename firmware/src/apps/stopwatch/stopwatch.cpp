@@ -2,10 +2,12 @@
 
 #include <cstring>
 
-StopwatchApp::StopwatchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
+StopwatchApp::StopwatchApp(TFT_eSprite *spr_, char *entitiy_id) : App(spr_)
 {
 
-    this->entity_name = entity_name;
+    sprintf(app_id, "%s", "stopwatch");
+    sprintf(entitiy_id, "%s", entitiy_id);
+    sprintf(friendly_name, "%s", "Stopwatch");
 
     motor_config = PB_SmartKnobConfig{
         0,
@@ -26,7 +28,7 @@ StopwatchApp::StopwatchApp(TFT_eSprite *spr_, std::string entity_name) : App(spr
 
     big_icon = stopwatch_80;
     small_icon = stopwatch_40;
-    friendly_name = "Stopwatch";
+    // friendly_name = "Stopwatch";
 }
 
 void StopwatchApp::clear()

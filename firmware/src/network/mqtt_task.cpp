@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 6, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 8, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
@@ -71,7 +71,8 @@ void MqttTask::run()
 
     static uint32_t last_mqtt_state_sent;
 
-    static String topic = "smartknob/" + WiFi.macAddress() + "/from_knob";
+    char topic[64];
+    sprintf(topic, "smartknob/%s/from_knob", WiFi.macAddress().c_str());
 
     static uint32_t message_count = 0;
 
@@ -139,17 +140,19 @@ void MqttTask::run()
                 {
                     if (!entity_states_to_send[i.first].sent)
                     {
-                        std::string m_id = generatePayloadId();
+
+                        sprintf(hexbuffer_, "%08lX", micros());
                         cJSON *json = cJSON_CreateObject();
-                        cJSON_AddStringToObject(json, "id", m_id.c_str());
+                        cJSON_AddStringToObject(json, "id", hexbuffer_);
                         cJSON_AddStringToObject(json, "type", "state_update");
                         cJSON_AddStringToObject(json, "app_id", entity_states_to_send[i.first].app_id);
                         cJSON_AddRawToObject(json, "state", entity_states_to_send[i.first].state);
 
                         char *json_string = cJSON_PrintUnformatted(json);
 
-                        unacknowledged_ids.insert(std::make_pair(m_id, "state_update"));
-                        mqtt_client.publish(topic.c_str(), json_string);
+                        unacknowledged_ids.insert(std::make_pair(hexbuffer_, "state_update"));
+                        unacknowledged_states.insert(std::make_pair(hexbuffer_, entity_states_to_send[i.first]));
+                        mqtt_client.publish(topic, json_string);
 
                         cJSON_free(json_string);
                         cJSON_Delete(json);
@@ -316,14 +319,18 @@ bool MqttTask::init()
     sprintf(buf_, "smartknob/%s/from_hass", WiFi.macAddress().c_str());
     mqtt_client.subscribe(buf_);
 
-    std::string m_id = generatePayloadId();
+    sprintf(hexbuffer_, "%08lX", millis());
 
     cJSON *json = cJSON_CreateObject();
-    cJSON_AddStringToObject(json, "id", m_id.c_str());
+    cJSON_AddStringToObject(json, "id", hexbuffer_);
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
 
-    unacknowledged_ids.insert(std::make_pair(m_id, "init"));
-    mqtt_client.publish("smartknob/init", cJSON_PrintUnformatted(json));
+    unacknowledged_ids.insert(std::make_pair(hexbuffer_, "init"));
+
+    char *init_string = cJSON_PrintUnformatted(json);
+    mqtt_client.publish("smartknob/init", init_string);
+
+    cJSON_free(init_string);
     cJSON_Delete(json);
 
     mqtt_client.loop();
@@ -344,10 +351,11 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "sync") == 0)
     {
+        cJSON *json_root_ = cJSON_Parse((char *)payload);
         log("sync");
 
         lock();
-        apps = cJSON_GetObjectItem(json_root, "apps");
+        apps = cJSON_GetObjectItem(json_root_, "apps"); //! THIS APPS OBJECT NEEDS TO BE FIXED!!! WAS CAUSING MEMORY LEAK BEFORE WHEN USING json_root instead of json_root_
         unlock();
 
         // DELAY TO MAKE SURE APPS ARE INITIALIZED?
@@ -357,7 +365,11 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         cJSON_AddStringToObject(json, "type", "acknowledgement");
         cJSON_AddStringToObject(json, "data", "sync");
 
-        mqtt_client.publish(buf_, cJSON_PrintUnformatted(json));
+        char *acknowledgement_payload = cJSON_PrintUnformatted(json);
+        mqtt_client.publish(buf_, acknowledgement_payload);
+
+        cJSON_free(acknowledgement_payload);
+        cJSON_Delete(json);
 
         publishAppSync(apps);
     }
@@ -367,11 +379,19 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         log("state_update received");
 
         cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
+        cJSON *entity_id = cJSON_GetObjectItem(json_root, "entity_id");
         cJSON *new_state = cJSON_GetObjectItem(json_root, "new_state");
 
         MQTTStateUpdate state_update;
-        state_update.app_id = app_id->valuestring;
-        state_update.state = new_state;
+        state_update.all = false;
+        sprintf(state_update.app_id, "%s", app_id->valuestring);
+        sprintf(state_update.entity_id, "%s", entity_id->valuestring);
+        sprintf(state_update.state, "%s", "");
+
+        char *state_string = cJSON_PrintUnformatted(new_state);
+        sprintf(state_update.state, "%s", state_string);
+
+        cJSON_free(state_string);
 
         WiFiEvent event;
         event.type = SK_MQTT_STATE_UPDATE;
@@ -393,18 +413,32 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
             {
                 hass_init_acknowledged = true;
             }
+
+            else if (strcmp(acknowledge_type->valuestring, "state_update") == 0)
+            {
+                if (unacknowledged_states.find(acknowledge_id->valuestring) != unacknowledged_states.end())
+                {
+                    EntityStateUpdate state = unacknowledged_states[acknowledge_id->valuestring];
+
+                    MQTTStateUpdate state_update;
+                    state_update.all = true;
+                    sprintf(state_update.app_id, "%s", state.app_id);
+                    sprintf(state_update.entity_id, "%s", state.entity_id);
+                    sprintf(state_update.state, "%s", state.state);
+
+                    WiFiEvent event;
+                    event.type = SK_MQTT_STATE_UPDATE;
+                    event.body.mqtt_state_update = state_update;
+
+                    publishEvent(event);
+
+                    unacknowledged_states.erase(acknowledge_id->valuestring);
+                }
+            }
         }
     }
 
-    cJSON_free(json_root);
-}
-
-std::string MqttTask::generatePayloadId()
-{
-    unsigned long currentTime = millis();
-    char hexBuffer[9];
-    sprintf(hexBuffer, "%08lX", currentTime);
-    return std::string(hexBuffer);
+    cJSON_Delete(json_root);
 }
 
 cJSON *MqttTask::getApps()

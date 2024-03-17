@@ -1,9 +1,10 @@
 #include "blinds.h"
 
-BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name) : App(spr_)
+BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
-    this->app_id = app_id;
-    this->friendly_name = friendly_name;
+    sprintf(this->app_id, "%s", app_id);
+    sprintf(this->friendly_name, "%s", friendly_name);
+    sprintf(this->entity_id, "%s", entity_id);
 
     motor_config = PB_SmartKnobConfig{
         15,
@@ -47,7 +48,8 @@ int8_t BlindsApp::navigationNext()
 
 void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    cJSON *position = cJSON_GetObjectItem(mqtt_state_update.state, "position");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *position = cJSON_GetObjectItem(new_state, "position");
 
     if (position != NULL)
     {
@@ -56,6 +58,8 @@ void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         motor_config.position_nonce = current_closed_position;
         state_sent_from_hass = true;
     }
+
+    cJSON_Delete(new_state);
 }
 
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -75,6 +79,7 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
     if (last_closed_position != current_closed_position && !state_sent_from_hass)
     {
         sprintf(new_state.app_id, "%s", app_id);
+        sprintf(new_state.entity_id, "%s", entity_id);
 
         cJSON *json = cJSON_CreateObject();
 

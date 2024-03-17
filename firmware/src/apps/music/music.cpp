@@ -25,7 +25,8 @@ MusicApp::MusicApp(TFT_eSprite *spr_, std::string entity_name) : App(spr_)
 
     big_icon = spotify_80;
     small_icon = spotify_40;
-    friendly_name = "Music";
+    // friendly_name = "Music";
+    sprintf(friendly_name, "%s", "Music");
 }
 
 EntityStateUpdate MusicApp::updateStateFromKnob(PB_SmartKnobState state)
