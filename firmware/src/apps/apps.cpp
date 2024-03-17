@@ -40,13 +40,15 @@ void Apps::clear()
 EntityStateUpdate Apps::update(AppState state)
 {
     // TODO: update with AppState
+    EntityStateUpdate new_state_update;
     lock();
     if (active_app == nullptr)
     {
         unlock();
-        return EntityStateUpdate();
+        return new_state_update;
     }
-    EntityStateUpdate new_state_update = active_app->updateStateFromKnob(state.motor_state);
+
+    new_state_update = active_app->updateStateFromKnob(state.motor_state);
     active_app->updateStateFromSystem(state);
 
     unlock();

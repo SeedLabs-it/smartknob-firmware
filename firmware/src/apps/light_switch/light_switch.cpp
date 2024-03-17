@@ -16,7 +16,7 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         1,
         1,
         0.55, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
-        "SKDEMO_Light_switch",
+        "",   // Change the type of app_id from char to char*
         0,
         {},
         0,
@@ -79,12 +79,12 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (on != NULL)
     {
-        ESP_LOGD("LIGHT_SWITCH", "ON: %d", on->valueint);
         current_position = on->valueint;
         last_position = current_position;
 
-        motor_config.position_nonce = current_position;
+        motor_config.position_nonce = current_position + 1;
         motor_config.position = current_position;
+
         state_sent_from_hass = true;
     }
 }
