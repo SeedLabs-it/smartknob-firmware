@@ -84,7 +84,7 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     {
         current_position = on->valueint;
         motor_config.position = current_position;
-        motor_config.position_nonce = current_position + 1;
+        motor_config.position_nonce = current_position + 1; // TODO: LOOK INTO THIS WEIRD WORK AROUND (NEEDED FOR LIGHT SWITCH NOT TO TOGGLE STATE OF LIGHT TO OFF IF SET TO ON IN HASS, KINDA)
         state_sent_from_hass = true;
     }
 

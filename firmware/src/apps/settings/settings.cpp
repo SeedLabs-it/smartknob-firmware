@@ -16,7 +16,7 @@ SettingsApp::SettingsApp(TFT_eSprite *spr_) : App(spr_)
         0,
         0,
         0,
-        5,
+        4,
         90 * PI / 180,
         1,
         1,
@@ -421,59 +421,59 @@ TFT_eSprite *SettingsApp::render()
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, backroung_green);
         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, backroung_green);
     }
-    else if (current_position >= 5)
-    {
-        // ben10 easter egg
-        uint32_t ben_10_green = TFT_GREENYELLOW;
+    // else if (current_position >= 5)
+    // {
+    //     // ben10 easter egg
+    //     uint32_t ben_10_green = TFT_GREENYELLOW;
 
-        uint8_t triangle_offset_h = 20;
-        uint8_t triangle_offset_v = 40;
-        uint32_t backroung_grey = spr_->color565(0, 0, 0);
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, ben_10_green);
+    //     uint8_t triangle_offset_h = 20;
+    //     uint8_t triangle_offset_v = 40;
+    //     uint32_t backroung_grey = spr_->color565(0, 0, 0);
+    //     spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, ben_10_green);
 
-        uint32_t icon_width = 75;
-        uint32_t icon_height = 174;
+    //     uint32_t icon_width = 75;
+    //     uint32_t icon_height = 174;
 
-        if (current_position == 2)
-        {
-            spr_->drawBitmap(center_h - icon_width / 2, center_v - icon_height / 2, omnitrix_char_1, icon_width, icon_height, TFT_BLACK, ben_10_green);
-        }
-        else if (current_position == 3)
-        {
-            icon_width = 85;
-            spr_->drawBitmap(center_h - icon_width / 2, center_v - icon_height / 2, omnitrix_char_2, icon_width, icon_height, TFT_BLACK, ben_10_green);
-        }
+    //     if (current_position == 2)
+    //     {
+    //         spr_->drawBitmap(center_h - icon_width / 2, center_v - icon_height / 2, omnitrix_char_1, icon_width, icon_height, TFT_BLACK, ben_10_green);
+    //     }
+    //     else if (current_position == 3)
+    //     {
+    //         icon_width = 85;
+    //         spr_->drawBitmap(center_h - icon_width / 2, center_v - icon_height / 2, omnitrix_char_2, icon_width, icon_height, TFT_BLACK, ben_10_green);
+    //     }
 
-        spr_->fillTriangle(0, 0, center_h + triangle_offset_h, 0, 0, center_v + triangle_offset_v, TFT_BLACK);
-        spr_->fillTriangle(TFT_WIDTH, 0, center_h - triangle_offset_h, 0, TFT_WIDTH, center_v + triangle_offset_v, TFT_BLACK);
+    //     spr_->fillTriangle(0, 0, center_h + triangle_offset_h, 0, 0, center_v + triangle_offset_v, TFT_BLACK);
+    //     spr_->fillTriangle(TFT_WIDTH, 0, center_h - triangle_offset_h, 0, TFT_WIDTH, center_v + triangle_offset_v, TFT_BLACK);
 
-        spr_->fillTriangle(0, TFT_HEIGHT, center_h + triangle_offset_h, TFT_HEIGHT, 0, center_v - triangle_offset_v, TFT_BLACK);
-        spr_->fillTriangle(TFT_WIDTH, TFT_HEIGHT, center_h - triangle_offset_h, TFT_HEIGHT, TFT_WIDTH, center_v - triangle_offset_v, TFT_BLACK);
+    //     spr_->fillTriangle(0, TFT_HEIGHT, center_h + triangle_offset_h, TFT_HEIGHT, 0, center_v - triangle_offset_v, TFT_BLACK);
+    //     spr_->fillTriangle(TFT_WIDTH, TFT_HEIGHT, center_h - triangle_offset_h, TFT_HEIGHT, TFT_WIDTH, center_v - triangle_offset_v, TFT_BLACK);
 
-        // spr_->fillTriangle(center_h, triangle_offset_v, TFT_WIDTH - triangle_offset_h, center_v, triangle_offset_h, center_v, ben_10_green);
-        // spr_->fillTriangle(center_h, TFT_HEIGHT - triangle_offset_v, TFT_WIDTH - triangle_offset_h, center_v, triangle_offset_h, center_v, ben_10_green);
+    //     // spr_->fillTriangle(center_h, triangle_offset_v, TFT_WIDTH - triangle_offset_h, center_v, triangle_offset_h, center_v, ben_10_green);
+    //     // spr_->fillTriangle(center_h, TFT_HEIGHT - triangle_offset_v, TFT_WIDTH - triangle_offset_h, center_v, triangle_offset_h, center_v, ben_10_green);
 
-        // draw controls
+    //     // draw controls
 
-        for (float r = 0; r >= -6.3; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 11, TFT_BLACK);
-        }
+    //     for (float r = 0; r >= -6.3; r -= 2 * PI / 180)
+    //     {
+    //         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 11, TFT_BLACK);
+    //     }
 
-        if (adjusted_angle > left_bound)
-        {
-            adjusted_angle = left_bound;
-        }
-        else if (adjusted_angle < right_bound)
-        {
-            adjusted_angle = right_bound;
-        }
+    //     if (adjusted_angle > left_bound)
+    //     {
+    //         adjusted_angle = left_bound;
+    //     }
+    //     else if (adjusted_angle < right_bound)
+    //     {
+    //         adjusted_angle = right_bound;
+    //     }
 
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, ben_10_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - PI / 2), 5, ben_10_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, ben_10_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, ben_10_green);
-    }
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, ben_10_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - PI / 2), 5, ben_10_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, ben_10_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, ben_10_green);
+    // }
 
     // Draw navigation menu.
     // num_position represents the total pages
