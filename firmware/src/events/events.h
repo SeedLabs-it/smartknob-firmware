@@ -50,7 +50,7 @@ struct MQTTStateUpdate
     bool all;
     char app_id[64];
     char entity_id[64];
-    cJSON *state;
+    char state[256];
 };
 
 struct WiFiError

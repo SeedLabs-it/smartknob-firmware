@@ -60,8 +60,10 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON *json = cJSON_CreateObject();
         cJSON_AddBoolToObject(json, "on", current_position > 0);
 
-        sprintf(new_state.state, "%s", cJSON_PrintUnformatted(json));
+        char *json_string = cJSON_PrintUnformatted(json);
+        sprintf(new_state.state, "%s", json_string);
 
+        cJSON_free(json_string);
         cJSON_Delete(json);
 
         last_position = current_position;
@@ -75,7 +77,8 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *on = cJSON_GetObjectItem(new_state, "on");
 
     if (on != NULL)
     {
@@ -87,6 +90,8 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
         state_sent_from_hass = true;
     }
+
+    cJSON_Delete(new_state);
 }
 
 void LightSwitchApp::updateStateFromSystem(AppState state) {}

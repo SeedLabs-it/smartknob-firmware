@@ -54,6 +54,8 @@ protected:
     void run();
 
 private:
+    char hexbuffer_[9];
+
     std::map<std::string, EntityStateUpdate> entity_states_to_send;
 
     std::map<std::string, std::string> unacknowledged_ids;
@@ -76,8 +78,6 @@ private:
     cJSON *apps;
 
     MqttNotifier mqtt_notifier;
-
-    std::string generatePayloadId();
 
     void log(const char *msg);
 

@@ -198,11 +198,11 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-
-    cJSON *on = cJSON_GetObjectItem(mqtt_state_update.state, "on");
-    cJSON *brightness = cJSON_GetObjectItem(mqtt_state_update.state, "brightness");
-    cJSON *color_temp = cJSON_GetObjectItem(mqtt_state_update.state, "color_temp");
-    cJSON *rgb_color = cJSON_GetObjectItem(mqtt_state_update.state, "rgb_color");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *on = cJSON_GetObjectItem(new_state, "on");
+    cJSON *brightness = cJSON_GetObjectItem(new_state, "brightness");
+    cJSON *color_temp = cJSON_GetObjectItem(new_state, "color_temp");
+    cJSON *rgb_color = cJSON_GetObjectItem(new_state, "rgb_color");
 
     if (on != NULL)
     {
@@ -273,7 +273,8 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         state_sent_from_hass = true;
     }
 
-    // cJSON_Delete(new_state);
+    // cJSON_free(new_state);
+    cJSON_Delete(new_state);
 }
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
