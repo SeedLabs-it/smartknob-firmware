@@ -83,11 +83,8 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     if (on != NULL)
     {
         current_position = on->valueint;
-        last_position = current_position;
-
-        motor_config.position_nonce = current_position + 1;
         motor_config.position = current_position;
-
+        motor_config.position_nonce = current_position + 1;
         state_sent_from_hass = true;
     }
 

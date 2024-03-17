@@ -120,7 +120,6 @@ void MqttTask::run()
 
             if (millis() - mqtt_pull > mqtt_pull_interval_ms)
             {
-                ESP_LOGD("MQTT MEMORY", "Free heap: %d", ESP.getFreeHeap());
                 mqtt_client.loop();
                 mqtt_pull = millis();
             }
