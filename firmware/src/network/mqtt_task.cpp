@@ -346,6 +346,12 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     cJSON *json_root = cJSON_Parse((char *)payload);
     cJSON *type = cJSON_GetObjectItem(json_root, "type");
 
+    if (type == NULL)
+    {
+        log("Invalid message received");
+        return;
+    }
+
     char buf_[128];
     sprintf(buf_, "smartknob/%s/from_knob", WiFi.macAddress().c_str());
 
@@ -356,6 +362,11 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
         lock();
         apps = cJSON_GetObjectItem(json_root_, "apps"); //! THIS APPS OBJECT NEEDS TO BE FIXED!!! WAS CAUSING MEMORY LEAK BEFORE WHEN USING json_root instead of json_root_
+        if (apps == NULL)
+        {
+            log("Invalid message received");
+            return;
+        }
         unlock();
 
         // DELAY TO MAKE SURE APPS ARE INITIALIZED?
@@ -382,6 +393,12 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
         cJSON *entity_id = cJSON_GetObjectItem(json_root, "entity_id");
         cJSON *new_state = cJSON_GetObjectItem(json_root, "new_state");
 
+        if (app_id == NULL || entity_id == NULL || new_state == NULL)
+        {
+            log("Invalid message received");
+            return;
+        }
+
         MQTTStateUpdate state_update;
         state_update.all = false;
         sprintf(state_update.app_id, "%s", app_id->valuestring);
@@ -404,6 +421,12 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     {
         cJSON *acknowledge_id = cJSON_GetObjectItem(json_root, "acknowledge_id");
         cJSON *acknowledge_type = cJSON_GetObjectItem(json_root, "acknowledge_type");
+
+        if (acknowledge_id == NULL || acknowledge_type == NULL)
+        {
+            log("Invalid message received");
+            return;
+        }
 
         if (unacknowledged_ids.find(acknowledge_id->valuestring) != unacknowledged_ids.end())
         {

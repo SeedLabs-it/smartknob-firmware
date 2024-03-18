@@ -14,6 +14,12 @@ void HassApps::sync(cJSON *json_apps)
         cJSON *json_entity_id = cJSON_GetObjectItemCaseSensitive(json_app_, "entity_id");
         cJSON *json_friendly_name = cJSON_GetObjectItemCaseSensitive(json_app_, "friendly_name");
 
+        if (json_app_slug == NULL || json_app_id == NULL || json_entity_id == NULL || json_friendly_name == NULL)
+        {
+            ESP_LOGE("HASS APPS", "Invalid data.");
+            continue;
+        }
+
         loadApp(app_position, json_app_slug->valuestring, json_app_id->valuestring, json_friendly_name->valuestring, json_entity_id->valuestring);
 
         app_position++;
