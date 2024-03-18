@@ -62,11 +62,17 @@ struct StrainState
     uint8_t virtual_button_code;
 };
 
+struct SystemState
+{
+    float esp32_temperature;
+};
+
 struct SensorsState
 {
     ProximityState proximity;
     StrainState strain;
     IlluminationState illumination;
+    SystemState system;
 };
 
 struct ScreenState

@@ -6,6 +6,8 @@
 #include <vector>
 #include <Adafruit_VL53L0X.h>
 
+#include "driver/temp_sensor.h"
+
 const uint16_t PROXIMITY_SENSOR_OFFSET_MM = 10;
 
 struct StrainCalibration

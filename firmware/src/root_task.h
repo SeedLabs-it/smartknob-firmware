@@ -22,8 +22,6 @@
 
 #include "navigation/navigation.h"
 
-#include "driver/temp_sensor.h"
-
 void delete_me_TriggerMotorCalibration();
 
 class RootTask : public Task<RootTask>,

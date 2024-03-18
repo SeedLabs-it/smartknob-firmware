@@ -103,8 +103,28 @@ void SensorsTask::run()
     double strain_filtered;
     MovingAverage strain_filter(5);
 
+    // system temperature
+    long last_system_temperature_check = 0;
+    float last_system_temperature = 0;
+
     while (1)
     {
+
+        if (millis() - last_system_temperature_check > 1000)
+        {
+            temp_sensor_read_celsius(&last_system_temperature);
+
+            if (verbose_)
+            {
+                sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
+                log(buf_);
+            }
+
+            sensors_state.system.esp32_temperature = last_system_temperature;
+
+            last_system_temperature_check = millis();
+        }
+
         if (millis() - last_proximity_check_ms > 1000 / proximity_poling_rate_hz)
         {
 
