@@ -191,7 +191,10 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         {
         case ONBOARDING_FLOW_PAGE_STEP_HASS_1:
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
-            wifi_notifier->requestAP();
+            if (!is_wifi_ap_started) // TODO: Make it actually use ap status, isnt updated if ap turns off. Or handle in wifi_task.
+            {
+                wifi_notifier->requestAP();
+            }
 
             motor_notifier->requestUpdate(blocked_motor_config);
             break;
