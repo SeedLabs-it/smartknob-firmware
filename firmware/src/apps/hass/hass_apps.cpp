@@ -77,7 +77,7 @@ void HassApps::handleEvent(WiFiEvent event)
 
 TFT_eSprite *HassApps::renderActive()
 {
-    if (active_app == nullptr && apps.size() == 0)
+    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
     {
         return renderWaitingForHass();
     }
