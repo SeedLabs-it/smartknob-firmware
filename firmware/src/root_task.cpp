@@ -281,6 +281,7 @@ void RootTask::run()
     AppState app_state = {};
     while (1)
     {
+
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             motor_task_.runCalibration();

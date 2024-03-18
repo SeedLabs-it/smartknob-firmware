@@ -24,12 +24,15 @@ private:
     int32_t current_position = 0;
     uint8_t num_positions;
     ConnectivityState connectivity_state;
+    char ip_address[20];
+    char ssid[128];
+
     ProximityState proximity_state;
     char room[24];
     char fw_version[24];
     // needed for UI
     float adjusted_sub_position = 0;
-    char buf_[24];
+    char buf_[48];
 
     // screen tearing test
     unsigned long startup_ms;

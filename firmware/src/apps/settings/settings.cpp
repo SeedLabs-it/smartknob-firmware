@@ -67,11 +67,12 @@ EntityStateUpdate SettingsApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void SettingsApp::updateStateFromSystem(AppState state)
 {
-    connectivity_state.ip_address = state.connectivity_state.ip_address;
+    sprintf(ip_address, "%s", state.connectivity_state.ip_address);
+    sprintf(ssid, "%s", state.connectivity_state.ssid);
+
     connectivity_state.is_connected = state.connectivity_state.is_connected;
     connectivity_state.signal_strength = state.connectivity_state.signal_strength;
     connectivity_state.signal_strenth_status = state.connectivity_state.signal_strenth_status;
-    connectivity_state.ssid = state.connectivity_state.ssid;
 
     proximity_state = state.proximiti_state;
 
@@ -179,7 +180,7 @@ TFT_eSprite *SettingsApp::render()
     float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
     float adjusted_angle = raw_angle - adjusted_sub_position;
 
-    char buf_[48];
+    char buf_[128];
 
     if (current_position == 0)
     {
@@ -208,8 +209,6 @@ TFT_eSprite *SettingsApp::render()
 
         // log(connectivity_state.ssid.c_str());
 
-        std::string ip = connectivity_state.ip_address;
-        std::string SSID = connectivity_state.ssid;
         int16_t signal_strength = connectivity_state.signal_strength;
         std::string signal_strength_text = "";
 
@@ -254,12 +253,12 @@ TFT_eSprite *SettingsApp::render()
 
             spr_->setTextColor(TFT_WHITE);
             spr_->setFreeFont(&NDS1210pt7b);
-            sprintf(buf_, "SSID: %s", SSID.c_str());
+            sprintf(buf_, "SSID: %s", ssid);
             spr_->drawString(buf_, center_h, 130, 1);
 
             spr_->setTextColor(TFT_WHITE);
             spr_->setFreeFont(&NDS1210pt7b);
-            sprintf(buf_, "IP: %s", ip.c_str());
+            sprintf(buf_, "IP: %s", ip_address);
             spr_->drawString(buf_, center_h, 160, 1);
         }
         else
@@ -389,38 +388,38 @@ TFT_eSprite *SettingsApp::render()
     {
         renderViewMotorCalibration();
     }
-    else if (current_position == 5)
-    {
-        // ben10 easter egg
-        uint32_t backroung_green = TFT_GREENYELLOW;
-        uint32_t center_margin = 20;
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, backroung_green);
-        spr_->fillTriangle(0, 0, TFT_WIDTH / 2 - center_margin / 2, center_v, 0, TFT_HEIGHT, TFT_BLACK);
-        spr_->fillTriangle(TFT_WIDTH, 0, TFT_WIDTH / 2 + center_margin / 2, center_v, TFT_WIDTH, TFT_HEIGHT, TFT_BLACK);
+    // else if (current_position == 5)
+    // {
+    //     // ben10 easter egg
+    //     uint32_t backroung_green = TFT_GREENYELLOW;
+    //     uint32_t center_margin = 20;
+    //     spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, backroung_green);
+    //     spr_->fillTriangle(0, 0, TFT_WIDTH / 2 - center_margin / 2, center_v, 0, TFT_HEIGHT, TFT_BLACK);
+    //     spr_->fillTriangle(TFT_WIDTH, 0, TFT_WIDTH / 2 + center_margin / 2, center_v, TFT_WIDTH, TFT_HEIGHT, TFT_BLACK);
 
-        uint8_t black_border = 20;
-        spr_->fillTriangle(0, 0 + black_border, TFT_WIDTH / 2 - center_margin / 2 - black_border, center_v, 0, TFT_HEIGHT - black_border, DISABLED_COLOR);
-        spr_->fillTriangle(TFT_WIDTH, 0 + black_border, TFT_WIDTH / 2 + center_margin / 2 + black_border, center_v, TFT_WIDTH, TFT_HEIGHT - black_border, DISABLED_COLOR);
+    //     uint8_t black_border = 20;
+    //     spr_->fillTriangle(0, 0 + black_border, TFT_WIDTH / 2 - center_margin / 2 - black_border, center_v, 0, TFT_HEIGHT - black_border, DISABLED_COLOR);
+    //     spr_->fillTriangle(TFT_WIDTH, 0 + black_border, TFT_WIDTH / 2 + center_margin / 2 + black_border, center_v, TFT_WIDTH, TFT_HEIGHT - black_border, DISABLED_COLOR);
 
-        for (float r = 0; r >= -6.3; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 11, TFT_BLACK);
-        }
+    //     for (float r = 0; r >= -6.3; r -= 2 * PI / 180)
+    //     {
+    //         spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 11, TFT_BLACK);
+    //     }
 
-        if (adjusted_angle > left_bound)
-        {
-            adjusted_angle = left_bound;
-        }
-        else if (adjusted_angle < right_bound)
-        {
-            adjusted_angle = right_bound;
-        }
+    //     if (adjusted_angle > left_bound)
+    //     {
+    //         adjusted_angle = left_bound;
+    //     }
+    //     else if (adjusted_angle < right_bound)
+    //     {
+    //         adjusted_angle = right_bound;
+    //     }
 
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, backroung_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - PI / 2), 5, backroung_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, backroung_green);
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, backroung_green);
-    }
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, backroung_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - PI / 2), 5, backroung_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 2 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 2 * PI / 2), 5, backroung_green);
+    //     spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle - 3 * PI / 2), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle - 3 * PI / 2), 5, backroung_green);
+    // }
     // else if (current_position >= 5)
     // {
     //     // ben10 easter egg

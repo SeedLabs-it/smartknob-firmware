@@ -26,8 +26,8 @@ struct ConnectivityState
   4 - No signal
     */
     uint8_t signal_strenth_status;
-    std::string ssid;
-    std::string ip_address;
+    char ssid[128];
+    char ip_address[20];
 
     bool is_ap;
     IPAddress ap_ip_address;
@@ -62,11 +62,17 @@ struct StrainState
     uint8_t virtual_button_code;
 };
 
+struct SystemState
+{
+    float esp32_temperature;
+};
+
 struct SensorsState
 {
     ProximityState proximity;
     StrainState strain;
     IlluminationState illumination;
+    SystemState system;
 };
 
 struct ScreenState
