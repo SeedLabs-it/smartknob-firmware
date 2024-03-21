@@ -154,6 +154,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
+        ESP_LOGD("LIGHT_DIMMER", "app_hue_position: %d", app_hue_position);
         if (current_brightness == 0)
         {
             is_on = false;
@@ -172,13 +173,17 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
-        RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
+        if (!color_not_set)
+        {
 
-        cJSON *rgb_array = cJSON_CreateArray();
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.r));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.g));
-        cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
-        cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+            RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
+
+            cJSON *rgb_array = cJSON_CreateArray();
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.r));
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.g));
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
+            cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+        }
 
         char *json_string = cJSON_PrintUnformatted(json);
         sprintf(new_state.state, "%s", json_string);
@@ -236,6 +241,8 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
     {
+        color_not_set = false;
+
         uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
         uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
@@ -252,6 +259,12 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
             motor_config.position_nonce = app_hue_position;
             motor_config.position = app_hue_position;
         }
+    }
+
+    if (cJSON_IsNull(rgb_color))
+    {
+        color_not_set = true;
+        ESP_LOGD("LIGHT_DIMMER", "app_hue_position: %d", app_hue_position);
     }
 
     if (brightness != NULL || (color_temp != NULL && cJSON_IsNull(color_temp) == 0) || (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0))
