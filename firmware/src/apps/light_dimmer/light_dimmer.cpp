@@ -112,32 +112,8 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     current_position = state.current_position;
 
-    if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
-    {
-        if (current_position < 0)
-        {
-            app_hue_position = (360 * 100 + current_position * 2) % 360;
-        }
-        else
-        {
-            app_hue_position = (current_position * 2) % 360;
-        }
-    }
-    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
-    {
-        if (current_position > 100)
-        {
-            current_position = 100;
-        }
-        if (current_position < 0)
-        {
-            current_position = 0;
-        }
-        current_brightness = current_position;
-    }
-
     sub_position_unit = state.sub_position_unit;
-    // // needed to next reload of App
+    //! needed to next reload of App
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
@@ -154,7 +130,21 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
-        ESP_LOGD("LIGHT_DIMMER", "app_hue_position: %d", app_hue_position);
+
+        if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+        {
+            app_hue_position = calculateAppHuePosition(current_position);
+
+            if (!color_set && calculateAppHuePosition(last_position) != app_hue_position)
+            {
+                color_set = true;
+            }
+        }
+        else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+        {
+            current_brightness = current_position;
+        }
+
         if (current_brightness == 0)
         {
             is_on = false;
@@ -173,7 +163,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_AddNumberToObject(json, "brightness", round(current_brightness * 2.55));
         cJSON_AddNumberToObject(json, "color_temp", 0);
 
-        if (!color_not_set)
+        if (color_set)
         {
 
             RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
@@ -183,6 +173,10 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.g));
             cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
             cJSON_AddItemToObject(json, "rgb_color", rgb_array);
+        }
+        else
+        {
+            cJSON_AddNullToObject(json, "rgb_color");
         }
 
         char *json_string = cJSON_PrintUnformatted(json);
@@ -199,6 +193,18 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
     first_run = true;
     return new_state;
+}
+
+uint16_t LightDimmerApp::calculateAppHuePosition(uint16_t position)
+{
+    if (position < 0)
+    {
+        return (360 * 100 + position * 2) % 360;
+    }
+    else
+    {
+        return (position * 2) % 360;
+    }
 }
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
@@ -241,7 +247,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
     {
-        color_not_set = false;
+        color_set = true;
 
         uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
@@ -263,8 +269,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (cJSON_IsNull(rgb_color))
     {
-        color_not_set = true;
-        ESP_LOGD("LIGHT_DIMMER", "app_hue_position: %d", app_hue_position);
+        color_set = false;
     }
 
     if (brightness != NULL || (color_temp != NULL && cJSON_IsNull(color_temp) == 0) || (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0))

@@ -35,11 +35,13 @@ private:
     // app state
     uint8_t app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
 
-    bool color_not_set = false;
+    bool color_set = true;
 
     uint16_t app_hue_position = 0;
     uint8_t current_brightness = 0;
     bool is_on = false;
 
     bool first_run = false;
+
+    uint16_t calculateAppHuePosition(uint16_t position);
 };
