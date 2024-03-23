@@ -30,14 +30,14 @@ void SerialProtocolPlaintext::loop()
     while (stream_.available() > 0)
     {
         int b = stream_.read();
-        if (b == 0)
-        {
-            if (protocol_change_callback_)
-            {
-                protocol_change_callback_(SERIAL_PROTOCOL_PROTO);
-            }
-            break;
-        }
+        // if (b == 0)
+        // {
+        //     if (protocol_change_callback_)
+        //     {
+        //         protocol_change_callback_(SERIAL_PROTOCOL_PROTO);
+        //     }
+        //     break;
+        // }
         // if (b == ' ')
         // {
         //     if (demo_config_change_callback_)
@@ -45,7 +45,7 @@ void SerialProtocolPlaintext::loop()
         //         demo_config_change_callback_();
         //     }
         // }
-        else if (b == 'C' || b == 'c')
+        if (b == 'C' || b == 'c')
         {
             motor_calibration_callback_();
         }
