@@ -6,7 +6,7 @@
 1. [Introduction](#introduction)
 2. [Why a Smart Knob Development Kit](#why)
 3. [Product Specifications](#specs)
-4. [What's in this codebase](#what)
+4. [How to use this codebase](#what)
 5. [Build vs Buy](#build-vs-buy) 
 6. [License](#license) 
 7. [FAQ](#faq)
@@ -61,9 +61,28 @@ Specifically:
 
 
 
-### What is in this codebase <a name="what"></a>
+### How to use this codebase <a name="what"></a>
 
-Coming Soon
+To get started with working on the firmware for Seedlabs' SmartKnob, and to flash the firmware onto your device, follow these steps. This guide specifically recommends using Visual Studio Code (VSCode) as the IDE, assuming you have PlatformIO installed in VSCode and that your SmartKnob is connected to your computer via a USB-C port.
+
+#### Setting Up a PlatformIO Project in VSCode
+
+1. **Open VSCode:** Launch Visual Studio Code where PlatformIO is installed as an extension.
+2. **Open the Project:** Use the "Open Folder" option in VSCode (usually found under the "File" menu) and select the directory of the cloned repository.
+3. **Install Dependencies:** PlatformIO will automatically attempt to resolve and install any dependencies specified in the project configuration.
+
+#### Flashing the Firmware
+
+1. **Connect the SmartKnob:** Ensure the SmartKnob is connected to your computer via the USB-C port. Our current hardware setup doesn't require dedicated hardware to communicate to the ESP32.
+2. **Open the Task Menu:** In VSCode with PlatformIO, you can access various tasks, including building and flashing firmware, through the task menu. This is often found in the bottom bar of VSCode or under the PlatformIO icon on the sidebar.The project task folder to use is _seedlabs_devkit_. 
+3. **Build the Project:** Before flashing, you might want to build the project to ensure there are no compilation errors. Look for a task named "Build" and click it.
+4. **Flash the Firmware:** Find a task named "Upload" or "Upload and Monitor" within the _seedlabs_devkit_ tasks. This task compiles the firmware (if not already compiled) and flashes it to the SmartKnob. Click this task to start the flashing process.
+
+- **Note:** If VSCode asks for the port or detects multiple devices, make sure to select the one corresponding to your SmartKnob. The port might be named differently depending on your operating system but generally contains identifiers like `COM` (Windows) or `/dev/tty` (Linux/macOS). If VSCode doesn't recognize the SmartKnob as attached to the computer, you need to put the SmartKnob in boot mode. To do so, on the back of your SmartKnob there are two buttons (EN/RST and BOOT). Hold both the BOOT and EN/RST, then release EN/RST. Your IDE should know see the Dev Kit.   
+
+5. **Monitor Output:** You can monitor the flashing process in the terminal or output window of VSCode. Once the process is complete, you should see a success message indicating that the firmware has been successfully flashed to the SmartKnob.
+
+
 
 ### Build vs Buy <a name="build-vs-buy"></a>
 
