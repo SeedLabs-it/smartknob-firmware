@@ -6,7 +6,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <vector>
-#include <mqtt.h>
 #include <Preferences.h>
 
 #include "../logger.h"
