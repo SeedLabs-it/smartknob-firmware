@@ -45,12 +45,6 @@ Specifically:
 - Slight change of the knob shape for better grip
 - Redesign of the enclosure to allow for leds to light through 
 
- You can find all the electronics and mechanical design files in [./electronics_brushknight_esp32s3](./electronics_brushknight_esp32s3)
-
-[Base PCB bill of materials (BOM)](https://github.com/brushknight/smartknob/releases/download/devkit_v0.1/base_ibom.html)
-
-[Screen PCB bill of materials (BOM)](https://github.com/brushknight/smartknob/releases/download/devkit_v0.1/screen_ibom.html)
-
 
 
 #### List of software changes (yet not merged #3)
