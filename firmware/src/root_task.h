@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "motor_foc/motor_task.h"
 #include "serial/serial_protocol_plaintext.h"
+#include "serial/serial_protocol_protobuf.h"
 #include "serial/uart_stream.h"
 #include "task.h"
 #include "app_config.h"
@@ -105,6 +106,7 @@ private:
     OSConfigNotifier os_config_notifier_;
 
     SerialProtocolPlaintext plaintext_protocol_;
+    SerialProtocolProtobuf proto_protocol_;
 
     // void changeConfig(int8_t id);
     void updateHardware(AppState app_state);
