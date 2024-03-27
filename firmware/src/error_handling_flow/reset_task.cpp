@@ -17,7 +17,6 @@ void ResetTask::run()
     {
         if (gpio_get_level(RESET_BUTTON) == 1)
         {
-            log("Reset button pressed");
             reset_button_pressed = millis();
         }
         else
