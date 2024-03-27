@@ -17,6 +17,7 @@ void ResetTask::run()
     {
         if (gpio_get_level(RESET_BUTTON) == 1)
         {
+            log("Reset button pressed");
             reset_button_pressed = millis();
         }
         else
@@ -31,14 +32,51 @@ void ResetTask::run()
                     esp_partition_iterator_release(it);
                     if (esp_ota_set_boot_partition(factory) == ESP_OK)
                     {
+                        log("FACTORY RESETTING");
+
                         esp_restart();
                     }
                     else
                     {
+                        if (verbose_)
+                        {
+                            log("Failed to set boot partition");
+                        }
+                    }
+                }
+                else
+                {
+                    if (verbose_)
+                    {
+                        log("Failed to find factory partition");
                     }
                 }
             }
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void ResetTask::toggleVerbose()
+{
+    verbose_ = !verbose_;
+}
+
+void ResetTask::setVerbose(bool verbose)
+{
+    verbose_ = verbose;
+}
+
+void ResetTask::setLogger(Logger *logger)
+{
+    logger_ = logger;
+}
+
+void ResetTask::log(const char *msg)
+{
+    if (logger_ != nullptr)
+    {
+        sprintf(buf_, "ResetTask: %s", msg);
+        logger_->log(buf_);
     }
 }

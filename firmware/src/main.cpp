@@ -120,7 +120,7 @@ void setup()
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
 
-    // reset_task_p->setLogger(&root_task);
+    reset_task_p->setLogger(&root_task);
     reset_task_p->begin();
 
     // Free up the Arduino loop task

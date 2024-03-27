@@ -149,6 +149,13 @@ bool Configuration::saveToDisk()
     return true;
 }
 
+bool Configuration::resetToDefaults()
+{
+    saveWiFiConfiguration(WiFiConfiguration());
+    saveMQTTConfiguration(MQTTConfiguration());
+    saveOSConfiguration(OSConfiguration());
+}
+
 bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
 {
     // TODO: persist in a file

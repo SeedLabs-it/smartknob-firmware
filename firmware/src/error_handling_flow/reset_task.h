@@ -12,8 +12,16 @@ public:
     ResetTask(const uint8_t task_core);
     ~ResetTask();
 
+    void setLogger(Logger *logger);
+    void setVerbose(bool verbose);
+    void toggleVerbose();
+
 protected:
     void run();
 
 private:
+    Logger *logger_;
+    void log(const char *msg);
+    bool verbose_ = false;
+    char buf_[128];
 };
