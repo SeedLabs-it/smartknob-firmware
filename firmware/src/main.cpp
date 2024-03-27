@@ -6,6 +6,7 @@
 #include "motor_foc/motor_task.h"
 #include "network/wifi_task.h"
 #include "sensors/sensors_task.h"
+#include "error_handling_flow/reset_task.h"
 #include "led_ring/led_ring_task.h"
 
 #include "driver/temp_sensor.h"
@@ -47,7 +48,10 @@ static MqttTask *mqtt_task_p = nullptr;
 static SensorsTask sensors_task(1);
 static SensorsTask *sensors_task_p = &sensors_task;
 
-RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p);
+static ResetTask reset_task(1);
+static ResetTask *reset_task_p = &reset_task;
+
+RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p);
 
 void initTempSensor()
 {
@@ -115,6 +119,9 @@ void setup()
     sensors_task_p->setLogger(&root_task);
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
+
+    // reset_task_p->setLogger(&root_task);
+    reset_task_p->begin();
 
     // Free up the Arduino loop task
     vTaskDelete(NULL);
