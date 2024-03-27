@@ -16,6 +16,7 @@
 #include "network/mqtt_task.h"
 #include "led_ring/led_ring_task.h"
 #include "sensors/sensors_task.h"
+#include "error_handling_flow/reset_task.h"
 
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/os_config_notifier/os_config_notifier.h"
@@ -31,7 +32,7 @@ class RootTask : public Task<RootTask>,
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task);
+    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
     virtual ~RootTask();
 
     void log(const char *msg) override;
@@ -65,6 +66,7 @@ private:
     HassApps *hass_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
+    ResetTask *reset_task_;
     char buf_[128];
 
     std::vector<QueueHandle_t> listeners_;

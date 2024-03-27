@@ -83,6 +83,7 @@ public:
     void setLogger(Logger *logger);
     bool loadFromDisk();
     bool saveToDisk();
+    bool resetToDefaults();
     PB_PersistentConfiguration get();
     bool setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibration);
     bool setStrainCalibrationAndSave(PB_StrainCalibration &strain_calibration);
