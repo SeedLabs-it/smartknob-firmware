@@ -48,7 +48,7 @@ static MqttTask *mqtt_task_p = nullptr;
 static SensorsTask sensors_task(1);
 static SensorsTask *sensors_task_p = &sensors_task;
 
-static ResetTask reset_task(1);
+static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
 RootTask root_task(0, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p);

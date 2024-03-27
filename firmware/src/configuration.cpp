@@ -151,9 +151,11 @@ bool Configuration::saveToDisk()
 
 bool Configuration::resetToDefaults()
 {
-    saveWiFiConfiguration(WiFiConfiguration());
-    saveMQTTConfiguration(MQTTConfiguration());
-    saveOSConfiguration(OSConfiguration());
+    EEPROM.put(WIFI_SET_EEPROM_POS, false);
+    EEPROM.put(MQTT_SET_EEPROM_POS, false);
+    EEPROM.put(OS_MODE_EEPROM_POS, Onboarding);
+    EEPROM.commit();
+    return true;
 }
 
 bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)

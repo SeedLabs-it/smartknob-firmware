@@ -2,7 +2,7 @@
 
 #define RESET_BUTTON GPIO_NUM_0
 
-ResetTask::ResetTask(const uint8_t task_core) : Task("ResetTask", 2048, task_core)
+ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 2048, task_core), configuration_(configuration)
 {
 }
 
@@ -32,8 +32,15 @@ void ResetTask::run()
                     if (esp_ota_set_boot_partition(factory) == ESP_OK)
                     {
                         log("FACTORY RESETTING");
-
-                        esp_restart();
+                        if (configuration_.resetToDefaults())
+                        {
+                            log("Configuration reset to defaults");
+                            esp_restart();
+                        }
+                        else
+                        {
+                            log("Failed to reset configuration to defaults");
+                        }
                     }
                     else
                     {
