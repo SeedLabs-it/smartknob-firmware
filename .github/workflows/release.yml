@@ -48,7 +48,8 @@ jobs:
         pio run \
           -e seedlabs_devkit_github_action_release
     
-    - uses: AButler/upload-release-assets@v3.0
+    - name: Upload Release Assets
+      uses: AButler/upload-release-assets@v3.0
       with:
         files: ".pio/build/seedlabs_devkit_github_action_release/firmware.bin"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
