@@ -53,3 +53,4 @@ jobs:
       with:
         files: ".pio/build/seedlabs_devkit_github_action_release/firmware.bin"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+        release-tag: test
