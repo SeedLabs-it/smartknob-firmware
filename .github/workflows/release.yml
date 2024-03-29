@@ -1,0 +1,55 @@
+name: PlatformIO CI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  pio-build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    # - name: Add SSH key
+    #   uses: webfactory/ssh-agent@v0.9.0
+    #   with:
+    #     ssh-private-key: ${{ secrets.SKDK_OTA_PRO_PRIVKEY }}
+
+    - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Cache PlatformIO
+      uses: actions/cache@v2
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+
+    - name: Install PlatformIO
+      id: pio_install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+
+    - name: Build Firmware (seedlabs_devkit)
+      # Run regardless of other build step failures, as long as setup steps completed
+      if: always() && steps.pio_install.outcome == 'success'
+      run: |
+        pio run \
+          -e seedlabs_devkit_github_action_release
+
+    # - name: Build Firmware (nanofoc)
+    #   # Run regardless of other build step failures, as long as setup steps completed
+    #   if: always() && steps.pio_install.outcome == 'success'
+    #   run: |
+    #     pio run \
+    #       -e nanofoc
