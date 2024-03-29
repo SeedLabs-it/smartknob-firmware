@@ -13,10 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     
-    # - name: Add SSH key
-    #   uses: webfactory/ssh-agent@v0.9.0
-    #   with:
-    #     ssh-private-key: ${{ secrets.SKDK_OTA_PRO_PRIVKEY }}
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SKDK_OTA_PRO_PRIVKEY }}
 
     - name: Cache pip
       uses: actions/cache@v2
