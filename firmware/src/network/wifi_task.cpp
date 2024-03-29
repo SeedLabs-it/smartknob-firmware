@@ -40,7 +40,6 @@ WifiTask::~WifiTask()
 void WifiTask::setConfig(WiFiConfiguration config)
 {
     config_ = config;
-    // is_config_set = true;
 }
 
 void WifiTask::handleCommand(WiFiCommand command)
@@ -138,7 +137,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
-    config_ = wifi_config;
+    setConfig(wifi_config);
     is_config_set = true;
 
     publishWiFiEvent(wifi_sta_connected);
@@ -172,7 +171,7 @@ bool WifiTask::tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config)
         strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
         wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
 
-        config_ = wifi_config;
+        setConfig(wifi_config);
         is_config_set = true;
 
         publishWiFiEvent(wifi_sta_connected);
@@ -299,7 +298,8 @@ void WifiTask::startWebServer()
     ElegantOTA.begin(server_);
 
 #if SK_ELEGANTOTA_PRO
-    ElegantOTA.setID("SKDK"); // config_.knob_id not working
+    ESP_LOGD(WIFI_TAG, "ElegantOTA Pro");
+    ElegantOTA.setID(config_.knob_id);
     ElegantOTA.setFWVersion(RELEASE_VERSION ? RELEASE_VERSION : "DEV");
     ElegantOTA.setFirmwareMode(true);
     ElegantOTA.setFilesystemMode(false);
