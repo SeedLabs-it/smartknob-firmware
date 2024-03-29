@@ -47,10 +47,8 @@ jobs:
       run: |
         pio run \
           -e seedlabs_devkit_github_action_release
-
-    # - name: Build Firmware (nanofoc)
-    #   # Run regardless of other build step failures, as long as setup steps completed
-    #   if: always() && steps.pio_install.outcome == 'success'
-    #   run: |
-    #     pio run \
-    #       -e nanofoc
+    
+    - uses: AButler/upload-release-assets@v3.0
+      with:
+        files: ".pio/build/seedlabs_devkit_github_action_release/firmware.bin"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
