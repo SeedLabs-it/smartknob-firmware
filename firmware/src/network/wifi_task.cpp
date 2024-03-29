@@ -298,6 +298,14 @@ void WifiTask::startWebServer()
     server_ = new WebServer(80);
     ElegantOTA.begin(server_);
 
+#if SK_ELEGANTOTA_PRO
+    ElegantOTA.setID(config_.knob_id);
+    ElegantOTA.setFWVersion(RELEASE_VERSION);
+    ElegantOTA.setFirmwareMode(true);
+    ElegantOTA.setFilesystemMode(false);
+    ElegantOTA.setTitle("SKDK - Update");
+#endif
+
     // TODO: do local files rendering
     // TODO: make this page work async with animations on UI
 
