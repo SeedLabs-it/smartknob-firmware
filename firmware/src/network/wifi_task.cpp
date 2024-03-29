@@ -299,8 +299,8 @@ void WifiTask::startWebServer()
     ElegantOTA.begin(server_);
 
 #if SK_ELEGANTOTA_PRO
-    ElegantOTA.setID(config_.knob_id);
-    ElegantOTA.setFWVersion(RELEASE_VERSION);
+    ElegantOTA.setID("SKDK"); // config_.knob_id not working
+    ElegantOTA.setFWVersion(RELEASE_VERSION ? RELEASE_VERSION : "DEV");
     ElegantOTA.setFirmwareMode(true);
     ElegantOTA.setFilesystemMode(false);
     ElegantOTA.setTitle("SKDK - Update");
