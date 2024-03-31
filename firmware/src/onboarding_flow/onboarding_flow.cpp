@@ -71,17 +71,18 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
     return updateStateFromKnob(state.motor_state);
 }
 
-void OnboardingFlow::generateAPQrCode()
+void OnboardingFlow::setQRCode(char *qr_data)
 {
     QRCode qrcode;
     uint8_t qrcodeVersion = 6;
     int moduleSize = 2;
 
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifi_qr_code);
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, qr_data);
 
     int qrCodeWidthHeight = qrcode.size * moduleSize;
     qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
+    qrcode_spr_.fillSprite(TFT_BLACK);
 
     for (uint8_t y = 0; y < qrcode.size; y++)
     {
@@ -106,8 +107,8 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         is_wifi_ap_started = true;
         sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
         sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
-        sprintf(wifi_qr_code, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
-        generateAPQrCode();
+        sprintf(ap_data, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
+        setQRCode(ap_data);
         // // std::string wifiqrcode_test = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
 
         break;
@@ -115,6 +116,16 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         is_wifi_ap_client_connected = event.body.ap_client.connected;
         if (is_wifi_ap_client_connected)
         {
+            if (is_wifi_ap_client_connected)
+            {
+                sprintf(ip_data, "%s", "http://192.168.4.1"); // always the same
+            }
+            else
+            {
+                sprintf(ip_data, "%s", "http://10.0.0.1"); // TODO: fetch real ip address
+            }
+            setQRCode(ip_data);
+
             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
         }
         else
@@ -351,41 +362,12 @@ TFT_eSprite *OnboardingFlow::renderHass3StepPage()
     spr_->drawString("SCAN TO START", center_horizontal, screen_name_label_h * 3, 1);
     spr_->drawString("SETUP", center_horizontal, screen_name_label_h * 4, 1);
 
-    QRCode qrcode;
-    uint8_t qrcodeVersion = 6;
-    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    std::string wifiqrcodestring = "";
-    if (is_wifi_ap_client_connected)
-    {
-        wifiqrcodestring = "http://192.168.4.1"; // always the same
-    }
-    else
-    {
-        wifiqrcodestring = "http://10.0.0.1"; // TODO: fetch real ip address
-    }
+    uint8_t qrsize = qrcode_spr_.width();
+    qrcode_spr_.pushToSprite(spr_, center_horizontal - qrsize / 2, center_vertical - qrsize / 2, TFT_BLACK);
 
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifiqrcodestring.c_str());
-
-    int moduleSize = 2;
-
-    int qrCodeWidth = qrcode.size * moduleSize;
-    int qrCodeHeight = qrcode.size * moduleSize;
-
-    int startX = center_horizontal - qrCodeWidth / 2;
-    int startY = center_vertical - 4 - qrCodeHeight / 2;
-
-    for (uint8_t y = 0; y < qrcode.size; y++)
-    {
-        for (uint8_t x = 0; x < qrcode.size; x++)
-        {
-            if (qrcode_getModule(&qrcode, x, y))
-            {
-                spr_->fillRect(startX + x * moduleSize, startY + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
-            }
-        }
-    }
-    std::string or_open = "OR OPEN: " + wifiqrcodestring;
-    spr_->drawString(or_open.c_str(), center_horizontal, TFT_WIDTH - screen_name_label_h * 4, 1);
+    char or_open[40];
+    sprintf(or_open, "OR OPEN: %s", ip_data);
+    spr_->drawString(or_open, center_horizontal, TFT_WIDTH - screen_name_label_h * 4, 1);
     spr_->drawString("IN YOUR BROWSER", center_horizontal, TFT_WIDTH - screen_name_label_h * 3, 1);
 
     return this->spr_;

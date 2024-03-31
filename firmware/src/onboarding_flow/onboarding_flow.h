@@ -36,7 +36,7 @@ class OnboardingFlow
 {
 public:
     OnboardingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
-    void generateAPQrCode();
+    void setQRCode(char *qr_data);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
@@ -99,7 +99,8 @@ private:
     uint8_t sta_connecting_tick = 0;
     char wifi_sta_ssid[128];
     char wifi_sta_passphrase[128];
-    char wifi_qr_code[40];
+    char ap_data[40];
+    char ip_data[40];
     char mqtt_server[32];
     uint8_t mqtt_connecting_tick = 0;
 };
