@@ -122,7 +122,7 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
             }
             else
             {
-                sprintf(ip_data, "%s", "http://10.0.0.1"); // TODO: fetch real ip address
+                sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
             }
             setQRCode(ip_data);
 
