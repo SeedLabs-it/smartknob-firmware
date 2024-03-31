@@ -78,13 +78,9 @@ void OnboardingFlow::generateAPQrCode()
     int moduleSize = 2;
 
     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-
-    int qrCodeWidthHeight = qrcode.size * moduleSize;
-
-    int start = qrCodeWidthHeight / 2;
-
     qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifi_qr_code);
 
+    int qrCodeWidthHeight = qrcode.size * moduleSize;
     qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
 
     for (uint8_t y = 0; y < qrcode.size; y++)
@@ -93,7 +89,7 @@ void OnboardingFlow::generateAPQrCode()
         {
             if (qrcode_getModule(&qrcode, x, y))
             {
-                qrcode_spr_.fillRect(start + x * moduleSize, start + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
+                qrcode_spr_.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
             }
         }
     }
@@ -330,12 +326,8 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
     spr_->drawString("SCAN TO CONNECT", center, screen_name_label_h * 3, 1);
     spr_->drawString("TO THE SMART KNOB", center, screen_name_label_h * 4, 1);
 
-    while (qrcode_spr_.height() == 0)
-    {
-        delay(100);
-        ESP_LOGD("onboarding_flow", "waiting for qrcode_spr_ to be created");
-    }
-    qrcode_spr_.pushToSprite(spr_, center / 2, center / 2, TFT_BLACK);
+    uint8_t qrsize = qrcode_spr_.width();
+    qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2, TFT_BLACK);
 
     spr_->drawString("OR CONNECT TO", center, TFT_HEIGHT - screen_name_label_h * 4, 1);
     spr_->drawString(wifi_ap_ssid, center, TFT_HEIGHT - screen_name_label_h * 3, 1);
