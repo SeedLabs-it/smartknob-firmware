@@ -1,6 +1,6 @@
 #include "error_handling_flow.h"
 
-ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr, TFT_eSprite qrcode_spr_) : spr_(spr_), qrcode_spr_(qrcode_spr_)
+ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_), qrcode_spr_(qrcode_spr_)
 {
 }
 
@@ -35,16 +35,34 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     motor_notifier->requestUpdate(blocked_motor_config);
     switch (event.type)
     {
-    case SK_MQTT_CONNECTION_FAILED:
     case SK_MQTT_RETRY_LIMIT_REACHED:
+        if (!WiFi.isConnected())
+        {
+            sprintf(ip_data, "%s", "http://192.168.4.1/mqtt"); // always the same
+        }
+        else
+        {
+            sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
+        }
+        setQRCode(ip_data);
+    case SK_MQTT_CONNECTION_FAILED:
         error_type = MQTT_ERROR;
         latest_event = event;
 
         send_event.type = SK_MQTT_ERROR;
         publishEvent(send_event);
         break;
-    case SK_WIFI_STA_CONNECTION_FAILED:
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+        if (!WiFi.isConnected())
+        {
+            sprintf(ip_data, "%s", "http://192.168.4.1/"); // always the same
+        }
+        else
+        {
+            sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
+        }
+        setQRCode(ip_data);
+    case SK_WIFI_STA_CONNECTION_FAILED:
         error_type = WIFI_ERROR;
         latest_event = event;
 
@@ -122,15 +140,6 @@ TFT_eSprite *ErrorHandlingFlow::render()
             return renderConnectionFailed();
             break;
         case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-            // if (!WiFi.isConnected())
-            // {
-            //     sprintf(ip_data, "%s", "http://192.168.4.1/mqtt"); // always the same
-            // }
-            // else
-            // {
-            //     sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
-            // }
-            // setQRCode(ip_data);
             return renderRetryLimitReached();
             break;
         default:
@@ -208,8 +217,8 @@ TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
     spr_->setTextSize(1);
     spr_->setTextColor(accent_text_color);
 
-    // uint8_t qrsize = qrcode_spr_.width();
-    // qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2, TFT_BLACK);
+    uint8_t qrsize = qrcode_spr_.width();
+    qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2 - 6, TFT_BLACK);
 
     spr_->setFreeFont(&NDS125_small);
     spr_->drawString("Retry limit reached", center, center - screen_name_label_h * 3.4, 1);
