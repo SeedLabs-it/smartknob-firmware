@@ -1,4 +1,5 @@
 #include "error_handling_flow.h"
+// TODO Add reset ui flow/"hints".
 
 ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_), qrcode_spr_(qrcode_spr_)
 {
