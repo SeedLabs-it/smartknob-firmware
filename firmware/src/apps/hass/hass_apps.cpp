@@ -33,6 +33,15 @@ void HassApps::sync(cJSON *json_apps)
     // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }
 
+void HassApps::handleNavigationEvent(NavigationEvent event)
+{
+    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
+    {
+        return;
+    }
+    return Apps::handleNavigationEvent(event);
+}
+
 void HassApps::handleEvent(WiFiEvent event)
 {
     lock();
