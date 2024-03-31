@@ -9,6 +9,7 @@ public:
     HassApps(TFT_eSprite *spr) : Apps(spr){};
     void sync(cJSON *apps_);
     void handleEvent(WiFiEvent event);
+    void handleNavigationEvent(NavigationEvent event);
 
     TFT_eSprite *renderActive();
 

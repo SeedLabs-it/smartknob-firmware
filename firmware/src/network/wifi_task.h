@@ -6,7 +6,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <vector>
-#include <mqtt.h>
 #include <Preferences.h>
 
 #include "../logger.h"
@@ -17,7 +16,11 @@
 #include "../events/events.h"
 #include "../notify/wifi_notifier/wifi_notifier.h"
 
+#if SK_ELEGANTOTA_PRO
+#include <ElegantOTAPro.h>
+#else
 #include <ElegantOTA.h>
+#endif
 
 class WifiTask : public Task<WifiTask>
 {

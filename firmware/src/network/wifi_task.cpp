@@ -40,7 +40,6 @@ WifiTask::~WifiTask()
 void WifiTask::setConfig(WiFiConfiguration config)
 {
     config_ = config;
-    // is_config_set = true;
 }
 
 void WifiTask::handleCommand(WiFiCommand command)
@@ -138,7 +137,7 @@ bool WifiTask::startWiFiSTA(WiFiConfiguration wifi_config)
     strcpy(wifi_sta_connected.body.wifi_sta_connected.ssid, wifi_config.ssid);
     strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
 
-    config_ = wifi_config;
+    setConfig(wifi_config);
     is_config_set = true;
 
     publishWiFiEvent(wifi_sta_connected);
@@ -172,7 +171,7 @@ bool WifiTask::tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config)
         strcpy(wifi_sta_connected.body.wifi_sta_connected.passphrase, wifi_config.passphrase);
         wifi_sta_connected.type = SK_WIFI_STA_CONNECTED;
 
-        config_ = wifi_config;
+        setConfig(wifi_config);
         is_config_set = true;
 
         publishWiFiEvent(wifi_sta_connected);
@@ -297,6 +296,15 @@ void WifiTask::startWebServer()
 {
     server_ = new WebServer(80);
     ElegantOTA.begin(server_);
+
+#if SK_ELEGANTOTA_PRO
+    ESP_LOGD(WIFI_TAG, "ElegantOTA Pro");
+    ElegantOTA.setID(config_.knob_id);
+    ElegantOTA.setFWVersion(RELEASE_VERSION ? RELEASE_VERSION : "DEV");
+    ElegantOTA.setFirmwareMode(true);
+    ElegantOTA.setFilesystemMode(false);
+    ElegantOTA.setTitle("SKDK - Update");
+#endif
 
     // TODO: do local files rendering
     // TODO: make this page work async with animations on UI
@@ -441,6 +449,7 @@ void WifiTask::updateWifiState()
     };
 
     sprintf(state.ssid, "%s", WiFi.SSID().c_str());
+    // TODO: look into how to store and retrieve ip in a better way.
     sprintf(state.ip_address, "%s", WiFi.localIP().toString().c_str());
 
     publishState(state);

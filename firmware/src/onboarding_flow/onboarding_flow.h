@@ -2,6 +2,7 @@
 #include "apps/app.h"
 
 #include "util.h"
+#include "qrcode.h"
 #include "navigation/navigation.h"
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
@@ -34,9 +35,8 @@ const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_8 = 11;
 class OnboardingFlow
 {
 public:
-    OnboardingFlow();
-
-    OnboardingFlow(TFT_eSprite *spr_);
+    OnboardingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
+    void setQRCode(char *qr_data);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
@@ -78,6 +78,7 @@ private:
 
     // UI
     TFT_eSprite *spr_ = NULL;
+    TFT_eSprite qrcode_spr_;
 
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
@@ -98,7 +99,8 @@ private:
     uint8_t sta_connecting_tick = 0;
     char wifi_sta_ssid[128];
     char wifi_sta_passphrase[128];
-    char wifi_qr_code[40];
+    char ap_data[64];
+    char ip_data[64];
     char mqtt_server[32];
     uint8_t mqtt_connecting_tick = 0;
 };

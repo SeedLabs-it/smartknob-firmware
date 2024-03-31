@@ -30,9 +30,10 @@ RootTask::RootTask(
                              sensors_task_(sensors_task),
                              reset_task_(reset_task),
                              plaintext_protocol_(stream_, [this]()
-                                                 { motor_task_.runCalibration(); }),
-                             proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
-                                             { applyConfig(config, true); })
+                                                 { motor_task_.runCalibration(); })
+//  proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
+//                  { applyConfig(config, true); })
+
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -184,8 +185,8 @@ void RootTask::run()
         case SERIAL_PROTOCOL_LEGACY:
             current_protocol_ = &plaintext_protocol_;
             break;
-        case SERIAL_PROTOCOL_PROTO:
-            current_protocol_ = &proto_protocol_;
+            // case SERIAL_PROTOCOL_PROTO:
+            //     current_protocol_ = &proto_protocol_;
             break;
         default:
             log("Unknown protocol requested");
@@ -194,12 +195,7 @@ void RootTask::run()
     };
 
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
-    proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
-
-    // TODO: remove me
-    // std::string apps_config = "[{\"app_slug\":\"stopwatch\",\"app_id\":\"stopwatch.office\",\"friendly_name\":\"Stopwatch\",\"area\":\"office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_switch\",\"app_id\":\"light.ceiling\",\"friendly_name\":\"Ceiling\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"light_dimmer\",\"app_id\":\"light.workbench\",\"friendly_name\":\"Workbench\",\"area\":\"Kitchen\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"thermostat\",\"app_id\":\"climate.office\",\"friendly_name\":\"Climate\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"3d_printer\",\"app_id\":\"3d_printer.office\",\"friendly_name\":\"3D Printer\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"blinds\",\"app_id\":\"blinds.office\",\"friendly_name\":\"Shades\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"},{\"app_slug\":\"music\",\"app_id\":\"music.office\",\"friendly_name\":\"Music\",\"area\":\"Office\",\"menu_color\":\"#ffffff\"}]";
-    // cJSON *json_root = cJSON_Parse(apps_config.c_str());
-    // hass_apps->sync(json_root);
+    // proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
