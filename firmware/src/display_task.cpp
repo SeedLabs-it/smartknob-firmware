@@ -123,8 +123,8 @@ void DisplayTask::run()
             fps_counter++;
             if (last_fps_check + 1000 < millis())
             {
-                ESP_LOGD("display_task.cpp", "Screen real FPS %d", fps_counter);
-                ESP_LOGD("display_task.cpp", "Free heap %d", ESP.getFreeHeap());
+                // ESP_LOGD("display_task.cpp", "Screen real FPS %d", fps_counter);
+                // ESP_LOGD("display_task.cpp", "Free heap %d", ESP.getFreeHeap());
                 fps_counter = 0;
                 last_fps_check = millis();
             }
