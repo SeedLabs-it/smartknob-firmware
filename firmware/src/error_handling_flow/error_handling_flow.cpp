@@ -42,6 +42,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         }
         else
         {
+            // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
         }
         setQRCode(ip_data);
@@ -59,6 +60,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         }
         else
         {
+            // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
         }
         setQRCode(ip_data);

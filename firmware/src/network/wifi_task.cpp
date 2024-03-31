@@ -441,6 +441,7 @@ void WifiTask::updateWifiState()
     };
 
     sprintf(state.ssid, "%s", WiFi.SSID().c_str());
+    // TODO: look into how to store and retrieve ip in a better way.
     sprintf(state.ip_address, "%s", WiFi.localIP().toString().c_str());
 
     publishState(state);
