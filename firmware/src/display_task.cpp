@@ -69,8 +69,6 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    onboarding_flow = OnboardingFlow(&spr_);
-
     demo_apps = DemoApps(&spr_);
 
     hass_apps = HassApps(&spr_);
@@ -127,7 +125,8 @@ void DisplayTask::run()
             fps_counter++;
             if (last_fps_check + 1000 < millis())
             {
-                // ESP_LOGD("display_task.cpp", "Screen real FPS %d", fps_counter);
+                ESP_LOGD("display_task.cpp", "Screen real FPS %d", fps_counter);
+                ESP_LOGD("display_task.cpp", "Free heap %d", ESP.getFreeHeap());
                 fps_counter = 0;
                 last_fps_check = millis();
             }

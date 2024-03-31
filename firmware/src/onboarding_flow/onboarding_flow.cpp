@@ -1,49 +1,8 @@
 #include "onboarding_flow.h"
 #include "apps/icons.h"
-#include "qrcode.h"
 
-OnboardingFlow::OnboardingFlow()
+OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_), qrcode_spr_(qrcode_spr_)
 {
-
-    root_level_motor_config = PB_SmartKnobConfig{
-        1,
-        0,
-        1,
-        0,
-        4,
-        35 * PI / 180,
-        2,
-        1,
-        0.55,
-        "",
-        0,
-        {},
-        0,
-        20,
-    };
-
-    blocked_motor_config = PB_SmartKnobConfig{
-        0,
-        0,
-        0,
-        0,
-        0,
-        55 * PI / 180,
-        0.01,
-        0.6,
-        1.1,
-        "",
-        0,
-        {},
-        0,
-        90,
-    };
-}
-
-OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_)
-{
-    this->spr_ = spr_;
-
     root_level_motor_config = PB_SmartKnobConfig{
         0,
         0,
@@ -112,9 +71,38 @@ EntityStateUpdate OnboardingFlow::update(AppState state)
     return updateStateFromKnob(state.motor_state);
 }
 
+void OnboardingFlow::generateAPQrCode()
+{
+    QRCode qrcode;
+    uint8_t qrcodeVersion = 6;
+    int moduleSize = 2;
+
+    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
+
+    int qrCodeWidthHeight = qrcode.size * moduleSize;
+
+    int start = qrCodeWidthHeight / 2;
+
+    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifi_qr_code);
+
+    qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
+
+    for (uint8_t y = 0; y < qrcode.size; y++)
+    {
+        for (uint8_t x = 0; x < qrcode.size; x++)
+        {
+            if (qrcode_getModule(&qrcode, x, y))
+            {
+                qrcode_spr_.fillRect(start + x * moduleSize, start + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
+            }
+        }
+    }
+}
+
 // TODO: rename to generic event
 void OnboardingFlow::handleEvent(WiFiEvent event)
 {
+
     latest_event = event;
     switch (event.type)
     {
@@ -123,6 +111,8 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
         sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
         sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
         sprintf(wifi_qr_code, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
+        generateAPQrCode();
+        // // std::string wifiqrcode_test = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
 
         break;
     case SK_AP_CLIENT:
@@ -311,8 +301,7 @@ TFT_eSprite *OnboardingFlow::renderHass1StepPage()
 }
 TFT_eSprite *OnboardingFlow::renderHass2StepPage()
 {
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
+    uint8_t center = TFT_WIDTH / 2;
 
     spr_->setTextDatum(CC_DATUM);
 
@@ -321,12 +310,12 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
         sprintf(buf_, "WiFi starting...");
         spr_->setFreeFont(&NDS1210pt7b);
         spr_->setTextColor(accent_text_color);
-        spr_->drawString(buf_, center_h, center_v, 1);
+        spr_->drawString(buf_, center, center, 1);
 
         sprintf(buf_, "wait a momoment please");
         spr_->setFreeFont(&NDS125_small);
         spr_->setTextColor(default_text_color);
-        spr_->drawString(buf_, center_h, center_v + 50, 1);
+        spr_->drawString(buf_, center, center + 50, 1);
 
         return this->spr_;
     }
@@ -338,38 +327,19 @@ TFT_eSprite *OnboardingFlow::renderHass2StepPage()
     spr_->setFreeFont(&NDS125_small);
     spr_->setTextColor(accent_text_color);
 
-    spr_->drawString("SCAN TO CONNECT", center_h, screen_name_label_h * 3, 1);
-    spr_->drawString("TO THE SMART KNOB", center_h, screen_name_label_h * 4, 1);
+    spr_->drawString("SCAN TO CONNECT", center, screen_name_label_h * 3, 1);
+    spr_->drawString("TO THE SMART KNOB", center, screen_name_label_h * 4, 1);
 
-    QRCode qrcode;
-    uint8_t qrcodeVersion = 6;
-    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-
-    // std::string wifiqrcode = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, wifi_qr_code);
-
-    int moduleSize = 2;
-
-    int qrCodeWidth = qrcode.size * moduleSize;
-    int qrCodeHeight = qrcode.size * moduleSize;
-
-    int startX = center_h - qrCodeWidth / 2;
-    int startY = center_v - 4 - qrCodeHeight / 2;
-
-    for (uint8_t y = 0; y < qrcode.size; y++)
+    while (qrcode_spr_.height() == 0)
     {
-        for (uint8_t x = 0; x < qrcode.size; x++)
-        {
-            if (qrcode_getModule(&qrcode, x, y))
-            {
-                spr_->fillRect(startX + x * moduleSize, startY + y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
-            }
-        }
+        delay(100);
+        ESP_LOGD("onboarding_flow", "waiting for qrcode_spr_ to be created");
     }
+    qrcode_spr_.pushToSprite(spr_, center / 2, center / 2, TFT_BLACK);
 
-    spr_->drawString("OR CONNECT TO", center_h, TFT_HEIGHT - screen_name_label_h * 4, 1);
-    spr_->drawString(wifi_ap_ssid, center_h, TFT_HEIGHT - screen_name_label_h * 3, 1);
-    spr_->drawString(wifi_ap_passphrase, center_h, TFT_HEIGHT - screen_name_label_h * 2, 1);
+    spr_->drawString("OR CONNECT TO", center, TFT_HEIGHT - screen_name_label_h * 4, 1);
+    spr_->drawString(wifi_ap_ssid, center, TFT_HEIGHT - screen_name_label_h * 3, 1);
+    spr_->drawString(wifi_ap_passphrase, center, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
     return this->spr_;
 }
