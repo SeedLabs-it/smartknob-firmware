@@ -52,7 +52,7 @@ jobs:
       if: always() && steps.pio_install.outcome == 'success'
       run: |
         pio run \
-          -e seedlabs_devkit_github_action
+          -e seedlabs_devkit
 
     # - name: Build Firmware (nanofoc)
     #   # Run regardless of other build step failures, as long as setup steps completed
