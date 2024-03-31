@@ -25,6 +25,7 @@ void WiFiNotifier::requestSTA(WiFiConfiguration wifi_config)
     command.type = RequestSTA;
     strcpy(command.body.wifi_sta_config.ssid, wifi_config.ssid);
     strcpy(command.body.wifi_sta_config.passphrase, wifi_config.passphrase);
+    strcpy(command.body.wifi_sta_config.knob_id, wifi_config.knob_id);
 
     xQueueSendToBack(wifi_notifications_queue, &command, 0);
 }
