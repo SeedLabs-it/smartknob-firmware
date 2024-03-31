@@ -15,8 +15,9 @@
 class ErrorHandlingFlow
 {
 public:
-    ErrorHandlingFlow();
-    ErrorHandlingFlow(TFT_eSprite *spr_);
+    ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
+
+    void setQRCode(char *qr_data);
 
     TFT_eSprite *render();
     void handleNavigationEvent(NavigationEvent event);
@@ -31,6 +32,7 @@ public:
 
 private:
     TFT_eSprite *spr_ = NULL;
+    TFT_eSprite qrcode_spr_;
 
     char buf_[64];
 
@@ -63,6 +65,9 @@ private:
     WiFiNotifier *wifi_notifier;
 
     QueueHandle_t shared_events_queue;
+
+    char ap_data[64];
+    char ip_data[64];
 
     TFT_eSprite *renderConnectionFailed();
     TFT_eSprite *renderRetryLimitReached();

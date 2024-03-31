@@ -59,7 +59,7 @@ private:
     OnboardingFlow onboarding_flow = OnboardingFlow(&spr_, TFT_eSprite(&tft_));
     DemoApps demo_apps;
     HassApps hass_apps;
-    ErrorHandlingFlow error_handling_flow;
+    ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));
 
     QueueHandle_t app_state_queue_;
 

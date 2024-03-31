@@ -73,8 +73,6 @@ void DisplayTask::run()
 
     hass_apps = HassApps(&spr_);
 
-    error_handling_flow = ErrorHandlingFlow(&spr_);
-
     AppState app_state;
 
     spr_.setTextDatum(CC_DATUM);
