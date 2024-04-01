@@ -149,3 +149,14 @@ void ResetTask::log(const char *msg)
         logger_->log(buf_);
     }
 }
+
+void ResetTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    this->shared_events_queue = shared_events_queue;
+}
+
+void ResetTask::publishEvent(WiFiEvent event)
+{
+    event.sent_at = millis();
+    xQueueSendToBack(shared_events_queue, &event, 0);
+}

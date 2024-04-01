@@ -234,6 +234,7 @@ void RootTask::run()
 
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #if SK_WIFI
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
