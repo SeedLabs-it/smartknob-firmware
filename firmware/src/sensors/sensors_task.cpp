@@ -47,8 +47,11 @@ void SensorsTask::run()
     Adafruit_VEML7700 veml = Adafruit_VEML7700();
     float luminosity_adjustment = 1.00;
     const float LUX_ALPHA = 0.005;
+    std::vector<float> lux_samples(10, 0.0);
+    uint8_t lux_sample_index = 0;
+    float sum = 0.0;
     float lux_avg;
-    float lux = 0;
+    float lux = 0.0;
 
     if (veml.begin())
     {
@@ -106,6 +109,8 @@ void SensorsTask::run()
     // system temperature
     long last_system_temperature_check = 0;
     float last_system_temperature = 0;
+
+    bool first_run = true;
 
     while (1)
     {
@@ -230,11 +235,16 @@ void SensorsTask::run()
 #endif
 
 #if SK_ALS
-        if (millis() - last_illumination_check_ms > 1000 / illumination_poling_rate_hz)
+        if (first_run || millis() - last_illumination_check_ms > 1000 / illumination_poling_rate_hz)
         {
-
             lux = veml.readLux();
-            lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
+            sum -= lux_samples[lux_sample_index];
+            sum += lux;
+
+            lux_samples[lux_sample_index] = lux;
+            lux_sample_index = (lux_sample_index + 1) % 10;
+
+            lux_avg = sum / std::min(10, static_cast<int>(lux_samples.size()));
 
             // looks at the lower part of the sensor spectrum (0 = dark)
 
@@ -252,6 +262,7 @@ void SensorsTask::run()
             last_illumination_check_ms = millis();
         }
 #endif
+        first_run = false;
         delay(1);
     }
 }

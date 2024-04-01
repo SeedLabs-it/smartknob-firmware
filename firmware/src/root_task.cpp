@@ -274,6 +274,8 @@ void RootTask::run()
     float currentSubPosition;
     WiFiEvent wifi_event;
 
+    bool sensor_state_received = false;
+
     AppState app_state = {};
     while (1)
     {
@@ -384,6 +386,7 @@ void RootTask::run()
 #endif
         if (xQueueReceive(sensors_status_queue_, &latest_sensors_state_, 0) == pdTRUE)
         {
+            sensor_state_received = true;
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;
             app_state.proximiti_state.RangeStatus = latest_sensors_state_.proximity.RangeStatus;
 
@@ -406,30 +409,32 @@ void RootTask::run()
             app_state.screen_state.has_been_engaged = false;
         }
 #if SK_ALS
-        // We are multiplying the current luminosity of the enviroment (0,1 range)
-        // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-        // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-        // [0, MIN_LCD_BRIGHTNESS]
-        uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
 
-        if (app_state.screen_state.has_been_engaged == false &&
-            abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-            millis() > app_state.screen_state.awake_until)
+        // Dont run if state hasnt been received
+        if (sensor_state_received)
         {
-            if ((app_state.screen_state.brightness < targetLuminosity))
+            uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
+            if (app_state.screen_state.has_been_engaged == false &&
+                abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                millis() > app_state.screen_state.awake_until)
             {
+
+                if ((app_state.screen_state.brightness < targetLuminosity))
+                {
+                    app_state.screen_state.brightness = (targetLuminosity);
+                }
+                else
+                {
+                    // TODO: I don't like this decay function. It's too slow for delta too small
+                    app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                }
+            }
+            else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+            {
+                // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
                 app_state.screen_state.brightness = (targetLuminosity);
             }
-            else
-            {
-                // TODO: I don't like this decay function. It's too slow for delta too small
-                app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-            }
-        }
-        else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
-        {
-            // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-            app_state.screen_state.brightness = (targetLuminosity);
         }
 #endif
 #if !SK_ALS
