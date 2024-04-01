@@ -24,6 +24,10 @@ void ResetTask::run()
         {
             if (held)
             {
+                WiFiEvent event = {
+                    .type = EventType::SK_RESET_BUTTON_RELEASED,
+                };
+                publishEvent(event);
                 // pressedCount += 1;
                 held = false;
                 // ESP_LOGD("", "Button pressed %d times", pressedCount);
@@ -47,15 +51,14 @@ void ResetTask::run()
             {
                 WiFiEvent event = {
                     .type = EventType::SK_RESET_BUTTON_PRESSED,
-                    .body = {.error = {.type = ErrorType::NO_ERROR}},
-                    .sent_at = millis(),
                 };
+                publishEvent(event);
                 held = true;
                 // ESP_LOGD("", "Button held");
             }
             reset_button_released = millis();
 
-            if (millis() - reset_button_pressed > SOFT_RESET_SECONDS * 1000)
+            if (millis() - reset_button_pressed > 1 * 1000)
             {
                 motor_task_->playHaptic(true, false);
                 delay(100);

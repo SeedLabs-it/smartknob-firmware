@@ -232,9 +232,10 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
-    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #if SK_WIFI
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
@@ -357,6 +358,10 @@ void RootTask::run()
                 default:
                     break;
                 }
+                break;
+            case SK_RESET_BUTTON_PRESSED:
+            case SK_RESET_BUTTON_RELEASED:
+                display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 break;
             case SK_MQTT_CONNECTION_FAILED:
             case SK_MQTT_RETRY_LIMIT_REACHED:

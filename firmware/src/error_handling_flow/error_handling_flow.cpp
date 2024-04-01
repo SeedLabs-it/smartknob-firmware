@@ -72,6 +72,11 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         send_event.type = SK_WIFI_ERROR;
         publishEvent(send_event);
         break;
+    case SK_RESET_BUTTON_PRESSED:
+        error_type = RESET;
+        latest_event = event;
+        break;
+    case SK_RESET_BUTTON_RELEASED:
     case SK_DISMISS_ERROR:
     case SK_RESET_ERROR:
         error_type = NO_ERROR;
@@ -149,10 +154,29 @@ TFT_eSprite *ErrorHandlingFlow::render()
             spr_->drawString("WIFI ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
             return spr_;
         }
+    case RESET:
+        return renderResetInProgress();
+        break;
     default:
         spr_->drawString("ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
         return spr_;
     }
+}
+
+TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
+{
+    uint16_t center = TFT_WIDTH / 2;
+    int8_t screen_name_label_h = spr_->fontHeight(1);
+
+    spr_->setTextDatum(CC_DATUM);
+    spr_->setTextSize(1);
+    spr_->setTextColor(accent_text_color);
+
+    spr_->setFreeFont(&NDS1210pt7b);
+    sprintf(buf_, "Soft reset in %ds", max(0, SOFT_RESET_SECONDS - (int)((millis() - latest_event.sent_at) / 1000)));
+    spr_->drawString(buf_, center, center, 1);
+
+    return this->spr_;
 }
 
 TFT_eSprite *ErrorHandlingFlow::renderConnectionFailed()
