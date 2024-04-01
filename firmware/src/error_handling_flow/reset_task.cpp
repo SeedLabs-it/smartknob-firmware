@@ -34,11 +34,6 @@ void ResetTask::run()
                     log("Resetting to factory defaults");
                     softReset();
                 }
-                else if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
-                {
-                    log("Hard resetting");
-                    hardReset();
-                }
 
                 WiFiEvent event = {
                     .type = EventType::SK_RESET_BUTTON_RELEASED,
@@ -64,6 +59,12 @@ void ResetTask::run()
             {
                 motor_task_->playHaptic(true, false);
                 delay(100);
+            }
+
+            if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
+            {
+                log("Hard resetting");
+                hardReset();
             }
         }
 
