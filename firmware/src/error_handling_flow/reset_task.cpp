@@ -2,7 +2,7 @@
 
 #define RESET_BUTTON GPIO_NUM_0
 
-ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 2048, task_core), configuration_(configuration)
+ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 1024 * 3, task_core), configuration_(configuration)
 {
 }
 
@@ -24,10 +24,7 @@ void ResetTask::run()
         {
             if (held)
             {
-                WiFiEvent event = {
-                    .type = EventType::SK_RESET_BUTTON_RELEASED,
-                };
-                publishEvent(event);
+
                 // pressedCount += 1;
                 held = false;
                 // ESP_LOGD("", "Button pressed %d times", pressedCount);
@@ -42,6 +39,11 @@ void ResetTask::run()
                     log("Hard resetting");
                     hardReset();
                 }
+
+                WiFiEvent event = {
+                    .type = EventType::SK_RESET_BUTTON_RELEASED,
+                };
+                publishEvent(event);
             }
             reset_button_pressed = millis();
         }

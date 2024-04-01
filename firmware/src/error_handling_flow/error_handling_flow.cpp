@@ -161,6 +161,7 @@ TFT_eSprite *ErrorHandlingFlow::render()
         spr_->drawString("ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
         return spr_;
     }
+    return spr_;
 }
 
 TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
@@ -173,8 +174,22 @@ TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
     spr_->setTextColor(accent_text_color);
 
     spr_->setFreeFont(&NDS1210pt7b);
-    sprintf(buf_, "Soft reset in %ds", max(0, SOFT_RESET_SECONDS - (int)((millis() - latest_event.sent_at) / 1000)));
-    spr_->drawString(buf_, center, center, 1);
+    uint8_t held_for = (int)((millis() - latest_event.sent_at) / 1000);
+    bool soft_reset = held_for > SOFT_RESET_SECONDS;
+
+    sprintf(buf_, "%s", soft_reset ? "Factory reset" : "For soft reset");
+    spr_->drawString(buf_, center, center - screen_name_label_h * 1.4, 1);
+
+    sprintf(buf_, "%sin %ds", soft_reset ? "" : "release ", soft_reset ? max(0, HARD_RESET_SECONDS - held_for) : max(0, SOFT_RESET_SECONDS - held_for));
+    spr_->drawString(buf_, center, center - screen_name_label_h * 0.4, 1);
+    if (soft_reset)
+    {
+        spr_->drawString("Release for soft reset", center, center + screen_name_label_h, 1);
+    }
+    else
+    {
+        spr_->drawString("Release to cancel", center, center + screen_name_label_h, 1);
+    }
 
     return this->spr_;
 }
