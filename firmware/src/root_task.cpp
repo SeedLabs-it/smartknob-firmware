@@ -19,16 +19,18 @@ RootTask::RootTask(
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
-    SensorsTask *sensors_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
-                                 stream_(),
-                                 motor_task_(motor_task),
-                                 display_task_(display_task),
-                                 wifi_task_(wifi_task),
-                                 mqtt_task_(mqtt_task),
-                                 led_ring_task_(led_ring_task),
-                                 sensors_task_(sensors_task),
-                                 plaintext_protocol_(stream_, [this]()
-                                                     { motor_task_.runCalibration(); })
+    SensorsTask *sensors_task,
+    ResetTask *reset_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
+                             stream_(),
+                             motor_task_(motor_task),
+                             display_task_(display_task),
+                             wifi_task_(wifi_task),
+                             mqtt_task_(mqtt_task),
+                             led_ring_task_(led_ring_task),
+                             sensors_task_(sensors_task),
+                             reset_task_(reset_task),
+                             plaintext_protocol_(stream_, [this]()
+                                                 { motor_task_.runCalibration(); })
 //  proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
 //                  { applyConfig(config, true); })
 
@@ -247,6 +249,9 @@ void RootTask::run()
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+
+    // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
+    reset_task_->setMotorTask(&motor_task_);
 
     switch (configuration_->getOSConfiguration()->mode)
     {
