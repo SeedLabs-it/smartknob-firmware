@@ -45,6 +45,11 @@ void ResetTask::run()
         {
             if (!held)
             {
+                WiFiEvent event = {
+                    .type = EventType::SK_RESET_BUTTON_PRESSED,
+                    .body = {.error = {.type = ErrorType::NO_ERROR}},
+                    .sent_at = millis(),
+                };
                 held = true;
                 // ESP_LOGD("", "Button held");
             }

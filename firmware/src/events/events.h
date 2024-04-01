@@ -126,14 +126,18 @@ enum EventType
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,
 
+    SK_RESET_BUTTON_PRESSED,
+
     SK_MQTT_ERROR,
     SK_WIFI_ERROR,
 };
+
+typedef unsigned long SentAt;
 
 // TODO: rename to generic event?
 struct WiFiEvent
 {
     EventType type;
     WiFiEventBody body;
-    uint32_t sent_at = millis();
+    SentAt sent_at;
 };
