@@ -325,6 +325,18 @@ bool MqttTask::init()
     cJSON_AddStringToObject(json, "id", hexbuffer_);
     cJSON_AddStringToObject(json, "mac_address", WiFi.macAddress().c_str());
 
+    cJSON *data = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(data, "model", MODEL);
+#ifdef RELEASE_VERSION
+    cJSON_AddStringToObject(data, "version", RELEASE_VERSION);
+#else
+    cJSON_AddStringToObject(data, "firmware_version", "DEV");
+#endif
+    cJSON_AddStringToObject(data, "manufacturer", "Seedlabs");
+
+    cJSON_AddItemToObject(json, "data", data);
+
     unacknowledged_ids.insert(std::make_pair(hexbuffer_, "init"));
 
     char *init_string = cJSON_PrintUnformatted(json);
