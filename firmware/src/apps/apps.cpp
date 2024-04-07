@@ -271,6 +271,17 @@ void Apps::setMotorNotifier(MotorNotifier *motor_notifier)
     }
 }
 
+void Apps::setLedRingNotifier(LedRingNotifier *led_ring_notifier)
+{
+    this->led_ring_notifier = led_ring_notifier;
+
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        it->second->setLedRingNotifier(led_ring_notifier);
+    }
+}
+
 void Apps::triggerMotorConfigUpdate()
 {
     if (this->motor_notifier != nullptr)

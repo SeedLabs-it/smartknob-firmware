@@ -250,6 +250,9 @@ void RootTask::run()
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
+    display_task_->getDemoApps()->setLedRingNotifier(led_ring_task_->getNotifier());
+    display_task_->getHassApps()->setLedRingNotifier(led_ring_task_->getNotifier());
+
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
 
@@ -657,7 +660,8 @@ void RootTask::updateHardware(AppState app_state)
 
     if (led_ring_task_ != nullptr)
     {
-        EffectSettings effect_settings;
+
+        // LedRingEffect led_ring_effect;
         // THERE ARE 3 potential range of the display
         // 1- Engaged
         // 2- Not Engaged and enviroment brightness is high
@@ -670,37 +674,46 @@ void RootTask::updateHardware(AppState app_state)
         if (brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS)
         {
             // case 1. FADE-IN led
-            effect_settings.effect_id = 4; // FADE-IN
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
+            // effect_settings.effect_id = 4; // FADE-IN
+            // effect_settings.effect_start_pixel = 0;
+            // effect_settings.effect_end_pixel = NUM_LEDS;
+            // effect_settings.effect_accent_pixel = 0;
 
-            // TODO: add conversion from HUE to RGB
-            // latest_config_.led_hue;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            // // TODO: add conversion from HUE to RGB
+            // // latest_config_.led_hue;
+            // effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            // led_ring_task_->setEffect(effect_settings);
         }
         else if (brightness == app_state.screen_state.MIN_LCD_BRIGHTNESS)
         {
-            // case 2. FADE-OUT led
-            effect_settings.effect_id = 5;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            // // case 2. FADE-OUT led
+            // effect_settings.effect_id = 5;
+            // effect_settings.effect_start_pixel = 0;
+            // effect_settings.effect_end_pixel = NUM_LEDS;
+            // effect_settings.effect_accent_pixel = 0;
+            // effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            // led_ring_task_->setEffect(effect_settings);
         }
         else
         {
-            // case 3 - Beacon
-            effect_settings.effect_id = 2;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            // // case 3 - Beacon
+            // effect_settings.effect_id = 2;
+            // effect_settings.effect_start_pixel = 0;
+            // effect_settings.effect_end_pixel = NUM_LEDS;
+            // effect_settings.effect_accent_pixel = 0;
+            // effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            // led_ring_task_->setEffect(effect_settings);
         }
-        led_ring_task_->setEffect(effect_settings);
+
+        // led_ring_effect.type = STATIC_COLOR_RANGE;
+        // led_ring_effect.payload.static_color_range.color = (255 << 16) | (165 << 8) | 0;
+        // led_ring_effect.payload.static_color_range.from_degrees = 315;
+        // led_ring_effect.payload.static_color_range.to_degrees = 225;
+
+        // led_ring_task_->getNotifier()->staticColor((255 << 16) | (165 << 8) | 0, 127);
+        led_ring_task_->getNotifier()->staticColor((0 << 16) | (255 << 8) | 255, 225, LED_RING_PRIOTITY_IDLE);
+
+        // led_ring_task_->setEffect(led_ring_effect);
         // ESP_LOGD("LED", "------------------- : %d, %d, %d, %f", effect_settings.effect_id, brightness, app_state.screen_state.MIN_LCD_BRIGHTNESS, latest_sensors_state_.illumination.lux_adj);
 
         // latest_config_.led_hue

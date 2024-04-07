@@ -43,6 +43,11 @@ void App::setMotorNotifier(MotorNotifier *motor_notifier)
     this->motor_notifier = motor_notifier;
 }
 
+void App::setLedRingNotifier(LedRingNotifier *led_ring_notifier)
+{
+    this->led_ring_notifier = led_ring_notifier;
+}
+
 void App::triggerMotorConfigUpdate()
 {
     if (this->motor_notifier != nullptr)

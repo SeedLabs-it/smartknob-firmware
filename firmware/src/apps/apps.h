@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "../app_config.h"
 #include "../notify/motor_notifier/motor_notifier.h"
+#include "../led_ring/led_ring_notifier.h"
 #include "../navigation/navigation.h"
 
 // include all apps
@@ -43,6 +44,7 @@ public:
     void reload(cJSON *apps_);
     void createOnboarding();
 
+    void setLedRingNotifier(LedRingNotifier *led_ring_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
 
@@ -85,4 +87,5 @@ protected:
     PB_SmartKnobConfig root_level_motor_config;
 
     MotorNotifier *motor_notifier;
+    LedRingNotifier *led_ring_notifier;
 };

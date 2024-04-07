@@ -125,6 +125,7 @@ void SettingsApp::renderViewMotorCalibration()
     {
         spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString("Press to start", center_h, center_v + 50, 1);
+        led_ring_notifier->staticColor((255 << 16) | (100 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
     }
     else
     {
@@ -139,6 +140,7 @@ void SettingsApp::renderViewMotorCalibration()
         spr_->drawString(buf_, center_h, center_v, 1);
 
         spr_->drawString("Don't touch it", center_h, center_v + 50, 1);
+        led_ring_notifier->staticColor((255 << 16) | (0 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
     }
 }
 
@@ -276,9 +278,12 @@ TFT_eSprite *SettingsApp::render()
         sprintf(buf_, "%dmm | %d", proximity_state.RangeMilliMeter, proximity_state.RangeStatus);
         spr_->setFreeFont(&NDS1210pt7b);
         spr_->drawString(buf_, center_h, 190, 1);
+
+        led_ring_notifier->staticColor((0 << 16) | (255 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
     }
     else if (current_position == 1)
     {
+        // proximity view
         spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_BLACK);
 
         spr_->setTextColor(TFT_WHITE);
@@ -321,7 +326,8 @@ TFT_eSprite *SettingsApp::render()
         spr_->setTextColor(TFT_WHITE);
         sprintf(buf_, "%dmm", proximity_state.RangeMilliMeter);
         spr_->setFreeFont(&NDS1210pt7b);
-        spr_->drawString(buf_, center_h, TFT_HEIGHT - 20, 1);
+        spr_->drawString(buf_, center_h, TFT_HEIGHT - 40, 1);
+        led_ring_notifier->staticColor((0 << 16) | (255 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
     }
     else if (current_position == 2)
     {
@@ -346,6 +352,7 @@ TFT_eSprite *SettingsApp::render()
         spr_->drawCircle(center_h, center_v, current_tick_time, TFT_GREENYELLOW);
 
         spr_->drawCircle(center_h, center_v, (current_tick_time + 60) % 120, TFT_GREENYELLOW); // concentric circle
+        led_ring_notifier->staticColor((0 << 16) | (255 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
     }
     else if (current_position == 3)
     {
@@ -360,14 +367,20 @@ TFT_eSprite *SettingsApp::render()
         {
         case 0:
             background_color = TFT_BLACK;
+            led_ring_notifier->staticColor((0 << 16) | (0 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
+
             text_color = TFT_WHITE;
             break;
         case 1:
             background_color = TFT_ORANGE;
+            led_ring_notifier->staticColor((255 << 16) | (180 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
+
             text_color = TFT_WHITE;
             break;
         case 2:
             background_color = TFT_DARKCYAN;
+            led_ring_notifier->staticColor((0 << 16) | (128 << 8) | 128, 255, LED_RING_PRIOTITY_APP);
+
             text_color = TFT_WHITE;
             break;
 
