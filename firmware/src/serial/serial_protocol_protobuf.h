@@ -12,7 +12,7 @@
 class SerialProtocolProtobuf : public SerialProtocol
 {
 public:
-    SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback);
+    SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback);
     ~SerialProtocolProtobuf(){};
     void log(const char *msg) override;
     void loop() override;
@@ -21,6 +21,8 @@ public:
 private:
     Stream &stream_;
     ConfigCallback config_callback_;
+    MotorCalibrationCallback motor_calibration_callback_;
+    StrainCalibrationCallback strain_calibration_callback_;
 
     PB_FromSmartKnob pb_tx_buffer_;
     PB_ToSmartknob pb_rx_buffer_;

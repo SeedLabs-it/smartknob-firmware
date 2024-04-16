@@ -31,8 +31,14 @@ RootTask::RootTask(
                              reset_task_(reset_task),
                              plaintext_protocol_(stream_, [this]()
                                                  { motor_task_.runCalibration(); }),
-                             proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
-                                             { applyConfig(config, true); })
+                             proto_protocol_(
+                                 stream_,
+                                 [this](PB_SmartKnobConfig &config)
+                                 { applyConfig(config, true); },
+                                 [this]()
+                                 { motor_task_.runCalibration(); },
+                                 [this]()
+                                 { strainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY

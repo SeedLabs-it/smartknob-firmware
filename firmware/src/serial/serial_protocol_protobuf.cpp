@@ -14,10 +14,12 @@ static SerialProtocolProtobuf *singleton_for_packet_serial = 0;
 static const uint16_t MIN_STATE_INTERVAL_MILLIS = 5;
 static const uint16_t PERIODIC_STATE_INTERVAL_MILLIS = 5000;
 
-SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback) : SerialProtocol(),
-                                                                                                 stream_(stream),
-                                                                                                 config_callback_(config_callback),
-                                                                                                 packet_serial_()
+SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),
+                                                                                                                                                                                                             stream_(stream),
+                                                                                                                                                                                                             config_callback_(config_callback),
+                                                                                                                                                                                                             motor_calibration_callback_(motor_calibration_callback),
+                                                                                                                                                                                                             strain_calibration_callback_(strain_calibration_callback),
+                                                                                                                                                                                                             packet_serial_()
 {
     packet_serial_.setStream(&stream);
 
@@ -152,6 +154,26 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
         config_callback_(pb_rx_buffer_.payload.smartknob_config);
         break;
     }
+    case PB_ToSmartknob_smartknob_command_tag:
+    {
+        // Handle command
+        log("Command received");
+        switch (pb_rx_buffer_.payload.smartknob_command)
+        {
+        case PB_SmartKnobCommand_MOTOR_CALIBRATE:
+            log("Motor Calibrate");
+            motor_calibration_callback_();
+            break;
+        case PB_SmartKnobCommand_STRAIN_CALIBRATE:
+            log("Strain Calibrate");
+            strain_calibration_callback_();
+            break;
+        default:
+            log("Unknown command");
+            break;
+        }
+        break;
+    }
     default:
     {
         char buf[200];
@@ -165,8 +187,12 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
 void SerialProtocolProtobuf::sendPbTxBuffer()
 {
     // Encode protobuf message to byte buffer
+
     pb_ostream_t stream = pb_ostream_from_buffer(tx_buffer_, sizeof(tx_buffer_));
     pb_tx_buffer_.protocol_version = PROTOBUF_PROTOCOL_VERSION;
+
+    strncpy(pb_tx_buffer_.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.mac_address) - 1);
+
     if (!pb_encode(&stream, PB_FromSmartKnob_fields, &pb_tx_buffer_))
     {
         stream_.println(stream.errmsg);
