@@ -8,7 +8,7 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
     sprintf(this->friendly_name, "%s", friendly_name);
     sprintf(this->entity_id, "%s", entity_id);
 
-    motor_config = PB_SmartKnobConfig{
+    motor_config_dimmer = PB_SmartKnobConfig{
         current_brightness,
         0,
         current_brightness,
@@ -25,6 +25,60 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         27,
     };
 
+    motor_config_settings = PB_SmartKnobConfig{
+        current_settings_position,
+        0,
+        current_settings_position,
+        0,
+        -1,
+        60 * PI / 180,
+        1,
+        1,
+        0.55, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
+        "",   // Change the type of app_id from char to char*
+        0,
+        {},
+        0,
+        27,
+    };
+
+    motor_config_hue = PB_SmartKnobConfig{
+        app_hue_position / 2,
+        0,
+        uint8_t(app_hue_position / 2),
+        0,
+        -1,
+        PI * 2 / 180,
+        1,
+        1,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        27,
+    };
+
+    // TODO make real kelvins wheel
+    motor_config_kelvin = PB_SmartKnobConfig{
+        app_hue_position / 2,
+        0,
+        uint8_t(app_hue_position / 2),
+        0,
+        -1,
+        PI * 2 / 180,
+        1,
+        1,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        27,
+    };
+
+    motor_config = motor_config_dimmer;
+
     num_positions = motor_config.max_position - motor_config.min_position;
 
     big_icon = light_top_80;
@@ -35,57 +89,29 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
 
 int8_t LightDimmerApp::navigationNext()
 {
-    if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
-    {
-        app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
-    }
-    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
-    {
-        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
-    }
 
     switch (app_state_mode)
     {
     case LIGHT_DIMMER_APP_MODE_DIMMER:
-        motor_config = PB_SmartKnobConfig{
-            current_brightness,
-            0,
-            current_brightness,
-            0,
-            100,
-            2.4 * PI / 180,
-            1,
-            1,
-            1.1,
-            "",
-            0,
-            {},
-            0,
-            27,
-        };
+        app_state_mode = LIGHT_DIMMER_APP_MODE_SETTINGS;
+        motor_config = motor_config_settings;
         break;
+    case LIGHT_DIMMER_APP_MODE_SETTINGS:
+        // check what is selected
+        app_state_mode = LIGHT_DIMMER_APP_MODE_KELVIN;
+        motor_config = motor_config_kelvin;
+        break;
+    case LIGHT_DIMMER_APP_MODE_KELVIN:
+        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
+        motor_config = motor_config_dimmer;
     case LIGHT_DIMMER_APP_MODE_HUE:
-        // todo, check that current temp is more than wanted
-        motor_config = PB_SmartKnobConfig{
-            app_hue_position / 2,
-            0,
-            app_hue_position / 2,
-            0,
-            -1,
-            PI * 2 / 180,
-            1,
-            1,
-            1.1,
-            "",
-            0,
-            {},
-            0,
-            27,
-        };
+        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
+        motor_config = motor_config_dimmer;
         break;
     default:
         break;
     }
+
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
@@ -107,6 +133,14 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     if (state_sent_from_hass)
     {
         state_sent_from_hass = false;
+        return new_state;
+    }
+
+    if (app_state_mode == LIGHT_DIMMER_APP_MODE_SETTINGS)
+    {
+        current_settings_position = state.current_position;
+        current_settings_subposition = state.sub_position_unit;
+        // TODO rework apps structure
         return new_state;
     }
 
@@ -297,6 +331,105 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
 
+TFT_eSprite *LightDimmerApp::renderLightSettings()
+{
+    uint16_t screen_radius = TFT_WIDTH / 2;
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    int offset = abs(current_settings_subposition * 40);
+
+    uint8_t actual_settings_position = current_settings_position % 4;
+
+    uint8_t from_center_offset = 85;
+
+    uint8_t opt_1_x = center_h - from_center_offset;
+    uint8_t opt_1_y = center_v;
+
+    uint8_t opt_2_x = center_h;
+    uint8_t opt_2_y = center_v - from_center_offset;
+
+    uint8_t opt_3_x = center_h + from_center_offset;
+    uint8_t opt_3_y = center_v;
+
+    uint8_t opt_4_x = center_h;
+    uint8_t opt_4_y = center_v + from_center_offset;
+
+    spr_->fillCircle(opt_1_x, opt_1_y, 30, TFT_DARKGREY);
+    spr_->fillCircle(opt_2_x, opt_2_y, 30, TFT_DARKGREY);
+    spr_->fillCircle(opt_3_x, opt_3_y, 30, TFT_DARKGREY);
+    spr_->fillCircle(opt_4_x, opt_4_y, 30, TFT_DARKGREY);
+
+    if (actual_settings_position == 0)
+    {
+
+        opt_1_x = center_h - offset;
+        opt_1_y = center_v;
+
+        opt_2_x = center_h;
+        opt_2_y = center_v - from_center_offset + offset;
+    }
+    else if (actual_settings_position == 1)
+    {
+        opt_2_x = center_h;
+        opt_2_y = center_v - offset;
+
+        opt_3_x = center_h + from_center_offset - offset;
+        opt_3_y = center_v;
+    }
+    else if (actual_settings_position == 2)
+    {
+        opt_3_x = center_h + offset;
+        opt_3_y = center_v;
+
+        opt_4_x = center_h;
+        opt_4_y = center_v + from_center_offset - offset;
+    }
+    else if (actual_settings_position == 3)
+    {
+        opt_4_x = center_h;
+        opt_4_y = center_v + offset;
+
+        opt_1_x = center_h - from_center_offset + offset;
+        opt_1_y = center_v;
+    }
+
+    sprintf(buf_, "%s", "1");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->fillCircle(opt_1_x, opt_1_y, 30, TFT_BLACK);
+    spr_->drawCircle(opt_1_x, opt_1_y, 30, TFT_WHITE);
+    spr_->drawString(buf_, opt_1_x, opt_1_y, 1);
+
+    sprintf(buf_, "%s", "2");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->fillCircle(opt_2_x, opt_2_y, 30, TFT_BLACK);
+    spr_->drawString(buf_, opt_2_x, opt_2_y, 1);
+    spr_->drawCircle(opt_2_x, opt_2_y, 30, TFT_WHITE);
+
+    sprintf(buf_, "%s", "3");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->fillCircle(opt_3_x, opt_3_y, 30, TFT_BLACK);
+    spr_->drawString(buf_, opt_3_x, opt_3_y, 1);
+    spr_->drawCircle(opt_3_x, opt_3_y, 30, TFT_WHITE);
+
+    sprintf(buf_, "%s", "4");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->fillCircle(opt_4_x, opt_4_y, 30, TFT_BLACK);
+    spr_->drawString(buf_, opt_4_x, opt_4_y, 1);
+    spr_->drawCircle(opt_4_x, opt_4_y, 30, TFT_WHITE);
+
+    return this->spr_;
+}
+
+TFT_eSprite *LightDimmerApp::renderKelvinWheel()
+{
+    return this->spr_;
+}
+
 TFT_eSprite *LightDimmerApp::renderHUEWheel()
 {
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
@@ -323,7 +456,6 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 
     uint16_t offset_vertical = 30;
 
-    char buf_[16];
     sprintf(buf_, "%d%%", current_position);
 
     spr_->fillScreen(DISABLED_COLOR);
@@ -378,9 +510,14 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 TFT_eSprite *LightDimmerApp::render()
 {
 
-    if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+    switch (app_state_mode)
     {
+    case LIGHT_DIMMER_APP_MODE_HUE:
         return renderHUEWheel();
+    case LIGHT_DIMMER_APP_MODE_SETTINGS:
+        return renderLightSettings();
+    default:
+        break;
     }
 
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
