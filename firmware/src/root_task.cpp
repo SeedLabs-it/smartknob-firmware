@@ -30,9 +30,15 @@ RootTask::RootTask(
                              sensors_task_(sensors_task),
                              reset_task_(reset_task),
                              plaintext_protocol_(stream_, [this]()
-                                                 { motor_task_.runCalibration(); })
-//  proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
-//                  { applyConfig(config, true); })
+                                                 { motor_task_.runCalibration(); }),
+                             proto_protocol_(
+                                 stream_,
+                                 [this](PB_SmartKnobConfig &config)
+                                 { applyConfig(config, true); },
+                                 [this]()
+                                 { motor_task_.runCalibration(); },
+                                 [this]()
+                                 { strainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY
@@ -185,8 +191,8 @@ void RootTask::run()
         case SERIAL_PROTOCOL_LEGACY:
             current_protocol_ = &plaintext_protocol_;
             break;
-            // case SERIAL_PROTOCOL_PROTO:
-            //     current_protocol_ = &proto_protocol_;
+        case SERIAL_PROTOCOL_PROTO:
+            current_protocol_ = &proto_protocol_;
             break;
         default:
             log("Unknown protocol requested");
@@ -195,7 +201,7 @@ void RootTask::run()
     };
 
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
-    // proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
+    proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
