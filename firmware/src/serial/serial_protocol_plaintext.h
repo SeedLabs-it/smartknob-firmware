@@ -18,6 +18,7 @@ public:
     SerialProtocolPlaintext(Stream &stream, MotorCalibrationCallback motor_calibration_callback) : SerialProtocol(), stream_(stream), motor_calibration_callback_(motor_calibration_callback) {}
     ~SerialProtocolPlaintext() {}
     void log(const char *msg) override;
+    void log(const LogLevel log_level, const char *msg) override;
     void loop() override;
     void handleState(const PB_SmartKnobState &state) override;
 

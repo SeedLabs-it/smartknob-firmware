@@ -25,6 +25,20 @@ void SerialProtocolPlaintext::log(const char *msg)
     stream_.println(msg);
 }
 
+void SerialProtocolPlaintext::log(const LogLevel log_level, const char *msg)
+{
+    switch (log_level)
+    {
+    case INFO:
+
+        break;
+
+    default:
+        break;
+    }
+    stream_.println(msg);
+}
+
 void SerialProtocolPlaintext::loop()
 {
     while (stream_.available() > 0)
