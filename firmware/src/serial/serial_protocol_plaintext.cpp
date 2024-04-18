@@ -9,15 +9,7 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        // char buf_[200];
-        // sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
-        //         state.current_position,
-        //         state.config.min_position,
-        //         state.config.max_position,
-        //         state.config.detent_strength_unit,
-        //         degrees(state.config.position_width_radians),
-        //         state.config.endstop_strength_unit);
-        // log(PB_LogLevel_DEBUG, buf_);
+
         LOGD("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
              state.current_position,
              state.config.min_position,
@@ -25,13 +17,6 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
              state.config.detent_strength_unit,
              degrees(state.config.position_width_radians),
              state.config.endstop_strength_unit);
-        // stream_.printf("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n",
-        //                state.current_position,
-        //                state.config.min_position,
-        //                state.config.max_position,
-        //                state.config.detent_strength_unit,
-        //                degrees(state.config.position_width_radians),
-        //                state.config.endstop_strength_unit);
     }
 }
 
@@ -48,6 +33,7 @@ void SerialProtocolPlaintext::log(const PB_LogLevel log_level, const char *origi
     {
         stream_.print(origin);
     }
+
     switch (log_level)
     {
     case PB_LogLevel_INFO:
