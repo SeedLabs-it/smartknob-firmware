@@ -53,18 +53,18 @@ void DisplayTask::run()
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
-    log("push menu sprite: ok");
+    LOGD("Push menu sprite: ok");
 
     spr_.setColorDepth(16);
 
     if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
     {
-        log("ERROR: sprite allocation failed!");
+        LOGE("Sprite allocation failed!");
         tft_.fillScreen(TFT_RED);
     }
     else
     {
-        log("Sprite created!");
+        LOGD("Sprite created!");
         tft_.fillScreen(TFT_BLACK);
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
@@ -143,19 +143,6 @@ void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
     brightness_ = brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH);
-}
-
-void DisplayTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void DisplayTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
 }
 
 void DisplayTask::enableOnboarding()

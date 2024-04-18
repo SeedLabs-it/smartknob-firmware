@@ -72,7 +72,6 @@ void setup()
     }
 
 #if SK_DISPLAY
-    display_task.setLogger(&root_task);
     display_task.begin();
 
     // Connect display to motor_task's knob state feed
