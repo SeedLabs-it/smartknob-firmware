@@ -47,7 +47,9 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
                 state.config.detent_strength_unit,
                 degrees(state.config.position_width_radians),
                 state.config.endstop_strength_unit);
-        log(PB_LogLevel_DEBUG, buf_);
+        char origin_[256];
+        snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
+        log(PB_LogLevel_DEBUG, origin_, buf_);
     }
 }
 
@@ -61,15 +63,18 @@ void SerialProtocolProtobuf::ack(uint32_t nonce)
 
 void SerialProtocolProtobuf::log(const char *msg)
 {
-    log(PB_LogLevel_INFO, msg);
+    char origin_[256];
+    snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
+    log(PB_LogLevel_INFO, origin_, msg);
 }
 
-void SerialProtocolProtobuf::log(const PB_LogLevel log_level, const char *msg)
+void SerialProtocolProtobuf::log(const PB_LogLevel log_level, const char *origin, const char *msg)
 {
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
-    pb_tx_buffer_.payload.log.log_level = log_level;
+    pb_tx_buffer_.payload.log.level = log_level;
 
+    strlcpy(pb_tx_buffer_.payload.log.origin, origin, sizeof(pb_tx_buffer_.payload.log.origin));
     strlcpy(pb_tx_buffer_.payload.log.msg, msg, sizeof(pb_tx_buffer_.payload.log.msg));
 
     sendPbTxBuffer();

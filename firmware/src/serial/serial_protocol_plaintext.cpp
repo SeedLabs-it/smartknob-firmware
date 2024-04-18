@@ -9,15 +9,22 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        char buf_[200];
-        sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
-                state.current_position,
-                state.config.min_position,
-                state.config.max_position,
-                state.config.detent_strength_unit,
-                degrees(state.config.position_width_radians),
-                state.config.endstop_strength_unit);
-        log(PB_LogLevel_DEBUG, buf_);
+        // char buf_[200];
+        // sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+        //         state.current_position,
+        //         state.config.min_position,
+        //         state.config.max_position,
+        //         state.config.detent_strength_unit,
+        //         degrees(state.config.position_width_radians),
+        //         state.config.endstop_strength_unit);
+        // log(PB_LogLevel_DEBUG, buf_);
+        LOGD("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+             state.current_position,
+             state.config.min_position,
+             state.config.max_position,
+             state.config.detent_strength_unit,
+             degrees(state.config.position_width_radians),
+             state.config.endstop_strength_unit);
         // stream_.printf("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n",
         //                state.current_position,
         //                state.config.min_position,
@@ -30,25 +37,31 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
 
 void SerialProtocolPlaintext::log(const char *msg)
 {
-    log(PB_LogLevel_INFO, msg);
+    char origin_[256];
+    snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
+    log(PB_LogLevel_INFO, origin_, msg);
 }
 
-void SerialProtocolPlaintext::log(const PB_LogLevel log_level, const char *msg)
+void SerialProtocolPlaintext::log(const PB_LogLevel log_level, const char *origin, const char *msg)
 {
+    if (isVerbose())
+    {
+        stream_.print(origin);
+    }
     switch (log_level)
     {
     case PB_LogLevel_INFO:
-        stream_.print("INFO: ");
+        stream_.print(" INFO: ");
         break;
         break;
     case PB_LogLevel_WARNING:
-        stream_.print("WARNING: ");
+        stream_.print(" WARNING: ");
         break;
     case PB_LogLevel_ERROR:
-        stream_.print("ERROR: ");
+        stream_.print(" ERROR: ");
         break;
     default:
-        stream_.print("INFO: ");
+        stream_.print(" INFO: ");
         break;
     }
     stream_.println(msg);
@@ -59,7 +72,7 @@ void SerialProtocolPlaintext::loop()
     while (stream_.available() > 0)
     {
         int b = stream_.read();
-        if (b == 0)
+        if (b == 0 || b == 'P' || b == 'p')
         {
             if (protocol_change_callback_)
             {
@@ -94,6 +107,7 @@ void SerialProtocolPlaintext::loop()
             if (verbose_toggle_callback_)
             {
                 verbose_toggle_callback_();
+                toggleVerbose();
             }
         }
         else if (b == 'M' || b == 'm')

@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "../logger.h"
+#include "../logging.h"
 #include "../proto_gen/smartknob.pb.h"
 
 #define SERIAL_PROTOCOL_LEGACY 0

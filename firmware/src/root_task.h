@@ -6,6 +6,7 @@
 #include "configuration.h"
 #include "display_task.h"
 #include "logger.h"
+#include "logging.h"
 #include "motor_foc/motor_task.h"
 #include "serial/serial_protocol_plaintext.h"
 #include "serial/serial_protocol_protobuf.h"
@@ -36,7 +37,7 @@ public:
     virtual ~RootTask();
 
     void log(const char *msg) override;
-    void log(const PB_LogLevel log_level, const char *msg) override;
+    void log(const PB_LogLevel log_level, const char *origin, const char *msg) override;
     void setConfiguration(Configuration *configuration);
 
     void setHassApps(HassApps *apps);
@@ -82,7 +83,6 @@ private:
     int32_t strain_reading_ = 0;
 
     SerialProtocol *current_protocol_ = nullptr;
-    Logger *logger_ = nullptr;
     bool remote_controlled_ = false;
     int current_config_ = 0;
     uint8_t press_count_ = 1;
