@@ -51,6 +51,9 @@ void SerialProtocolPlaintext::log(const PB_LogLevel log_level, bool isVerbose_, 
     case PB_LogLevel_ERROR:
         stream_.print(" ERROR: ");
         break;
+    case PB_LogLevel_DEBUG:
+        stream_.print(" DEBUG: ");
+        break;
     default:
         stream_.print(" INFO: ");
         break;
