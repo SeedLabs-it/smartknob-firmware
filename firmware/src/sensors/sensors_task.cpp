@@ -57,7 +57,7 @@ void SensorsTask::run()
     }
     else
     {
-        LOGE("Failed to boot VEML7700")
+        LOGE("Failed to boot VEML7700");
     }
 
 #endif
