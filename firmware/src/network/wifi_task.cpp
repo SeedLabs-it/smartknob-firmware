@@ -328,7 +328,8 @@ void WifiTask::startWebServer()
 
     server_->begin();
 
-    log("WebServer started");
+    LOGI("WebServer started");
+
     is_webserver_started = true;
     // TODO: send event to
 }
@@ -380,7 +381,7 @@ void WifiTask::run()
                 if (retry_count > 2)
                 {
                     WiFi.disconnect();
-                    log("Retry limit reached...");
+                    LOGW("Retry limit reached...");
                     WiFiEvent event;
                     event.type = SK_WIFI_STA_RETRY_LIMIT_REACHED;
                     publishWiFiEvent(event);
@@ -465,19 +466,6 @@ void WifiTask::publishState(const ConnectivityState &state)
     for (auto listener : state_listeners_)
     {
         xQueueOverwrite(listener, &state);
-    }
-}
-
-void WifiTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void WifiTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
     }
 }
 
