@@ -29,14 +29,15 @@ void SerialProtocolPlaintext::log(const char *msg)
 
 void SerialProtocolPlaintext::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
-    if (logOrigin())
-    {
-        stream_.print(origin);
-    }
 
     if (isVerbose_ && !isVerbose())
     {
         return;
+    }
+
+    if (logOrigin())
+    {
+        stream_.printf("[%s]", origin);
     }
 
     switch (log_level)
@@ -74,20 +75,13 @@ void SerialProtocolPlaintext::loop()
             }
             break;
         }
-        // if (b == ' ')
-        // {
-        //     if (demo_config_change_callback_)
-        //     {
-        //         demo_config_change_callback_();
-        //     }
-        // }
         else if (b == 'C' || b == 'c')
         {
             motor_calibration_callback_();
         }
         else if (b == 'S' || b == 's')
         {
-            stream_.println("Strain calibration requrest recieved\n");
+            stream_.println("Strain calibration request received\n");
 
             if (strain_calibration_callback_)
             {
@@ -96,12 +90,17 @@ void SerialProtocolPlaintext::loop()
         }
         else if (b == 'V' || b == 'v')
         {
-            stream_.println("Verbose toggle requrest recieved\n");
+            stream_.println("Verbose toggle request received\n");
             toggleVerbose();
+        }
+        else if (b == 'O' || b == 'o')
+        {
+            stream_.println("Log origin toggle request received\n");
+            toggleLogOrigin();
         }
         else if (b == 'M' || b == 'm')
         {
-            stream_.println("Change mode requrest recieved\n");
+            stream_.println("Change mode request received\n");
 
             if (operation_mode_toggle_callback_)
             {

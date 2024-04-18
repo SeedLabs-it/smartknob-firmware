@@ -2,17 +2,17 @@
 
 #include "logger.h"
 
-#define LOG(log_level, isVerbose, ...)                                                       \
-    do                                                                                       \
-    {                                                                                        \
-        if (Logger *logger = Logging::getInstance().getLogger())                             \
-        {                                                                                    \
-            char origin_[256];                                                               \
-            char msg_[256];                                                                  \
-            snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__); \
-            snprintf(msg_, sizeof(msg_), ##__VA_ARGS__);                                     \
-            logger->log(log_level, isVerbose, origin_, msg_);                                \
-        }                                                                                    \
+#define LOG(log_level, isVerbose, ...)                                                    \
+    do                                                                                    \
+    {                                                                                     \
+        if (Logger *logger = Logging::getInstance().getLogger())                          \
+        {                                                                                 \
+            char origin_[256];                                                            \
+            char msg_[256];                                                               \
+            snprintf(origin_, sizeof(origin_), "%s:%s:%d", __FILE__, __func__, __LINE__); \
+            snprintf(msg_, sizeof(msg_), ##__VA_ARGS__);                                  \
+            logger->log(log_level, isVerbose, origin_, msg_);                             \
+        }                                                                                 \
     } while (0)
 
 #define LOGI(...)                                  \
