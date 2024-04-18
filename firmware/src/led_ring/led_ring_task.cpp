@@ -306,17 +306,4 @@ void LedRingTask::setEffect(EffectSettings effect_settings)
     xQueueSend(render_effect_queue_, &effect_settings, 0); // portMAX_DELAY
 }
 
-void LedRingTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void LedRingTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
-}
-
 #endif

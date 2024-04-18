@@ -31,8 +31,6 @@ class LedRingTask : public Task<LedRingTask>
 public:
     LedRingTask(const uint8_t task_core);
     ~LedRingTask();
-
-    void setLogger(Logger *logger);
     void setEffect(EffectSettings effect_settings);
 
 protected:
@@ -43,8 +41,6 @@ private:
     QueueHandle_t render_effect_queue_;
 
     SemaphoreHandle_t mutex_;
-    Logger *logger_;
-    void log(const char *msg);
 
     uint32_t effect_timeout_ms;
     unsigned long effect_expiration_ms;
