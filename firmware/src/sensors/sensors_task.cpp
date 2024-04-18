@@ -115,7 +115,7 @@ void SensorsTask::run()
             temp_sensor_read_celsius(&last_system_temperature);
 
             sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
-            LOGD(buf_);
+            LOGV(PB_LogLevel_DEBUG, buf_);
 
             sensors_state.system.esp32_temperature = last_system_temperature;
 
