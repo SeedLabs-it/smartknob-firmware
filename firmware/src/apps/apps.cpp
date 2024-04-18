@@ -274,7 +274,7 @@ void Apps::triggerMotorConfigUpdate()
         else
         {
             motor_notifier->requestUpdate(blocked_motor_config);
-            LOGE("No active app");
+            LOGW("No active app");
         }
     }
     else

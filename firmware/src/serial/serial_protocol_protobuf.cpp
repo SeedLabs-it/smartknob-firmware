@@ -70,6 +70,11 @@ void SerialProtocolProtobuf::log(const char *msg)
 
 void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
+    if (isVerbose_ && !isVerbose())
+    {
+        return;
+    }
+
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
     pb_tx_buffer_.payload.log.level = log_level;
