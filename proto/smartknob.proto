@@ -45,7 +45,8 @@ enum LogLevel {
 
 message Log {
     string msg = 1 [(nanopb).max_length = 255];
-    LogLevel log_level = 2;
+    LogLevel level = 2;
+    string origin = 3 [(nanopb).max_length = 128];
 }
 
 message SmartKnobState {
