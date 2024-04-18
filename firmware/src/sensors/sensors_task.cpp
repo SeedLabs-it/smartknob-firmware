@@ -109,7 +109,6 @@ void SensorsTask::run()
 
     while (1)
     {
-
         if (millis() - last_system_temperature_check > 1000)
         {
             temp_sensor_read_celsius(&last_system_temperature);
