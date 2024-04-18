@@ -2,17 +2,6 @@
 #include "semaphore_guard.h"
 #include "util.h"
 
-// #define LOGD(fmt, ...)                                                                     \
-//     do                                                                                     \
-//     {                                                                                      \
-//         if (Logger *logger = RootTask::getCurrentLogger())                                 \
-//         {                                                                                  \
-//             char buf_[200];                                                                \
-//             sprintf(buf_, "[%s:%s:%d] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
-//             logger->log(PB_LogLevel_DEBUG, buf_);                                          \
-//         }                                                                                  \
-//     } while (0)
-
 QueueHandle_t trigger_motor_calibration_;
 uint8_t trigger_motor_calibration_event_;
 
@@ -543,22 +532,6 @@ void RootTask::run()
 
         delay(1);
     }
-}
-
-void RootTask::log(const char *msg)
-{
-    char origin_[256];
-    snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
-    log(PB_LogLevel_INFO, origin_, msg);
-}
-
-void RootTask::log(const PB_LogLevel log_level, const char *origin, const char *msg)
-{
-    // Allocate a string for the duration it's in the queue; it is free'd by the queue consumer
-    std::string *msg_str = new std::string(msg);
-
-    // Put string in queue (or drop if full to avoid blocking)
-    xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
 void RootTask::updateHardware(AppState app_state)

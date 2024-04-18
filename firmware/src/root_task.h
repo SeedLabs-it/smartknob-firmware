@@ -26,8 +26,7 @@
 
 void delete_me_TriggerMotorCalibration();
 
-class RootTask : public Task<RootTask>,
-                 public Logger
+class RootTask : public Task<RootTask>
 {
 
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
@@ -35,9 +34,6 @@ class RootTask : public Task<RootTask>,
 public:
     RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
     virtual ~RootTask();
-
-    void log(const char *msg) override;
-    void log(const PB_LogLevel log_level, const char *origin, const char *msg) override;
     void setConfiguration(Configuration *configuration);
 
     void setHassApps(HassApps *apps);

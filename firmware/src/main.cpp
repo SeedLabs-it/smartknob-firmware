@@ -97,27 +97,22 @@ void setup()
 
     root_task.setConfiguration(&config);
 
-    motor_task.setLogger(&root_task);
     motor_task.begin();
 
 #if SK_WIFI
-    wifi_task.setLogger(&root_task);
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
     wifi_task.begin();
 #endif
 
 #if SK_MQTT
     // IF WIFI CONNECTED CONNECT MQTT
-    mqtt_task.setLogger(&root_task);
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
     mqtt_task.begin();
 #endif
 
-    sensors_task_p->setLogger(&root_task);
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
     sensors_task_p->begin();
 
-    reset_task_p->setLogger(&root_task);
     reset_task_p->begin();
 
     // Free up the Arduino loop task
