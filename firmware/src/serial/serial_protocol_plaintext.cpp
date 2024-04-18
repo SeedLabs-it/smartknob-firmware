@@ -89,12 +89,7 @@ void SerialProtocolPlaintext::loop()
         else if (b == 'V' || b == 'v')
         {
             stream_.println("Verbose toggle requrest recieved\n");
-
-            if (verbose_toggle_callback_)
-            {
-                verbose_toggle_callback_();
-                toggleVerbose();
-            }
+            toggleVerbose();
         }
         else if (b == 'M' || b == 'm')
         {
@@ -108,11 +103,10 @@ void SerialProtocolPlaintext::loop()
     }
 }
 
-void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, StrainCalibrationCallback strain_calibration_callback, VerboseToggleCallback verbose_toggle_callback, OperationModeToggleCallback operation_mode_toggle_callback)
+void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, StrainCalibrationCallback strain_calibration_callback, OperationModeToggleCallback operation_mode_toggle_callback)
 {
     demo_config_change_callback_ = demo_config_change_callback;
     strain_calibration_callback_ = strain_calibration_callback;
-    verbose_toggle_callback_ = verbose_toggle_callback;
     operation_mode_toggle_callback_ = operation_mode_toggle_callback;
     stream_.println("SmartKnob starting!\n\nSerial mode: plaintext\nPress 'C' at any time to calibrate motor/sensor.\nPress 'S' at any time to calibrate strain sensors.\nPress <Space> to change haptic modes.\nPress V to stoggle verbose mode.\nPress M to switch from onboarding to real apps and back.");
 }

@@ -487,6 +487,11 @@ void MqttTask::enqueueEntityStateToSend(EntityStateUpdate state)
     xQueueSendToBack(entity_state_to_send_queue_, &state, 0);
 }
 
+MqttNotifier *MqttTask::getNotifier()
+{
+    return &mqtt_notifier;
+}
+
 void MqttTask::addAppSyncListener(QueueHandle_t queue)
 {
     app_sync_listeners_.push_back(queue);

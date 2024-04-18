@@ -123,11 +123,6 @@ void RootTask::strainCalibrationCallback()
     }
 }
 
-void RootTask::verboseToggleCallback()
-{
-    sensors_task_->toggleVerbose();
-}
-
 void RootTask::run()
 {
     uint8_t task_started_at = millis();
@@ -142,10 +137,6 @@ void RootTask::run()
                              [this]()
                              {
                                  this->strainCalibrationCallback();
-                             },
-                             [this]()
-                             {
-                                 this->verboseToggleCallback();
                              },
                              [this]()
                              {
