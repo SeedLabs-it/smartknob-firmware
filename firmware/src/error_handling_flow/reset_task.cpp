@@ -30,12 +30,12 @@ void ResetTask::run()
 
                 if (millis() - reset_button_pressed > SOFT_RESET_SECONDS * 1000 && millis() - reset_button_pressed < HARD_RESET_SECONDS * 1000)
                 {
-                    log("Resetting to factory defaults");
+                    LOGI("Resetting to factory defaults");
                     softReset();
                 }
                 else if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
                 {
-                    log("Hard resetting");
+                    LOGI("Hard resetting");
                     hardReset();
                 }
             }
@@ -74,12 +74,12 @@ void ResetTask::softReset()
 {
     if (configuration_.resetToDefaults())
     {
-        log("Configuration reset to defaults");
+        LOGI("Resetting to factory defaults");
         esp_restart();
     }
     else
     {
-        log("Failed to reset configuration to defaults");
+        LOGE("Failed to reset configuration to defaults");
     }
 }
 
@@ -93,59 +93,29 @@ void ResetTask::hardReset()
         esp_partition_iterator_release(it);
         if (esp_ota_set_boot_partition(factory) == ESP_OK)
         {
-            log("FACTORY RESETTING");
+            LOGI("Factory resetting");
             if (configuration_.resetToDefaults())
             {
-                log("Configuration reset to defaults");
+                LOGI("Configuration reset to defaults");
                 esp_restart();
             }
             else
             {
-                log("Failed to reset configuration to defaults");
+                LOGE("Failed to reset configuration to defaults");
             }
         }
         else
         {
-            if (verbose_)
-            {
-                log("Failed to set boot partition");
-            }
+            LOGE("Failed to set boot partition");
         }
     }
     else
     {
-        if (verbose_)
-        {
-            log("Failed to find factory partition");
-        }
+        LOGE("Failed to find factory partition");
     }
 }
 
 void ResetTask::setMotorTask(MotorTask *motor_task)
 {
     this->motor_task_ = motor_task;
-}
-
-void ResetTask::toggleVerbose()
-{
-    verbose_ = !verbose_;
-}
-
-void ResetTask::setVerbose(bool verbose)
-{
-    verbose_ = verbose;
-}
-
-void ResetTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void ResetTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        sprintf(buf_, "ResetTask: %s", msg);
-        logger_->log(buf_);
-    }
 }
