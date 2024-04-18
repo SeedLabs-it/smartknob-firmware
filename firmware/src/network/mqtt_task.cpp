@@ -84,6 +84,7 @@ void MqttTask::run()
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
+
                 if (!has_been_connected || retry_count > 0)
                 {
                     WiFiEvent event;

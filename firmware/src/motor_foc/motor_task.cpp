@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 4000, 1, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 5, 1, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);
@@ -385,7 +385,7 @@ void MotorTask::calibrate()
     // So this value is based on experimentation.
     // TODO: dig into SimpleFOC calibration and find/fix the issue
 
-    LOGI("\n\n\nStarting calibration, please DO NOT TOUCH MOTOR until complete!");
+    LOGI("Starting calibration, please DO NOT TOUCH MOTOR until complete!");
     delay(1000);
 
     motor.controller = MotionControlType::angle_openloop;

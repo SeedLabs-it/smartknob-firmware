@@ -20,7 +20,7 @@ RootTask::RootTask(
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
+    ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
                              stream_(),
                              motor_task_(motor_task),
                              display_task_(display_task),
@@ -507,7 +507,7 @@ void RootTask::run()
 
         current_protocol_->loop();
 
-        std::string *log_string;
+        // std::string *log_string;
         // while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
         // {
         //     // LOGI(log_string->c_str());

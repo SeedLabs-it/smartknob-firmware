@@ -2,16 +2,21 @@
 
 #include "logger.h"
 
-#define LOG(log_level, isVerbose, ...)                                                    \
+// ! CHAR[] CAUASES SOME PROBLEMS WITH MEMORY HERE IF ALOT OF LOG MESSAGES IN ONE TASK..... NEED BETTER SOLUTION
+#define LOG(log_level, isVerbose_, ...)                                                   \
     do                                                                                    \
     {                                                                                     \
         if (Logger *logger = Logging::getInstance().getLogger())                          \
         {                                                                                 \
-            char origin_[256];                                                            \
+            if (isVerbose_ && !logger->isVerbose())                                       \
+            {                                                                             \
+                break;                                                                    \
+            }                                                                             \
+            char origin_[128];                                                            \
             char msg_[256];                                                               \
             snprintf(origin_, sizeof(origin_), "%s:%s:%d", __FILE__, __func__, __LINE__); \
-            snprintf(msg_, sizeof(msg_), ##__VA_ARGS__);                                  \
-            logger->log(log_level, isVerbose, origin_, msg_);                             \
+            snprintf(msg_, sizeof(msg_), __VA_ARGS__);                                    \
+            logger->log(log_level, isVerbose_, origin_, msg_);                            \
         }                                                                                 \
     } while (0)
 
@@ -39,10 +44,10 @@
         LOG(PB_LogLevel_DEBUG, false, __VA_ARGS__); \
     } while (0)
 
-#define LOGV(log_level, ...)               \
-    do                                     \
-    {                                      \
-        LOG(log_level, true, __VA_ARGS__); \
+#define LOGV(log_level, ...)                 \
+    do                                       \
+    {                                        \
+        LOG(log_level, true, ##__VA_ARGS__); \
     } while (0)
 
 class Logging

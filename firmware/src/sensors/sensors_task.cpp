@@ -13,7 +13,7 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 2048 * 2, 1, task_core}
+SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 1024 * 6, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
 

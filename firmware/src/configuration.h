@@ -132,7 +132,6 @@ public:
         if (mounted_)
         {
             FFat.end();
-
             LOGD("Unmounted FFat");
         }
     }

@@ -134,7 +134,7 @@ bool Configuration::saveToDisk()
     f.close();
     LOGD("4 Save to disk");
 
-    char buf_[20];
+    char buf_[32];
     snprintf(buf_, sizeof(buf_), "Wrote %d bytes", written);
     LOGD(buf_);
     LOGD("5 Save to disk");
