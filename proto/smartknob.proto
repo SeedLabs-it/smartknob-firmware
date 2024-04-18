@@ -41,6 +41,7 @@ enum LogLevel {
     WARNING = 1;
     ERROR = 2;
     DEBUG = 3;
+    VERBOSE = 4;
 }
 
 message Log {

@@ -24,14 +24,19 @@ void SerialProtocolPlaintext::log(const char *msg)
 {
     char origin_[256];
     snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
-    log(PB_LogLevel_INFO, origin_, msg);
+    log(PB_LogLevel_INFO, false, origin_, msg);
 }
 
-void SerialProtocolPlaintext::log(const PB_LogLevel log_level, const char *origin, const char *msg)
+void SerialProtocolPlaintext::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
-    if (isVerbose())
+    if (logOrigin())
     {
         stream_.print(origin);
+    }
+
+    if (isVerbose_ && !isVerbose())
+    {
+        return;
     }
 
     switch (log_level)

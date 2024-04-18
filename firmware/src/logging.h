@@ -2,7 +2,7 @@
 
 #include "logger.h"
 
-#define LOG(log_level, ...)                                                                  \
+#define LOG(log_level, isVerbose, ...)                                                       \
     do                                                                                       \
     {                                                                                        \
         if (Logger *logger = Logging::getInstance().getLogger())                             \
@@ -11,32 +11,38 @@
             char msg_[256];                                                                  \
             snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__); \
             snprintf(msg_, sizeof(msg_), ##__VA_ARGS__);                                     \
-            logger->log(log_level, origin_, msg_);                                           \
+            logger->log(log_level, isVerbose, origin_, msg_);                                \
         }                                                                                    \
     } while (0)
 
-#define LOGI(...)                           \
-    do                                      \
-    {                                       \
-        LOG(PB_LogLevel_INFO, __VA_ARGS__); \
+#define LOGI(...)                                  \
+    do                                             \
+    {                                              \
+        LOG(PB_LogLevel_INFO, false, __VA_ARGS__); \
     } while (0)
 
-#define LOGW(...)                              \
-    do                                         \
-    {                                          \
-        LOG(PB_LogLevel_WARNING, __VA_ARGS__); \
+#define LOGW(...)                                     \
+    do                                                \
+    {                                                 \
+        LOG(PB_LogLevel_WARNING, false, __VA_ARGS__); \
     } while (0)
 
-#define LOGE(...)                            \
-    do                                       \
-    {                                        \
-        LOG(PB_LogLevel_ERROR, __VA_ARGS__); \
+#define LOGE(...)                                   \
+    do                                              \
+    {                                               \
+        LOG(PB_LogLevel_ERROR, false, __VA_ARGS__); \
     } while (0)
 
-#define LOGD(...)                            \
-    do                                       \
-    {                                        \
-        LOG(PB_LogLevel_DEBUG, __VA_ARGS__); \
+#define LOGD(...)                                   \
+    do                                              \
+    {                                               \
+        LOG(PB_LogLevel_DEBUG, false, __VA_ARGS__); \
+    } while (0)
+
+#define LOGV(log_level, ...)               \
+    do                                     \
+    {                                      \
+        LOG(log_level, true, __VA_ARGS__); \
     } while (0)
 
 class Logging

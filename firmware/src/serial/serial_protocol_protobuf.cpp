@@ -49,7 +49,7 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
                 state.config.endstop_strength_unit);
         char origin_[256];
         snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
-        log(PB_LogLevel_DEBUG, origin_, buf_);
+        log(PB_LogLevel_DEBUG, false, origin_, buf_);
     }
 }
 
@@ -65,10 +65,10 @@ void SerialProtocolProtobuf::log(const char *msg)
 {
     char origin_[256];
     snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
-    log(PB_LogLevel_INFO, origin_, msg);
+    log(PB_LogLevel_INFO, false, origin_, msg);
 }
 
-void SerialProtocolProtobuf::log(const PB_LogLevel log_level, const char *origin, const char *msg)
+void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;

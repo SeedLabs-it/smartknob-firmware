@@ -14,7 +14,8 @@ typedef enum _PB_LogLevel {
     PB_LogLevel_INFO = 0,
     PB_LogLevel_WARNING = 1,
     PB_LogLevel_ERROR = 2,
-    PB_LogLevel_DEBUG = 3
+    PB_LogLevel_DEBUG = 3,
+    PB_LogLevel_VERBOSE = 4
 } PB_LogLevel;
 
 typedef enum _PB_SmartKnobCommand {
@@ -223,8 +224,8 @@ extern "C" {
 
 /* Helper constants for enums */
 #define _PB_LogLevel_MIN PB_LogLevel_INFO
-#define _PB_LogLevel_MAX PB_LogLevel_DEBUG
-#define _PB_LogLevel_ARRAYSIZE ((PB_LogLevel)(PB_LogLevel_DEBUG+1))
+#define _PB_LogLevel_MAX PB_LogLevel_VERBOSE
+#define _PB_LogLevel_ARRAYSIZE ((PB_LogLevel)(PB_LogLevel_VERBOSE+1))
 
 #define _PB_SmartKnobCommand_MIN PB_SmartKnobCommand_MOTOR_CALIBRATE
 #define _PB_SmartKnobCommand_MAX PB_SmartKnobCommand_STRAIN_CALIBRATE
