@@ -91,8 +91,6 @@ void setup()
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     root_task.begin();
-
-    config.setLogger(&root_task);
     if (!config.loadFromDisk())
     {
         config.saveToDisk();

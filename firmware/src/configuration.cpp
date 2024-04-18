@@ -58,7 +58,7 @@ bool Configuration::loadFromDisk()
     File f = FFat.open(CONFIG_PATH);
     if (!f)
     {
-        log("Failed to read config file");
+        log(PB_LogLevel_ERROR, "Failed to read config file");
         ESP_LOGD("", "Failed to read config file");
         return false;
     }
@@ -71,7 +71,7 @@ bool Configuration::loadFromDisk()
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Decoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        log(PB_LogLevel_ERROR, buf);
         pb_buffer_ = {};
         return false;
     }
@@ -80,7 +80,7 @@ bool Configuration::loadFromDisk()
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
-        log(buf);
+        log(PB_LogLevel_ERROR, buf);
         pb_buffer_ = {};
         return false;
     }
@@ -95,7 +95,7 @@ bool Configuration::loadFromDisk()
         pb_buffer_.motor.pole_pairs,
         pb_buffer_.motor.zero_electrical_offset,
         pb_buffer_.motor.direction_cw);
-    log(buf);
+    log(PB_LogLevel_INFO, buf);
     return true;
 }
 
@@ -109,7 +109,7 @@ bool Configuration::saveToDisk()
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Encoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        log(PB_LogLevel_ERROR, buf);
         return false;
     }
     ESP_LOGD("1", "save to disk");
@@ -126,7 +126,7 @@ bool Configuration::saveToDisk()
     {
         ESP_LOGD("2.5", "Failed to read config file");
 
-        log("Failed to read config file");
+        log(PB_LogLevel_ERROR, "Failed to read config file");
         return false;
     }
     ESP_LOGD("3", "save to disk");
@@ -137,12 +137,12 @@ bool Configuration::saveToDisk()
 
     char buf[20];
     snprintf(buf, sizeof(buf), "Wrote %d bytes", written);
-    log(buf);
+    log(PB_LogLevel_DEBUG, buf);
     ESP_LOGD("5", "save to disk");
 
     if (written != stream.bytes_written)
     {
-        log("Failed to write all bytes to file");
+        log(PB_LogLevel_ERROR, "Failed to write all bytes to file");
         return false;
     }
 
@@ -163,7 +163,7 @@ bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
     // TODO: persist in a file
     char buf_[512];
     sprintf(buf_, "saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
-    log(buf_);
+    log(PB_LogLevel_DEBUG, buf_);
 
     is_wifi_set = true;
     EEPROM.put(WIFI_SSID_EEPROM_POS, wifi_config_to_save.ssid);
@@ -188,7 +188,7 @@ bool Configuration::loadWiFiConfiguration()
     EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
 
     sprintf(buf_, "loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
-    log(buf_);
+    log(PB_LogLevel_DEBUG, buf_);
 
     return is_wifi_set;
 }
@@ -198,7 +198,7 @@ bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
     // TODO: persist in a file
     char buf_[512];
     sprintf(buf_, "saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
-    log(buf_);
+    log(PB_LogLevel_DEBUG, buf_);
 
     is_mqtt_set = true;
     EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
@@ -226,7 +226,7 @@ bool Configuration::loadMQTTConfiguration()
     EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
 
     sprintf(buf_, "loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
-    log(buf_);
+    log(PB_LogLevel_DEBUG, buf_);
 
     return is_mqtt_set;
 }
@@ -237,7 +237,7 @@ bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
     this->os_config.mode = os_config.mode;
     char buf_[32];
     sprintf(buf_, "os mode set to %d", os_config.mode);
-    log(buf_);
+    log(PB_LogLevel_DEBUG, buf_);
 
     return true;
 }
@@ -307,10 +307,10 @@ void Configuration::setLogger(Logger *logger)
     logger_ = logger;
 }
 
-void Configuration::log(const char *msg)
+void Configuration::log(const PB_LogLevel log_level, const char *msg)
 {
     if (logger_ != nullptr)
     {
-        logger_->log(msg);
+        logger_->log(log_level, msg);
     }
 }

@@ -10,19 +10,21 @@
 
 typedef std::function<void(uint8_t)> ProtocolChangeCallback;
 
-class SerialProtocol : public Logger {
-    public:
-        SerialProtocol() : Logger() {}
-        virtual ~SerialProtocol(){}
+class SerialProtocol : public Logger
+{
+public:
+    SerialProtocol() : Logger() {}
+    virtual ~SerialProtocol() {}
 
-        virtual void loop() = 0;
+    virtual void loop() = 0;
 
-        virtual void handleState(const PB_SmartKnobState& state) = 0;
+    virtual void handleState(const PB_SmartKnobState &state) = 0;
 
-        virtual void setProtocolChangeCallback(ProtocolChangeCallback cb) {
-            protocol_change_callback_ = cb;
-        }
-    
-    protected:
-        ProtocolChangeCallback protocol_change_callback_;
+    virtual void setProtocolChangeCallback(ProtocolChangeCallback cb)
+    {
+        protocol_change_callback_ = cb;
+    }
+
+protected:
+    ProtocolChangeCallback protocol_change_callback_;
 };

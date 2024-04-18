@@ -114,7 +114,7 @@ private:
 
     uint8_t buffer_[PB_PersistentConfiguration_size];
 
-    void log(const char *msg);
+    void log(const PB_LogLevel log_level, const char *msg);
 
     std::string knob_id;
 };

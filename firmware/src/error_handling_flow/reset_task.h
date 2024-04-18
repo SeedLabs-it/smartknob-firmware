@@ -31,7 +31,7 @@ private:
     Configuration &configuration_;
     MotorTask *motor_task_;
     Logger *logger_;
-    void log(const LogLevel *log_level, const char *msg);
+    void log(const char *msg);
     bool verbose_ = false;
     char buf_[128];
 };

@@ -81,21 +81,21 @@ void RootTask::strainCalibrationCallback()
 {
     if (!configuration_loaded_)
     {
-        log("Strain calibration step 0: configuration not loaded, exiting");
+        logger_->log("Strain calibration step 0: configuration not loaded, exiting");
 
         return;
     }
     if (strain_calibration_step_ == 0)
     {
-        log("Strain calibration step 1: Don't touch the knob, then press 'S' again");
+        logger_->log("Strain calibration step 1: Don't touch the knob, then press 'S' again");
         strain_calibration_step_ = 1;
     }
     else if (strain_calibration_step_ == 1)
     {
         configuration_value_.strain.idle_value = latest_sensors_state_.strain.raw_value;
         snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
-        log(buf_);
-        log("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
+        logger_->log(buf_);
+        logger_->log("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
         strain_calibration_step_ = 2;
     }
     else if (strain_calibration_step_ == 2)
@@ -106,8 +106,8 @@ void RootTask::strainCalibrationCallback()
 
         ESP_LOGD("1", "pre-save %d", configuration_value_.strain.idle_value);
         snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
-        log(buf_);
-        log("Strain calibration complete! Saving...");
+        logger_->log(buf_);
+        logger_->log("Strain calibration complete! Saving...");
 
         ESP_LOGD("2", "pre-save %d", configuration_value_.strain.idle_value);
         strain_calibration_step_ = 0;
@@ -116,11 +116,11 @@ void RootTask::strainCalibrationCallback()
 
         if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
         {
-            log("  Saved!");
+            logger_->log("Saved!");
         }
         else
         {
-            log("  FAILED to save config!!!");
+            logger_->log("FAILED to save config!!!");
         }
     }
 }
@@ -183,6 +183,7 @@ void RootTask::run()
 
     // Start in legacy protocol mode
     current_protocol_ = &plaintext_protocol_;
+    logger_ = &plaintext_protocol_;
 
     ProtocolChangeCallback protocol_change_callback = [this](uint8_t protocol)
     {
@@ -195,9 +196,10 @@ void RootTask::run()
             current_protocol_ = &proto_protocol_;
             break;
         default:
-            log("Unknown protocol requested");
+            logger_->log("Unknown protocol requested");
             break;
         }
+        logger_ = current_protocol_;
     };
 
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
@@ -231,7 +233,7 @@ void RootTask::run()
     bool is_configuration_loaded = false;
     while (!is_configuration_loaded)
     {
-        log("waiting for configuration");
+        logger_->log("waiting for configuration");
         xSemaphoreTake(mutex_, portMAX_DELAY);
         is_configuration_loaded = configuration_ != nullptr;
         xSemaphoreGive(mutex_);
@@ -461,7 +463,7 @@ void RootTask::run()
 #if SK_MQTT // Should this be here??
             hass_apps->sync(mqtt_task_->getApps());
 
-            log("Giving 0.5s for Apps to initialize");
+            logger_->log("Giving 0.5s for Apps to initialize");
             delay(500);
             display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
@@ -519,7 +521,7 @@ void RootTask::run()
         std::string *log_string;
         while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
         {
-            current_protocol_->log(log_string->c_str());
+            logger_->log(log_string->c_str());
             delete log_string;
         }
 
@@ -533,6 +535,11 @@ void RootTask::run()
 }
 
 void RootTask::log(const char *msg)
+{
+    log(PB_LogLevel_INFO, msg);
+}
+
+void RootTask::log(const PB_LogLevel log_level, const char *msg)
 {
     // Allocate a string for the duration it's in the queue; it is free'd by the queue consumer
     std::string *msg_str = new std::string(msg);
@@ -554,7 +561,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
-                log("handling short press");
+                logger_->log("handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
@@ -563,7 +570,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
-                log("handling long press");
+                logger_->log("handling long press");
 
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
@@ -601,7 +608,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
             {
-                log("handling short press released");
+                logger_->log("handling short press released");
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
@@ -637,7 +644,7 @@ void RootTask::updateHardware(AppState app_state)
 
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
-                log("handling long press released");
+                logger_->log("handling long press released");
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;

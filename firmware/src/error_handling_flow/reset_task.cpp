@@ -141,11 +141,11 @@ void ResetTask::setLogger(Logger *logger)
     logger_ = logger;
 }
 
-void ResetTask::log(const LogLevel *log_level, const char *msg)
+void ResetTask::log(const char *msg)
 {
     if (logger_ != nullptr)
     {
         sprintf(buf_, "ResetTask: %s", msg);
-        logger_->log(log_level, buf_);
+        logger_->log(buf_);
     }
 }

@@ -47,7 +47,7 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
                 state.config.detent_strength_unit,
                 degrees(state.config.position_width_radians),
                 state.config.endstop_strength_unit);
-        log(buf_);
+        log(PB_LogLevel_DEBUG, buf_);
     }
 }
 
@@ -61,8 +61,14 @@ void SerialProtocolProtobuf::ack(uint32_t nonce)
 
 void SerialProtocolProtobuf::log(const char *msg)
 {
+    log(PB_LogLevel_INFO, msg);
+}
+
+void SerialProtocolProtobuf::log(const PB_LogLevel log_level, const char *msg)
+{
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
+    pb_tx_buffer_.payload.log.log_level = log_level;
 
     strlcpy(pb_tx_buffer_.payload.log.msg, msg, sizeof(pb_tx_buffer_.payload.log.msg));
 

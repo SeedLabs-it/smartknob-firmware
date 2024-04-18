@@ -36,8 +36,16 @@ message Ack {
     uint32 nonce = 1;
 }
 
+enum LogLevel {
+    INFO = 0;
+    WARNING = 1;
+    ERROR = 2;
+    DEBUG = 3;
+}
+
 message Log {
     string msg = 1 [(nanopb).max_length = 255];
+    LogLevel log_level = 2;
 }
 
 message SmartKnobState {

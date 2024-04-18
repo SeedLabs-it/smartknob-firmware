@@ -9,31 +9,46 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        stream_.printf("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n",
-                       state.current_position,
-                       state.config.min_position,
-                       state.config.max_position,
-                       state.config.detent_strength_unit,
-                       degrees(state.config.position_width_radians),
-                       state.config.endstop_strength_unit);
+        char buf_[200];
+        sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+                state.current_position,
+                state.config.min_position,
+                state.config.max_position,
+                state.config.detent_strength_unit,
+                degrees(state.config.position_width_radians),
+                state.config.endstop_strength_unit);
+        log(PB_LogLevel_DEBUG, buf_);
+        // stream_.printf("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n",
+        //                state.current_position,
+        //                state.config.min_position,
+        //                state.config.max_position,
+        //                state.config.detent_strength_unit,
+        //                degrees(state.config.position_width_radians),
+        //                state.config.endstop_strength_unit);
     }
 }
 
 void SerialProtocolPlaintext::log(const char *msg)
 {
-    stream_.print("LOG: ");
-    stream_.println(msg);
+    log(PB_LogLevel_INFO, msg);
 }
 
-void SerialProtocolPlaintext::log(const LogLevel log_level, const char *msg)
+void SerialProtocolPlaintext::log(const PB_LogLevel log_level, const char *msg)
 {
     switch (log_level)
     {
-    case INFO:
-
+    case PB_LogLevel_INFO:
+        stream_.print("INFO: ");
         break;
-
+        break;
+    case PB_LogLevel_WARNING:
+        stream_.print("WARNING: ");
+        break;
+    case PB_LogLevel_ERROR:
+        stream_.print("ERROR: ");
+        break;
     default:
+        stream_.print("INFO: ");
         break;
     }
     stream_.println(msg);

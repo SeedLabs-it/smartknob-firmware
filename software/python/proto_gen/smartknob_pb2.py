@@ -16,10 +16,16 @@ _sym_db = _symbol_database.Default()
 import nanopb_pb2 as nanopb__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fsmartknob.proto\x12\x02PB\x1a\x0cnanopb.proto\"\xb6\x01\n\rFromSmartKnob\x12\x1f\n\x10protocol_version\x18\x01 \x01(\rB\x05\x92?\x02\x38\x08\x12\x1a\n\x0bmac_address\x18\x02 \x01(\tB\x05\x92?\x02p2\x12\x16\n\x03\x61\x63k\x18\x03 \x01(\x0b\x32\x07.PB.AckH\x00\x12\x16\n\x03log\x18\x04 \x01(\x0b\x32\x07.PB.LogH\x00\x12-\n\x0fsmartknob_state\x18\x05 \x01(\x0b\x32\x12.PB.SmartKnobStateH\x00\x42\t\n\x07payload\"\xd7\x01\n\x0bToSmartknob\x12\x1f\n\x10protocol_version\x18\x01 \x01(\rB\x05\x92?\x02\x38\x08\x12\r\n\x05nonce\x18\x02 \x01(\r\x12)\n\rrequest_state\x18\x03 \x01(\x0b\x32\x10.PB.RequestStateH\x00\x12/\n\x10smartknob_config\x18\x04 \x01(\x0b\x32\x13.PB.SmartKnobConfigH\x00\x12\x31\n\x11smartknob_command\x18\x05 \x01(\x0e\x32\x14.PB.SmartKnobCommandH\x00\x42\t\n\x07payload\"\x14\n\x03\x41\x63k\x12\r\n\x05nonce\x18\x01 \x01(\r\"\x1a\n\x03Log\x12\x13\n\x03msg\x18\x01 \x01(\tB\x06\x92?\x03p\xff\x01\"\x86\x01\n\x0eSmartKnobState\x12\x18\n\x10\x63urrent_position\x18\x01 \x01(\x05\x12\x19\n\x11sub_position_unit\x18\x02 \x01(\x02\x12#\n\x06\x63onfig\x18\x03 \x01(\x0b\x32\x13.PB.SmartKnobConfig\x12\x1a\n\x0bpress_nonce\x18\x04 \x01(\rB\x05\x92?\x02\x38\x08\"\xe1\x02\n\x0fSmartKnobConfig\x12\x10\n\x08position\x18\x01 \x01(\x05\x12\x19\n\x11sub_position_unit\x18\x02 \x01(\x02\x12\x1d\n\x0eposition_nonce\x18\x03 \x01(\rB\x05\x92?\x02\x38\x08\x12\x14\n\x0cmin_position\x18\x04 \x01(\x05\x12\x14\n\x0cmax_position\x18\x05 \x01(\x05\x12\x1e\n\x16position_width_radians\x18\x06 \x01(\x02\x12\x1c\n\x14\x64\x65tent_strength_unit\x18\x07 \x01(\x02\x12\x1d\n\x15\x65ndstop_strength_unit\x18\x08 \x01(\x02\x12\x12\n\nsnap_point\x18\t \x01(\x02\x12\x13\n\x04text\x18\n \x01(\tB\x05\x92?\x02p2\x12\x1f\n\x10\x64\x65tent_positions\x18\x0b \x03(\x05\x42\x05\x92?\x02\x10\x05\x12\x17\n\x0fsnap_point_bias\x18\x0c \x01(\x02\x12\x16\n\x07led_hue\x18\r \x01(\x05\x42\x05\x92?\x02\x38\x10\"\x0e\n\x0cRequestState\"v\n\x17PersistentConfiguration\x12\x0f\n\x07version\x18\x01 \x01(\r\x12#\n\x05motor\x18\x02 \x01(\x0b\x32\x14.PB.MotorCalibration\x12%\n\x06strain\x18\x03 \x01(\x0b\x32\x15.PB.StrainCalibration\"p\n\x10MotorCalibration\x12\x12\n\ncalibrated\x18\x01 \x01(\x08\x12\x1e\n\x16zero_electrical_offset\x18\x02 \x01(\x02\x12\x14\n\x0c\x64irection_cw\x18\x03 \x01(\x08\x12\x12\n\npole_pairs\x18\x04 \x01(\r\"<\n\x11StrainCalibration\x12\x12\n\nidle_value\x18\x01 \x01(\x05\x12\x13\n\x0bpress_delta\x18\x02 \x01(\x05*=\n\x10SmartKnobCommand\x12\x13\n\x0fMOTOR_CALIBRATE\x10\x00\x12\x14\n\x10STRAIN_CALIBRATE\x10\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fsmartknob.proto\x12\x02PB\x1a\x0cnanopb.proto\"\xb6\x01\n\rFromSmartKnob\x12\x1f\n\x10protocol_version\x18\x01 \x01(\rB\x05\x92?\x02\x38\x08\x12\x1a\n\x0bmac_address\x18\x02 \x01(\tB\x05\x92?\x02p2\x12\x16\n\x03\x61\x63k\x18\x03 \x01(\x0b\x32\x07.PB.AckH\x00\x12\x16\n\x03log\x18\x04 \x01(\x0b\x32\x07.PB.LogH\x00\x12-\n\x0fsmartknob_state\x18\x05 \x01(\x0b\x32\x12.PB.SmartKnobStateH\x00\x42\t\n\x07payload\"\xd7\x01\n\x0bToSmartknob\x12\x1f\n\x10protocol_version\x18\x01 \x01(\rB\x05\x92?\x02\x38\x08\x12\r\n\x05nonce\x18\x02 \x01(\r\x12)\n\rrequest_state\x18\x03 \x01(\x0b\x32\x10.PB.RequestStateH\x00\x12/\n\x10smartknob_config\x18\x04 \x01(\x0b\x32\x13.PB.SmartKnobConfigH\x00\x12\x31\n\x11smartknob_command\x18\x05 \x01(\x0e\x32\x14.PB.SmartKnobCommandH\x00\x42\t\n\x07payload\"\x14\n\x03\x41\x63k\x12\r\n\x05nonce\x18\x01 \x01(\r\";\n\x03Log\x12\x13\n\x03msg\x18\x01 \x01(\tB\x06\x92?\x03p\xff\x01\x12\x1f\n\tlog_level\x18\x02 \x01(\x0e\x32\x0c.PB.LogLevel\"\x86\x01\n\x0eSmartKnobState\x12\x18\n\x10\x63urrent_position\x18\x01 \x01(\x05\x12\x19\n\x11sub_position_unit\x18\x02 \x01(\x02\x12#\n\x06\x63onfig\x18\x03 \x01(\x0b\x32\x13.PB.SmartKnobConfig\x12\x1a\n\x0bpress_nonce\x18\x04 \x01(\rB\x05\x92?\x02\x38\x08\"\xe1\x02\n\x0fSmartKnobConfig\x12\x10\n\x08position\x18\x01 \x01(\x05\x12\x19\n\x11sub_position_unit\x18\x02 \x01(\x02\x12\x1d\n\x0eposition_nonce\x18\x03 \x01(\rB\x05\x92?\x02\x38\x08\x12\x14\n\x0cmin_position\x18\x04 \x01(\x05\x12\x14\n\x0cmax_position\x18\x05 \x01(\x05\x12\x1e\n\x16position_width_radians\x18\x06 \x01(\x02\x12\x1c\n\x14\x64\x65tent_strength_unit\x18\x07 \x01(\x02\x12\x1d\n\x15\x65ndstop_strength_unit\x18\x08 \x01(\x02\x12\x12\n\nsnap_point\x18\t \x01(\x02\x12\x13\n\x04text\x18\n \x01(\tB\x05\x92?\x02p2\x12\x1f\n\x10\x64\x65tent_positions\x18\x0b \x03(\x05\x42\x05\x92?\x02\x10\x05\x12\x17\n\x0fsnap_point_bias\x18\x0c \x01(\x02\x12\x16\n\x07led_hue\x18\r \x01(\x05\x42\x05\x92?\x02\x38\x10\"\x0e\n\x0cRequestState\"v\n\x17PersistentConfiguration\x12\x0f\n\x07version\x18\x01 \x01(\r\x12#\n\x05motor\x18\x02 \x01(\x0b\x32\x14.PB.MotorCalibration\x12%\n\x06strain\x18\x03 \x01(\x0b\x32\x15.PB.StrainCalibration\"p\n\x10MotorCalibration\x12\x12\n\ncalibrated\x18\x01 \x01(\x08\x12\x1e\n\x16zero_electrical_offset\x18\x02 \x01(\x02\x12\x14\n\x0c\x64irection_cw\x18\x03 \x01(\x08\x12\x12\n\npole_pairs\x18\x04 \x01(\r\"<\n\x11StrainCalibration\x12\x12\n\nidle_value\x18\x01 \x01(\x05\x12\x13\n\x0bpress_delta\x18\x02 \x01(\x05*7\n\x08LogLevel\x12\x08\n\x04INFO\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\t\n\x05\x44\x45\x42UG\x10\x03*=\n\x10SmartKnobCommand\x12\x13\n\x0fMOTOR_CALIBRATE\x10\x00\x12\x14\n\x10STRAIN_CALIBRATE\x10\x01\x62\x06proto3')
 
+_LOGLEVEL = DESCRIPTOR.enum_types_by_name['LogLevel']
+LogLevel = enum_type_wrapper.EnumTypeWrapper(_LOGLEVEL)
 _SMARTKNOBCOMMAND = DESCRIPTOR.enum_types_by_name['SmartKnobCommand']
 SmartKnobCommand = enum_type_wrapper.EnumTypeWrapper(_SMARTKNOBCOMMAND)
+INFO = 0
+WARNING = 1
+ERROR = 2
+DEBUG = 3
 MOTOR_CALIBRATE = 0
 STRAIN_CALIBRATE = 1
 
@@ -125,8 +131,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _SMARTKNOBCONFIG.fields_by_name['detent_positions']._serialized_options = b'\222?\002\020\005'
   _SMARTKNOBCONFIG.fields_by_name['led_hue']._options = None
   _SMARTKNOBCONFIG.fields_by_name['led_hue']._serialized_options = b'\222?\0028\020'
-  _SMARTKNOBCOMMAND._serialized_start=1295
-  _SMARTKNOBCOMMAND._serialized_end=1356
+  _LOGLEVEL._serialized_start=1328
+  _LOGLEVEL._serialized_end=1383
+  _SMARTKNOBCOMMAND._serialized_start=1385
+  _SMARTKNOBCOMMAND._serialized_end=1446
   _FROMSMARTKNOB._serialized_start=38
   _FROMSMARTKNOB._serialized_end=220
   _TOSMARTKNOB._serialized_start=223
@@ -134,17 +142,17 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ACK._serialized_start=440
   _ACK._serialized_end=460
   _LOG._serialized_start=462
-  _LOG._serialized_end=488
-  _SMARTKNOBSTATE._serialized_start=491
-  _SMARTKNOBSTATE._serialized_end=625
-  _SMARTKNOBCONFIG._serialized_start=628
-  _SMARTKNOBCONFIG._serialized_end=981
-  _REQUESTSTATE._serialized_start=983
-  _REQUESTSTATE._serialized_end=997
-  _PERSISTENTCONFIGURATION._serialized_start=999
-  _PERSISTENTCONFIGURATION._serialized_end=1117
-  _MOTORCALIBRATION._serialized_start=1119
-  _MOTORCALIBRATION._serialized_end=1231
-  _STRAINCALIBRATION._serialized_start=1233
-  _STRAINCALIBRATION._serialized_end=1293
+  _LOG._serialized_end=521
+  _SMARTKNOBSTATE._serialized_start=524
+  _SMARTKNOBSTATE._serialized_end=658
+  _SMARTKNOBCONFIG._serialized_start=661
+  _SMARTKNOBCONFIG._serialized_end=1014
+  _REQUESTSTATE._serialized_start=1016
+  _REQUESTSTATE._serialized_end=1030
+  _PERSISTENTCONFIGURATION._serialized_start=1032
+  _PERSISTENTCONFIGURATION._serialized_end=1150
+  _MOTORCALIBRATION._serialized_start=1152
+  _MOTORCALIBRATION._serialized_end=1264
+  _STRAINCALIBRATION._serialized_start=1266
+  _STRAINCALIBRATION._serialized_end=1326
 # @@protoc_insertion_point(module_scope)
