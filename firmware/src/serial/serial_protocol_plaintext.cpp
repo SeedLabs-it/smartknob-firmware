@@ -67,7 +67,7 @@ void SerialProtocolPlaintext::loop()
     while (stream_.available() > 0)
     {
         int b = stream_.read();
-        if (b == 0 || b == 'P' || b == 'p')
+        if (b == 0)
         {
             if (protocol_change_callback_)
             {
