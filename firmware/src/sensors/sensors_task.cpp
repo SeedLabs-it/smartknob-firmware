@@ -132,7 +132,7 @@ void SensorsTask::run()
             // todo: call this once per tick
             publishState(sensors_state);
             snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
-            LOGD(buf_);
+            LOGV(PB_LogLevel_DEBUG, buf_);
             last_proximity_check_ms = millis();
         }
 #if SK_STRAIN
