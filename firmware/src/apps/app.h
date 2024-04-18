@@ -7,6 +7,7 @@
 #include "icons.h"
 #include "../events/events.h"
 #include "../notify/motor_notifier/motor_notifier.h"
+#include "../led_ring/led_ring_notifier.h"
 
 const char APP_SLUG_CLIMATE[48] = "climate";
 const char APP_SLUG_BLINDS[48] = "blinds";
@@ -34,6 +35,7 @@ public:
     virtual void updateStateFromSystem(AppState state);
 
     void setMotorNotifier(MotorNotifier *motor_notifier);
+    void setLedRingNotifier(LedRingNotifier *led_ring_notifier);
     void triggerMotorConfigUpdate();
 
     virtual int8_t navigationNext();
@@ -70,4 +72,5 @@ protected:
     bool state_sent_from_hass = false;
 
     MotorNotifier *motor_notifier;
+    LedRingNotifier *led_ring_notifier;
 };

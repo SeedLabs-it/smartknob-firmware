@@ -30,6 +30,7 @@ void HassApps::sync(cJSON *json_apps)
 
     updateMenu();
     setMotorNotifier(motor_notifier);
+    setLedRingNotifier(led_ring_notifier);
     // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }
 

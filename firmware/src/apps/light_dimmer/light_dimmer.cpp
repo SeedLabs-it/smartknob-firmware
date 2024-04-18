@@ -2,6 +2,8 @@
 #include "cJSON.h"
 #include <cstring>
 
+#include "../../led_ring/led_ring_task.h"
+
 LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
 {
     sprintf(this->app_id, "%s", app_id);
@@ -372,6 +374,9 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     spr_->setTextColor(color_light_grey);
     spr_->drawString(buf_, center_h, center_v + 30, 1);
 
+    RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
+    led_ring_notifier->staticColor((rgb.r << 16) | (rgb.g << 8) | rgb.b, 255, LED_RING_PRIOTITY_APP);
+
     return this->spr_;
 }
 
@@ -470,7 +475,14 @@ TFT_eSprite *LightDimmerApp::render()
             adjusted_angle = right_bound;
         }
         spr_->fillSmoothCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color, foreground_color);
+        led_ring_notifier->staticColorRange((255 << 16) | (127 << 8) | 0, 255, wanted_angle * 180 / PI, start_angle * 180 / PI + 5, LED_RING_PRIOTITY_APP);
     }
+    else
+    {
+        led_ring_notifier->staticColor((0 << 16) | (0 << 8) | 0, 255, LED_RING_PRIOTITY_APP);
+    }
+
+    ESP_LOGD("dimmer", "%0.2f %0.0f %0.2f %0.0f %0.2f %0.0f", start_angle, start_angle * 180 / PI, right_bound, right_bound * 180 / PI, wanted_angle, wanted_angle * 180 / PI);
 
     return this->spr_;
 };
