@@ -51,6 +51,6 @@ void App::triggerMotorConfigUpdate()
     }
     else
     {
-        ESP_LOGE("onboarding_flow", "motor_notifier is not set");
+        LOGW("motor_notifier is not set");
     }
 }

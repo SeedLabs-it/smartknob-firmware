@@ -266,7 +266,6 @@ void LedRingTask::run()
 
         // At this point, effect_settings is always the last object received through the queue.
         // Todo : turn this on, when verbose.
-        // ESP_LOGI("LED", "Received request for effect %d", effect_settings.effect_id);
 
         switch (effect_settings.effect_id)
         {

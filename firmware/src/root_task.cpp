@@ -104,12 +104,10 @@ void RootTask::strainCalibrationCallback()
         configuration_value_.strain.press_delta = latest_sensors_state_.strain.raw_value - configuration_value_.strain.idle_value;
         configuration_value_.has_strain = true;
 
-        // ESP_LOGD("1", "pre-save %d", configuration_value_.strain.idle_value);
         snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
         LOGD("%s", buf_);
         LOGI("Strain calibration complete! Saving...");
 
-        // ESP_LOGD("2", "pre-save %d", configuration_value_.strain.idle_value);
         strain_calibration_step_ = 0;
 
         sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
@@ -459,7 +457,7 @@ void RootTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            ESP_LOGD("root_task", "App sync requested!");
+            LOGD("App sync requested!");
 #if SK_MQTT // Should this be here??
             hass_apps->sync(mqtt_task_->getApps());
 
@@ -700,7 +698,6 @@ void RootTask::updateHardware(AppState app_state)
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);
-        // ESP_LOGD("LED", "------------------- : %d, %d, %d, %f", effect_settings.effect_id, brightness, app_state.screen_state.MIN_LCD_BRIGHTNESS, latest_sensors_state_.illumination.lux_adj);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
@@ -749,7 +746,7 @@ void RootTask::setConfiguration(Configuration *configuration)
             if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+                LOGD("MQTT_CONFIG: %s", mqtt_config.host);
 
                 // mqtt_task_->setupMQTT(mqtt_config);
                 // DO STUFF WITH MQTT CONFIG!!!

@@ -70,7 +70,7 @@ TFT_eSprite *Apps::renderActive()
     if (apps[active_id] == nullptr)
     {
         rendered_spr_ = spr_;
-        ESP_LOGE("apps.cpp", "null pointer instead of app");
+        LOGW("Null pointer instead of app");
         unlock();
         return rendered_spr_;
     }
@@ -93,12 +93,12 @@ void Apps::setActive(int8_t id)
         unlock();
         return;
     }
-    ESP_LOGD("apps.cpp", "set active %d", id);
+    LOGD("Set active %d", id);
     active_id = id;
     if (apps[active_id] == nullptr)
     {
         // TODO: panic?
-        ESP_LOGE("apps.cpp", "null pointer instead of app");
+        LOGW("Null pointer instead of app");
     }
     else
     {
@@ -142,12 +142,10 @@ void Apps::updateMenu() // BROKEN FOR NOW
 // TODO: create struct for data passed to each app.
 App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
 {
-    // ESP_LOGD("apps.cpp", "loading app %d %s %s %s", position, app_slug, app_id, friendly_name);
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
@@ -156,21 +154,18 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         // app->friendly_name = friendly_name;
         sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
         BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
         LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name, entity_id);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
@@ -178,7 +173,6 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name, entity_id);
 
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
@@ -187,7 +181,6 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         // app->friendly_name = friendly_name;
         sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
@@ -196,12 +189,11 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         // app->friendly_name = friendly_name;
         sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
-        // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;
     }
     else
     {
-        ESP_LOGE("apps.cpp", "can't find app with slug '%s'", app_slug);
+        LOGW("Can't find app with slug '%s'", app_slug.c_str());
     }
     return nullptr;
 }
@@ -282,12 +274,12 @@ void Apps::triggerMotorConfigUpdate()
         else
         {
             motor_notifier->requestUpdate(blocked_motor_config);
-            ESP_LOGE("onboarding_flow", "no active app");
+            LOGE("No active app");
         }
     }
     else
     {
-        ESP_LOGE("onboarding_flow", "motor_notifier is not set");
+        LOGW("Motor_notifier is not set");
     }
 }
 

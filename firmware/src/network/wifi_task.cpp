@@ -75,7 +75,7 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
     {
 
     case SYSTEM_EVENT_STA_CONNECTED:
-        ESP_LOGD("wifi", "ESP32 Connected to WiFi Network");
+        LOGD("Connected to WiFi Network");
         break;
     // case SYSTEM_EVENT_AP_START:
     //     Serial.println("ESP32 soft AP started");
@@ -262,7 +262,7 @@ void WifiTask::webHandlerMQTTCredentials()
     event.body.mqtt_connecting.port = mqtt_port;
     sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
     sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
-    ESP_LOGD(WIFI_TAG, "MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
+    LOGD("MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
     sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
 
     publishWiFiEvent(event);
@@ -298,7 +298,6 @@ void WifiTask::startWebServer()
     ElegantOTA.begin(server_);
 
 #if SK_ELEGANTOTA_PRO
-    ESP_LOGD(WIFI_TAG, "ElegantOTA Pro");
     ElegantOTA.setID(config_.knob_id);
     ElegantOTA.setFWVersion(RELEASE_VERSION ? RELEASE_VERSION : "DEV");
     ElegantOTA.setFirmwareMode(true);
@@ -357,10 +356,10 @@ void WifiTask::run()
 
         if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
         {
-            ESP_LOGD(WIFI_TAG, "WiFi status: %d", WiFi.status());
-            ESP_LOGD(WIFI_TAG, "WiFi connected: %d", WiFi.isConnected());
-            ESP_LOGD(WIFI_TAG, "Retry count: %d", retry_count);
-            ESP_LOGD(WIFI_TAG, "last_wifi_status_new: %d", last_wifi_status_new);
+            LOGD("WiFi status: %d", WiFi.status());
+            LOGD("WiFi connected: %d", WiFi.isConnected());
+            LOGD("Retry count: %d", retry_count);
+            LOGD("last_wifi_status_new: %d", last_wifi_status_new);
 
             WiFi.begin(config_.ssid, config_.passphrase);
             while (WiFi.status() != WL_CONNECTED)

@@ -26,7 +26,6 @@ void ResetTask::run()
             {
                 // pressedCount += 1;
                 held = false;
-                // ESP_LOGD("", "Button pressed %d times", pressedCount);
 
                 if (millis() - reset_button_pressed > SOFT_RESET_SECONDS * 1000 && millis() - reset_button_pressed < HARD_RESET_SECONDS * 1000)
                 {
@@ -46,7 +45,6 @@ void ResetTask::run()
             if (!held)
             {
                 held = true;
-                // ESP_LOGD("", "Button held");
             }
             reset_button_released = millis();
 

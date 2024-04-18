@@ -68,7 +68,7 @@ void setup()
     // TODO: move from eeprom to ffatfs
     if (!EEPROM.begin(EEPROM_SIZE))
     {
-        ESP_LOGE("config", "failed to start EEPROM");
+        LOGE("Failed to start EEPROM");
     }
 
 #if SK_DISPLAY

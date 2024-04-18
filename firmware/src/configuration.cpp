@@ -132,7 +132,6 @@ bool Configuration::saveToDisk()
 
     size_t written = f.write(buffer_, stream.bytes_written);
     f.close();
-    ESP_LOGD("4", "save to disk");
     LOGD("4 Save to disk");
 
     char buf_[20];
