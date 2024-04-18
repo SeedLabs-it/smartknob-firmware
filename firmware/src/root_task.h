@@ -93,7 +93,7 @@ private:
 
     cJSON *apps_ = NULL;
 
-    QueueHandle_t log_queue_;
+    // QueueHandle_t log_queue_;
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;

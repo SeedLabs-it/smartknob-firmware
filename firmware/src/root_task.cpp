@@ -51,8 +51,8 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
-    log_queue_ = xQueueCreate(10, sizeof(std::string *));
-    assert(log_queue_ != NULL);
+    // log_queue_ = xQueueCreate(10, sizeof(std::string *));
+    // assert(log_queue_ != NULL);
 
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
@@ -508,11 +508,11 @@ void RootTask::run()
         current_protocol_->loop();
 
         std::string *log_string;
-        while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
-        {
-            // LOGI(log_string->c_str());
-            delete log_string;
-        }
+        // while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
+        // {
+        //     // LOGI(log_string->c_str());
+        //     delete log_string;
+        // }
 
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
