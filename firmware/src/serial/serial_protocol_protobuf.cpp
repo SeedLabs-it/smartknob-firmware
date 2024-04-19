@@ -47,9 +47,7 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
                 state.config.detent_strength_unit,
                 degrees(state.config.position_width_radians),
                 state.config.endstop_strength_unit);
-        char origin_[256];
-        snprintf(origin_, sizeof(origin_), "%s:%s:%d ", __FILE__, __func__, __LINE__);
-        log(PB_LogLevel_DEBUG, false, origin_, buf_);
+        LOGD(buf_);
     }
 }
 

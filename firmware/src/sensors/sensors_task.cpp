@@ -130,8 +130,11 @@ void SensorsTask::run()
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
             publishState(sensors_state);
-            snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
-            LOGV(PB_LogLevel_DEBUG, buf_);
+            if (millis() % 1000 == 0)
+            {
+                snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+                LOGV(PB_LogLevel_DEBUG, buf_);
+            }
             last_proximity_check_ms = millis();
         }
 #if SK_STRAIN
@@ -211,8 +214,11 @@ void SensorsTask::run()
 
                     // todo: call this once per tick
                     publishState(sensors_state);
-                    snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
-                    LOGV(PB_LogLevel_DEBUG, buf_);
+                    if (millis() % 1000 == 0)
+                    {
+                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
+                        LOGV(PB_LogLevel_DEBUG, buf_);
+                    }
                 }
             }
         }
@@ -233,8 +239,11 @@ void SensorsTask::run()
             sensors_state.illumination.lux_avg = lux_avg;
             sensors_state.illumination.lux_adj = luminosity_adjustment;
 
-            snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
-            LOGV(PB_LogLevel_DEBUG, buf_);
+            if (millis() % 1000 == 0)
+            {
+                snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
+                LOGV(PB_LogLevel_DEBUG, buf_);
+            }
             last_illumination_check_ms = millis();
         }
 #endif
