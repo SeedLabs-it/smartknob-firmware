@@ -70,14 +70,15 @@ void SerialProtocolProtobuf::log(const char *msg)
 
 void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
-    if (isVerbose_ && !isVerbose())
-    {
-        return;
-    }
+    // if (isVerbose_ && !isVerbose())
+    // {
+    //     return;
+    // }
 
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
     pb_tx_buffer_.payload.log.level = log_level;
+    pb_tx_buffer_.payload.log.isVerbose = isVerbose_;
 
     strlcpy(pb_tx_buffer_.payload.log.origin, origin, sizeof(pb_tx_buffer_.payload.log.origin));
     strlcpy(pb_tx_buffer_.payload.log.msg, msg, sizeof(pb_tx_buffer_.payload.log.msg));
@@ -116,7 +117,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     if (size <= 4)
     {
         // Too small, ignore bad packet
-        log("Small packet");
+        LOGD("Small packet received. Ignoring.");
         return;
     }
 
@@ -207,13 +208,16 @@ void SerialProtocolProtobuf::sendPbTxBuffer()
     pb_ostream_t stream = pb_ostream_from_buffer(tx_buffer_, sizeof(tx_buffer_));
     pb_tx_buffer_.protocol_version = PROTOBUF_PROTOCOL_VERSION;
 
-    strncpy(pb_tx_buffer_.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.mac_address) - 1);
+    strncpy(pb_tx_buffer_.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.mac_address));
 
+    stream.bytes_written = 0;
     if (!pb_encode(&stream, PB_FromSmartKnob_fields, &pb_tx_buffer_))
     {
         stream_.println(stream.errmsg);
         stream_.flush();
-        assert(false);
+        LOGV(PB_LogLevel_ERROR, "PB Encoding failed: %s", stream.errmsg);
+        LOGV(PB_LogLevel_ERROR, "PB Bytes written when failed: %d", stream.bytes_written);
+        return;
     }
 
     // Compute and append little-endian CRC32
@@ -226,4 +230,5 @@ void SerialProtocolProtobuf::sendPbTxBuffer()
 
     // Encode and send proto+CRC as a COBS packet
     packet_serial_.send(tx_buffer_, stream.bytes_written + 4);
+    stream_.flush();
 }

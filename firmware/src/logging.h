@@ -7,10 +7,6 @@
     {                                                                                     \
         if (Logger *logger = Logging::getInstance().getLogger())                          \
         {                                                                                 \
-            if (isVerbose_ && !logger->isVerbose())                                       \
-            {                                                                             \
-                break;                                                                    \
-            }                                                                             \
             static char origin_[128];                                                     \
             static char msg_[256];                                                        \
             snprintf(origin_, sizeof(origin_), "%s:%s:%d", __FILE__, __func__, __LINE__); \
