@@ -64,7 +64,7 @@ void SerialProtocolProtobuf::ack(uint32_t nonce)
 void SerialProtocolProtobuf::log(const char *msg)
 {
     char origin_[256];
-    snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
+    snprintf(origin_, sizeof(origin_), "%s:%s:%d ", __FILE__, __func__, __LINE__);
     log(PB_LogLevel_INFO, false, origin_, msg);
 }
 
