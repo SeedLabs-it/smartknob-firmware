@@ -48,6 +48,8 @@ message Log {
     string msg = 1 [(nanopb).max_length = 255];
     LogLevel level = 2;
     string origin = 3 [(nanopb).max_length = 128];
+    bool isVerbose = 4;
+
 }
 
 message SmartKnobState {
