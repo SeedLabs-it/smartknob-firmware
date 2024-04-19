@@ -2,8 +2,6 @@
 
 #include "logger.h"
 
-// ! CHAR[] CAUASES SOME PROBLEMS WITH MEMORY HERE IF ALOT OF LOG MESSAGES IN ONE TASK..... NEED BETTER SOLUTION
-// ! static char origin_[128]; might be a solution bit worried about accessing it at the same time? is that possible? this shouldnt be multi threaded but it is called from multiple threads/tasks
 #define LOG(log_level, isVerbose_, ...)                                                   \
     do                                                                                    \
     {                                                                                     \

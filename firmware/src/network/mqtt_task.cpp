@@ -136,6 +136,7 @@ void MqttTask::run()
 
             if (millis() - mqtt_push > mqtt_push_interval_ms)
             {
+                LOGE("FREE HEAP: %d", ESP.getFreeHeap());
                 // iterate over all items in the map and push all not pushed yet
                 for (auto i : entity_states_to_send)
                 {
