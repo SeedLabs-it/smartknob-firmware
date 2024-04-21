@@ -2,13 +2,17 @@
 #include "cJSON.h"
 #include <cstring>
 
-LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
+// utils for screen
+
+#include "picker_mask.h"
+
+LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, TFT_eSPI *tft_, char *app_id, char *friendly_name, char *entity_id) : App(spr_, tft_)
 {
     sprintf(this->app_id, "%s", app_id);
     sprintf(this->friendly_name, "%s", friendly_name);
     sprintf(this->entity_id, "%s", entity_id);
 
-    motor_config = PB_SmartKnobConfig{
+    motor_config_dimmer = PB_SmartKnobConfig{
         current_brightness,
         0,
         current_brightness,
@@ -25,67 +29,106 @@ LightDimmerApp::LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         27,
     };
 
+    motor_config_settings = PB_SmartKnobConfig{
+        current_settings_position,
+        0,
+        current_settings_position,
+        0,
+        3,
+        60 * PI / 180,
+        1,
+        1,
+        0.7, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
+        "",  // Change the type of app_id from char to char*
+        0,
+        {},
+        0,
+        27,
+    };
+
+    motor_config_hue = PB_SmartKnobConfig{
+        app_hue_position / 4,
+        0,
+        uint8_t(app_hue_position / 4),
+        0,
+        -1,
+        PI * 2 / 90,
+        1,
+        1,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        27,
+    };
+
+    // TODO make real kelvins wheel
+    motor_config_kelvin = PB_SmartKnobConfig{
+        app_hue_position / 2,
+        0,
+        uint8_t(app_hue_position / 2),
+        0,
+        -1,
+        PI * 2 / 180,
+        1,
+        1,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        27,
+    };
+
+    motor_config = motor_config_dimmer;
+
     num_positions = motor_config.max_position - motor_config.min_position;
 
     big_icon = light_top_80;
     small_icon = light_top_40;
 
     json = cJSON_CreateObject();
+    loadDimmerMaskSprite();
+}
+
+void LightDimmerApp::loadDimmerMaskSprite()
+{
+    // TFT_eSprite spr = TFT_eSprite(spr_);
+    // light_dimmer_mask_spr_ = &spr;
+    // light_dimmer_mask_spr_->createSprite(240, 240);
+    // light_dimmer_mask_spr_->fillCircle(120, 120, 30, TFT_BLACK);
+    // light_dimmer_mask_spr_->createSprite(240, 240);
+    // light_dimmer_mask_spr_->fillSprite(TFT_TRANSPARENT);
+    // light_dimmer_mask_spr_->fillTriangle(35, 0, 0, 59, 69, 59, TFT_BLACK);
+    // light_dimmer_mask_spr_->pushSprite(0, 0, TFT_TRANSPARENT);
 }
 
 int8_t LightDimmerApp::navigationNext()
 {
-    if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
-    {
-        app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
-    }
-    else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
-    {
-        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
-    }
 
     switch (app_state_mode)
     {
     case LIGHT_DIMMER_APP_MODE_DIMMER:
-        motor_config = PB_SmartKnobConfig{
-            current_brightness,
-            0,
-            current_brightness,
-            0,
-            100,
-            2.4 * PI / 180,
-            1,
-            1,
-            1.1,
-            "",
-            0,
-            {},
-            0,
-            27,
-        };
+        app_state_mode = LIGHT_DIMMER_APP_MODE_SETTINGS;
+        motor_config = motor_config_settings;
         break;
+    case LIGHT_DIMMER_APP_MODE_SETTINGS:
+        // check what is selected
+        app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
+        motor_config = motor_config_hue;
+        break;
+    case LIGHT_DIMMER_APP_MODE_KELVIN:
+        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
+        motor_config = motor_config_dimmer;
     case LIGHT_DIMMER_APP_MODE_HUE:
-        // todo, check that current temp is more than wanted
-        motor_config = PB_SmartKnobConfig{
-            app_hue_position / 2,
-            0,
-            app_hue_position / 2,
-            0,
-            -1,
-            PI * 2 / 180,
-            1,
-            1,
-            1.1,
-            "",
-            0,
-            {},
-            0,
-            27,
-        };
+        app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
+        motor_config = motor_config_dimmer;
         break;
     default:
         break;
     }
+
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
@@ -107,6 +150,14 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     if (state_sent_from_hass)
     {
         state_sent_from_hass = false;
+        return new_state;
+    }
+
+    if (app_state_mode == LIGHT_DIMMER_APP_MODE_SETTINGS)
+    {
+        current_settings_position = state.current_position;
+        current_settings_subposition = state.sub_position_unit;
+        // TODO rework apps structure
         return new_state;
     }
 
@@ -199,11 +250,11 @@ uint16_t LightDimmerApp::calculateAppHuePosition(uint16_t position)
 {
     if (position < 0)
     {
-        return (360 * 100 + position * 2) % 360;
+        return (360 * 100 + position * 4) % 360;
     }
     else
     {
-        return (position * 2) % 360;
+        return (position * 4) % 360;
     }
 }
 
@@ -297,8 +348,127 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
 void LightDimmerApp::updateStateFromSystem(AppState state) {}
 
+TFT_eSprite *LightDimmerApp::renderLightSettings()
+{
+    uint16_t screen_radius = TFT_WIDTH / 2;
+    uint16_t center_h = TFT_WIDTH / 2;
+    uint16_t center_v = TFT_WIDTH / 2;
+
+    int16_t actual_settings_position = current_settings_position % 4;
+
+    int16_t circle_size_r = 34;
+    int16_t circle_margin = 20;
+
+    int offset = current_settings_position * (circle_size_r * 2 + circle_margin) + current_settings_subposition * (circle_size_r * 2 + circle_margin) * 0.5;
+
+    int16_t opt_1_x = center_h - offset;
+    int16_t opt_1_y = center_v;
+
+    int16_t opt_2_x = center_h + circle_size_r * 2 + circle_margin - offset;
+    int16_t opt_2_y = center_v;
+
+    int16_t opt_3_x = center_h + circle_size_r * 2 * 2 + circle_margin * 2 - offset;
+    int16_t opt_3_y = center_v;
+
+    int16_t opt_4_x = center_h + circle_size_r * 2 * 3 + circle_margin * 3 - offset;
+    int16_t opt_4_y = center_v;
+
+    spr_->fillCircle(opt_1_x, opt_1_y, circle_size_r, TFT_DARKGREY);
+    spr_->fillCircle(opt_2_x, opt_2_y, circle_size_r, TFT_DARKGREY);
+    spr_->fillCircle(opt_3_x, opt_3_y, circle_size_r, TFT_DARKGREY);
+    spr_->fillCircle(opt_4_x, opt_4_y, circle_size_r, TFT_DARKGREY);
+
+    // if (actual_settings_position == 0)
+    // {
+
+    //     opt_1_x = center_h - offset;
+    //     opt_1_y = center_v;
+
+    //     opt_2_x = center_h;
+    //     opt_2_y = center_v - from_center_offset + offset;
+    // }
+    // else if (actual_settings_position == 1)
+    // {
+    //     opt_2_x = center_h;
+    //     opt_2_y = center_v - offset;
+
+    //     opt_3_x = center_h + from_center_offset - offset;
+    //     opt_3_y = center_v;
+    // }
+    // else if (actual_settings_position == 2)
+    // {
+    //     opt_3_x = center_h + offset;
+    //     opt_3_y = center_v;
+
+    //     opt_4_x = center_h;
+    //     opt_4_y = center_v + from_center_offset - offset;
+    // }
+    // else if (actual_settings_position == 3)
+    // {
+    //     opt_4_x = center_h;
+    //     opt_4_y = center_v + offset;
+
+    //     opt_1_x = center_h - from_center_offset + offset;
+    //     opt_1_y = center_v;
+    // }
+
+    spr_->setTextDatum(CC_DATUM);
+
+    uint32_t current_color = ToRGBA(0);
+
+    spr_->fillSmoothCircle(center_h, center_v, circle_size_r, TFT_DARKGREY, TFT_BLACK);
+
+    sprintf(buf_, "%s", "color");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->fillCircle(opt_1_x, opt_1_y, circle_size_r, TFT_BLACK);
+    for (int i = 0; i < circle_size_r - 6; i++)
+    {
+        current_color = ToRGBA(i * 10);
+        spr_->fillCircle(opt_1_x, opt_1_y, circle_size_r - 6 - i, current_color);
+    }
+    spr_->drawCircle(opt_1_x, opt_1_y, circle_size_r, TFT_WHITE);
+    spr_->drawString(buf_, opt_1_x, opt_1_y + circle_size_r + 10, 1);
+
+    sprintf(buf_, "%s", "temp");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->fillCircle(opt_2_x, opt_2_y, circle_size_r, TFT_BLACK);
+    spr_->fillSmoothCircle(opt_2_x, opt_2_y, circle_size_r - 6, TFT_ORANGE, TFT_BLACK);
+    spr_->fillSmoothCircle(opt_2_x, opt_2_y, circle_size_r - 15, TFT_SKYBLUE, TFT_ORANGE);
+    spr_->drawCircle(opt_2_x, opt_2_y, circle_size_r, TFT_WHITE);
+    spr_->drawString(buf_, opt_2_x, opt_2_y + circle_size_r + 10, 1);
+
+    sprintf(buf_, "%s", "preset");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->fillCircle(opt_3_x, opt_3_y, circle_size_r, TFT_BLACK);
+    spr_->fillSmoothCircle(opt_3_x, opt_3_y, circle_size_r - 6, TFT_PURPLE, TFT_BLACK);
+    spr_->drawCircle(opt_3_x, opt_3_y, circle_size_r, TFT_WHITE);
+    spr_->drawString(buf_, opt_3_x, opt_3_y + circle_size_r + 10, 1);
+
+    sprintf(buf_, "%s", "dimmer");
+    spr_->setTextColor(TFT_WHITE);
+    spr_->setFreeFont(&NDS125_small);
+    spr_->fillCircle(opt_4_x, opt_4_y, circle_size_r, TFT_BLACK);
+    spr_->fillSmoothCircle(opt_4_x, opt_4_y, circle_size_r - 6, TFT_LIGHTGREY, TFT_BLACK);
+    spr_->drawCircle(opt_4_x, opt_4_y, circle_size_r, TFT_WHITE);
+    spr_->drawString(buf_, opt_4_x, opt_4_y + circle_size_r + 10, 1);
+    sprintf(buf_, "%d%%", current_brightness);
+    spr_->setFreeFont(&NDS1210pt7b);
+    spr_->drawString(buf_, opt_4_x, opt_4_y, 1);
+
+    return this->spr_;
+}
+
+TFT_eSprite *LightDimmerApp::renderKelvinWheel()
+{
+    return this->spr_;
+}
+
 TFT_eSprite *LightDimmerApp::renderHUEWheel()
 {
+    // TODO: fix jumping circle over 0 crossing
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
     uint16_t color_black = spr_->color565(0, 0, 0);
     uint16_t color_light_grey = spr_->color565(200, 200, 200);
@@ -317,13 +487,12 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     float range_radians = (motor_config.max_position - motor_config.min_position) * motor_config.position_width_radians;
 
     left_bound = PI / 2;
-    right_bound = PI / 2 - range_radians - motor_config.position_width_radians;
+    // right_bound = PI / 2 - range_radians - motor_config.position_width_radians;
 
     uint8_t icon_size = 80;
 
     uint16_t offset_vertical = 30;
 
-    char buf_[16];
     sprintf(buf_, "%d%%", current_position);
 
     spr_->fillScreen(DISABLED_COLOR);
@@ -339,11 +508,11 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     uint32_t segment_color = TFT_WHITE;
 
     // shift wheel by current position
-    left_bound = left_bound - position_in_radians * app_hue_position;
+    // left_bound = left_bound - position_in_radians * app_hue_position;
 
     for (int i = 0; i < segmetns; i++)
     {
-        segment_position = left_bound + position_in_radians * i;
+        segment_position = left_bound - position_in_radians * i;
         segment_color = ToRGBA(i);
         spr_->fillTriangle(
             TFT_WIDTH / 2 + (screen_radius + 10) * cosf(segment_position - position_in_radians / 2),
@@ -356,21 +525,34 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
     }
 
     uint32_t current_color = ToRGBA(app_hue_position);
-    spr_->fillSmoothCircle(center_h, center_v, 80, color_black, color_black);
 
-    spr_->fillTriangle(center_h, center_v - 70, center_h - 10, center_v - 55, center_h + 10, center_v - 55, current_color);
+    for (int i = 0; i < black_border_size; i++)
+    {
+        spr_->drawCircle(center_h, center_v, TFT_WIDTH / 2 - i, color_black);
+        spr_->drawCircle(center_h + 1, center_v, TFT_WIDTH / 2 - i, color_black);
+        spr_->drawCircle(center_h - 1, center_v, TFT_WIDTH / 2 - i, color_black);
+        spr_->drawCircle(center_h, center_v + 1, TFT_WIDTH / 2 - i, color_black);
+        spr_->drawCircle(center_h, center_v - 1, TFT_WIDTH / 2 - i, color_black);
+    }
+
+    spr_->fillSmoothCircle(center_h, center_v, TFT_WIDTH / 2 - black_border_size - color_strip_size, color_black, color_black);
+
+    uint8_t dot_x = TFT_WIDTH / 2 + (screen_radius - black_border_size - color_strip_size / 2) * cosf(left_bound - position_in_radians * app_hue_position);
+    uint8_t dot_y = TFT_HEIGHT / 2 - (screen_radius - black_border_size - color_strip_size / 2) * sinf(left_bound - position_in_radians * app_hue_position);
+
+    spr_->fillCircle(dot_x, dot_y, (color_strip_size + 10) / 2, current_color);
+    spr_->drawCircle(dot_x, dot_y, (color_strip_size + 10) / 2, TFT_BLACK);
+    spr_->drawCircle(dot_x, dot_y, (color_strip_size + 10) / 2 + 1, TFT_BLACK);
 
     HEXColor current_color_hex = hToHEX(app_hue_position);
 
-    sprintf(buf_, "#%02X%02X%02X", current_color_hex.r, current_color_hex.g, current_color_hex.b);
-    spr_->setTextColor(current_color);
+    sprintf(buf_, "%d%%", current_brightness);
+    spr_->setTextColor(TFT_WHITE);
     spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(buf_, center_h, center_v, 1);
 
-    sprintf(buf_, "HEX", app_hue_position);
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(color_light_grey);
-    spr_->drawString(buf_, center_h, center_v + 30, 1);
+    spr_->drawString(friendly_name, center_h, center_v + 20, 1);
+    spr_->setFreeFont(&Pixel62mr11pt7b);
+    spr_->drawString(buf_, center_h, center_v - 22, 1);
 
     return this->spr_;
 }
@@ -378,9 +560,14 @@ TFT_eSprite *LightDimmerApp::renderHUEWheel()
 TFT_eSprite *LightDimmerApp::render()
 {
 
-    if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+    switch (app_state_mode)
     {
+    case LIGHT_DIMMER_APP_MODE_HUE:
         return renderHUEWheel();
+    case LIGHT_DIMMER_APP_MODE_SETTINGS:
+        return renderLightSettings();
+    default:
+        break;
     }
 
     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
@@ -446,30 +633,27 @@ TFT_eSprite *LightDimmerApp::render()
         dot_color = on_background;
     }
 
-    spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background_color);
-    spr_->setTextColor(foreground_color);
+    spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_BLACK);
+    spr_->setTextColor(TFT_WHITE);
     spr_->setFreeFont(&NDS1210pt7b);
 
     spr_->drawString(friendly_name, center_h, center_v + 20, 1);
     spr_->setFreeFont(&Pixel62mr11pt7b);
     spr_->drawString(buf_, center_h, center_v - 22, 1);
 
+    uint32_t current_color = ToRGBA(app_hue_position);
+
     if (current_position > 0)
     {
         for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
         {
             // draw the arc
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, foreground_color);
+            spr_->fillSmoothCircle(
+                TFT_WIDTH / 2 + (screen_radius - black_border_size - color_strip_size / 2) * cosf(r),
+                TFT_HEIGHT / 2 - (screen_radius - black_border_size - color_strip_size / 2) * sinf(r),
+                color_strip_size / 2 - 2, // for smoth line
+                current_color);
         }
-        // there is some jittering on adjusted_angle that might push the dot outside the arc.
-        // need to  bound it on the right side. On the left side it's already turned off by
-        // the current_position > 0 condition.
-
-        if (adjusted_angle < right_bound)
-        {
-            adjusted_angle = right_bound;
-        }
-        spr_->fillSmoothCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color, foreground_color);
     }
 
     return this->spr_;

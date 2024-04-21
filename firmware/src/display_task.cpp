@@ -69,9 +69,9 @@ void DisplayTask::run()
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    demo_apps = DemoApps(&spr_);
+    demo_apps = DemoApps(&spr_, &tft_);
 
-    hass_apps = HassApps(&spr_);
+    hass_apps = HassApps(&spr_, &tft_);
 
     AppState app_state;
 
