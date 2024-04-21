@@ -6,7 +6,7 @@ class DemoApps : public HassApps
 {
 public:
     DemoApps(){};
-    DemoApps(TFT_eSprite *spr);
+    DemoApps(TFT_eSprite *spr, TFT_eSPI *tft_);
     void handleNavigationEvent(NavigationEvent event);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
 

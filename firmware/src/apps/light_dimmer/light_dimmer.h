@@ -3,6 +3,7 @@
 #include "../../font/NDS1210pt7b.h"
 #include "../../font/Pixel62mr11pt7b.h"
 #include "../../util.h"
+#include "../../font/NDS125_small.h"
 
 const uint8_t LIGHT_DIMMER_APP_MODE_DIMMER = 0;
 const uint8_t LIGHT_DIMMER_APP_MODE_SETTINGS = 1;
@@ -12,7 +13,7 @@ const uint8_t LIGHT_DIMMER_APP_MODE_KELVIN = 3;
 class LightDimmerApp : public App
 {
 public:
-    LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
+    LightDimmerApp(TFT_eSprite *spr_, TFT_eSPI *tft_, char *app_id, char *friendly_name, char *entity_id);
     TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
@@ -39,6 +40,9 @@ private:
     PB_SmartKnobConfig motor_config_settings;
 
     // needed for UI
+    uint8_t black_border_size = 7;
+    uint8_t color_strip_size = 16;
+
     char buf_[24];
 
     float sub_position_unit = 0;
@@ -56,6 +60,8 @@ private:
     bool is_on = false;
 
     bool first_run = false;
+    TFT_eSprite *light_dimmer_mask_spr_;
 
+    void loadDimmerMaskSprite();
     uint16_t calculateAppHuePosition(uint16_t position);
 };

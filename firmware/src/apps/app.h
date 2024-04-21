@@ -27,7 +27,8 @@ class App
 {
 public:
     App(TFT_eSprite *spr_) : spr_(spr_) {}
-    App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
+    App(TFT_eSprite *spr_, TFT_eSPI *tft_) : spr_(spr_), tft_(tft_) {}
+    App(TFT_eSprite *spr_, TFT_eSPI *tft_, int8_t next, int8_t back) : spr_(spr_), tft_(tft_), next(next), back(back) {}
     virtual TFT_eSprite *render();
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
@@ -62,6 +63,7 @@ protected:
     int8_t next = DONT_NAVIGATE;
     int8_t back = MENU;
     TFT_eSprite *spr_;
+    TFT_eSPI *tft_;
     PB_SmartKnobConfig motor_config;
 
     PB_SmartKnobConfig root_level_motor_config;

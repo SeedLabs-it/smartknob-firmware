@@ -12,10 +12,11 @@ Apps::Apps()
     mutex = xSemaphoreCreateMutex();
 }
 
-Apps::Apps(TFT_eSprite *spr_)
+Apps::Apps(TFT_eSprite *spr_, TFT_eSPI *tft_)
 {
     mutex = xSemaphoreCreateMutex();
     this->spr_ = spr_;
+    this->tft_ = tft_;
 }
 
 void Apps::setSprite(TFT_eSprite *spr_)
@@ -168,7 +169,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name, entity_id);
+        LightDimmerApp *app = new LightDimmerApp(this->spr_, this->tft_, app_id, friendly_name, entity_id);
         add(position, app);
         // ESP_LOGD("apps.cpp", "added app %d %s %s %s", position, app_slug, app_id, friendly_name);
         return app;

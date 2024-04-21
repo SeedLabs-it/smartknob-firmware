@@ -29,7 +29,7 @@ class Apps
 
 public:
     Apps();
-    Apps(TFT_eSprite *spr_);
+    Apps(TFT_eSprite *spr_, TFT_eSPI *tft_);
     void add(uint8_t id, App *app);
     void clear();
     EntityStateUpdate update(AppState state);
@@ -73,6 +73,8 @@ protected:
     int8_t active_id = 0;
 
     TFT_eSprite *spr_ = nullptr;
+    TFT_eSPI *tft_ = nullptr;
+
     std::shared_ptr<App> active_app = nullptr;
 
     TFT_eSprite *rendered_spr_;

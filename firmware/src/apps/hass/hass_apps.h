@@ -6,7 +6,7 @@ class HassApps : public Apps
 {
 public:
     HassApps(){};
-    HassApps(TFT_eSprite *spr) : Apps(spr){};
+    HassApps(TFT_eSprite *spr, TFT_eSPI *tft_) : Apps(spr, tft_){};
     void sync(cJSON *apps_);
     void handleEvent(WiFiEvent event);
     void handleNavigationEvent(NavigationEvent event);
