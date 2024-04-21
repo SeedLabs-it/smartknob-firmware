@@ -112,7 +112,6 @@ bool Configuration::saveToDisk()
         LOGE(buf_);
         return false;
     }
-    LOGD("1 Save to disk");
 
     FatGuard fatGuard;
     if (!fatGuard.mounted_)
@@ -120,24 +119,17 @@ bool Configuration::saveToDisk()
         return false;
     }
 
-    LOGD("2 Save to disk");
-
     File f = FFat.open(CONFIG_PATH, FILE_WRITE);
     if (!f)
     {
         LOGE("Failed to read config file");
         return false;
     }
-    LOGD("3 Save to disk");
 
     size_t written = f.write(buffer_, stream.bytes_written);
     f.close();
-    LOGD("4 Save to disk");
 
-    char buf_[32];
-    snprintf(buf_, sizeof(buf_), "Wrote %d bytes", written);
-    LOGD(buf_);
-    LOGD("5 Save to disk");
+    LOGD("Saved config. Wrote %d bytes", written);
 
     if (written != stream.bytes_written)
     {

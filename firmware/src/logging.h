@@ -39,10 +39,10 @@
         LOG(PB_LogLevel_DEBUG, false, __VA_ARGS__); \
     } while (0)
 
-#define LOGV(log_level, ...)                 \
-    do                                       \
-    {                                        \
-        LOG(log_level, true, ##__VA_ARGS__); \
+#define LOGV(log_level, ...)               \
+    do                                     \
+    {                                      \
+        LOG(log_level, true, __VA_ARGS__); \
     } while (0)
 
 class Logging
