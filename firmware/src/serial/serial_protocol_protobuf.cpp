@@ -68,11 +68,6 @@ void SerialProtocolProtobuf::log(const char *msg)
 
 void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
-    // if (isVerbose_ && !isVerbose())
-    // {
-    //     return;
-    // }
-
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
     pb_tx_buffer_.payload.log.level = log_level;
@@ -80,6 +75,18 @@ void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, c
 
     strlcpy(pb_tx_buffer_.payload.log.origin, origin, sizeof(pb_tx_buffer_.payload.log.origin));
     strlcpy(pb_tx_buffer_.payload.log.msg, msg, sizeof(pb_tx_buffer_.payload.log.msg));
+
+    sendPbTxBuffer();
+}
+
+void SerialProtocolProtobuf::sendInitialInfo()
+{
+    pb_tx_buffer_ = {};
+    pb_tx_buffer_.which_payload = PB_FromSmartKnob_knob_tag;
+    strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
+    strlcpy(pb_tx_buffer_.payload.knob.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.payload.knob.mac_address));
+    pb_tx_buffer_.payload.knob.motorCalibrated = true;
+    pb_tx_buffer_.payload.knob.strainCalibrated = true;
 
     sendPbTxBuffer();
 }
@@ -129,7 +136,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Bad CRC (%u byte packet). Expected %08x but got %08x.", size - 4, expected_crc, provided_crc);
-        log(buf);
+        LOGE(buf);
         return;
     }
 
@@ -138,7 +145,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Decoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        LOGE(buf);
         return;
     }
 
@@ -146,7 +153,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Invalid protocol version. Expected %u, received %u", PROTOBUF_PROTOCOL_VERSION, pb_rx_buffer_.protocol_version);
-        log(buf);
+        LOGE(buf);
         return;
     }
 
@@ -157,7 +164,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
         // Ignore any extraneous retries
         char buf[200];
         snprintf(buf, sizeof(buf), "Already handled nonce %u", pb_rx_buffer_.nonce);
-        log(buf);
+        LOGD(buf);
         return;
     }
     last_nonce_ = pb_rx_buffer_.nonce;
@@ -172,19 +179,23 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     case PB_ToSmartknob_smartknob_command_tag:
     {
         // Handle command
-        log("Command received");
+        LOGD("Command received");
         switch (pb_rx_buffer_.payload.smartknob_command)
         {
+        case PB_SmartKnobCommand_GET_KNOB_INFO:
+            LOGD("Get Knob Info");
+            sendInitialInfo();
+            break;
         case PB_SmartKnobCommand_MOTOR_CALIBRATE:
-            log("Motor Calibrate");
+            LOGD("Motor Calibrate");
             motor_calibration_callback_();
             break;
         case PB_SmartKnobCommand_STRAIN_CALIBRATE:
-            log("Strain Calibrate");
+            LOGD("Strain Calibrate");
             strain_calibration_callback_();
             break;
         default:
-            log("Unknown command");
+            LOGD("Unknown command");
             break;
         }
         break;
@@ -193,7 +204,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     {
         char buf[200];
         snprintf(buf, sizeof(buf), "Unknown payload type: %d", pb_rx_buffer_.which_payload);
-        log(buf);
+        LOGW(buf);
         return;
     }
     }
@@ -205,8 +216,6 @@ void SerialProtocolProtobuf::sendPbTxBuffer()
 
     pb_ostream_t stream = pb_ostream_from_buffer(tx_buffer_, sizeof(tx_buffer_));
     pb_tx_buffer_.protocol_version = PROTOBUF_PROTOCOL_VERSION;
-
-    strncpy(pb_tx_buffer_.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.mac_address));
 
     stream.bytes_written = 0;
     if (!pb_encode(&stream, PB_FromSmartKnob_fields, &pb_tx_buffer_))

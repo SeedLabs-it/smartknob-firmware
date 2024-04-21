@@ -12,6 +12,9 @@ PB_BIND(PB_FromSmartKnob, PB_FromSmartKnob, 2)
 PB_BIND(PB_ToSmartknob, PB_ToSmartknob, AUTO)
 
 
+PB_BIND(PB_Knob, PB_Knob, AUTO)
+
+
 PB_BIND(PB_Ack, PB_Ack, AUTO)
 
 

@@ -19,11 +19,20 @@ typedef enum _PB_LogLevel {
 } PB_LogLevel;
 
 typedef enum _PB_SmartKnobCommand {
-    PB_SmartKnobCommand_MOTOR_CALIBRATE = 0,
-    PB_SmartKnobCommand_STRAIN_CALIBRATE = 1
+    PB_SmartKnobCommand_GET_KNOB_INFO = 0,
+    PB_SmartKnobCommand_MOTOR_CALIBRATE = 1,
+    PB_SmartKnobCommand_STRAIN_CALIBRATE = 2
 } PB_SmartKnobCommand;
 
 /* Struct definitions */
+/* * Initial knob information. */
+typedef struct _PB_Knob {
+    char mac_address[51];
+    char ip_address[51];
+    bool motorCalibrated;
+    bool strainCalibrated;
+} PB_Knob;
+
 /* * Lets the host know that a ToSmartknob message was received and should not be retried. */
 typedef struct _PB_Ack {
     uint32_t nonce;
@@ -173,9 +182,9 @@ typedef struct _PB_SmartKnobState {
 /* Message FROM the SmartKnob to the host */
 typedef struct _PB_FromSmartKnob {
     uint8_t protocol_version;
-    char mac_address[51];
     pb_size_t which_payload;
     union {
+        PB_Knob knob;
         PB_Ack ack;
         PB_Log log;
         PB_SmartKnobState smartknob_state;
@@ -228,12 +237,13 @@ extern "C" {
 #define _PB_LogLevel_MAX PB_LogLevel_VERBOSE
 #define _PB_LogLevel_ARRAYSIZE ((PB_LogLevel)(PB_LogLevel_VERBOSE+1))
 
-#define _PB_SmartKnobCommand_MIN PB_SmartKnobCommand_MOTOR_CALIBRATE
+#define _PB_SmartKnobCommand_MIN PB_SmartKnobCommand_GET_KNOB_INFO
 #define _PB_SmartKnobCommand_MAX PB_SmartKnobCommand_STRAIN_CALIBRATE
 #define _PB_SmartKnobCommand_ARRAYSIZE ((PB_SmartKnobCommand)(PB_SmartKnobCommand_STRAIN_CALIBRATE+1))
 
 
 #define PB_ToSmartknob_payload_smartknob_command_ENUMTYPE PB_SmartKnobCommand
+
 
 
 #define PB_Log_level_ENUMTYPE PB_LogLevel
@@ -246,8 +256,9 @@ extern "C" {
 
 
 /* Initializer values for message structs */
-#define PB_FromSmartKnob_init_default            {0, "", 0, {PB_Ack_init_default}}
+#define PB_FromSmartKnob_init_default            {0, 0, {PB_Knob_init_default}}
 #define PB_ToSmartknob_init_default              {0, 0, 0, {PB_RequestState_init_default}}
+#define PB_Knob_init_default                     {"", "", 0, 0}
 #define PB_Ack_init_default                      {0}
 #define PB_Log_init_default                      {"", _PB_LogLevel_MIN, "", 0}
 #define PB_SmartKnobState_init_default           {0, 0, false, PB_SmartKnobConfig_init_default, 0}
@@ -256,8 +267,9 @@ extern "C" {
 #define PB_PersistentConfiguration_init_default  {0, false, PB_MotorCalibration_init_default, false, PB_StrainCalibration_init_default}
 #define PB_MotorCalibration_init_default         {0, 0, 0, 0}
 #define PB_StrainCalibration_init_default        {0, 0}
-#define PB_FromSmartKnob_init_zero               {0, "", 0, {PB_Ack_init_zero}}
+#define PB_FromSmartKnob_init_zero               {0, 0, {PB_Knob_init_zero}}
 #define PB_ToSmartknob_init_zero                 {0, 0, 0, {PB_RequestState_init_zero}}
+#define PB_Knob_init_zero                        {"", "", 0, 0}
 #define PB_Ack_init_zero                         {0}
 #define PB_Log_init_zero                         {"", _PB_LogLevel_MIN, "", 0}
 #define PB_SmartKnobState_init_zero              {0, 0, false, PB_SmartKnobConfig_init_zero, 0}
@@ -268,6 +280,10 @@ extern "C" {
 #define PB_StrainCalibration_init_zero           {0, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
+#define PB_Knob_mac_address_tag                  1
+#define PB_Knob_ip_address_tag                   2
+#define PB_Knob_motorCalibrated_tag              3
+#define PB_Knob_strainCalibrated_tag             4
 #define PB_Ack_nonce_tag                         1
 #define PB_Log_msg_tag                           1
 #define PB_Log_level_tag                         2
@@ -291,10 +307,10 @@ extern "C" {
 #define PB_SmartKnobState_config_tag             3
 #define PB_SmartKnobState_press_nonce_tag        4
 #define PB_FromSmartKnob_protocol_version_tag    1
-#define PB_FromSmartKnob_mac_address_tag         2
-#define PB_FromSmartKnob_ack_tag                 3
-#define PB_FromSmartKnob_log_tag                 4
-#define PB_FromSmartKnob_smartknob_state_tag     5
+#define PB_FromSmartKnob_knob_tag                3
+#define PB_FromSmartKnob_ack_tag                 4
+#define PB_FromSmartKnob_log_tag                 5
+#define PB_FromSmartKnob_smartknob_state_tag     6
 #define PB_ToSmartknob_protocol_version_tag      1
 #define PB_ToSmartknob_nonce_tag                 2
 #define PB_ToSmartknob_request_state_tag         3
@@ -313,12 +329,13 @@ extern "C" {
 /* Struct field encoding specification for nanopb */
 #define PB_FromSmartKnob_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   protocol_version,   1) \
-X(a, STATIC,   SINGULAR, STRING,   mac_address,       2) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (payload,ack,payload.ack),   3) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (payload,log,payload.log),   4) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (payload,smartknob_state,payload.smartknob_state),   5)
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,knob,payload.knob),   3) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,ack,payload.ack),   4) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,log,payload.log),   5) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,smartknob_state,payload.smartknob_state),   6)
 #define PB_FromSmartKnob_CALLBACK NULL
 #define PB_FromSmartKnob_DEFAULT NULL
+#define PB_FromSmartKnob_payload_knob_MSGTYPE PB_Knob
 #define PB_FromSmartKnob_payload_ack_MSGTYPE PB_Ack
 #define PB_FromSmartKnob_payload_log_MSGTYPE PB_Log
 #define PB_FromSmartKnob_payload_smartknob_state_MSGTYPE PB_SmartKnobState
@@ -333,6 +350,14 @@ X(a, STATIC,   ONEOF,    UENUM,    (payload,smartknob_command,payload.smartknob_
 #define PB_ToSmartknob_DEFAULT NULL
 #define PB_ToSmartknob_payload_request_state_MSGTYPE PB_RequestState
 #define PB_ToSmartknob_payload_smartknob_config_MSGTYPE PB_SmartKnobConfig
+
+#define PB_Knob_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, STRING,   mac_address,       1) \
+X(a, STATIC,   SINGULAR, STRING,   ip_address,        2) \
+X(a, STATIC,   SINGULAR, BOOL,     motorCalibrated,   3) \
+X(a, STATIC,   SINGULAR, BOOL,     strainCalibrated,   4)
+#define PB_Knob_CALLBACK NULL
+#define PB_Knob_DEFAULT NULL
 
 #define PB_Ack_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   nonce,             1)
@@ -403,6 +428,7 @@ X(a, STATIC,   SINGULAR, INT32,    press_delta,       2)
 
 extern const pb_msgdesc_t PB_FromSmartKnob_msg;
 extern const pb_msgdesc_t PB_ToSmartknob_msg;
+extern const pb_msgdesc_t PB_Knob_msg;
 extern const pb_msgdesc_t PB_Ack_msg;
 extern const pb_msgdesc_t PB_Log_msg;
 extern const pb_msgdesc_t PB_SmartKnobState_msg;
@@ -415,6 +441,7 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define PB_FromSmartKnob_fields &PB_FromSmartKnob_msg
 #define PB_ToSmartknob_fields &PB_ToSmartknob_msg
+#define PB_Knob_fields &PB_Knob_msg
 #define PB_Ack_fields &PB_Ack_msg
 #define PB_Log_fields &PB_Log_msg
 #define PB_SmartKnobState_fields &PB_SmartKnobState_msg
@@ -426,7 +453,8 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define PB_Ack_size                              6
-#define PB_FromSmartKnob_size                    451
+#define PB_FromSmartKnob_size                    399
+#define PB_Knob_size                             108
 #define PB_Log_size                              393
 #define PB_MotorCalibration_size                 15
 #define PB_PersistentConfiguration_size          47

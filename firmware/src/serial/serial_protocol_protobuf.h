@@ -16,6 +16,7 @@ public:
     ~SerialProtocolProtobuf(){};
     void log(const char *msg) override;
     void log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg) override;
+    void sendInitialInfo();
     void loop() override;
     void handleState(const PB_SmartKnobState &state) override;
 
