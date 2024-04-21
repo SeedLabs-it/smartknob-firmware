@@ -84,6 +84,7 @@ void MqttTask::run()
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
+
                 if (!has_been_connected || retry_count > 0)
                 {
                     WiFiEvent event;
@@ -104,7 +105,7 @@ void MqttTask::run()
                     retry_count++;
                     if (retry_count > 2)
                     {
-                        log("Retry limit reached...");
+                        LOGI("Retry limit reached...");
                         WiFiEvent event;
                         event.type = SK_MQTT_RETRY_LIMIT_REACHED;
                         publishEvent(event);
@@ -267,21 +268,21 @@ bool MqttTask::connect()
 {
     if (config_.host == "")
     {
-        log("No host set");
+        LOGD("No host set");
         return false;
     }
 
     bool mqtt_connected = false;
     if (config_.user == "")
     {
-        log("Connecting to MQTT without credentials");
+        LOGI("Connecting to MQTT without credentials");
         // TODO: Create and use knob id
 
         mqtt_connected = mqtt_client.connect(config_.knob_id);
     }
     else
     {
-        log("Connecting to MQTT with credentials");
+        LOGI("Connecting to MQTT with credentials");
         // TODO: Create and use knob id
         mqtt_connected = mqtt_client.connect(config_.knob_id, config_.user, config_.password);
     }
@@ -291,7 +292,7 @@ bool MqttTask::connect()
         WiFiEvent event;
         event.type = SK_MQTT_CONNECTED;
         publishEvent(event);
-        log("MQTT client connected");
+        LOGI("MQTT client connected");
         return true;
     }
     else
@@ -299,7 +300,7 @@ bool MqttTask::connect()
         WiFiEvent event;
         event.type = SK_MQTT_CONNECTION_FAILED;
         publishEvent(event);
-        log("MQTT connection failed");
+        LOGE("MQTT connection failed");
     }
     return false;
 }
@@ -360,7 +361,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (type == NULL)
     {
-        log("Invalid message received");
+        LOGW("Invalid message received");
         return;
     }
 
@@ -370,13 +371,13 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     if (strcmp(type->valuestring, "sync") == 0)
     {
         cJSON *json_root_ = cJSON_Parse((char *)payload);
-        log("sync");
+        LOGD("sync");
 
         lock();
         apps = cJSON_GetObjectItem(json_root_, "apps"); //! THIS APPS OBJECT NEEDS TO BE FIXED!!! WAS CAUSING MEMORY LEAK BEFORE WHEN USING json_root instead of json_root_
         if (apps == NULL)
         {
-            log("Invalid message received");
+            LOGW("Invalid message received");
             return;
         }
         unlock();
@@ -399,7 +400,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "state_update") == 0)
     {
-        log("state_update received");
+        LOGD("state_update received");
 
         cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
         cJSON *entity_id = cJSON_GetObjectItem(json_root, "entity_id");
@@ -407,7 +408,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
         if (app_id == NULL || entity_id == NULL || new_state == NULL)
         {
-            log("Invalid message received");
+            LOGW("Invalid message received");
             return;
         }
 
@@ -436,7 +437,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
         if (acknowledge_id == NULL || acknowledge_type == NULL)
         {
-            log("Invalid message received");
+            LOGW("Invalid message received");
             return;
         }
 
@@ -487,22 +488,9 @@ void MqttTask::enqueueEntityStateToSend(EntityStateUpdate state)
     xQueueSendToBack(entity_state_to_send_queue_, &state, 0);
 }
 
-void MqttTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
 MqttNotifier *MqttTask::getNotifier()
 {
     return &mqtt_notifier;
-}
-
-void MqttTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
 }
 
 void MqttTask::addAppSyncListener(QueueHandle_t queue)

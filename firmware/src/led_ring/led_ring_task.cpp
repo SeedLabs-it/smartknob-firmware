@@ -266,7 +266,6 @@ void LedRingTask::run()
 
         // At this point, effect_settings is always the last object received through the queue.
         // Todo : turn this on, when verbose.
-        // ESP_LOGI("LED", "Received request for effect %d", effect_settings.effect_id);
 
         switch (effect_settings.effect_id)
         {
@@ -304,19 +303,6 @@ void LedRingTask::setEffect(EffectSettings effect_settings)
 {
     // TODO: make it async and safe with a queue
     xQueueSend(render_effect_queue_, &effect_settings, 0); // portMAX_DELAY
-}
-
-void LedRingTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void LedRingTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
 }
 
 #endif

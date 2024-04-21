@@ -108,7 +108,6 @@ int8_t StopwatchApp::navigationNext()
         stopwatch_sec = floor((lap_ms / 1000) % 60);
         stopwatch_min = floor((lap_ms / (1000 * 60)) % 60);
 
-        // ESP_LOGD("stopwatch", "diff: %d", diff);
         laps[last_lap_added].m = stopwatch_min;
         laps[last_lap_added].s = stopwatch_sec;
         laps[last_lap_added].ms = stopwatch_ms;
@@ -139,8 +138,6 @@ TFT_eSprite *StopwatchApp::render()
 
     uint32_t background = spr_->color565(0, 0, 0);
     spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background);
-
-    // ESP_LOGD("stopwatch", "%d", percent);
 
     uint8_t rendering_lap = 0;
     // render laps

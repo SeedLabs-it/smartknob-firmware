@@ -33,7 +33,6 @@ PomodoroApp::PomodoroApp(TFT_eSprite *spr_) : App(spr_), state(PomodoroState::ID
 
 int8_t PomodoroApp::navigationNext()
 {
-    ESP_LOGD("PomodoroApp", "navigationNext, state: %d", state);
     if (state == PomodoroState::IDLE)
     {
         state = PomodoroState::WORK;

@@ -6,6 +6,7 @@
 #include "configuration.h"
 #include "display_task.h"
 #include "logger.h"
+#include "logging.h"
 #include "motor_foc/motor_task.h"
 #include "serial/serial_protocol_plaintext.h"
 #include "serial/serial_protocol_protobuf.h"
@@ -25,8 +26,7 @@
 
 void delete_me_TriggerMotorCalibration();
 
-class RootTask : public Task<RootTask>,
-                 public Logger
+class RootTask : public Task<RootTask>
 {
 
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
@@ -34,8 +34,6 @@ class RootTask : public Task<RootTask>,
 public:
     RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
     virtual ~RootTask();
-
-    void log(const char *msg) override;
     void setConfiguration(Configuration *configuration);
 
     void setHassApps(HassApps *apps);
@@ -48,7 +46,6 @@ public:
     QueueHandle_t getAppSyncQueue();
 
     void strainCalibrationCallback();
-    void verboseToggleCallback();
 
 protected:
     void run();
@@ -96,7 +93,7 @@ private:
 
     cJSON *apps_ = NULL;
 
-    QueueHandle_t log_queue_;
+    // QueueHandle_t log_queue_;
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;

@@ -13,7 +13,7 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 2048 * 2, 1, task_core}
+SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 1024 * 6, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
 
@@ -57,7 +57,7 @@ void SensorsTask::run()
     }
     else
     {
-        log("Failed to boot VEML7700");
+        LOGE("Failed to boot VEML7700");
     }
 
 #endif
@@ -66,11 +66,11 @@ void SensorsTask::run()
     {
         VL53L0X_RangingMeasurementData_t measure;
         lox.rangingTest(&measure, false);
-        ESP_LOGD(TAG, "Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+        LOGD("Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
     }
     else
     {
-        log("Failed to boot VL53L0X");
+        LOGE("Failed to boot VL53L0X");
     }
 
     VL53L0X_RangingMeasurementData_t measure;
@@ -109,16 +109,12 @@ void SensorsTask::run()
 
     while (1)
     {
-
         if (millis() - last_system_temperature_check > 1000)
         {
             temp_sensor_read_celsius(&last_system_temperature);
 
-            if (verbose_)
-            {
-                sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
-                log(buf_);
-            }
+            sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
+            LOGV(PB_LogLevel_DEBUG, buf_);
 
             sensors_state.system.esp32_temperature = last_system_temperature;
 
@@ -134,11 +130,10 @@ void SensorsTask::run()
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
             publishState(sensors_state);
-
-            if (verbose_)
+            if (millis() % 1000 == 0)
             {
                 snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
-                log(buf_);
+                LOGV(PB_LogLevel_DEBUG, buf_);
             }
             last_proximity_check_ms = millis();
         }
@@ -153,7 +148,7 @@ void SensorsTask::run()
                 {
 
                     snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %d, idle value %d, delta value %d", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
-                    log(buf_);
+                    LOGD(buf_);
                 }
                 else
                 {
@@ -219,10 +214,10 @@ void SensorsTask::run()
 
                     // todo: call this once per tick
                     publishState(sensors_state);
-                    if (verbose_)
+                    if (millis() % 1000 == 0)
                     {
                         snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
-                        log(buf_);
+                        LOGV(PB_LogLevel_DEBUG, buf_);
                     }
                 }
             }
@@ -244,10 +239,10 @@ void SensorsTask::run()
             sensors_state.illumination.lux_avg = lux_avg;
             sensors_state.illumination.lux_adj = luminosity_adjustment;
 
-            if (verbose_)
+            if (millis() % 1000 == 0)
             {
                 snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
-                log(buf_);
+                LOGV(PB_LogLevel_DEBUG, buf_);
             }
             last_illumination_check_ms = millis();
         }
@@ -263,22 +258,12 @@ void SensorsTask::updateStrainCalibration(float idle_value, float press_delta)
     char buf_[128];
     snprintf(buf_, sizeof(buf_), "New strain config, idle: %d, pressed: %d ", strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta);
 
-    log(buf_);
+    LOGI(buf_);
 }
 
 void SensorsTask::addStateListener(QueueHandle_t queue)
 {
     state_listeners_.push_back(queue);
-}
-
-void SensorsTask::setVerbose(bool verbose)
-{
-    verbose_ = verbose;
-}
-
-void SensorsTask::toggleVerbose()
-{
-    verbose_ = !verbose_;
 }
 
 void SensorsTask::publishState(const SensorsState &state)
@@ -288,18 +273,5 @@ void SensorsTask::publishState(const SensorsState &state)
         xQueueSend(listener, &state, portMAX_DELAY);
 
         // xQueueOverwrite(listener, &state);
-    }
-}
-
-void SensorsTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void SensorsTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
     }
 }

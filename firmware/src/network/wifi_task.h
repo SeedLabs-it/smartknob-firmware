@@ -30,7 +30,6 @@ public:
     WifiTask(const uint8_t task_core);
     ~WifiTask();
 
-    void setLogger(Logger *logger);
     void addStateListener(QueueHandle_t queue);
 
     WiFiNotifier *getNotifier();
@@ -60,8 +59,6 @@ private:
 
     PB_SmartKnobState state_;
     SemaphoreHandle_t mutex_;
-    Logger *logger_;
-    void log(const char *msg);
     WiFiClient wifi_client;
     void updateWifiState();
     void publishState(const ConnectivityState &state);

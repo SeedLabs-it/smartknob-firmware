@@ -20,18 +20,11 @@ public:
 
     void setMotorTask(MotorTask *motor_task);
 
-    void setLogger(Logger *logger);
-    void setVerbose(bool verbose);
-    void toggleVerbose();
-
 protected:
     void run();
 
 private:
     Configuration &configuration_;
     MotorTask *motor_task_;
-    Logger *logger_;
-    void log(const char *msg);
-    bool verbose_ = false;
     char buf_[128];
 };

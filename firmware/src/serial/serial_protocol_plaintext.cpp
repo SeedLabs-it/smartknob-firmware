@@ -9,19 +9,56 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        stream_.printf("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n",
-                       state.current_position,
-                       state.config.min_position,
-                       state.config.max_position,
-                       state.config.detent_strength_unit,
-                       degrees(state.config.position_width_radians),
-                       state.config.endstop_strength_unit);
+
+        LOGD("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+             state.current_position,
+             state.config.min_position,
+             state.config.max_position,
+             state.config.detent_strength_unit,
+             degrees(state.config.position_width_radians),
+             state.config.endstop_strength_unit);
     }
 }
 
 void SerialProtocolPlaintext::log(const char *msg)
 {
-    stream_.print("LOG: ");
+    char origin_[256];
+    snprintf(origin_, sizeof(origin_), "[%s:%s:%d] ", __FILE__, __func__, __LINE__);
+    log(PB_LogLevel_INFO, false, origin_, msg);
+}
+
+void SerialProtocolPlaintext::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
+{
+
+    if (isVerbose_ && !isVerbose())
+    {
+        return;
+    }
+
+    if (logOrigin())
+    {
+        stream_.printf("[%s]", origin);
+    }
+
+    switch (log_level)
+    {
+    case PB_LogLevel_INFO:
+        stream_.print(" INFO: ");
+        break;
+        break;
+    case PB_LogLevel_WARNING:
+        stream_.print(" WARNING: ");
+        break;
+    case PB_LogLevel_ERROR:
+        stream_.print(" ERROR: ");
+        break;
+    case PB_LogLevel_DEBUG:
+        stream_.print(" DEBUG: ");
+        break;
+    default:
+        stream_.print(" INFO: ");
+        break;
+    }
     stream_.println(msg);
 }
 
@@ -30,7 +67,7 @@ void SerialProtocolPlaintext::loop()
     while (stream_.available() > 0)
     {
         int b = stream_.read();
-        if (b == 0)
+        if (b == 0 || b == 'q')
         {
             if (protocol_change_callback_)
             {
@@ -38,20 +75,13 @@ void SerialProtocolPlaintext::loop()
             }
             break;
         }
-        // if (b == ' ')
-        // {
-        //     if (demo_config_change_callback_)
-        //     {
-        //         demo_config_change_callback_();
-        //     }
-        // }
         else if (b == 'C' || b == 'c')
         {
             motor_calibration_callback_();
         }
         else if (b == 'S' || b == 's')
         {
-            stream_.println("Strain calibration requrest recieved\n");
+            stream_.println("Strain calibration request received\n");
 
             if (strain_calibration_callback_)
             {
@@ -60,16 +90,17 @@ void SerialProtocolPlaintext::loop()
         }
         else if (b == 'V' || b == 'v')
         {
-            stream_.println("Verbose toggle requrest recieved\n");
-
-            if (verbose_toggle_callback_)
-            {
-                verbose_toggle_callback_();
-            }
+            stream_.println("Verbose toggle request received\n");
+            toggleVerbose();
+        }
+        else if (b == 'O' || b == 'o')
+        {
+            stream_.println("Log origin toggle request received\n");
+            toggleLogOrigin();
         }
         else if (b == 'M' || b == 'm')
         {
-            stream_.println("Change mode requrest recieved\n");
+            stream_.println("Change mode request received\n");
 
             if (operation_mode_toggle_callback_)
             {
@@ -79,11 +110,10 @@ void SerialProtocolPlaintext::loop()
     }
 }
 
-void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, StrainCalibrationCallback strain_calibration_callback, VerboseToggleCallback verbose_toggle_callback, OperationModeToggleCallback operation_mode_toggle_callback)
+void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, StrainCalibrationCallback strain_calibration_callback, OperationModeToggleCallback operation_mode_toggle_callback)
 {
     demo_config_change_callback_ = demo_config_change_callback;
     strain_calibration_callback_ = strain_calibration_callback;
-    verbose_toggle_callback_ = verbose_toggle_callback;
     operation_mode_toggle_callback_ = operation_mode_toggle_callback;
     stream_.println("SmartKnob starting!\n\nSerial mode: plaintext\nPress 'C' at any time to calibrate motor/sensor.\nPress 'S' at any time to calibrate strain sensors.\nPress <Space> to change haptic modes.\nPress V to stoggle verbose mode.\nPress M to switch from onboarding to real apps and back.");
 }
