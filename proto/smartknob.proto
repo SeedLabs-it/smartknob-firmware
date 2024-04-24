@@ -14,6 +14,8 @@ message FromSmartKnob {
         Ack ack = 4;
         Log log = 5;
         SmartKnobState smartknob_state = 6;
+        MotorCalibState motor_calib_state = 7;
+        StrainCalibState strain_calib_state = 8;
     }
 }
 
@@ -35,8 +37,21 @@ message FromSmartKnob {
 message Knob {
     string mac_address = 1 [(nanopb).max_length = 50];
     string ip_address = 2 [(nanopb).max_length = 50];
-    bool motorCalibrated = 3;
-    bool strainCalibrated = 4;
+    bool motor_calibrated = 3;
+    bool strain_calibrated = 4;
+}
+
+/** Motor calibration state information */
+message MotorCalibState {
+    bool calibrated = 1; /** PLACEHOLDER */
+}
+
+/** Strain calibration state information */
+message StrainCalibState {
+    uint32 step = 1;
+    StrainCalibration strain_calibration = 2;
+    StrainState strain_state = 3;
+
 }
 
 /** Lets the host know that a ToSmartknob message was received and should not be retried. */
@@ -241,6 +256,11 @@ message MotorCalibration {
 message StrainCalibration {
     int32 idle_value = 1;
     int32 press_delta = 2; 
+}
+
+message StrainState {
+    int32 raw_value = 1;
+    float press_value = 2;
 }
 
 enum SmartKnobCommand {

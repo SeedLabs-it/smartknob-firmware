@@ -85,6 +85,7 @@ void RootTask::strainCalibrationCallback()
 
         return;
     }
+
     if (strain_calibration_step_ == 0)
     {
         LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
@@ -528,6 +529,16 @@ void RootTask::updateHardware(AppState app_state)
 
     static bool pressed;
 #if SK_STRAIN
+
+    if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ != 0 && current_protocol_ == &proto_protocol_ && millis() - last_calib_state_sent_ > 250)
+    {
+        PB_StrainState strain_state = {};
+        strain_state.press_value = latest_sensors_state_.strain.press_value;
+        strain_state.raw_value = latest_sensors_state_.strain.raw_value;
+
+        proto_protocol_.sendStrainCalibState(strain_calibration_step_, configuration_value_.strain, strain_state);
+        last_calib_state_sent_ = millis();
+    }
 
     if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
     {

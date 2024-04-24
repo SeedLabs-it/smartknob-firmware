@@ -107,6 +107,8 @@ private:
     SerialProtocolPlaintext plaintext_protocol_;
     SerialProtocolProtobuf proto_protocol_;
 
+    uint32_t last_calib_state_sent_ = 0;
+
     // void changeConfig(int8_t id);
     void updateHardware(AppState app_state);
     void publishState();

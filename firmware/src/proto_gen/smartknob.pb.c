@@ -15,6 +15,12 @@ PB_BIND(PB_ToSmartknob, PB_ToSmartknob, AUTO)
 PB_BIND(PB_Knob, PB_Knob, AUTO)
 
 
+PB_BIND(PB_MotorCalibState, PB_MotorCalibState, AUTO)
+
+
+PB_BIND(PB_StrainCalibState, PB_StrainCalibState, AUTO)
+
+
 PB_BIND(PB_Ack, PB_Ack, AUTO)
 
 
@@ -37,6 +43,9 @@ PB_BIND(PB_MotorCalibration, PB_MotorCalibration, AUTO)
 
 
 PB_BIND(PB_StrainCalibration, PB_StrainCalibration, AUTO)
+
+
+PB_BIND(PB_StrainState, PB_StrainState, AUTO)
 
 
 
