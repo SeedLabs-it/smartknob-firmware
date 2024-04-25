@@ -29,8 +29,11 @@ RootTask::RootTask(
                              led_ring_task_(led_ring_task),
                              sensors_task_(sensors_task),
                              reset_task_(reset_task),
-                             plaintext_protocol_(stream_, [this]()
-                                                 { motor_task_.runCalibration(); }),
+                             plaintext_protocol_(
+                                 stream_, [this]()
+                                 { motor_task_.runCalibration(); },
+                                 [this]()
+                                 { factoryStrainCalibrationCallback(); }),
                              proto_protocol_(
                                  stream_,
                                  [this](PB_SmartKnobConfig &config)
@@ -121,6 +124,11 @@ void RootTask::strainCalibrationCallback()
             LOGE("Strain calibration failed to save!");
         }
     }
+}
+
+void RootTask::factoryStrainCalibrationCallback()
+{
+    LOGE("Factory strain calibration started");
 }
 
 void RootTask::run()
@@ -525,7 +533,6 @@ void RootTask::run()
 
 void RootTask::updateHardware(AppState app_state)
 {
-
     static bool pressed;
 #if SK_STRAIN
 

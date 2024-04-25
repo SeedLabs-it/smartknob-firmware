@@ -7,3 +7,4 @@
 typedef std::function<void(PB_SmartKnobConfig &)> ConfigCallback;
 typedef std::function<void(void)> MotorCalibrationCallback;
 typedef std::function<void(void)> StrainCalibrationCallback;
+typedef std::function<void(void)> FactoryStrainCalibrationCallback;

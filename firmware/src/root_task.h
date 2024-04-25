@@ -46,6 +46,7 @@ public:
     QueueHandle_t getAppSyncQueue();
 
     void strainCalibrationCallback();
+    void factoryStrainCalibrationCallback();
 
 protected:
     void run();
