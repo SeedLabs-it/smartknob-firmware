@@ -6,6 +6,10 @@
 #include <vector>
 #include <Adafruit_VL53L0X.h>
 
+#if SK_STRAIN
+#include <HX711.h>
+#endif
+
 #include "driver/temp_sensor.h"
 
 const uint16_t PROXIMITY_SENSOR_OFFSET_MM = 10;
@@ -24,6 +28,8 @@ public:
     SensorsTask(const uint8_t task_core);
     ~SensorsTask();
 
+    HX711 *getStrain();
+
     void addStateListener(QueueHandle_t queue);
     void updateStrainCalibration(float idle_value, float press_delta);
 
@@ -38,4 +44,5 @@ private:
     SemaphoreHandle_t mutex_;
     void publishState(const SensorsState &state);
     StrainCalibration strain_calibration;
+    HX711 scale;
 };

@@ -3,9 +3,6 @@
 #include "util.h"
 
 // todo: think on thise compilation flags
-#if SK_STRAIN
-#include <HX711.h>
-#endif
 
 #if SK_ALS
 #include <Adafruit_VEML7700.h>
@@ -39,7 +36,6 @@ void SensorsTask::run()
     Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 #if SK_STRAIN
-    HX711 scale;
     scale.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
 #endif
 
@@ -250,6 +246,13 @@ void SensorsTask::run()
         delay(1);
     }
 }
+
+#if SK_STRAIN
+HX711 *SensorsTask::getStrain()
+{
+    return &scale;
+}
+#endif
 
 void SensorsTask::updateStrainCalibration(float idle_value, float press_delta)
 {

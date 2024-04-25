@@ -128,7 +128,49 @@ void RootTask::strainCalibrationCallback()
 
 void RootTask::factoryStrainCalibrationCallback()
 {
-    LOGE("Factory strain calibration started");
+    HX711 *strain = sensors_task_->getStrain();
+    if (factory_strain_calibration_step_ == 0)
+    {
+        LOGE("Factory strain calibration step 1: Place calibration weight on the knob and press 'Y' again");
+        strain->set_scale();
+        delay(100);
+        strain->tare();
+    }
+
+    while (factory_strain_calibration_step_ > 0 && true)
+    {
+        LOGE("Factory strain calibration step 2, try: %d", factory_strain_calibration_step_);
+        strain->set_scale();
+        const float get_calibration_weight = strain->get_units(10);
+
+        strain->set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
+        delay(100);
+        const float calibrated_weight = strain->get_units(10);
+        if (calibrated_weight <= CALIBRATION_WEIGHT + 2 && calibrated_weight >= CALIBRATION_WEIGHT - 2)
+        {
+            LOGD("Calibration weight detected: %0.0f", calibrated_weight);
+            break;
+        }
+        else
+        {
+            LOGE("Not close enough to CALIBRATION_WEIGHT, weight measured %0.0fg", calibrated_weight);
+        }
+
+        delay(1000);
+        factory_strain_calibration_step_++;
+    }
+
+    if (factory_strain_calibration_step_ > 1)
+    {
+        for (size_t i = 0; i < 3; i++)
+        {
+
+            delay(1000);
+            LOGD("Factory strain calibration step 3, verify calibrated weight: %0.0fg", strain->get_units(10));
+        }
+    }
+
+    factory_strain_calibration_step_ = 1;
 }
 
 void RootTask::run()

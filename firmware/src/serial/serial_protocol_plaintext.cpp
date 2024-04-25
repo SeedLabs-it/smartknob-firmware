@@ -78,7 +78,6 @@ void SerialProtocolPlaintext::loop()
         else if (b == 'Y' || b == 'y')
         {
             factory_strain_calibration_callback_();
-            break;
         }
         else if (b == 'C' || b == 'c')
         {
