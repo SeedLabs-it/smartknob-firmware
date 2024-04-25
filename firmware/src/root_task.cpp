@@ -149,7 +149,7 @@ void RootTask::factoryStrainCalibrationCallback()
         strain->set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
         delay(100);
         const float calibrated_weight = strain->get_units(10);
-        if (calibrated_weight <= CALIBRATION_WEIGHT + 1 && calibrated_weight >= CALIBRATION_WEIGHT - 1)
+        if (calibrated_weight <= CALIBRATION_WEIGHT + 0.25 && calibrated_weight >= CALIBRATION_WEIGHT - 0.25)
         {
             LOGD("Calibration weight detected: %0.0fg", calibrated_weight);
             break;
