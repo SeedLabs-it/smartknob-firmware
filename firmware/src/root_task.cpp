@@ -135,6 +135,9 @@ void RootTask::factoryStrainCalibrationCallback()
         strain->set_scale();
         delay(100);
         strain->tare();
+        factory_strain_calibration_step_ = 1;
+        delay(5000);
+        return;
     }
 
     while (factory_strain_calibration_step_ > 0 && true)
@@ -146,9 +149,9 @@ void RootTask::factoryStrainCalibrationCallback()
         strain->set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
         delay(100);
         const float calibrated_weight = strain->get_units(10);
-        if (calibrated_weight <= CALIBRATION_WEIGHT + 2 && calibrated_weight >= CALIBRATION_WEIGHT - 2)
+        if (calibrated_weight <= CALIBRATION_WEIGHT + 1 && calibrated_weight >= CALIBRATION_WEIGHT - 1)
         {
-            LOGD("Calibration weight detected: %0.0f", calibrated_weight);
+            LOGD("Calibration weight detected: %0.0fg", calibrated_weight);
             break;
         }
         else
@@ -160,17 +163,17 @@ void RootTask::factoryStrainCalibrationCallback()
         factory_strain_calibration_step_++;
     }
 
-    if (factory_strain_calibration_step_ > 1)
+    if (factory_strain_calibration_step_ >= 1)
     {
-        for (size_t i = 0; i < 3; i++)
+        LOGD("Factory strain calibration step 3");
+        for (size_t i = 0; i < 10; i++)
         {
-
             delay(1000);
-            LOGD("Factory strain calibration step 3, verify calibrated weight: %0.0fg", strain->get_units(10));
+            LOGD("Verify calibrated weight: %0.0fg", strain->get_units(10));
         }
+        LOGD("Factory strain calibration done!");
+        factory_strain_calibration_step_ = 0;
     }
-
-    factory_strain_calibration_step_ = 1;
 }
 
 void RootTask::run()
