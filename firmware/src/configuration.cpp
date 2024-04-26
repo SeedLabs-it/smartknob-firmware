@@ -258,6 +258,15 @@ bool Configuration::loadOSConfiguration()
     return true;
 }
 
+bool Configuration::saveFactoryStrainCalibration(uint16_t strain_scale)
+{
+    {
+        SemaphoreGuard lock(mutex_);
+        pb_buffer_.strain_scale = strain_scale;
+    }
+    return saveToDisk();
+}
+
 OSConfiguration *Configuration::getOSConfiguration()
 {
     return &os_config;

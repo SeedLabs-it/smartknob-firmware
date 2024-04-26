@@ -216,6 +216,7 @@ typedef struct _PB_PersistentConfiguration {
     PB_MotorCalibration motor;
     bool has_strain;
     PB_StrainCalibration strain;
+    uint32_t strain_scale;
 } PB_PersistentConfiguration;
 
 
@@ -253,7 +254,7 @@ extern "C" {
 #define PB_SmartKnobState_init_default           {0, 0, false, PB_SmartKnobConfig_init_default, 0}
 #define PB_SmartKnobConfig_init_default          {0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, {0, 0, 0, 0, 0}, 0, 0}
 #define PB_RequestState_init_default             {0}
-#define PB_PersistentConfiguration_init_default  {0, false, PB_MotorCalibration_init_default, false, PB_StrainCalibration_init_default}
+#define PB_PersistentConfiguration_init_default  {0, false, PB_MotorCalibration_init_default, false, PB_StrainCalibration_init_default, 0}
 #define PB_MotorCalibration_init_default         {0, 0, 0, 0}
 #define PB_StrainCalibration_init_default        {0, 0}
 #define PB_FromSmartKnob_init_zero               {0, "", 0, {PB_Ack_init_zero}}
@@ -263,7 +264,7 @@ extern "C" {
 #define PB_SmartKnobState_init_zero              {0, 0, false, PB_SmartKnobConfig_init_zero, 0}
 #define PB_SmartKnobConfig_init_zero             {0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, {0, 0, 0, 0, 0}, 0, 0}
 #define PB_RequestState_init_zero                {0}
-#define PB_PersistentConfiguration_init_zero     {0, false, PB_MotorCalibration_init_zero, false, PB_StrainCalibration_init_zero}
+#define PB_PersistentConfiguration_init_zero     {0, false, PB_MotorCalibration_init_zero, false, PB_StrainCalibration_init_zero, 0}
 #define PB_MotorCalibration_init_zero            {0, 0, 0, 0}
 #define PB_StrainCalibration_init_zero           {0, 0}
 
@@ -309,6 +310,7 @@ extern "C" {
 #define PB_PersistentConfiguration_version_tag   1
 #define PB_PersistentConfiguration_motor_tag     2
 #define PB_PersistentConfiguration_strain_tag    3
+#define PB_PersistentConfiguration_strain_scale_tag 4
 
 /* Struct field encoding specification for nanopb */
 #define PB_FromSmartKnob_FIELDLIST(X, a) \
@@ -381,7 +383,8 @@ X(a, STATIC,   SINGULAR, INT32,    led_hue,          13)
 #define PB_PersistentConfiguration_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   version,           1) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  motor,             2) \
-X(a, STATIC,   OPTIONAL, MESSAGE,  strain,            3)
+X(a, STATIC,   OPTIONAL, MESSAGE,  strain,            3) \
+X(a, STATIC,   SINGULAR, UINT32,   strain_scale,      4)
 #define PB_PersistentConfiguration_CALLBACK NULL
 #define PB_PersistentConfiguration_DEFAULT NULL
 #define PB_PersistentConfiguration_motor_MSGTYPE PB_MotorCalibration
@@ -429,7 +432,7 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 #define PB_FromSmartKnob_size                    451
 #define PB_Log_size                              393
 #define PB_MotorCalibration_size                 15
-#define PB_PersistentConfiguration_size          47
+#define PB_PersistentConfiguration_size          53
 #define PB_RequestState_size                     0
 #define PB_SMARTKNOB_PB_H_MAX_SIZE               PB_FromSmartKnob_size
 #define PB_SmartKnobConfig_size                  184

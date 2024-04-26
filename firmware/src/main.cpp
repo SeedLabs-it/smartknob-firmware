@@ -45,7 +45,7 @@ static MqttTask *mqtt_task_p = nullptr;
 
 #endif
 
-static SensorsTask sensors_task(1);
+static SensorsTask sensors_task(1, &config);
 static SensorsTask *sensors_task_p = &sensors_task;
 
 static ResetTask reset_task(1, config);

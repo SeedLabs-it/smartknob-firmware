@@ -79,6 +79,10 @@ void SerialProtocolPlaintext::loop()
         {
             factory_strain_calibration_callback_();
         }
+        else if (b == 'U' || b == 'u')
+        {
+            weight_measurement_callback_();
+        }
         else if (b == 'C' || b == 'c')
         {
             motor_calibration_callback_();
@@ -114,10 +118,9 @@ void SerialProtocolPlaintext::loop()
     }
 }
 
-void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, StrainCalibrationCallback strain_calibration_callback, OperationModeToggleCallback operation_mode_toggle_callback)
+void SerialProtocolPlaintext::init(DemoConfigChangeCallback demo_config_change_callback, OperationModeToggleCallback operation_mode_toggle_callback)
 {
     demo_config_change_callback_ = demo_config_change_callback;
-    strain_calibration_callback_ = strain_calibration_callback;
     operation_mode_toggle_callback_ = operation_mode_toggle_callback;
     stream_.println("SmartKnob starting!\n\nSerial mode: plaintext\nPress 'C' at any time to calibrate motor/sensor.\nPress 'S' at any time to calibrate strain sensors.\nPress <Space> to change haptic modes.\nPress V to stoggle verbose mode.\nPress M to switch from onboarding to real apps and back.");
 }

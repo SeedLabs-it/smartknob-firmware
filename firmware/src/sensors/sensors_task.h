@@ -16,8 +16,8 @@ const uint16_t PROXIMITY_SENSOR_OFFSET_MM = 10;
 
 struct StrainCalibration
 {
-    float idle_value;
-    float press_delta;
+    int32_t idle_value;
+    int32_t press_delta;
 };
 
 class SensorsTask : public Task<SensorsTask>
@@ -25,18 +25,22 @@ class SensorsTask : public Task<SensorsTask>
     friend class Task<SensorsTask>; // Allow base Task to invoke protected run()
 
 public:
-    SensorsTask(const uint8_t task_core);
+    SensorsTask(const uint8_t task_core, Configuration *configuration);
     ~SensorsTask();
 
     HX711 *getStrain();
 
     void addStateListener(QueueHandle_t queue);
-    void updateStrainCalibration(float idle_value, float press_delta);
+    void strainCalibrationCallback();
+    void updateStrainCalibration(int32_t idle_value, int32_t press_delta);
+    void factoryStrainCalibrationCallback();
+    void weightMeasurementCallback();
 
 protected:
     void run();
 
 private:
+    SensorsState sensors_state = {};
     QueueHandle_t sensors_state_queue_;
 
     std::vector<QueueHandle_t> state_listeners_;
@@ -44,5 +48,11 @@ private:
     SemaphoreHandle_t mutex_;
     void publishState(const SensorsState &state);
     StrainCalibration strain_calibration;
-    HX711 scale;
+    HX711 strain;
+
+    Configuration *configuration_;
+
+    uint8_t strain_calibration_step_ = 0;
+    uint8_t factory_strain_calibration_step_ = 0;
+    uint8_t weight_measurement_step_ = 0;
 };

@@ -45,9 +45,6 @@ public:
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
 
-    void strainCalibrationCallback();
-    void factoryStrainCalibrationCallback();
-
 protected:
     void run();
 

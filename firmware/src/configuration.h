@@ -95,6 +95,7 @@ public:
     bool saveOSConfiguration(OSConfiguration os_config);
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
+    bool saveFactoryStrainCalibration(uint16_t strain_scale);
     OSConfiguration *getOSConfiguration();
     const char *getKnobId();
 

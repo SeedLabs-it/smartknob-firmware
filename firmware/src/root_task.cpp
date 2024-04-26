@@ -33,7 +33,13 @@ RootTask::RootTask(
                                  stream_, [this]()
                                  { motor_task_.runCalibration(); },
                                  [this]()
-                                 { factoryStrainCalibrationCallback(); }),
+                                 { sensors_task_->strainCalibrationCallback(); },
+                                 [this]()
+                                 { sensors_task_->factoryStrainCalibrationCallback(); },
+                                 [this]()
+                                 {
+                                     sensors_task_->weightMeasurementCallback();
+                                 }),
                              proto_protocol_(
                                  stream_,
                                  [this](PB_SmartKnobConfig &config)
@@ -41,7 +47,7 @@ RootTask::RootTask(
                                  [this]()
                                  { motor_task_.runCalibration(); },
                                  [this]()
-                                 { strainCalibrationCallback(); })
+                                 { sensors_task_->strainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY
@@ -80,102 +86,6 @@ void RootTask::setHassApps(HassApps *apps)
     this->hass_apps = apps;
 }
 
-void RootTask::strainCalibrationCallback()
-{
-    if (!configuration_loaded_)
-    {
-        LOGI("Strain calibration step 0: configuration not loaded, exiting");
-
-        return;
-    }
-    if (strain_calibration_step_ == 0)
-    {
-        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
-        strain_calibration_step_ = 1;
-    }
-    else if (strain_calibration_step_ == 1)
-    {
-        configuration_value_.strain.idle_value = latest_sensors_state_.strain.raw_value;
-        snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
-        LOGD(buf_);
-        LOGI("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
-        strain_calibration_step_ = 2;
-    }
-    else if (strain_calibration_step_ == 2)
-    {
-
-        configuration_value_.strain.press_delta = latest_sensors_state_.strain.raw_value - configuration_value_.strain.idle_value;
-        configuration_value_.has_strain = true;
-
-        snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
-        LOGD("%s", buf_);
-        LOGI("Strain calibration complete! Saving...");
-
-        strain_calibration_step_ = 0;
-
-        sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
-
-        if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
-        {
-            LOGI("Strain calibration saved!");
-        }
-        else
-        {
-            LOGE("Strain calibration failed to save!");
-        }
-    }
-}
-
-void RootTask::factoryStrainCalibrationCallback()
-{
-    HX711 *strain = sensors_task_->getStrain();
-    if (factory_strain_calibration_step_ == 0)
-    {
-        LOGE("Factory strain calibration step 1: Place calibration weight on the knob and press 'Y' again");
-        strain->set_scale();
-        delay(100);
-        strain->tare();
-        factory_strain_calibration_step_ = 1;
-        delay(5000);
-        return;
-    }
-
-    while (factory_strain_calibration_step_ > 0 && true)
-    {
-        LOGE("Factory strain calibration step 2, try: %d", factory_strain_calibration_step_);
-        strain->set_scale();
-        const float get_calibration_weight = strain->get_units(10);
-
-        strain->set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
-        delay(100);
-        const float calibrated_weight = strain->get_units(10);
-        if (calibrated_weight <= CALIBRATION_WEIGHT + 0.25 && calibrated_weight >= CALIBRATION_WEIGHT - 0.25)
-        {
-            LOGD("Calibration weight detected: %0.0fg", calibrated_weight);
-            break;
-        }
-        else
-        {
-            LOGE("Not close enough to CALIBRATION_WEIGHT, weight measured %0.0fg", calibrated_weight);
-        }
-
-        delay(1000);
-        factory_strain_calibration_step_++;
-    }
-
-    if (factory_strain_calibration_step_ >= 1)
-    {
-        LOGD("Factory strain calibration step 3");
-        for (size_t i = 0; i < 10; i++)
-        {
-            delay(1000);
-            LOGD("Verify calibrated weight: %0.0fg", strain->get_units(10));
-        }
-        LOGD("Factory strain calibration done!");
-        factory_strain_calibration_step_ = 0;
-    }
-}
-
 void RootTask::run()
 {
     uint8_t task_started_at = millis();
@@ -186,10 +96,6 @@ void RootTask::run()
     plaintext_protocol_.init([this]()
                              {
                                  //  CHANGE MOTOR CONFIG????
-                             },
-                             [this]()
-                             {
-                                 this->strainCalibrationCallback();
                              },
                              [this]()
                              {
