@@ -221,7 +221,7 @@ message PersistentConfiguration {
     uint32 version = 1;
     MotorCalibration motor = 2;
     StrainCalibration strain = 3;
-    uint32 strain_scale = 4;
+    float strain_scale = 4;
 }
 
 message MotorCalibration {
@@ -232,8 +232,8 @@ message MotorCalibration {
 }
 
 message StrainCalibration {
-    int32 idle_value = 1;
-    int32 press_delta = 2; 
+    float idle_value = 1;
+    float press_delta = 2; 
 }
 
 enum SmartKnobCommand {
