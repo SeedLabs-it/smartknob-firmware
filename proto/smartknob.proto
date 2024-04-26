@@ -221,6 +221,7 @@ message PersistentConfiguration {
     uint32 version = 1;
     MotorCalibration motor = 2;
     StrainCalibration strain = 3;
+    uint32 strain_scale = 4;
 }
 
 message MotorCalibration {
