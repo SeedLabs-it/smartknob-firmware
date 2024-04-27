@@ -44,7 +44,7 @@ static const uint16_t MQTT_SET_EEPROM_POS = MQTT_PASS_EEPROM_POS + MQTT_PASS_LEN
 // EEPROM size, verify when adding new fiels that size is still big enough
 static const uint16_t EEPROM_SIZE = 512;
 
-const uint32_t PERSISTENT_CONFIGURATION_VERSION = 1;
+const uint32_t PERSISTENT_CONFIGURATION_VERSION = 2;
 
 struct WiFiConfiguration
 {
@@ -95,7 +95,7 @@ public:
     bool saveOSConfiguration(OSConfiguration os_config);
     bool saveOSConfigurationInMemory(OSConfiguration os_config);
     bool loadOSConfiguration();
-    bool saveFactoryStrainCalibration(uint16_t strain_scale);
+    bool saveFactoryStrainCalibration(float strain_scale);
     OSConfiguration *getOSConfiguration();
     const char *getKnobId();
 

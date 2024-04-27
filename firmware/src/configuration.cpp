@@ -258,7 +258,7 @@ bool Configuration::loadOSConfiguration()
     return true;
 }
 
-bool Configuration::saveFactoryStrainCalibration(uint16_t strain_scale)
+bool Configuration::saveFactoryStrainCalibration(float strain_scale)
 {
     {
         SemaphoreGuard lock(mutex_);

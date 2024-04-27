@@ -37,8 +37,26 @@ void SensorsTask::run()
 
 #if SK_STRAIN
     strain.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
-    strain.set_scale(configuration_->get().strain_scale);
+    while (!strain.is_ready())
+    {
+        LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+        delay(100);
+    }
+    LOGE("STRAIN SCALE %f", configuration_->get().strain_scale);
+    if (configuration_->get().strain_scale == 0)
+    {
+        strain.set_scale();
+    }
+    else
+    {
+        strain.set_scale(configuration_->get().strain_scale);
+    }
+    delay(100);
+    strain.set_offset(0);
     strain.tare();
+    delay(100);
+
+    raw_initial_value_ = strain.get_units(10);
 #endif
 
 #if SK_ALS
@@ -78,12 +96,12 @@ void SensorsTask::run()
     unsigned long last_illumination_check_ms = millis();
 
     const uint8_t proximity_poling_rate_hz = 20;
-    const uint8_t strain_poling_rate_hz = 20;
+    const uint8_t strain_poling_rate_hz = 120;
     const uint8_t illumination_poling_rate_hz = 1;
 
     // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
-    int32_t strain_reading_raw = 0;
+    float strain_reading_raw = 0;
 
     char buf_[128];
 
@@ -97,7 +115,7 @@ void SensorsTask::run()
 
     // strain value filtering
     double strain_filtered;
-    MovingAverage strain_filter(5);
+    MovingAverage strain_filter(10);
 
     // system temperature
     long last_system_temperature_check = 0;
@@ -138,35 +156,38 @@ void SensorsTask::run()
         {
             if (strain.wait_ready_timeout(100))
             {
-                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
+                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0 || strain_calibration_step_ != 0)
                 {
-                    delay(50);
+                    if (strain_calibration_step_ == 2)
+                    {
+                        LOGD("Measured weight in %0.0fg", strain.get_units(1));
+                        continue;
+                    }
+                    delay(100);
                     continue;
                 }
 
-                strain_reading_raw = (int)strain.get_units(1);
+                strain_reading_raw = strain.get_units(1);
+
+                // Discard negative readings.
+                if (strain_reading_raw < 0)
+                {
+                    continue;
+                }
 
                 if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(4 * strain_calibration.press_delta) && strain_calibration.idle_value != 0)
                 {
 
-                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %d, idle value %d, delta value %d", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
+                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
                     LOGD(buf_);
                 }
                 else
                 {
                     sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
+                    LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
+
                     // TODO: calibrate and track (long term moving average) idle point (lower)
                     sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, 0, 1);
-
-                    if (strain_calibration_step_ != 0)
-                    {
-                        if (strain_calibration_step_ == 2)
-                        {
-                            LOGD("Measured weight in %dg", strain_reading_raw);
-                            delay(15);
-                        }
-                        continue;
-                    }
 
                     if (sensors_state.strain.press_value < strain_released)
                     {
@@ -184,6 +205,7 @@ void SensorsTask::run()
                         default:
                             short_pressed_triggered_at_ms = 0;
                             sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
+                            delay(50);
                             break;
                         }
                     }
@@ -228,9 +250,10 @@ void SensorsTask::run()
                     publishState(sensors_state);
                     if (millis() % 1000 == 0)
                     {
-                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
+                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %f %f, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
                         LOGV(PB_LogLevel_DEBUG, buf_);
                     }
+                    last_strain_check_ms = millis();
                 }
             }
         }
@@ -264,37 +287,40 @@ void SensorsTask::run()
 }
 
 #if SK_STRAIN
-HX711 *SensorsTask::getStrain()
-{
-    return &strain;
-}
-
 void SensorsTask::strainCalibrationCallback()
 {
     PB_PersistentConfiguration config = configuration_->get();
 
-    LOGD("CONFIG VALUES: %d %d", strain_calibration.idle_value, strain_calibration.press_delta);
+    if (config.strain_scale == 0 && strain.get_scale() == 1.0f)
+    {
+        LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+        return;
+    }
+
+    LOGD("CONFIG VALUES: %f %f", strain_calibration.idle_value, strain_calibration.press_delta);
 
     if (strain_calibration_step_ == 0)
     {
-        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
         strain_calibration_step_ = 1;
+
+        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
+        strain.set_offset(0);
+        strain.tare();
+        delay(200);
     }
     else if (strain_calibration_step_ == 1)
     {
-        config.strain.idle_value = sensors_state.strain.raw_value;
-        LOGD("  idle_value=%d", config.strain.idle_value);
-        LOGI("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
         strain_calibration_step_ = 2;
+        LOGI("Strain calibration step 2: When desired weight is reached press 'S' again");
     }
     else if (strain_calibration_step_ == 2)
     {
-        config.strain.press_delta = sensors_state.strain.raw_value - config.strain.idle_value;
+        config.strain.press_delta = sensors_state.strain.raw_value;
         config.has_strain = true;
 
-        LOGD("  press_delta=%d", config.strain.press_delta);
-        LOGD("  raw_value=%d", sensors_state.strain.raw_value);
-        LOGI("Strain calibration complete! Saving...");
+        LOGD("  press_delta=%f", config.strain.press_delta);
+        LOGD("  raw_value=%f", sensors_state.strain.raw_value);
+        LOGI("Saving strain calibration...");
 
         updateStrainCalibration(config.strain.idle_value, sensors_state.strain.raw_value);
 
@@ -306,6 +332,13 @@ void SensorsTask::strainCalibrationCallback()
         {
             LOGE("Strain calibration failed to save!");
         }
+
+        strain.set_offset(0);
+        strain.tare();
+        delay(200);
+
+        LOGI("Strain calibration complete!");
+
         strain_calibration_step_ = 0;
     }
 }
@@ -314,51 +347,99 @@ void SensorsTask::factoryStrainCalibrationCallback()
 {
     if (factory_strain_calibration_step_ == 0)
     {
-        LOGE("Factory strain calibration step 1: Place calibration weight on the knob and press 'Y' again");
-        strain.set_scale();
-        delay(100);
-        strain.tare();
         factory_strain_calibration_step_ = 1;
-        delay(5000);
+        LOGI("Factory strain calibration step 1");
+
+        delay(200);
+
+        strain.set_scale();
+        delay(200);
+
+        strain.set_offset(0);
+        strain.tare();
+        delay(200);
+
+        raw_initial_value_ = strain.get_units(10);
+
+        LOGI("Place calibration weight on the knob and press 'Y' again");
+
+        delay(2000);
         return;
     }
 
-    while (factory_strain_calibration_step_ > 0 && true)
+    // Array of calibration floats
+    float calibration_scale_validation[3];
+
+    LOGI("Factory strain calibration step 2, try: %d", factory_strain_calibration_step_);
+    float raw_value = strain.get_units(10);
+
+    LOGD("Raw value: %0.2f", raw_value);
+    LOGD("Raw initial value: %0.2f", raw_initial_value_);
+
+    if (abs(abs(raw_initial_value_) - abs(raw_value)) < 10000)
     {
-        LOGE("Factory strain calibration step 2, try: %d", factory_strain_calibration_step_);
-        strain.set_scale();
-        const float get_calibration_weight = strain.get_units(10);
-
-        strain.set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
-        delay(100);
-        const float calibrated_weight = strain.get_units(10);
-        if (calibrated_weight <= CALIBRATION_WEIGHT + 0.25 && calibrated_weight >= CALIBRATION_WEIGHT - 0.25)
-        {
-            configuration_->saveFactoryStrainCalibration((uint32_t)(get_calibration_weight / CALIBRATION_WEIGHT));
-            strain.set_scale(get_calibration_weight / CALIBRATION_WEIGHT);
-            LOGD("Calibration weight detected: %0.0fg", calibrated_weight);
-            break;
-        }
-        else
-        {
-            LOGE("Not close enough to CALIBRATION_WEIGHT, weight measured %0.000fg", calibrated_weight);
-        }
-
-        delay(1000);
-        factory_strain_calibration_step_++;
-    }
-
-    if (factory_strain_calibration_step_ >= 1)
-    {
-        LOGD("Factory strain calibration step 3");
-        for (size_t i = 0; i < 10; i++)
-        {
-            delay(1000);
-            LOGD("Verify calibrated weight: %0.0fg", strain.get_units(10));
-        }
-        LOGD("Factory strain calibration done!");
+        LOGE("Calibration weight not detected. Please place the calibration weight on the knob and press 'Y' again");
         factory_strain_calibration_step_ = 0;
+        return;
     }
+
+    float calibration_scale = 0;
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        calibration_scale = raw_value / CALIBRATION_WEIGHT;
+        raw_value = strain.get_units(10);
+        LOGD("Raw value during calibration: %0.2f", raw_value);
+
+        strain.set_scale(calibration_scale);
+        delay(200);
+        float calibrated_weight = strain.get_units(10);
+
+        while (abs(calibrated_weight - CALIBRATION_WEIGHT) > 0.25)
+        {
+            // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
+            if (calibrated_weight < CALIBRATION_WEIGHT - 10 || calibrated_weight > CALIBRATION_WEIGHT + 10)
+            {
+                calibrated_weight = strain.get_units(10);
+                continue;
+            }
+
+            if (calibrated_weight < CALIBRATION_WEIGHT)
+            {
+                calibration_scale -= 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+            }
+            else
+            {
+                calibration_scale += 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+            }
+
+            strain.set_scale(calibration_scale);
+            delay(200);
+            calibrated_weight = strain.get_units(10);
+            LOGD("Measured weight during calibration: %0.2fg", calibrated_weight); // MAKE VERBOSE LATER
+        }
+        LOGD("Validation run %d, result: %0.2fg", i + 1, calibrated_weight);
+
+        strain.set_scale();
+        calibration_scale_validation[i] = calibrated_weight;
+    }
+    strain.set_scale(calibration_scale);
+
+    configuration_->saveFactoryStrainCalibration((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
+
+    LOGI("Found calibration scale: %f", (calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
+    LOGD("Found strain scale. Verifying...");
+    for (size_t i = 0; i < 3; i++)
+    {
+        delay(1000);
+        LOGD("Verify calibrated weight: %0.0fg", strain.get_units(10));
+    }
+    LOGI("Remove calibration weight.");
+    delay(5000);
+    LOGI("Factory strain calibration complete!");
+    strain.set_offset(0);
+    strain.tare();
+    factory_strain_calibration_step_ = 0;
 }
 
 void SensorsTask::weightMeasurementCallback()
@@ -368,6 +449,7 @@ void SensorsTask::weightMeasurementCallback()
         weight_measurement_step_ = 1;
         LOGI("Weight measurement step 1: Place weight on KNOB and press 'U' again");
         delay(1000);
+        strain.set_offset(0);
         strain.tare();
     }
     else if (weight_measurement_step_ == 1)
@@ -378,12 +460,12 @@ void SensorsTask::weightMeasurementCallback()
 }
 #endif
 
-void SensorsTask::updateStrainCalibration(int32_t idle_value, int32_t press_delta)
+void SensorsTask::updateStrainCalibration(float idle_value, float press_delta)
 {
     strain_calibration.idle_value = idle_value;
     strain_calibration.press_delta = press_delta;
     char buf_[128];
-    snprintf(buf_, sizeof(buf_), "New strain config, idle: %d, pressed: %d ", strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta);
+    snprintf(buf_, sizeof(buf_), "New strain config, idle: %f, pressed: %f ", strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta);
 
     LOGI(buf_);
 }

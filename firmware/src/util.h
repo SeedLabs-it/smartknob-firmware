@@ -45,17 +45,17 @@ class MovingAverage
 {
 public:
     MovingAverage(int filterLength);
-    int32_t addSample(int32_t newValue);
-    int32_t getValue();
+    float addSample(float newValue);
+    float getValue();
     void dumpFilter();
 
 private:
-    int32_t *filterPointer;
+    float *filterPointer;
     int filterLength;
-    int32_t lastValue;
+    float lastValue;
 
     void initFilter();
-    void shiftFilter(int32_t nextValue);
+    void shiftFilter(float nextValue);
     void computeAverage();
 };
 

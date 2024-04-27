@@ -206,8 +206,8 @@ typedef struct _PB_MotorCalibration {
 } PB_MotorCalibration;
 
 typedef struct _PB_StrainCalibration {
-    int32_t idle_value;
-    int32_t press_delta;
+    float idle_value;
+    float press_delta;
 } PB_StrainCalibration;
 
 typedef struct _PB_PersistentConfiguration {
@@ -216,7 +216,7 @@ typedef struct _PB_PersistentConfiguration {
     PB_MotorCalibration motor;
     bool has_strain;
     PB_StrainCalibration strain;
-    uint32_t strain_scale;
+    float strain_scale;
 } PB_PersistentConfiguration;
 
 
@@ -384,7 +384,7 @@ X(a, STATIC,   SINGULAR, INT32,    led_hue,          13)
 X(a, STATIC,   SINGULAR, UINT32,   version,           1) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  motor,             2) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  strain,            3) \
-X(a, STATIC,   SINGULAR, UINT32,   strain_scale,      4)
+X(a, STATIC,   SINGULAR, FLOAT,    strain_scale,      4)
 #define PB_PersistentConfiguration_CALLBACK NULL
 #define PB_PersistentConfiguration_DEFAULT NULL
 #define PB_PersistentConfiguration_motor_MSGTYPE PB_MotorCalibration
@@ -399,8 +399,8 @@ X(a, STATIC,   SINGULAR, UINT32,   pole_pairs,        4)
 #define PB_MotorCalibration_DEFAULT NULL
 
 #define PB_StrainCalibration_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT32,    idle_value,        1) \
-X(a, STATIC,   SINGULAR, INT32,    press_delta,       2)
+X(a, STATIC,   SINGULAR, FLOAT,    idle_value,        1) \
+X(a, STATIC,   SINGULAR, FLOAT,    press_delta,       2)
 #define PB_StrainCalibration_CALLBACK NULL
 #define PB_StrainCalibration_DEFAULT NULL
 
@@ -432,12 +432,12 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 #define PB_FromSmartKnob_size                    451
 #define PB_Log_size                              393
 #define PB_MotorCalibration_size                 15
-#define PB_PersistentConfiguration_size          53
+#define PB_PersistentConfiguration_size          40
 #define PB_RequestState_size                     0
 #define PB_SMARTKNOB_PB_H_MAX_SIZE               PB_FromSmartKnob_size
 #define PB_SmartKnobConfig_size                  184
 #define PB_SmartKnobState_size                   206
-#define PB_StrainCalibration_size                22
+#define PB_StrainCalibration_size                10
 #define PB_ToSmartknob_size                      196
 
 #ifdef __cplusplus
