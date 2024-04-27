@@ -177,10 +177,11 @@ void SensorsTask::run()
 
                     strain_reading_raw = strain.get_units(1);
 
-                    if (abs(strain_reading_raw) > abs(14 * PRESS_WEIGHT))
+                    if (abs(last_strain_reading_raw_ - strain_reading_raw) > 1000)
                     {
-                        snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
-                        LOGV(PB_LogLevel_DEBUG, buf_);
+                        LOGV(PB_LogLevel_WARNING, "Discarding strain reading, too big difference from last reading.");
+                        LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
+                        LOGV(PB_LogLevel_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
                     }
                     else
                     {
@@ -233,6 +234,10 @@ void SensorsTask::run()
                             switch (sensors_state.strain.virtual_button_code)
                             {
                             case VIRTUAL_BUTTON_IDLE:
+                                LOGD("Strain sensor short press.");
+                                LOGD("Press value: %f", sensors_state.strain.press_value);
+                                LOGD("Raw value: %f", sensors_state.strain.raw_value);
+                                LOGD("Last press value: %f", last_press_value_);
                                 sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
                                 short_pressed_triggered_at_ms = millis();
                                 break;
@@ -256,6 +261,7 @@ void SensorsTask::run()
                             last_tare_ms = millis();
                         }
 
+                        last_strain_reading_raw_ = strain_reading_raw;
                         last_press_value_ = sensors_state.strain.press_value;
                         last_strain_check_ms = millis();
                     }

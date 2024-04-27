@@ -55,6 +55,8 @@ private:
     uint8_t weight_measurement_step_ = 0;
 
     float last_press_value_ = 0;
+    float last_strain_reading_raw_ = 0;
+
     float raw_initial_value_ = 0;
 
     float calibration_scale_ = 0;
