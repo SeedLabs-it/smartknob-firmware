@@ -125,6 +125,8 @@ void SensorsTask::run()
     long last_system_temperature_check = 0;
     float last_system_temperature = 0;
 
+    bool do_strain = false;
+
     while (1)
     {
         if (millis() - last_system_temperature_check > 1000)
@@ -157,102 +159,106 @@ void SensorsTask::run()
                     if (strain_calibration_step_ == 2)
                     {
                         LOGD("Measured weight in %0.0fg", strain.get_units(1));
-                        continue;
+                        do_strain = false;
                     }
                     delay(100);
-                    continue;
+                    do_strain = false;
                 }
 
                 if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f)
                 {
                     LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
                     delay(100);
-                    continue;
+                    do_strain = false;
                 }
 
-                strain_reading_raw = strain.get_units(1);
-
-                if (abs(strain_reading_raw) > abs(14 * PRESS_WEIGHT))
+                if (do_strain)
                 {
-                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
-                    LOGV(PB_LogLevel_DEBUG, buf_);
-                }
-                else
-                {
-                    sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
 
-                    // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
+                    strain_reading_raw = strain.get_units(1);
 
-                    // TODO: calibrate and track (long term moving average) idle point (lower)
-                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, 0, PRESS_WEIGHT, 0, 1);
-
-                    if (sensors_state.strain.press_value < strain_released)
+                    if (abs(strain_reading_raw) > abs(14 * PRESS_WEIGHT))
                     {
-                        // released
-                        switch (sensors_state.strain.virtual_button_code)
-                        {
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_RELEASED;
-                            break;
-                        case VIRTUAL_BUTTON_LONG_PRESSED:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_RELEASED;
-                            break;
-                        default:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
-                            delay(20);
-                            break;
-                        }
+                        snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
+                        LOGV(PB_LogLevel_DEBUG, buf_);
                     }
-                    else if (strain_released < sensors_state.strain.press_value && sensors_state.strain.press_value < strain_pressed)
+                    else
                     {
-                        switch (sensors_state.strain.virtual_button_code)
-                        {
+                        sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
 
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                        // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
+
+                        // TODO: calibrate and track (long term moving average) idle point (lower)
+                        sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, 0, PRESS_WEIGHT, 0, 1);
+
+                        if (sensors_state.strain.press_value < strain_released)
+                        {
+                            // released
+                            switch (sensors_state.strain.virtual_button_code)
                             {
-                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_RELEASED;
+                                break;
+                            case VIRTUAL_BUTTON_LONG_PRESSED:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_RELEASED;
+                                break;
+                            default:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
+                                delay(20);
+                                break;
                             }
-                            break;
-
-                        default:
-                            break;
                         }
-                    }
-                    else if (sensors_state.strain.press_value > strain_pressed)
-                    {
-
-                        switch (sensors_state.strain.virtual_button_code)
+                        else if (strain_released < sensors_state.strain.press_value && sensors_state.strain.press_value < strain_pressed)
                         {
-                        case VIRTUAL_BUTTON_IDLE:
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
-                            short_pressed_triggered_at_ms = millis();
-                            break;
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                            switch (sensors_state.strain.virtual_button_code)
                             {
-                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                                {
+                                    sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                                }
+                                break;
+
+                            default:
+                                break;
                             }
-                            break;
-                        default:
-                            break;
                         }
+                        else if (sensors_state.strain.press_value > strain_pressed)
+                        {
+
+                            switch (sensors_state.strain.virtual_button_code)
+                            {
+                            case VIRTUAL_BUTTON_IDLE:
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
+                                short_pressed_triggered_at_ms = millis();
+                                break;
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                                {
+                                    sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                                }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+
+                        publishState(sensors_state);
+
+                        if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && millis() - short_pressed_triggered_at_ms > 100 && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
+                        {
+                            LOGV(PB_LogLevel_DEBUG, "Strain sensor tare.");
+                            strain.tare();
+                            last_tare_ms = millis();
+                        }
+
+                        last_press_value_ = sensors_state.strain.press_value;
+                        last_strain_check_ms = millis();
                     }
-
-                    publishState(sensors_state);
-
-                    if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && millis() - short_pressed_triggered_at_ms > 100 && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
-                    {
-                        LOGD("Strain sensor tare.");
-                        strain.tare();
-                        last_tare_ms = millis();
-                    }
-
-                    last_press_value_ = sensors_state.strain.press_value;
-                    last_strain_check_ms = millis();
                 }
             }
         }
@@ -287,7 +293,6 @@ void SensorsTask::run()
 #if SK_ALS
             LOGV(PB_LogLevel_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
 #endif
-
             log_ms = millis();
         }
         delay(1);
