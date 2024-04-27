@@ -42,15 +42,16 @@ void SensorsTask::run()
         LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
         delay(100);
     }
-    LOGE("STRAIN SCALE %f", configuration_->get().strain_scale);
     if (configuration_->get().strain_scale == 0)
     {
-        strain.set_scale();
+        calibration_scale_ = 1.0f;
     }
     else
     {
-        strain.set_scale(configuration_->get().strain_scale);
+        calibration_scale_ = configuration_->get().strain_scale;
     }
+    LOGV(PB_LogLevel_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
+    strain.set_scale(calibration_scale_);
     delay(100);
     strain.set_offset(0);
     strain.tare();
@@ -168,13 +169,20 @@ void SensorsTask::run()
                     continue;
                 }
 
+                if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f)
+                {
+                    LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+                    delay(100);
+                    continue;
+                }
+
                 strain_reading_raw = strain.get_units(1);
 
-                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(4 * PRESS_WEIGHT) && strain_calibration.idle_value != 0)
+                if (abs(strain_reading_raw) > abs(4 * PRESS_WEIGHT))
                 {
 
                     snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
-                    LOGD(buf_);
+                    LOGV(PB_LogLevel_DEBUG, buf_);
                 }
                 else
                 {
@@ -183,7 +191,7 @@ void SensorsTask::run()
                     // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
 
                     // TODO: calibrate and track (long term moving average) idle point (lower)
-                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + PRESS_WEIGHT, 0, 1);
+                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, 0, PRESS_WEIGHT, 0, 1);
 
                     LOGD("Strain press value: %0.2f", sensors_state.strain.press_value);
 
@@ -203,7 +211,7 @@ void SensorsTask::run()
                         default:
                             short_pressed_triggered_at_ms = 0;
                             sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
-                            delay(50);
+                            delay(20);
                             break;
                         }
                     }
@@ -225,26 +233,27 @@ void SensorsTask::run()
                     }
                     else if (sensors_state.strain.press_value > strain_pressed)
                     {
+
                         switch (sensors_state.strain.virtual_button_code)
                         {
                         case VIRTUAL_BUTTON_IDLE:
                             sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
                             short_pressed_triggered_at_ms = millis();
                             break;
-
                         case VIRTUAL_BUTTON_SHORT_PRESSED:
                             if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
                             {
                                 sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
                             }
                             break;
-
                         default:
                             break;
                         }
                     }
 
-                    if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
+                    publishState(sensors_state);
+
+                    if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && millis() - short_pressed_triggered_at_ms > 100 && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
                     {
                         LOGD("Strain sensor tare.");
                         strain.tare();
@@ -252,7 +261,7 @@ void SensorsTask::run()
                     }
 
                     // todo: call this once per tick
-                    publishState(sensors_state);
+
                     if (millis() % 1000 == 0)
                     {
                         snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %f %f, [%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, PRESS_WEIGHT, press_value_unit);
@@ -391,15 +400,15 @@ void SensorsTask::factoryStrainCalibrationCallback()
         return;
     }
 
-    float calibration_scale = 0;
+    calibration_scale_ = 0;
 
     for (size_t i = 0; i < 3; i++)
     {
-        calibration_scale = raw_value / CALIBRATION_WEIGHT;
+        calibration_scale_ = raw_value / CALIBRATION_WEIGHT;
         raw_value = strain.get_units(10);
         LOGD("Raw value during calibration: %0.2f", raw_value);
 
-        strain.set_scale(calibration_scale);
+        strain.set_scale(calibration_scale_);
         delay(200);
         float calibrated_weight = strain.get_units(10);
 
@@ -414,14 +423,14 @@ void SensorsTask::factoryStrainCalibrationCallback()
 
             if (calibrated_weight < CALIBRATION_WEIGHT)
             {
-                calibration_scale -= 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+                calibration_scale_ -= 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
             }
             else
             {
-                calibration_scale += 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+                calibration_scale_ += 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
             }
 
-            strain.set_scale(calibration_scale);
+            strain.set_scale(calibration_scale_);
             delay(200);
             calibrated_weight = strain.get_units(10);
             LOGD("Measured weight during calibration: %0.2fg", calibrated_weight); // MAKE VERBOSE LATER
@@ -429,9 +438,9 @@ void SensorsTask::factoryStrainCalibrationCallback()
         LOGD("Validation run %d, result: %0.2fg", i + 1, calibrated_weight);
 
         strain.set_scale();
-        calibration_scale_validation[i] = calibrated_weight;
+        calibration_scale_validation[i] = calibration_scale_;
     }
-    strain.set_scale(calibration_scale);
+    strain.set_scale(calibration_scale_);
 
     configuration_->saveFactoryStrainCalibration((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
 

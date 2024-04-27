@@ -487,7 +487,7 @@ void RootTask::updateHardware(AppState app_state)
     static bool pressed;
 #if SK_STRAIN
 
-    if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
+    if (configuration_loaded_)
     {
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
