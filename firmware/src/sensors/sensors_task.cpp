@@ -93,6 +93,7 @@ void SensorsTask::run()
     lox.rangingTest(&measure, false);
     unsigned long last_proximity_check_ms = millis();
     unsigned long last_strain_check_ms = millis();
+    unsigned long last_tare_ms = millis();
     unsigned long last_illumination_check_ms = millis();
 
     const uint8_t proximity_poling_rate_hz = 20;
@@ -169,25 +170,22 @@ void SensorsTask::run()
 
                 strain_reading_raw = strain.get_units(1);
 
-                // Discard negative readings.
-                if (strain_reading_raw < 0)
-                {
-                    continue;
-                }
-
-                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(4 * strain_calibration.press_delta) && strain_calibration.idle_value != 0)
+                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(4 * PRESS_WEIGHT) && strain_calibration.idle_value != 0)
                 {
 
-                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
+                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
                     LOGD(buf_);
                 }
                 else
                 {
                     sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
-                    LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
+
+                    // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
 
                     // TODO: calibrate and track (long term moving average) idle point (lower)
-                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, 0, 1);
+                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + PRESS_WEIGHT, 0, 1);
+
+                    LOGD("Strain press value: %0.2f", sensors_state.strain.press_value);
 
                     if (sensors_state.strain.press_value < strain_released)
                     {
@@ -246,13 +244,21 @@ void SensorsTask::run()
                         }
                     }
 
+                    if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
+                    {
+                        LOGD("Strain sensor tare.");
+                        strain.tare();
+                        last_tare_ms = millis();
+                    }
+
                     // todo: call this once per tick
                     publishState(sensors_state);
                     if (millis() % 1000 == 0)
                     {
-                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %f %f, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
+                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %f %f, [%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, PRESS_WEIGHT, press_value_unit);
                         LOGV(PB_LogLevel_DEBUG, buf_);
                     }
+                    last_press_value_ = sensors_state.strain.press_value;
                     last_strain_check_ms = millis();
                 }
             }
@@ -297,7 +303,7 @@ void SensorsTask::strainCalibrationCallback()
         return;
     }
 
-    LOGD("CONFIG VALUES: %f %f", strain_calibration.idle_value, strain_calibration.press_delta);
+    // LOGD("CONFIG VALUES: %f %f", strain_calibration.idle_value, strain_calibration.press_delta);
 
     if (strain_calibration_step_ == 0)
     {
@@ -332,6 +338,8 @@ void SensorsTask::strainCalibrationCallback()
         {
             LOGE("Strain calibration failed to save!");
         }
+
+        delay(2000);
 
         strain.set_offset(0);
         strain.tare();
