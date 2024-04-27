@@ -294,7 +294,6 @@ void SensorsTask::run()
 #if SK_ALS
             LOGV(PB_LogLevel_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
 #endif
-            LOGD("Free heap: %d", ESP.getFreeHeap());
             log_ms = millis();
         }
         delay(1);
@@ -417,9 +416,9 @@ void SensorsTask::factoryStrainCalibrationCallback()
             // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
             if (calibrated_weight < CALIBRATION_WEIGHT - 10 || calibrated_weight > CALIBRATION_WEIGHT + 10)
             {
+                // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
                 calibrated_weight = strain.get_units(10);
-                LOGD("WTF!!!!");
-                delay(100);
+                delay(500);
                 continue;
             }
 
