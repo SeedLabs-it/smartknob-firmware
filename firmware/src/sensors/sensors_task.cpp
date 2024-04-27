@@ -92,10 +92,12 @@ void SensorsTask::run()
 
     VL53L0X_RangingMeasurementData_t measure;
     lox.rangingTest(&measure, false);
-    unsigned long last_proximity_check_ms = millis();
-    unsigned long last_strain_check_ms = millis();
-    unsigned long last_tare_ms = millis();
-    unsigned long last_illumination_check_ms = millis();
+    unsigned long last_proximity_check_ms = 0;
+    unsigned long last_strain_check_ms = 0;
+    unsigned long last_tare_ms = 0;
+    unsigned long last_illumination_check_ms = 0;
+
+    unsigned long log_ms = 0;
 
     const uint8_t proximity_poling_rate_hz = 20;
     const uint8_t strain_poling_rate_hz = 120;
@@ -129,9 +131,6 @@ void SensorsTask::run()
         {
             temp_sensor_read_celsius(&last_system_temperature);
 
-            sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
-            LOGV(PB_LogLevel_DEBUG, buf_);
-
             sensors_state.system.esp32_temperature = last_system_temperature;
 
             last_system_temperature_check = millis();
@@ -146,11 +145,6 @@ void SensorsTask::run()
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
             publishState(sensors_state);
-            if (millis() % 1000 == 0)
-            {
-                snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
-                LOGV(PB_LogLevel_DEBUG, buf_);
-            }
             last_proximity_check_ms = millis();
         }
 #if SK_STRAIN
@@ -178,7 +172,7 @@ void SensorsTask::run()
 
                 strain_reading_raw = strain.get_units(1);
 
-                if (abs(strain_reading_raw) > abs(20 * PRESS_WEIGHT))
+                if (abs(strain_reading_raw) > abs(14 * PRESS_WEIGHT))
                 {
                     snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
                     LOGV(PB_LogLevel_DEBUG, buf_);
@@ -257,13 +251,6 @@ void SensorsTask::run()
                         last_tare_ms = millis();
                     }
 
-                    // todo: call this once per tick
-
-                    if (millis() % 1000 == 0)
-                    {
-                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %f %f, [%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, PRESS_WEIGHT, press_value_unit);
-                        LOGV(PB_LogLevel_DEBUG, buf_);
-                    }
                     last_press_value_ = sensors_state.strain.press_value;
                     last_strain_check_ms = millis();
                 }
@@ -286,14 +273,23 @@ void SensorsTask::run()
             sensors_state.illumination.lux_avg = lux_avg;
             sensors_state.illumination.lux_adj = luminosity_adjustment;
 
-            if (millis() % 1000 == 0)
-            {
-                snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
-                LOGV(PB_LogLevel_DEBUG, buf_);
-            }
             last_illumination_check_ms = millis();
         }
 #endif
+
+        if (millis() - log_ms > 1000)
+        {
+            LOGV(PB_LogLevel_DEBUG, "System temp %0.2f °C", last_system_temperature);
+            LOGV(PB_LogLevel_DEBUG, "Proximity sensor:  range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
+#if SK_STRAIN
+            LOGV(PB_LogLevel_DEBUG, "Strain: reading:\n        Virtual button code: %d\n        Strain value: %f\n        Press value: %f", sensors_state.strain.virtual_button_code, sensors_state.strain.raw_value, press_value_unit);
+#endif
+#if SK_ALS
+            LOGV(PB_LogLevel_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
+#endif
+
+            log_ms = millis();
+        }
         delay(1);
     }
 }
