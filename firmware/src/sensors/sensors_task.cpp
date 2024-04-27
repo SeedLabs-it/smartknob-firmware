@@ -178,9 +178,8 @@ void SensorsTask::run()
 
                 strain_reading_raw = strain.get_units(1);
 
-                if (abs(strain_reading_raw) > abs(4 * PRESS_WEIGHT))
+                if (abs(strain_reading_raw) > abs(20 * PRESS_WEIGHT))
                 {
-
                     snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %f, idle value %f, delta value %f", strain_reading_raw, strain_calibration.idle_value, PRESS_WEIGHT);
                     LOGV(PB_LogLevel_DEBUG, buf_);
                 }
@@ -192,8 +191,6 @@ void SensorsTask::run()
 
                     // TODO: calibrate and track (long term moving average) idle point (lower)
                     sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, 0, PRESS_WEIGHT, 0, 1);
-
-                    LOGD("Strain press value: %0.2f", sensors_state.strain.press_value);
 
                     if (sensors_state.strain.press_value < strain_released)
                     {
