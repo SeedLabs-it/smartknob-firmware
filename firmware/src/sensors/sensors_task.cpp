@@ -179,7 +179,7 @@ void SensorsTask::run()
 
                     if (abs(last_strain_reading_raw_ - strain_reading_raw) > 1000)
                     {
-                        LOGV(PB_LogLevel_WARNING, "Discarding strain reading, too big difference from last reading.");
+                        LOGW("Discarding strain reading, too big difference from last reading.");
                         LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
                         LOGV(PB_LogLevel_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
                     }
