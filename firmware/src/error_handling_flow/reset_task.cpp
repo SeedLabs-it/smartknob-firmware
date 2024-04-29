@@ -61,7 +61,7 @@ void ResetTask::run()
 
             if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
             {
-                log("Hard resetting");
+                LOGI("Hard resetting");
                 hardReset();
             }
         }
@@ -127,30 +127,6 @@ void ResetTask::hardReset()
 void ResetTask::setMotorTask(MotorTask *motor_task)
 {
     this->motor_task_ = motor_task;
-}
-
-void ResetTask::toggleVerbose()
-{
-    verbose_ = !verbose_;
-}
-
-void ResetTask::setVerbose(bool verbose)
-{
-    verbose_ = verbose;
-}
-
-void ResetTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void ResetTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        sprintf(buf_, "ResetTask: %s", msg);
-        logger_->log(buf_);
-    }
 }
 
 void ResetTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
