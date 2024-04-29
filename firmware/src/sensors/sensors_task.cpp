@@ -165,10 +165,10 @@ void SensorsTask::run()
                     do_strain = false;
                 }
 
-                if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f)
+                if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0)
                 {
                     LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
-                    delay(100);
+                    delay(2000);
                     do_strain = false;
                 }
 
