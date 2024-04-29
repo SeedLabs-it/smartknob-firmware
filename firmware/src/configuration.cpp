@@ -49,7 +49,7 @@ const char *Configuration::getKnobId()
 bool Configuration::loadFromDisk()
 {
     SemaphoreGuard lock(mutex_);
-    FatGuard fatGuard(logger_);
+    FatGuard fatGuard;
     if (!fatGuard.mounted_)
     {
         return false;
@@ -58,8 +58,7 @@ bool Configuration::loadFromDisk()
     File f = FFat.open(CONFIG_PATH);
     if (!f)
     {
-        log("Failed to read config file");
-        ESP_LOGD("", "Failed to read config file");
+        LOGE("Failed to read config file");
         return false;
     }
 
@@ -69,33 +68,34 @@ bool Configuration::loadFromDisk()
     pb_istream_t stream = pb_istream_from_buffer(buffer_, read);
     if (!pb_decode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Decoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        char buf_[200];
+        snprintf(buf_, sizeof(buf_), "Decoding failed: %s", PB_GET_ERROR(&stream));
+        LOGE(buf_);
         pb_buffer_ = {};
         return false;
     }
 
     if (pb_buffer_.version != PERSISTENT_CONFIGURATION_VERSION)
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
-        log(buf);
+        char buf_[200];
+        snprintf(buf_, sizeof(buf_), "Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
+        LOGE(buf_);
         pb_buffer_ = {};
         return false;
     }
     loaded_ = true;
 
-    char buf[200];
+    char buf_[200];
     snprintf(
-        buf,
-        sizeof(buf),
+        buf_,
+        sizeof(buf_),
         "Motor calibration: calib=%u, pole_pairs=%u, zero_offset=%.2f, cw=%u",
         pb_buffer_.motor.calibrated,
         pb_buffer_.motor.pole_pairs,
         pb_buffer_.motor.zero_electrical_offset,
         pb_buffer_.motor.direction_cw);
-    log(buf);
+    LOGE(buf_);
+
     return true;
 }
 
@@ -107,42 +107,33 @@ bool Configuration::saveToDisk()
     pb_buffer_.version = PERSISTENT_CONFIGURATION_VERSION;
     if (!pb_encode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Encoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        char buf_[200];
+        snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
+        LOGE(buf_);
         return false;
     }
-    ESP_LOGD("1", "save to disk");
 
-    FatGuard fatGuard(logger_);
+    FatGuard fatGuard;
     if (!fatGuard.mounted_)
     {
         return false;
     }
-    ESP_LOGD("2", "save to disk");
 
     File f = FFat.open(CONFIG_PATH, FILE_WRITE);
     if (!f)
     {
-        ESP_LOGD("2.5", "Failed to read config file");
-
-        log("Failed to read config file");
+        LOGE("Failed to read config file");
         return false;
     }
-    ESP_LOGD("3", "save to disk");
 
     size_t written = f.write(buffer_, stream.bytes_written);
     f.close();
-    ESP_LOGD("4", "save to disk");
 
-    char buf[20];
-    snprintf(buf, sizeof(buf), "Wrote %d bytes", written);
-    log(buf);
-    ESP_LOGD("5", "save to disk");
+    LOGD("Saved config. Wrote %d bytes", written);
 
     if (written != stream.bytes_written)
     {
-        log("Failed to write all bytes to file");
+        LOGE("Failed to write all bytes to file");
         return false;
     }
 
@@ -162,8 +153,8 @@ bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
 {
     // TODO: persist in a file
     char buf_[512];
-    sprintf(buf_, "saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
-    log(buf_);
+    sprintf(buf_, "Saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
+    LOGD(buf_);
 
     is_wifi_set = true;
     EEPROM.put(WIFI_SSID_EEPROM_POS, wifi_config_to_save.ssid);
@@ -188,7 +179,7 @@ bool Configuration::loadWiFiConfiguration()
     EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
 
     sprintf(buf_, "loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
-    log(buf_);
+    LOGD(buf_);
 
     return is_wifi_set;
 }
@@ -198,7 +189,7 @@ bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
     // TODO: persist in a file
     char buf_[512];
     sprintf(buf_, "saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
-    log(buf_);
+    LOGD(buf_);
 
     is_mqtt_set = true;
     EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
@@ -226,7 +217,7 @@ bool Configuration::loadMQTTConfiguration()
     EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
 
     sprintf(buf_, "loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
-    log(buf_);
+    LOGD(buf_);
 
     return is_mqtt_set;
 }
@@ -237,7 +228,7 @@ bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
     this->os_config.mode = os_config.mode;
     char buf_[32];
     sprintf(buf_, "os mode set to %d", os_config.mode);
-    log(buf_);
+    LOGD(buf_);
 
     return true;
 }
@@ -300,17 +291,4 @@ bool Configuration::setStrainCalibrationAndSave(PB_StrainCalibration &strain_cal
         pb_buffer_.has_strain = true;
     }
     return saveToDisk();
-}
-
-void Configuration::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void Configuration::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
 }

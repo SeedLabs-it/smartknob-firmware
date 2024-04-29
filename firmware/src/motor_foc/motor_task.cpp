@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 4000, 1, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 5, 1, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);
@@ -121,27 +121,27 @@ void MotorTask::run()
                 PB_SmartKnobConfig &new_config = command.data.config;
                 if (new_config.detent_strength_unit < 0)
                 {
-                    log("Ignoring invalid config: detent_strength_unit cannot be negative");
+                    LOGD("Ignoring invalid config: detent_strength_unit cannot be negative");
                     break;
                 }
                 if (new_config.endstop_strength_unit < 0)
                 {
-                    log("Ignoring invalid config: endstop_strength_unit cannot be negative");
+                    LOGD("Ignoring invalid config: endstop_strength_unit cannot be negative");
                     break;
                 }
                 if (new_config.snap_point < 0.5)
                 {
-                    log("Ignoring invalid config: snap_point must be >= 0.5 for stability");
+                    LOGD("Ignoring invalid config: snap_point must be >= 0.5 for stability");
                     break;
                 }
                 if (new_config.detent_positions_count > COUNT_OF(new_config.detent_positions))
                 {
-                    log("Ignoring invalid config: detent_positions_count is too large");
+                    LOGD("Ignoring invalid config: detent_positions_count is too large");
                     break;
                 }
                 if (new_config.snap_point_bias < 0)
                 {
-                    log("Ignoring invalid config: snap_point_bias cannot be negative or there is risk of instability");
+                    LOGD("Ignoring invalid config: snap_point_bias cannot be negative or there is risk of instability");
                     break;
                 }
 
@@ -149,7 +149,7 @@ void MotorTask::run()
                 bool position_updated = false;
                 if (new_config.position != config.position || new_config.sub_position_unit != config.sub_position_unit || new_config.position_nonce != config.position_nonce)
                 {
-                    log("applying position change");
+                    LOGD("applying position change");
                     current_position = new_config.position;
                     position_updated = true;
                 }
@@ -160,18 +160,18 @@ void MotorTask::run()
                     if (current_position < new_config.min_position)
                     {
                         current_position = new_config.min_position;
-                        log("adjusting position to min");
+                        LOGD("adjusting position to min");
                     }
                     else if (current_position > new_config.max_position)
                     {
                         current_position = new_config.max_position;
-                        log("adjusting position to max");
+                        LOGD("adjusting position to max");
                     }
                 }
 
                 if (position_updated || new_config.position_width_radians != config.position_width_radians)
                 {
-                    log("adjusting detent center");
+                    LOGD("adjusting detent center");
                     float new_sub_position = position_updated ? new_config.sub_position_unit : latest_sub_position_unit;
 #if SK_INVERT_ROTATION
                     float shaft_angle = -motor.shaft_angle;
@@ -181,7 +181,7 @@ void MotorTask::run()
                     current_detent_center = shaft_angle + new_sub_position * new_config.position_width_radians;
                 }
                 config = new_config;
-                log("Got new config");
+                LOGI("Got new config");
 
                 // Update derivative factor of torque controller based on detent width.
                 // If the D factor is large on coarse detents, the motor ends up making noise because the P&D factors amplify the noise from the sensor.
@@ -385,7 +385,7 @@ void MotorTask::calibrate()
     // So this value is based on experimentation.
     // TODO: dig into SimpleFOC calibration and find/fix the issue
 
-    log("\n\n\nStarting calibration, please DO NOT TOUCH MOTOR until complete!");
+    LOGI("Starting calibration, please DO NOT TOUCH MOTOR until complete!");
     delay(1000);
 
     motor.controller = MotionControlType::angle_openloop;
@@ -423,38 +423,36 @@ void MotorTask::calibrate()
     motor.voltage_limit = 0;
     motor.move(a);
 
-    log("");
-
     float movement_angle = fabsf(end_sensor - start_sensor);
     if (movement_angle < radians(30) || movement_angle > radians(180))
     {
         snprintf(buf_, sizeof(buf_), "ERROR! Unexpected sensor change: start=%.2f end=%.2f", start_sensor, end_sensor);
-        log(buf_);
+        LOGE(buf_);
         return;
     }
 
-    log("Sensor measures positive for positive motor rotation:");
+    LOGD("Sensor measures positive for positive motor rotation:");
     if (end_sensor > start_sensor)
     {
-        log("YES, Direction=CW");
+        LOGD("YES, Direction=CW");
         motor.initFOC(0, Direction::CW);
     }
     else
     {
-        log("NO, Direction=CCW");
+        LOGD("NO, Direction=CCW");
         motor.initFOC(0, Direction::CCW);
     }
     snprintf(buf_, sizeof(buf_), "  (start was %.1f, end was %.1f)", start_sensor, end_sensor);
-    log(buf_);
+    LOGD(buf_);
 
     // #### Determine pole-pairs
     // Rotate 20 electrical revolutions and measure mechanical angle traveled, to calculate pole-pairs
     uint8_t electrical_revolutions = 20;
     snprintf(buf_, sizeof(buf_), "Going to measure %d electrical revolutions...", electrical_revolutions);
-    log(buf_);
+    LOGI(buf_);
     motor.voltage_limit = FOC_VOLTAGE_LIMIT;
     motor.move(a);
-    log("Going to electrical zero...");
+    LOGI("Going to electrical zero...");
     float destination = a + _2PI;
     for (; a < destination; a += 0.03)
     {
@@ -462,13 +460,13 @@ void MotorTask::calibrate()
         motor.move(a);
         delay(1);
     }
-    log("pause..."); // Let momentum settle...
+    LOGI("pause..."); // Let momentum settle...
     for (uint16_t i = 0; i < 1000; i++)
     {
         encoder.update();
         delay(1);
     }
-    log("Measuring...");
+    LOGI("Measuring...");
 
     start_sensor = motor.sensor_direction * encoder.getAngle();
     destination = a + electrical_revolutions * _2PI;
@@ -490,7 +488,7 @@ void MotorTask::calibrate()
 
     if (fabsf(motor.shaft_angle - motor.target) > 1 * PI / 180)
     {
-        log("ERROR: motor did not reach target!");
+        LOGE("ERROR: motor did not reach target!");
         while (1)
         {
         }
@@ -498,18 +496,18 @@ void MotorTask::calibrate()
 
     float electrical_per_mechanical = electrical_revolutions * _2PI / (end_sensor - start_sensor);
     snprintf(buf_, sizeof(buf_), "Electrical angle / mechanical angle (i.e. pole pairs) = %.2f", electrical_per_mechanical);
-    log(buf_);
+    LOGD(buf_);
 
     if (electrical_per_mechanical < 3 || electrical_per_mechanical > 12)
     {
         snprintf(buf_, sizeof(buf_), "ERROR! Unexpected calculated pole pairs: %.2f", electrical_per_mechanical);
-        log(buf_);
+        LOGE(buf_);
         return;
     }
 
     int measured_pole_pairs = (int)round(electrical_per_mechanical);
     snprintf(buf_, sizeof(buf_), "Pole pairs set to %d", measured_pole_pairs);
-    log(buf_);
+    LOGD(buf_);
 
     delay(1000);
 
@@ -538,7 +536,7 @@ void MotorTask::calibrate()
         offset_y += sinf(offset_angle);
 
         snprintf(buf_, sizeof(buf_), "%.2f, %.2f, %.2f", degrees(real_electrical_angle), degrees(measured_electrical_angle), degrees(_normalizeAngle(offset_angle)));
-        log(buf_);
+        LOGD(buf_);
     }
     for (; a > destination2; a -= 0.4)
     {
@@ -557,7 +555,7 @@ void MotorTask::calibrate()
         offset_y += sinf(offset_angle);
 
         snprintf(buf_, sizeof(buf_), "%.2f, %.2f, %.2f", degrees(real_electrical_angle), degrees(measured_electrical_angle), degrees(_normalizeAngle(offset_angle)));
-        log(buf_);
+        LOGD(buf_);
     }
     motor.voltage_limit = 0;
     motor.move(a);
@@ -570,23 +568,21 @@ void MotorTask::calibrate()
     motor.voltage_limit = FOC_VOLTAGE_LIMIT;
     motor.controller = MotionControlType::torque;
 
-    log("");
-    log("RESULTS:");
+    LOGI("RESULTS:");
     snprintf(buf_, sizeof(buf_), "  ZERO_ELECTRICAL_OFFSET: %.2f", motor.zero_electric_angle);
-    log(buf_);
+    LOGI(buf_);
     if (motor.sensor_direction == Direction::CW)
     {
-        log("  FOC_DIRECTION: Direction::CW");
+        LOGI("  FOC_DIRECTION: Direction::CW");
     }
     else
     {
-        log("  FOC_DIRECTION: Direction::CCW");
+        LOGI("  FOC_DIRECTION: Direction::CCW");
     }
     snprintf(buf_, sizeof(buf_), "  MOTOR_POLE_PAIRS: %d", motor.pole_pairs);
-    log(buf_);
+    LOGI(buf_);
 
-    log("");
-    log("Saving to persistent configuration...");
+    LOGI("Saving to persistent configuration...");
     PB_MotorCalibration calibration = {
         .calibrated = true,
         .zero_electrical_offset = motor.zero_electric_angle,
@@ -595,7 +591,7 @@ void MotorTask::calibrate()
     };
     if (configuration_.setMotorCalibrationAndSave(calibration))
     {
-        log("Success!");
+        LOGI("Success!");
     }
 }
 
@@ -604,27 +600,14 @@ void MotorTask::checkSensorError()
 #if SENSOR_TLV
     if (encoder.getAndClearError())
     {
-        log("LOCKED!");
+        LOGD("LOCKED!");
     }
 #elif SENSOR_MT6701
     MT6701Error error = encoder.getAndClearError();
     if (error.error)
     {
         snprintf(buf_, sizeof(buf_), "CRC error. Received %d; calculated %d", error.received_crc, error.calculated_crc);
-        log(buf_);
+        LOGD(buf_);
     }
 #endif
-}
-
-void MotorTask::setLogger(Logger *logger)
-{
-    logger_ = logger;
-}
-
-void MotorTask::log(const char *msg)
-{
-    if (logger_ != nullptr)
-    {
-        logger_->log(msg);
-    }
 }

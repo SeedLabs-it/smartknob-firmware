@@ -34,9 +34,6 @@ protected:
 private:
     Configuration &configuration_;
     MotorTask *motor_task_;
-    Logger *logger_;
-    void log(const char *msg);
-    bool verbose_ = false;
     char buf_[128];
 
     QueueHandle_t shared_events_queue;

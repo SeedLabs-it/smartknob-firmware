@@ -47,7 +47,6 @@ public:
     void runCalibration();
 
     void addListener(QueueHandle_t queue);
-    void setLogger(Logger *logger);
 
 protected:
     void run();
@@ -55,7 +54,6 @@ protected:
 private:
     Configuration &configuration_;
     QueueHandle_t queue_;
-    Logger *logger_;
     std::vector<QueueHandle_t> listeners_;
     char buf_[72];
 
@@ -66,5 +64,4 @@ private:
     void publish(const PB_SmartKnobState &state);
     void calibrate();
     void checkSensorError();
-    void log(const char *msg);
 };

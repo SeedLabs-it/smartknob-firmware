@@ -31,7 +31,6 @@ public:
 
     void enqueueEntityStateToSend(EntityStateUpdate);
     void addAppSyncListener(QueueHandle_t queue);
-    void setLogger(Logger *logger);
     void unlock();
     cJSON *getApps();
     void handleEvent(WiFiEvent event);
@@ -74,12 +73,9 @@ private:
     SemaphoreHandle_t mutex_app_sync_;
     WiFiClient wifi_client;
     PubSubClient mqtt_client;
-    Logger *logger_;
     cJSON *apps;
 
     MqttNotifier mqtt_notifier;
-
-    void log(const char *msg);
 
     void callback(char *topic, byte *payload, unsigned int length);
 

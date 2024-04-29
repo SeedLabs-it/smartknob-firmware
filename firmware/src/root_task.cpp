@@ -20,7 +20,7 @@ RootTask::RootTask(
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task) : Task("RootTask", 1024 * 14, ESP_TASK_MAIN_PRIO, task_core),
+    ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
                              stream_(),
                              motor_task_(motor_task),
                              display_task_(display_task),
@@ -30,9 +30,15 @@ RootTask::RootTask(
                              sensors_task_(sensors_task),
                              reset_task_(reset_task),
                              plaintext_protocol_(stream_, [this]()
-                                                 { motor_task_.runCalibration(); })
-//  proto_protocol_(stream_, [this](PB_SmartKnobConfig &config)
-//                  { applyConfig(config, true); })
+                                                 { motor_task_.runCalibration(); }),
+                             proto_protocol_(
+                                 stream_,
+                                 [this](PB_SmartKnobConfig &config)
+                                 { applyConfig(config, true); },
+                                 [this]()
+                                 { motor_task_.runCalibration(); },
+                                 [this]()
+                                 { strainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY
@@ -45,8 +51,8 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
-    log_queue_ = xQueueCreate(10, sizeof(std::string *));
-    assert(log_queue_ != NULL);
+    // log_queue_ = xQueueCreate(10, sizeof(std::string *));
+    // assert(log_queue_ != NULL);
 
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
@@ -75,21 +81,21 @@ void RootTask::strainCalibrationCallback()
 {
     if (!configuration_loaded_)
     {
-        log("Strain calibration step 0: configuration not loaded, exiting");
+        LOGI("Strain calibration step 0: configuration not loaded, exiting");
 
         return;
     }
     if (strain_calibration_step_ == 0)
     {
-        log("Strain calibration step 1: Don't touch the knob, then press 'S' again");
+        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
         strain_calibration_step_ = 1;
     }
     else if (strain_calibration_step_ == 1)
     {
         configuration_value_.strain.idle_value = latest_sensors_state_.strain.raw_value;
         snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
-        log(buf_);
-        log("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
+        LOGD(buf_);
+        LOGI("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
         strain_calibration_step_ = 2;
     }
     else if (strain_calibration_step_ == 2)
@@ -98,30 +104,23 @@ void RootTask::strainCalibrationCallback()
         configuration_value_.strain.press_delta = latest_sensors_state_.strain.raw_value - configuration_value_.strain.idle_value;
         configuration_value_.has_strain = true;
 
-        ESP_LOGD("1", "pre-save %d", configuration_value_.strain.idle_value);
         snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
-        log(buf_);
-        log("Strain calibration complete! Saving...");
+        LOGD("%s", buf_);
+        LOGI("Strain calibration complete! Saving...");
 
-        ESP_LOGD("2", "pre-save %d", configuration_value_.strain.idle_value);
         strain_calibration_step_ = 0;
 
         sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
 
         if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
         {
-            log("  Saved!");
+            LOGI("Strain calibration saved!");
         }
         else
         {
-            log("  FAILED to save config!!!");
+            LOGE("Strain calibration failed to save!");
         }
     }
-}
-
-void RootTask::verboseToggleCallback()
-{
-    sensors_task_->toggleVerbose();
 }
 
 void RootTask::run()
@@ -138,10 +137,6 @@ void RootTask::run()
                              [this]()
                              {
                                  this->strainCalibrationCallback();
-                             },
-                             [this]()
-                             {
-                                 this->verboseToggleCallback();
                              },
                              [this]()
                              {
@@ -177,6 +172,7 @@ void RootTask::run()
 
     // Start in legacy protocol mode
     current_protocol_ = &plaintext_protocol_;
+    Logging::getInstance().setLogger(&plaintext_protocol_);
 
     ProtocolChangeCallback protocol_change_callback = [this](uint8_t protocol)
     {
@@ -185,17 +181,18 @@ void RootTask::run()
         case SERIAL_PROTOCOL_LEGACY:
             current_protocol_ = &plaintext_protocol_;
             break;
-            // case SERIAL_PROTOCOL_PROTO:
-            //     current_protocol_ = &proto_protocol_;
+        case SERIAL_PROTOCOL_PROTO:
+            current_protocol_ = &proto_protocol_;
             break;
         default:
-            log("Unknown protocol requested");
+            LOGE("Unknown protocol requested: %d", protocol);
             break;
         }
+        Logging::getInstance().setLogger(current_protocol_);
     };
 
     plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
-    // proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
+    proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -225,7 +222,7 @@ void RootTask::run()
     bool is_configuration_loaded = false;
     while (!is_configuration_loaded)
     {
-        log("waiting for configuration");
+        LOGI("Waiting for configuration");
         xSemaphoreTake(mutex_, portMAX_DELAY);
         is_configuration_loaded = configuration_ != nullptr;
         xSemaphoreGive(mutex_);
@@ -457,11 +454,11 @@ void RootTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            ESP_LOGD("root_task", "App sync requested!");
+            LOGD("App sync requested!");
 #if SK_MQTT // Should this be here??
             hass_apps->sync(mqtt_task_->getApps());
 
-            log("Giving 0.5s for Apps to initialize");
+            LOGD("Giving 0.5s for Apps to initialize");
             delay(500);
             display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
@@ -516,12 +513,12 @@ void RootTask::run()
 
         current_protocol_->loop();
 
-        std::string *log_string;
-        while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
-        {
-            current_protocol_->log(log_string->c_str());
-            delete log_string;
-        }
+        // std::string *log_string;
+        // while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
+        // {
+        //     // LOGI(log_string->c_str());
+        //     delete log_string;
+        // }
 
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
@@ -530,15 +527,6 @@ void RootTask::run()
 
         delay(1);
     }
-}
-
-void RootTask::log(const char *msg)
-{
-    // Allocate a string for the duration it's in the queue; it is free'd by the queue consumer
-    std::string *msg_str = new std::string(msg);
-
-    // Put string in queue (or drop if full to avoid blocking)
-    xQueueSendToBack(log_queue_, &msg_str, 0);
 }
 
 void RootTask::updateHardware(AppState app_state)
@@ -554,7 +542,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
-                log("handling short press");
+                LOGD("Handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
             }
@@ -563,7 +551,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
-                log("handling long press");
+                LOGD("Handling long press");
 
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
@@ -601,7 +589,7 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_SHORT_RELEASED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_RELEASED)
             {
-                log("handling short press released");
+                LOGD("Handling short press released");
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
@@ -637,7 +625,7 @@ void RootTask::updateHardware(AppState app_state)
 
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_RELEASED)
             {
-                log("handling long press released");
+                LOGD("Handling long press released");
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_RELEASED;
@@ -707,7 +695,6 @@ void RootTask::updateHardware(AppState app_state)
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);
-        // ESP_LOGD("LED", "------------------- : %d, %d, %d, %f", effect_settings.effect_id, brightness, app_state.screen_state.MIN_LCD_BRIGHTNESS, latest_sensors_state_.illumination.lux_adj);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
@@ -756,7 +743,7 @@ void RootTask::setConfiguration(Configuration *configuration)
             if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                ESP_LOGD("root_task", "MQTT_CONFIG: %s", mqtt_config.host);
+                LOGD("MQTT_CONFIG: %s", mqtt_config.host);
 
                 // mqtt_task_->setupMQTT(mqtt_config);
                 // DO STUFF WITH MQTT CONFIG!!!

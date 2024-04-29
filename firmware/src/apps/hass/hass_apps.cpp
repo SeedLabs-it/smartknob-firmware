@@ -16,7 +16,7 @@ void HassApps::sync(cJSON *json_apps)
 
         if (json_app_slug == NULL || json_app_id == NULL || json_entity_id == NULL || json_friendly_name == NULL)
         {
-            ESP_LOGE("HASS APPS", "Invalid data.");
+            LOGE("Invalid data.");
             continue;
         }
 
@@ -72,7 +72,7 @@ void HassApps::handleEvent(WiFiEvent event)
             }
             else
             {
-                ESP_LOGD("HASS_APPS", "APP NOT FOUND");
+                LOGW("App not found");
             }
         }
 

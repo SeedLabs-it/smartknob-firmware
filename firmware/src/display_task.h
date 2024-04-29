@@ -6,7 +6,6 @@
 #include <TFT_eSPI.h>
 #include <HTTPClient.h>
 
-#include "logger.h"
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
 #include "app_config.h"
@@ -33,7 +32,6 @@ public:
     QueueHandle_t getKnobStateQueue();
 
     void setBrightness(uint16_t brightness);
-    void setLogger(Logger *logger);
     void setApps(Apps apps);
     OnboardingFlow *getOnboardingFlow();
     DemoApps *getDemoApps();
@@ -66,8 +64,6 @@ private:
     AppState app_state_;
     SemaphoreHandle_t mutex_;
     uint16_t brightness_;
-    Logger *logger_;
-    void log(const char *msg);
     char buf_[128];
 
     OSMode os_mode;

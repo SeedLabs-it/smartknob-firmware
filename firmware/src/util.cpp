@@ -255,7 +255,5 @@ uint32_t ToRGBA(float h)
     // Alpha value stays the same
     a = a;
 
-    // ESP_LOGD("color", "%.0f %.0f %.0f %.0f", h, r, g, b);
-
     return rgbToUint32(uint8_t(r), uint8_t(g), uint8_t(b));
 }

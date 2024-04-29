@@ -24,12 +24,8 @@ public:
     SensorsTask(const uint8_t task_core);
     ~SensorsTask();
 
-    void setLogger(Logger *logger);
     void addStateListener(QueueHandle_t queue);
     void updateStrainCalibration(float idle_value, float press_delta);
-
-    void setVerbose(bool verbose);
-    void toggleVerbose();
 
 protected:
     void run();
@@ -40,9 +36,6 @@ private:
     std::vector<QueueHandle_t> state_listeners_;
 
     SemaphoreHandle_t mutex_;
-    Logger *logger_;
-    void log(const char *msg);
     void publishState(const SensorsState &state);
-    bool verbose_ = false;
     StrainCalibration strain_calibration;
 };

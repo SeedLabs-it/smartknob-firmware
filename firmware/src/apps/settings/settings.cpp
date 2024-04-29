@@ -205,10 +205,6 @@ TFT_eSprite *SettingsApp::render()
 
         spr_->drawBitmap(20, 75, wifi_40, wifi_icon_size, wifi_icon_size, wifi_icon_color, TFT_BLACK);
 
-        // wifi_30
-
-        // log(connectivity_state.ssid.c_str());
-
         int16_t signal_strength = connectivity_state.signal_strength;
         std::string signal_strength_text = "";
 

@@ -3,11 +3,11 @@
 #include <FFat.h>
 #include <PacketSerial.h>
 
+#include "logging.h"
+
 #include <WiFi.h>
 
 #include "proto_gen/smartknob.pb.h"
-
-#include "logger.h"
 
 #include "EEPROM.h"
 
@@ -80,7 +80,6 @@ public:
     Configuration();
     ~Configuration();
 
-    void setLogger(Logger *logger);
     bool loadFromDisk();
     bool saveToDisk();
     bool resetToDefaults();
@@ -102,7 +101,6 @@ public:
 private:
     SemaphoreHandle_t mutex_;
 
-    Logger *logger_ = nullptr;
     bool loaded_ = false;
     PB_PersistentConfiguration pb_buffer_ = {};
 
@@ -114,27 +112,19 @@ private:
 
     uint8_t buffer_[PB_PersistentConfiguration_size];
 
-    void log(const char *msg);
-
     std::string knob_id;
 };
 class FatGuard
 {
 public:
-    FatGuard(Logger *logger) : logger_(logger)
+    FatGuard()
     {
         if (!FFat.begin(true))
         {
-            if (logger_ != nullptr)
-            {
-                logger_->log("Failed to mount FFat");
-            }
+            LOGE("Failed to mount FFat");
             return;
         }
-        if (logger_ != nullptr)
-        {
-            logger_->log("Mounted FFat");
-        }
+        LOGD("Mounted FFat");
         mounted_ = true;
     }
     ~FatGuard()
@@ -142,17 +132,11 @@ public:
         if (mounted_)
         {
             FFat.end();
-            if (logger_ != nullptr)
-            {
-                logger_->log("Unmounted FFat");
-            }
+            LOGD("Unmounted FFat");
         }
     }
     FatGuard(FatGuard const &) = delete;
     FatGuard &operator=(FatGuard const &) = delete;
 
     bool mounted_ = false;
-
-private:
-    Logger *logger_;
 };
