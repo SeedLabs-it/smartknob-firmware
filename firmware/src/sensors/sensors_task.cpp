@@ -447,7 +447,8 @@ void SensorsTask::factoryStrainCalibrationCallback()
         strain.set_scale();
         calibration_scale_validation[i] = calibration_scale_;
     }
-    strain.set_scale(calibration_scale_);
+
+    strain.set_scale((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
 
     configuration_->saveFactoryStrainCalibration((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
 
