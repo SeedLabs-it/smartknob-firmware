@@ -46,7 +46,9 @@ private:
     SemaphoreHandle_t mutex_;
     void publishState(const SensorsState &state);
     StrainCalibration strain_calibration;
+#if SK_STRAIN
     HX711 strain;
+#endif
 
     Configuration *configuration_;
 
