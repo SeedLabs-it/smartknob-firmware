@@ -220,8 +220,7 @@ message RequestState {}
 message PersistentConfiguration {
     uint32 version = 1;
     MotorCalibration motor = 2;
-    StrainCalibration strain = 3;
-    float strain_scale = 4;
+    float strain_scale = 3;
 }
 
 message MotorCalibration {
@@ -229,11 +228,6 @@ message MotorCalibration {
     float zero_electrical_offset = 2;
     bool direction_cw = 3;
     uint32 pole_pairs = 4;
-}
-
-message StrainCalibration {
-    float idle_value = 1;
-    float press_delta = 2; 
 }
 
 enum SmartKnobCommand {
