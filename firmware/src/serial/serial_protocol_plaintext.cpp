@@ -43,20 +43,20 @@ void SerialProtocolPlaintext::log(const PB_LogLevel log_level, bool isVerbose_, 
     switch (log_level)
     {
     case PB_LogLevel_INFO:
-        stream_.print(" INFO: ");
+        stream_.print("\u001b[37m INFO: ");
         break;
         break;
     case PB_LogLevel_WARNING:
-        stream_.print(" WARNING: ");
+        stream_.print("\u001b[33m WARNING: ");
         break;
     case PB_LogLevel_ERROR:
-        stream_.print(" ERROR: ");
+        stream_.print("\u001b[31m ERROR: ");
         break;
     case PB_LogLevel_DEBUG:
-        stream_.print(" DEBUG: ");
+        stream_.print("\u001b[32m DEBUG: ");
         break;
     default:
-        stream_.print(" INFO: ");
+        stream_.print("\u001b[37m  INFO: ");
         break;
     }
     stream_.println(msg);
