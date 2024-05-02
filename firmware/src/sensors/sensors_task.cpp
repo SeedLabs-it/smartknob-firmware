@@ -154,13 +154,8 @@ void SensorsTask::run()
         {
             if (strain.wait_ready_timeout(100))
             {
-                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0 || strain_calibration_step_ != 0)
+                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
                 {
-                    if (strain_calibration_step_ == 2)
-                    {
-                        LOGD("Measured weight in %0.0fg", strain.get_units(1));
-                        do_strain = false;
-                    }
                     delay(100);
                     do_strain = false;
                 }
@@ -307,64 +302,6 @@ void SensorsTask::run()
 }
 
 #if SK_STRAIN
-void SensorsTask::strainCalibrationCallback()
-{
-    PB_PersistentConfiguration config = configuration_->get();
-
-    if (config.strain_scale == 0 && strain.get_scale() == 1.0f)
-    {
-        LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
-        return;
-    }
-
-    // LOGD("CONFIG VALUES: %f %f", strain_calibration.idle_value, strain_calibration.press_delta);
-
-    if (strain_calibration_step_ == 0)
-    {
-        strain_calibration_step_ = 1;
-
-        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
-        strain.set_offset(0);
-        strain.tare();
-        delay(200);
-    }
-    else if (strain_calibration_step_ == 1)
-    {
-        strain_calibration_step_ = 2;
-        LOGI("Strain calibration step 2: When desired weight is reached press 'S' again");
-    }
-    else if (strain_calibration_step_ == 2)
-    {
-        config.strain.press_delta = sensors_state.strain.raw_value;
-        config.has_strain = true;
-
-        LOGD("  press_delta=%f", config.strain.press_delta);
-        LOGD("  raw_value=%f", sensors_state.strain.raw_value);
-        LOGI("Saving strain calibration...");
-
-        updateStrainCalibration(config.strain.idle_value, sensors_state.strain.raw_value);
-
-        if (configuration_->setStrainCalibrationAndSave(config.strain))
-        {
-            LOGI("Strain calibration saved!");
-        }
-        else
-        {
-            LOGE("Strain calibration failed to save!");
-        }
-
-        delay(2000);
-
-        strain.set_offset(0);
-        strain.tare();
-        delay(200);
-
-        LOGI("Strain calibration complete!");
-
-        strain_calibration_step_ = 0;
-    }
-}
-
 void SensorsTask::factoryStrainCalibrationCallback()
 {
     if (factory_strain_calibration_step_ == 0)
@@ -484,16 +421,6 @@ void SensorsTask::weightMeasurementCallback()
     }
 }
 #endif
-
-void SensorsTask::updateStrainCalibration(float idle_value, float press_delta)
-{
-    strain_calibration.idle_value = idle_value;
-    strain_calibration.press_delta = press_delta;
-    char buf_[128];
-    snprintf(buf_, sizeof(buf_), "New strain config, idle: %f, pressed: %f ", strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta);
-
-    LOGI(buf_);
-}
 
 void SensorsTask::addStateListener(QueueHandle_t queue)
 {

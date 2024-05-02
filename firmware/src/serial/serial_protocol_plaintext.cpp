@@ -87,15 +87,6 @@ void SerialProtocolPlaintext::loop()
         {
             motor_calibration_callback_();
         }
-        else if (b == 'S' || b == 's')
-        {
-            stream_.println("Strain calibration request received\n");
-
-            if (strain_calibration_callback_)
-            {
-                strain_calibration_callback_();
-            }
-        }
         else if (b == 'V' || b == 'v')
         {
             stream_.println("Verbose toggle request received\n");

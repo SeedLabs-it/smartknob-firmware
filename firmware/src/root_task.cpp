@@ -33,8 +33,6 @@ RootTask::RootTask(
                                  stream_, [this]()
                                  { motor_task_.runCalibration(); },
                                  [this]()
-                                 { sensors_task_->strainCalibrationCallback(); },
-                                 [this]()
                                  { sensors_task_->factoryStrainCalibrationCallback(); },
                                  [this]()
                                  {
@@ -47,7 +45,7 @@ RootTask::RootTask(
                                  [this]()
                                  { motor_task_.runCalibration(); },
                                  [this]()
-                                 { sensors_task_->strainCalibrationCallback(); })
+                                 { sensors_task_->factoryStrainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY
@@ -678,7 +676,6 @@ void RootTask::setConfiguration(Configuration *configuration)
         {
             configuration_value_ = configuration_->get();
             configuration_loaded_ = true;
-            sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
 
             configuration_->loadOSConfiguration();
 

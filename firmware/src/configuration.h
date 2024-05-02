@@ -85,7 +85,6 @@ public:
     bool resetToDefaults();
     PB_PersistentConfiguration get();
     bool setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibration);
-    bool setStrainCalibrationAndSave(PB_StrainCalibration &strain_calibration);
     bool saveWiFiConfiguration(WiFiConfiguration wifi_config);
     WiFiConfiguration getWiFiConfiguration();
     bool loadWiFiConfiguration();

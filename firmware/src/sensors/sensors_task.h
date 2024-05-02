@@ -14,12 +14,6 @@
 
 const uint16_t PROXIMITY_SENSOR_OFFSET_MM = 10;
 
-struct StrainCalibration
-{
-    float idle_value;
-    float press_delta;
-};
-
 class SensorsTask : public Task<SensorsTask>
 {
     friend class Task<SensorsTask>; // Allow base Task to invoke protected run()
@@ -29,8 +23,6 @@ public:
     ~SensorsTask();
 
     void addStateListener(QueueHandle_t queue);
-    void strainCalibrationCallback();
-    void updateStrainCalibration(float idle_value, float press_delta);
     void factoryStrainCalibrationCallback();
     void weightMeasurementCallback();
 
@@ -45,14 +37,12 @@ private:
 
     SemaphoreHandle_t mutex_;
     void publishState(const SensorsState &state);
-    StrainCalibration strain_calibration;
 #if SK_STRAIN
     HX711 strain;
 #endif
 
     Configuration *configuration_;
 
-    uint8_t strain_calibration_step_ = 0;
     uint8_t factory_strain_calibration_step_ = 0;
     uint8_t weight_measurement_step_ = 0;
 

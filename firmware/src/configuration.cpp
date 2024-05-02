@@ -291,13 +291,3 @@ bool Configuration::setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibr
     }
     return saveToDisk();
 }
-
-bool Configuration::setStrainCalibrationAndSave(PB_StrainCalibration &strain_calibration)
-{
-    {
-        SemaphoreGuard lock(mutex_);
-        pb_buffer_.strain = strain_calibration;
-        pb_buffer_.has_strain = true;
-    }
-    return saveToDisk();
-}
