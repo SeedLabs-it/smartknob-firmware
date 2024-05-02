@@ -171,18 +171,20 @@ TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
 
     spr_->setTextDatum(CC_DATUM);
     spr_->setTextSize(1);
-    spr_->setTextColor(accent_text_color);
+    spr_->setTextColor(TFT_BLACK);
 
     spr_->setFreeFont(&NDS1210pt7b);
     uint8_t held_for = (int)((millis() - latest_event.sent_at) / 1000);
-    bool soft_reset = held_for > SOFT_RESET_SECONDS;
+    bool factory_reset = held_for > SOFT_RESET_SECONDS;
 
-    sprintf(buf_, "%s", soft_reset ? "Factory reset" : "For soft reset");
+    spr_->fillScreen(factory_reset ? rgbToUint32(255, 0, 0) : rgbToUint32(255, 110, 0));
+
+    sprintf(buf_, "%s", factory_reset ? "Factory reset" : "For soft reset");
     spr_->drawString(buf_, center, center - screen_name_label_h * 1.4, 1);
 
-    sprintf(buf_, "%sin %ds", soft_reset ? "" : "release ", soft_reset ? max(0, HARD_RESET_SECONDS - held_for) : max(0, SOFT_RESET_SECONDS - held_for));
+    sprintf(buf_, "%sin %ds", factory_reset ? "" : "release ", factory_reset ? max(0, HARD_RESET_SECONDS - held_for) : max(0, SOFT_RESET_SECONDS - held_for));
     spr_->drawString(buf_, center, center - screen_name_label_h * 0.4, 1);
-    if (soft_reset)
+    if (factory_reset)
     {
         spr_->drawString("Release for soft reset", center, center + screen_name_label_h, 1);
     }
