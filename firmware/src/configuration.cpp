@@ -96,6 +96,10 @@ bool Configuration::loadFromDisk()
         pb_buffer_.motor.direction_cw);
     LOGE(buf_);
 
+    WiFiEvent event;
+    event.type = SK_CONFIGURATION_SAVED;
+    publishEvent(event);
+
     return true;
 }
 
@@ -290,4 +294,15 @@ bool Configuration::setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibr
         pb_buffer_.has_motor = true;
     }
     return saveToDisk();
+}
+
+void Configuration::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    this->shared_events_queue = shared_events_queue;
+}
+
+void Configuration::publishEvent(WiFiEvent event)
+{
+    event.sent_at = millis();
+    xQueueSendToBack(shared_events_queue, &event, 0);
 }

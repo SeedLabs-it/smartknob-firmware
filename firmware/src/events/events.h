@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "configuration.h"
 
 struct WiFiAPStarted
 {
@@ -44,6 +43,14 @@ struct WebClient
 //     uint8_t sta_signal_strenth_status;
 //     int8_t sta_rssi;
 // };
+struct MQTTConfiguration
+{
+    char host[64];
+    uint16_t port;
+    char user[64];
+    char password[64];
+    char knob_id[64];
+};
 
 struct MQTTStateUpdate
 {
@@ -136,6 +143,8 @@ enum EventType
 
     SK_MQTT_ERROR,
     SK_WIFI_ERROR,
+
+    SK_CONFIGURATION_SAVED
 };
 
 typedef unsigned long SentAt;

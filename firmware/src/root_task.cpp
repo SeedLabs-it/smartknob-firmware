@@ -189,6 +189,8 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    configuration_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
@@ -343,6 +345,12 @@ void RootTask::run()
             case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
                 wifi_task_->retryMqtt(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
+                break;
+            case SK_CONFIGURATION_SAVED:
+                if (current_protocol_ == &proto_protocol_)
+                {
+                    proto_protocol_.sendInitialInfo();
+                }
                 break;
 
             default:

@@ -10,6 +10,7 @@
 #include "proto_gen/smartknob.pb.h"
 
 #include "EEPROM.h"
+#include "./events/events.h"
 
 // TODO: should move these consts to wifi?
 static const uint16_t WIFI_SSID_LENGTH = 128;
@@ -53,15 +54,6 @@ struct WiFiConfiguration
     char knob_id[64];
 };
 
-struct MQTTConfiguration
-{
-    char host[64];
-    uint16_t port;
-    char user[64];
-    char password[64];
-    char knob_id[64];
-};
-
 enum OSMode
 {
     Onboarding = 0,
@@ -98,8 +90,13 @@ public:
     OSConfiguration *getOSConfiguration();
     const char *getKnobId();
 
+    void setSharedEventsQueue(QueueHandle_t shared_event_queue);
+    void publishEvent(WiFiEvent event);
+
 private:
     SemaphoreHandle_t mutex_;
+
+    QueueHandle_t shared_events_queue;
 
     bool loaded_ = false;
     PB_PersistentConfiguration pb_buffer_ = {};
