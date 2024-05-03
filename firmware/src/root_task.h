@@ -45,8 +45,6 @@ public:
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
 
-    void strainCalibrationCallback();
-
 protected:
     void run();
 
@@ -74,6 +72,7 @@ private:
     PB_PersistentConfiguration configuration_value_;
     bool configuration_loaded_ = false;
 
+    uint8_t factory_strain_calibration_step_ = 0;
     uint8_t strain_calibration_step_ = 0;
     int32_t strain_reading_ = 0;
 

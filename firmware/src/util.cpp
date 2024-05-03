@@ -9,19 +9,19 @@ float lerp(const float value, const float inMin, const float inMax, const float 
 MovingAverage::MovingAverage(int filterLength)
 {
     this->filterLength = filterLength;
-    this->filterPointer = new int32_t[filterLength];
+    this->filterPointer = new float[filterLength];
     this->lastValue = 0.0;
     initFilter();
 }
 
-int32_t MovingAverage::addSample(int32_t newValue)
+float MovingAverage::addSample(float newValue)
 {
     shiftFilter(newValue);
     computeAverage();
     return this->lastValue;
 }
 
-int32_t MovingAverage::getValue()
+float MovingAverage::getValue()
 {
     return this->lastValue;
 }
@@ -32,7 +32,7 @@ void MovingAverage::dumpFilter()
     initFilter();
 }
 
-void MovingAverage::shiftFilter(int32_t nextValue)
+void MovingAverage::shiftFilter(float nextValue)
 {
     for (int i = this->filterLength - 1; i > -1; i--)
     {

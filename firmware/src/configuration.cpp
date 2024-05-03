@@ -258,6 +258,15 @@ bool Configuration::loadOSConfiguration()
     return true;
 }
 
+bool Configuration::saveFactoryStrainCalibration(float strain_scale)
+{
+    {
+        SemaphoreGuard lock(mutex_);
+        pb_buffer_.strain_scale = strain_scale;
+    }
+    return saveToDisk();
+}
+
 OSConfiguration *Configuration::getOSConfiguration()
 {
     return &os_config;
@@ -279,16 +288,6 @@ bool Configuration::setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibr
         SemaphoreGuard lock(mutex_);
         pb_buffer_.motor = motor_calibration;
         pb_buffer_.has_motor = true;
-    }
-    return saveToDisk();
-}
-
-bool Configuration::setStrainCalibrationAndSave(PB_StrainCalibration &strain_calibration)
-{
-    {
-        SemaphoreGuard lock(mutex_);
-        pb_buffer_.strain = strain_calibration;
-        pb_buffer_.has_strain = true;
     }
     return saveToDisk();
 }
