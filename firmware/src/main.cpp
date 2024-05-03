@@ -95,6 +95,8 @@ void setup()
         config.saveToDisk();
     }
 
+    root_task.loadConfiguration();
+
     motor_task.begin();
 
 #if SK_WIFI

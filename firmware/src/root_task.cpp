@@ -681,10 +681,9 @@ void RootTask::updateHardware(AppState app_state)
     // #endif
 }
 
-void RootTask::setConfiguration(Configuration *configuration)
+void RootTask::loadConfiguration()
 {
     SemaphoreGuard lock(mutex_);
-    configuration_ = configuration;
     if (!configuration_loaded_)
     {
         if (configuration_ != nullptr)

@@ -87,15 +87,15 @@ void SerialProtocolProtobuf::sendInitialInfo()
     strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
     strlcpy(pb_tx_buffer_.payload.knob.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.payload.knob.mac_address));
     PB_PersistentConfiguration config = configuration_->get();
-    // if (config.version != 0)
-    // {
-    //     pb_tx_buffer_.payload.knob.has_persistent_config = config.has_motor;
-    //     // pb_tx_buffer_.payload.knob.persistent_config = config;
-    // }
-    // else
-    // {
-    //     pb_tx_buffer_.payload.knob.has_persistent_config = false;
-    // }
+    if (config.version != 0)
+    {
+        pb_tx_buffer_.payload.knob.has_persistent_config = true;
+        pb_tx_buffer_.payload.knob.persistent_config = config;
+    }
+    else
+    {
+        pb_tx_buffer_.payload.knob.has_persistent_config = false;
+    }
 
     sendPbTxBuffer();
 }
