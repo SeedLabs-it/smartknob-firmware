@@ -57,7 +57,7 @@ struct ProximityState
 
 struct StrainState
 {
-    int32_t raw_value;
+    float raw_value;
     float press_value;
     uint8_t virtual_button_code;
 };

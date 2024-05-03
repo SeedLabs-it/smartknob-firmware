@@ -29,8 +29,15 @@ RootTask::RootTask(
                              led_ring_task_(led_ring_task),
                              sensors_task_(sensors_task),
                              reset_task_(reset_task),
-                             plaintext_protocol_(stream_, [this]()
-                                                 { motor_task_.runCalibration(); }),
+                             plaintext_protocol_(
+                                 stream_, [this]()
+                                 { motor_task_.runCalibration(); },
+                                 [this]()
+                                 { sensors_task_->factoryStrainCalibrationCallback(); },
+                                 [this]()
+                                 {
+                                     sensors_task_->weightMeasurementCallback();
+                                 }),
                              proto_protocol_(
                                  stream_,
                                  [this](PB_SmartKnobConfig &config)
@@ -38,7 +45,7 @@ RootTask::RootTask(
                                  [this]()
                                  { motor_task_.runCalibration(); },
                                  [this]()
-                                 { strainCalibrationCallback(); })
+                                 { sensors_task_->factoryStrainCalibrationCallback(); })
 
 {
 #if SK_DISPLAY
@@ -77,52 +84,6 @@ void RootTask::setHassApps(HassApps *apps)
     this->hass_apps = apps;
 }
 
-void RootTask::strainCalibrationCallback()
-{
-    if (!configuration_loaded_)
-    {
-        LOGI("Strain calibration step 0: configuration not loaded, exiting");
-
-        return;
-    }
-    if (strain_calibration_step_ == 0)
-    {
-        LOGI("Strain calibration step 1: Don't touch the knob, then press 'S' again");
-        strain_calibration_step_ = 1;
-    }
-    else if (strain_calibration_step_ == 1)
-    {
-        configuration_value_.strain.idle_value = latest_sensors_state_.strain.raw_value;
-        snprintf(buf_, sizeof(buf_), "  idle_value=%d", configuration_value_.strain.idle_value);
-        LOGD(buf_);
-        LOGI("Strain calibration step 2: Push and hold down the knob with medium pressure, and press 'S' again");
-        strain_calibration_step_ = 2;
-    }
-    else if (strain_calibration_step_ == 2)
-    {
-
-        configuration_value_.strain.press_delta = latest_sensors_state_.strain.raw_value - configuration_value_.strain.idle_value;
-        configuration_value_.has_strain = true;
-
-        snprintf(buf_, sizeof(buf_), "  press_delta=%d", configuration_value_.strain.press_delta);
-        LOGD("%s", buf_);
-        LOGI("Strain calibration complete! Saving...");
-
-        strain_calibration_step_ = 0;
-
-        sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
-
-        if (configuration_->setStrainCalibrationAndSave(configuration_value_.strain))
-        {
-            LOGI("Strain calibration saved!");
-        }
-        else
-        {
-            LOGE("Strain calibration failed to save!");
-        }
-    }
-}
-
 void RootTask::run()
 {
     uint8_t task_started_at = millis();
@@ -133,10 +94,6 @@ void RootTask::run()
     plaintext_protocol_.init([this]()
                              {
                                  //  CHANGE MOTOR CONFIG????
-                             },
-                             [this]()
-                             {
-                                 this->strainCalibrationCallback();
                              },
                              [this]()
                              {
@@ -542,11 +499,10 @@ void RootTask::run()
 
 void RootTask::updateHardware(AppState app_state)
 {
-
     static bool pressed;
 #if SK_STRAIN
 
-    if (configuration_loaded_ && configuration_value_.has_strain && strain_calibration_step_ == 0)
+    if (configuration_loaded_)
     {
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
@@ -737,7 +693,6 @@ void RootTask::setConfiguration(Configuration *configuration)
         {
             configuration_value_ = configuration_->get();
             configuration_loaded_ = true;
-            sensors_task_->updateStrainCalibration(configuration_value_.strain.idle_value, configuration_value_.strain.press_delta);
 
             configuration_->loadOSConfiguration();
 

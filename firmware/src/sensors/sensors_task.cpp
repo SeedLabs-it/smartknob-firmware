@@ -3,9 +3,6 @@
 #include "util.h"
 
 // todo: think on thise compilation flags
-#if SK_STRAIN
-#include <HX711.h>
-#endif
 
 #if SK_ALS
 #include <Adafruit_VEML7700.h>
@@ -13,7 +10,7 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core) : Task{"Sensors", 1024 * 6, 1, task_core}
+SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 6, 1, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
 
@@ -39,8 +36,28 @@ void SensorsTask::run()
     Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 #if SK_STRAIN
-    HX711 scale;
-    scale.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
+    strain.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
+    while (!strain.is_ready())
+    {
+        LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+        delay(100);
+    }
+    if (configuration_->get().strain_scale == 0)
+    {
+        calibration_scale_ = 1.0f;
+    }
+    else
+    {
+        calibration_scale_ = configuration_->get().strain_scale;
+    }
+    LOGV(PB_LogLevel_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
+    strain.set_scale(calibration_scale_);
+    delay(100);
+    strain.set_offset(0);
+    strain.tare();
+    delay(100);
+
+    raw_initial_value_ = strain.get_units(10);
 #endif
 
 #if SK_ALS
@@ -78,19 +95,20 @@ void SensorsTask::run()
 
     VL53L0X_RangingMeasurementData_t measure;
     lox.rangingTest(&measure, false);
-    unsigned long last_proximity_check_ms = millis();
-    unsigned long last_strain_check_ms = millis();
-    unsigned long last_illumination_check_ms = millis();
+    unsigned long last_proximity_check_ms = 0;
+    unsigned long last_strain_check_ms = 0;
+    unsigned long last_tare_ms = 0;
+    unsigned long last_illumination_check_ms = 0;
+
+    unsigned long log_ms = 0;
 
     const uint8_t proximity_poling_rate_hz = 20;
-    const uint8_t strain_poling_rate_hz = 20;
+    const uint8_t strain_poling_rate_hz = 120;
     const uint8_t illumination_poling_rate_hz = 1;
-
-    SensorsState sensors_state = {};
 
     // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
-    int32_t strain_reading_raw = 0;
+    float strain_reading_raw = 0;
 
     char buf_[128];
 
@@ -104,11 +122,13 @@ void SensorsTask::run()
 
     // strain value filtering
     double strain_filtered;
-    MovingAverage strain_filter(5);
+    MovingAverage strain_filter(10);
 
     // system temperature
     long last_system_temperature_check = 0;
     float last_system_temperature = 0;
+
+    bool do_strain = false;
 
     bool first_run = true;
 
@@ -117,9 +137,6 @@ void SensorsTask::run()
         if (millis() - last_system_temperature_check > 1000)
         {
             temp_sensor_read_celsius(&last_system_temperature);
-
-            sprintf(buf_, "system temp %0.2f °C", last_system_temperature);
-            LOGV(PB_LogLevel_DEBUG, buf_);
 
             sensors_state.system.esp32_temperature = last_system_temperature;
 
@@ -135,96 +152,121 @@ void SensorsTask::run()
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
             publishState(sensors_state);
-            if (millis() % 1000 == 0)
-            {
-                snprintf(buf_, sizeof(buf_), "Proximity sensor:  range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
-                LOGV(PB_LogLevel_DEBUG, buf_);
-            }
             last_proximity_check_ms = millis();
         }
 #if SK_STRAIN
         if (millis() - last_strain_check_ms > 1000 / strain_poling_rate_hz)
         {
-            if (scale.wait_ready_timeout(100))
+            if (strain.wait_ready_timeout(100))
             {
-                strain_reading_raw = scale.read();
+                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
+                {
+                    delay(100);
+                    do_strain = false;
+                }
 
-                if (abs(strain_reading_raw - strain_calibration.idle_value) > abs(4 * strain_calibration.press_delta) && strain_calibration.idle_value != 0)
+                if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0)
+                {
+                    LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+                    delay(2000);
+                    do_strain = false;
+                }
+
+                if (do_strain)
                 {
 
-                    snprintf(buf_, sizeof(buf_), "Value for pressure discarded. Raw Reading %d, idle value %d, delta value %d", strain_reading_raw, strain_calibration.idle_value, strain_calibration.press_delta);
-                    LOGD(buf_);
-                }
-                else
-                {
-                    sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
-                    // TODO: calibrate and track (long term moving average) idle point (lower)
-                    sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, 0, 1);
+                    strain_reading_raw = strain.get_units(1);
 
-                    if (sensors_state.strain.press_value < strain_released)
+                    if (abs(last_strain_reading_raw_ - strain_reading_raw) > 1000)
                     {
-                        // released
-                        switch (sensors_state.strain.virtual_button_code)
-                        {
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_RELEASED;
-                            break;
-                        case VIRTUAL_BUTTON_LONG_PRESSED:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_RELEASED;
-                            break;
-                        default:
-                            short_pressed_triggered_at_ms = 0;
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
-                            break;
-                        }
+                        LOGW("Discarding strain reading, too big difference from last reading.");
+                        LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
+                        LOGV(PB_LogLevel_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
                     }
-                    else if (strain_released < sensors_state.strain.press_value && sensors_state.strain.press_value < strain_pressed)
+                    else
                     {
-                        switch (sensors_state.strain.virtual_button_code)
-                        {
+                        sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
 
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                        // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
+
+                        // TODO: calibrate and track (long term moving average) idle point (lower)
+                        sensors_state.strain.press_value = lerp(sensors_state.strain.raw_value, 0, PRESS_WEIGHT, 0, 1);
+
+                        if (sensors_state.strain.press_value < strain_released)
+                        {
+                            // released
+                            switch (sensors_state.strain.virtual_button_code)
                             {
-                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_RELEASED;
+                                break;
+                            case VIRTUAL_BUTTON_LONG_PRESSED:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_RELEASED;
+                                break;
+                            default:
+                                short_pressed_triggered_at_ms = 0;
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_IDLE;
+                                delay(20);
+                                break;
                             }
-                            break;
-
-                        default:
-                            break;
                         }
-                    }
-                    else if (sensors_state.strain.press_value > strain_pressed)
-                    {
-                        switch (sensors_state.strain.virtual_button_code)
+                        else if (strain_released < sensors_state.strain.press_value && sensors_state.strain.press_value < strain_pressed)
                         {
-                        case VIRTUAL_BUTTON_IDLE:
-                            sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
-                            short_pressed_triggered_at_ms = millis();
-                            break;
-
-                        case VIRTUAL_BUTTON_SHORT_PRESSED:
-                            if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                            switch (sensors_state.strain.virtual_button_code)
                             {
-                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                                {
+                                    sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                                }
+                                break;
+
+                            default:
+                                break;
                             }
-                            break;
-
-                        default:
-                            break;
                         }
-                    }
+                        else if (sensors_state.strain.press_value > strain_pressed)
+                        {
 
-                    // todo: call this once per tick
-                    publishState(sensors_state);
-                    if (millis() % 1000 == 0)
-                    {
-                        snprintf(buf_, sizeof(buf_), "Strain: reading:  %d %d %d, [%0.2f,%0.2f] -> %0.2f ", sensors_state.strain.virtual_button_code, strain_reading_raw, sensors_state.strain.raw_value, strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta, press_value_unit);
-                        LOGV(PB_LogLevel_DEBUG, buf_);
+                            switch (sensors_state.strain.virtual_button_code)
+                            {
+                            case VIRTUAL_BUTTON_IDLE:
+                                LOGD("Strain sensor short press.");
+                                LOGD("Press value: %f", sensors_state.strain.press_value);
+                                LOGD("Raw value: %f", sensors_state.strain.raw_value);
+                                LOGD("Last press value: %f", last_press_value_);
+                                sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
+                                short_pressed_triggered_at_ms = millis();
+                                break;
+                            case VIRTUAL_BUTTON_SHORT_PRESSED:
+                                if (short_pressed_triggered_at_ms > 0 && millis() - short_pressed_triggered_at_ms > long_press_timeout_ms)
+                                {
+                                    sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_LONG_PRESSED;
+                                }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+
+                        publishState(sensors_state);
+
+                        if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && millis() - short_pressed_triggered_at_ms > 100 && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
+                        {
+                            LOGV(PB_LogLevel_DEBUG, "Strain sensor tare.");
+                            strain.tare();
+                            last_tare_ms = millis();
+                        }
+
+                        last_strain_reading_raw_ = strain_reading_raw;
+                        last_press_value_ = sensors_state.strain.press_value;
+                        last_strain_check_ms = millis();
                     }
                 }
+                do_strain = true;
             }
         }
 #endif
@@ -249,28 +291,147 @@ void SensorsTask::run()
             sensors_state.illumination.lux_avg = lux_avg;
             sensors_state.illumination.lux_adj = luminosity_adjustment;
 
-            if (millis() % 1000 == 0)
-            {
-                snprintf(buf_, sizeof(buf_), "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
-                LOGV(PB_LogLevel_DEBUG, buf_);
-            }
             last_illumination_check_ms = millis();
         }
 #endif
+
+        if (millis() - log_ms > 1000)
+        {
+            LOGV(PB_LogLevel_DEBUG, "System temp %0.2f °C", last_system_temperature);
+            LOGV(PB_LogLevel_DEBUG, "Proximity sensor:  range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
+#if SK_STRAIN
+            LOGV(PB_LogLevel_DEBUG, "Strain: reading:\n        Virtual button code: %d\n        Strain value: %f\n        Press value: %f", sensors_state.strain.virtual_button_code, sensors_state.strain.raw_value, press_value_unit);
+#endif
+#if SK_ALS
+            LOGV(PB_LogLevel_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
+#endif
+            log_ms = millis();
+        }
         first_run = false;
         delay(1);
     }
 }
 
-void SensorsTask::updateStrainCalibration(float idle_value, float press_delta)
+#if SK_STRAIN
+void SensorsTask::factoryStrainCalibrationCallback()
 {
-    strain_calibration.idle_value = idle_value;
-    strain_calibration.press_delta = press_delta;
-    char buf_[128];
-    snprintf(buf_, sizeof(buf_), "New strain config, idle: %d, pressed: %d ", strain_calibration.idle_value, strain_calibration.idle_value + strain_calibration.press_delta);
+    if (factory_strain_calibration_step_ == 0)
+    {
+        factory_strain_calibration_step_ = 1;
+        LOGI("Factory strain calibration step 1");
 
-    LOGI(buf_);
+        delay(200);
+
+        strain.set_scale();
+        delay(200);
+
+        strain.set_offset(0);
+        strain.tare();
+        delay(200);
+
+        raw_initial_value_ = strain.get_units(10);
+
+        LOGI("Place calibration weight on the knob and press 'Y' again");
+
+        delay(2000);
+        return;
+    }
+
+    // Array of calibration floats
+    float calibration_scale_validation[3];
+
+    LOGI("Factory strain calibration step 2, try: %d", factory_strain_calibration_step_);
+    float raw_value = strain.get_units(10);
+
+    LOGD("Raw value: %0.2f", raw_value);
+    LOGD("Raw initial value: %0.2f", raw_initial_value_);
+
+    if (abs(abs(raw_initial_value_) - abs(raw_value)) < 10000)
+    {
+        LOGE("Calibration weight not detected. Please place the calibration weight on the knob and press 'Y' again");
+        factory_strain_calibration_step_ = 0;
+        return;
+    }
+
+    calibration_scale_ = 0;
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        calibration_scale_ = raw_value / CALIBRATION_WEIGHT;
+        raw_value = strain.get_units(10);
+        LOGD("Raw value during calibration: %0.2f", raw_value);
+
+        strain.set_scale(calibration_scale_);
+        delay(200);
+        float calibrated_weight = strain.get_units(10);
+
+        while (abs(calibrated_weight - CALIBRATION_WEIGHT) > 0.25)
+        {
+            // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
+            if (calibrated_weight < CALIBRATION_WEIGHT - 10 || calibrated_weight > CALIBRATION_WEIGHT + 10)
+            {
+                // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
+                calibrated_weight = strain.get_units(10);
+                delay(500);
+                continue;
+            }
+
+            if (calibrated_weight < CALIBRATION_WEIGHT)
+            {
+                calibration_scale_ -= 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+            }
+            else
+            {
+                calibration_scale_ += 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+            }
+
+            strain.set_scale(calibration_scale_);
+            delay(200);
+            calibrated_weight = strain.get_units(10);
+            LOGD("Measured weight during calibration: %0.2fg", calibrated_weight); // MAKE VERBOSE LATER
+        }
+        LOGD("Validation run %d, result: %0.2fg", i + 1, calibrated_weight);
+
+        strain.set_scale();
+        calibration_scale_validation[i] = calibration_scale_;
+    }
+
+    strain.set_scale((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
+
+    configuration_->saveFactoryStrainCalibration((calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
+
+    LOGI("Found calibration scale: %f", (calibration_scale_validation[0] + calibration_scale_validation[1] + calibration_scale_validation[2]) / 3.0f);
+    LOGD("Found strain scale. Verifying...");
+    for (size_t i = 0; i < 3; i++)
+    {
+        delay(1000);
+        LOGD("Verify calibrated weight: %0.0fg", strain.get_units(10));
+    }
+    LOGI("\nRemove calibration weight.\n");
+    delay(5000);
+    LOGI("Factory strain calibration complete!");
+    strain.set_offset(0);
+    strain.tare();
+    factory_strain_calibration_step_ = 0;
 }
+
+void SensorsTask::weightMeasurementCallback()
+{
+    if (weight_measurement_step_ == 0)
+    {
+        weight_measurement_step_ = 1;
+        LOGI("Weight measurement step 1: Place weight on KNOB and press 'U' again");
+        delay(1000);
+        strain.set_offset(0);
+        strain.tare();
+    }
+    else if (weight_measurement_step_ == 1)
+    {
+        LOGD("Measured weight: %0.0fg", strain.get_units(10));
+        weight_measurement_step_ = 0;
+    }
+}
+#endif
 
 void SensorsTask::addStateListener(QueueHandle_t queue)
 {
