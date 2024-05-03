@@ -98,11 +98,6 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     cJSON *target_temp = cJSON_GetObjectItem(new_state, "target_temp");
     cJSON *current_temp = cJSON_GetObjectItem(new_state, "current_temp");
 
-    ESP_LOGD("CLIMATE_APP", "RECEIVED HASS STATE UPDATE");
-    ESP_LOGD("CLIMATE_APP", "mode: %d", mode->valueint);
-    ESP_LOGD("CLIMATE_APP", "target_temperature: %d", target_temp->valueint);
-    ESP_LOGD("CLIMATE_APP", "current_temperature: %d", current_temp->valueint);
-
     if (mode != NULL)
     {
         this->mode = mode->valueint;

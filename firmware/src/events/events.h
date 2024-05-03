@@ -67,7 +67,8 @@ enum ErrorType
 {
     NO_ERROR,
     WIFI_ERROR,
-    MQTT_ERROR
+    MQTT_ERROR,
+    RESET
 };
 
 union ErrorBody
@@ -101,8 +102,6 @@ enum EventType
 {
     SK_WIFI_AP_STARTED = 1,
     SK_WIFI_STATUS,
-    SK_AP_CLIENT,
-    SK_WEB_CLIENT,
     SK_WIFI_STA_TRY_NEW_CREDENTIALS,
     SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED,
     SK_WIFI_STA_CONNECTING,
@@ -110,7 +109,12 @@ enum EventType
     SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS,
     SK_WIFI_STA_CONNECTION_FAILED,
     SK_WIFI_STA_RETRY_LIMIT_REACHED,
+
+    SK_AP_CLIENT,
+
+    SK_WEB_CLIENT,
     SK_WEB_CLIENT_MQTT,
+
     SK_MQTT_TRY_NEW_CREDENTIALS,
     SK_MQTT_TRY_NEW_CREDENTIALS_FAILED,
     SK_MQTT_NEW_CREDENTIALS_RECIEVED,
@@ -123,17 +127,23 @@ enum EventType
     SK_MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED,
     SK_MQTT_CONNECTED_NEW_CREDENTIALS,
+
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,
+
+    SK_RESET_BUTTON_PRESSED,
+    SK_RESET_BUTTON_RELEASED,
 
     SK_MQTT_ERROR,
     SK_WIFI_ERROR,
 };
+
+typedef unsigned long SentAt;
 
 // TODO: rename to generic event?
 struct WiFiEvent
 {
     EventType type;
     WiFiEventBody body;
-    uint32_t sent_at = millis();
+    SentAt sent_at;
 };
