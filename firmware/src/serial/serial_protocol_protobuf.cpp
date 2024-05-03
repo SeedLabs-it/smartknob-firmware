@@ -86,7 +86,7 @@ void SerialProtocolProtobuf::sendInitialInfo()
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_knob_tag;
     strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
     strlcpy(pb_tx_buffer_.payload.knob.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.payload.knob.mac_address));
-    PB_PersistentConfiguration config = configuration_->get();
+    const PB_PersistentConfiguration config = configuration_->get();
     if (config.version != 0)
     {
         pb_tx_buffer_.payload.knob.has_persistent_config = true;
@@ -107,7 +107,7 @@ void SerialProtocolProtobuf::sendStrainCalibState(const uint8_t step)
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_strain_calib_state_tag;
     pb_tx_buffer_.payload.strain_calib_state.step = step;
-    pb_tx_buffer_.payload.strain_calib_state.strain_scale = 1.0f;
+    pb_tx_buffer_.payload.strain_calib_state.strain_scale = configuration_->get().strain_scale;
 
     sendPbTxBuffer();
 }

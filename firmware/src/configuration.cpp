@@ -96,10 +96,6 @@ bool Configuration::loadFromDisk()
         pb_buffer_.motor.direction_cw);
     LOGE(buf_);
 
-    WiFiEvent event;
-    event.type = SK_CONFIGURATION_SAVED;
-    publishEvent(event);
-
     return true;
 }
 
@@ -139,6 +135,12 @@ bool Configuration::saveToDisk()
     {
         LOGE("Failed to write all bytes to file");
         return false;
+    }
+    if (shared_events_queue != NULL)
+    {
+        WiFiEvent event;
+        event.type = SK_CONFIGURATION_SAVED;
+        publishEvent(event);
     }
 
     return true;
