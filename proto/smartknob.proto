@@ -37,8 +37,7 @@ message FromSmartKnob {
 message Knob {
     string mac_address = 1 [(nanopb).max_length = 50];
     string ip_address = 2 [(nanopb).max_length = 50];
-    bool motor_calibrated = 3;
-    bool strain_calibrated = 4;
+    PersistentConfiguration persistent_config = 3;
 }
 
 /** Motor calibration state information */
@@ -49,9 +48,7 @@ message MotorCalibState {
 /** Strain calibration state information */
 message StrainCalibState {
     uint32 step = 1;
-    StrainCalibration strain_calibration = 2;
-    StrainState strain_state = 3;
-
+    float strain_scale = 2;
 }
 
 /** Lets the host know that a ToSmartknob message was received and should not be retried. */
@@ -253,13 +250,8 @@ message MotorCalibration {
     uint32 pole_pairs = 4;
 }
 
-message StrainCalibration {
-    int32 idle_value = 1;
-    int32 press_delta = 2; 
-}
-
 message StrainState {
-    int32 raw_value = 1;
+    int32 press_weight = 1;
     float press_value = 2;
 }
 

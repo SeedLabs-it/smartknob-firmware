@@ -14,12 +14,13 @@ static SerialProtocolProtobuf *singleton_for_packet_serial = 0;
 static const uint16_t MIN_STATE_INTERVAL_MILLIS = 5;
 static const uint16_t PERIODIC_STATE_INTERVAL_MILLIS = 5000;
 
-SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),
-                                                                                                                                                                                                             stream_(stream),
-                                                                                                                                                                                                             config_callback_(config_callback),
-                                                                                                                                                                                                             motor_calibration_callback_(motor_calibration_callback),
-                                                                                                                                                                                                             strain_calibration_callback_(strain_calibration_callback),
-                                                                                                                                                                                                             packet_serial_()
+SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, Configuration *configuration, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),
+                                                                                                                                                                                                                                           stream_(stream),
+                                                                                                                                                                                                                                           configuration_(configuration),
+                                                                                                                                                                                                                                           config_callback_(config_callback),
+                                                                                                                                                                                                                                           motor_calibration_callback_(motor_calibration_callback),
+                                                                                                                                                                                                                                           strain_calibration_callback_(strain_calibration_callback),
+                                                                                                                                                                                                                                           packet_serial_()
 {
     packet_serial_.setStream(&stream);
 
@@ -85,23 +86,28 @@ void SerialProtocolProtobuf::sendInitialInfo()
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_knob_tag;
     strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
     strlcpy(pb_tx_buffer_.payload.knob.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.payload.knob.mac_address));
-    pb_tx_buffer_.payload.knob.motor_calibrated = true;
-    pb_tx_buffer_.payload.knob.strain_calibrated = true;
+    PB_PersistentConfiguration config = configuration_->get();
+    // if (config.version != 0)
+    // {
+    //     pb_tx_buffer_.payload.knob.has_persistent_config = config.has_motor;
+    //     // pb_tx_buffer_.payload.knob.persistent_config = config;
+    // }
+    // else
+    // {
+    //     pb_tx_buffer_.payload.knob.has_persistent_config = false;
+    // }
 
     sendPbTxBuffer();
 }
 
-void SerialProtocolProtobuf::sendStrainCalibState(const uint8_t step, const PB_StrainCalibration &strain_calibration, const PB_StrainState strain_state)
+void SerialProtocolProtobuf::sendStrainCalibState(const uint8_t step)
 
 {
     LOGD("Sending strain calibration state");
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_strain_calib_state_tag;
     pb_tx_buffer_.payload.strain_calib_state.step = step;
-    pb_tx_buffer_.payload.strain_calib_state.has_strain_calibration = true;
-    pb_tx_buffer_.payload.strain_calib_state.strain_calibration = strain_calibration;
-    pb_tx_buffer_.payload.strain_calib_state.has_strain_state = true;
-    pb_tx_buffer_.payload.strain_calib_state.strain_state = strain_state;
+    pb_tx_buffer_.payload.strain_calib_state.strain_scale = 1.0f;
 
     sendPbTxBuffer();
 }

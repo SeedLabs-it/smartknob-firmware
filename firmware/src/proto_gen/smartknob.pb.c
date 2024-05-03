@@ -42,9 +42,6 @@ PB_BIND(PB_PersistentConfiguration, PB_PersistentConfiguration, AUTO)
 PB_BIND(PB_MotorCalibration, PB_MotorCalibration, AUTO)
 
 
-PB_BIND(PB_StrainCalibration, PB_StrainCalibration, AUTO)
-
-
 PB_BIND(PB_StrainState, PB_StrainState, AUTO)
 
 

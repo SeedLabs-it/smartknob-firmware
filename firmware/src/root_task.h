@@ -32,7 +32,7 @@ class RootTask : public Task<RootTask>
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
+    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
     virtual ~RootTask();
     void setConfiguration(Configuration *configuration);
 

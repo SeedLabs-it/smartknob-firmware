@@ -14,6 +14,7 @@ void delete_me_TriggerMotorCalibration()
 
 RootTask::RootTask(
     const uint8_t task_core,
+    Configuration *configuration,
     MotorTask &motor_task,
     DisplayTask *display_task,
     WifiTask *wifi_task,
@@ -22,6 +23,7 @@ RootTask::RootTask(
     SensorsTask *sensors_task,
     ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
                              stream_(),
+                             configuration_(configuration),
                              motor_task_(motor_task),
                              display_task_(display_task),
                              wifi_task_(wifi_task),
@@ -40,6 +42,7 @@ RootTask::RootTask(
                                  }),
                              proto_protocol_(
                                  stream_,
+                                 configuration,
                                  [this](PB_SmartKnobConfig &config)
                                  { applyConfig(config, true); },
                                  [this]()
