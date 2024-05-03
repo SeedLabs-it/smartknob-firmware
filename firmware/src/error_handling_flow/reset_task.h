@@ -6,6 +6,7 @@
 #include "configuration.h"
 #include "motor_foc/motor_task.h"
 #include "../notify/motor_notifier/motor_notifier.h"
+#include "../events/events.h"
 
 class ResetTask : public Task<ResetTask>
 {
@@ -20,6 +21,13 @@ public:
 
     void setMotorTask(MotorTask *motor_task);
 
+    void setLogger(Logger *logger);
+    void setVerbose(bool verbose);
+    void toggleVerbose();
+
+    void setSharedEventsQueue(QueueHandle_t shared_event_queue);
+    void publishEvent(WiFiEvent event);
+
 protected:
     void run();
 
@@ -27,4 +35,6 @@ private:
     Configuration &configuration_;
     MotorTask *motor_task_;
     char buf_[128];
+
+    QueueHandle_t shared_events_queue;
 };

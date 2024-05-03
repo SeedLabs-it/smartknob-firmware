@@ -2,7 +2,7 @@
 
 #define RESET_BUTTON GPIO_NUM_0
 
-ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 2048, task_core), configuration_(configuration)
+ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 1024 * 3, task_core), configuration_(configuration)
 {
 }
 
@@ -24,6 +24,7 @@ void ResetTask::run()
         {
             if (held)
             {
+
                 // pressedCount += 1;
                 held = false;
 
@@ -32,11 +33,11 @@ void ResetTask::run()
                     LOGI("Resetting to factory defaults");
                     softReset();
                 }
-                else if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
-                {
-                    LOGI("Hard resetting");
-                    hardReset();
-                }
+
+                WiFiEvent event = {
+                    .type = EventType::SK_RESET_BUTTON_RELEASED,
+                };
+                publishEvent(event);
             }
             reset_button_pressed = millis();
         }
@@ -44,14 +45,24 @@ void ResetTask::run()
         {
             if (!held)
             {
+                WiFiEvent event = {
+                    .type = EventType::SK_RESET_BUTTON_PRESSED,
+                };
+                publishEvent(event);
                 held = true;
             }
             reset_button_released = millis();
 
-            if (millis() - reset_button_pressed > SOFT_RESET_SECONDS * 1000)
+            if (millis() - reset_button_pressed > 1 * 1000)
             {
                 motor_task_->playHaptic(true, false);
                 delay(100);
+            }
+
+            if (millis() - reset_button_pressed > HARD_RESET_SECONDS * 1000)
+            {
+                LOGI("Hard resetting");
+                hardReset();
             }
         }
 
@@ -116,4 +127,15 @@ void ResetTask::hardReset()
 void ResetTask::setMotorTask(MotorTask *motor_task)
 {
     this->motor_task_ = motor_task;
+}
+
+void ResetTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    this->shared_events_queue = shared_events_queue;
+}
+
+void ResetTask::publishEvent(WiFiEvent event)
+{
+    event.sent_at = millis();
+    xQueueSendToBack(shared_events_queue, &event, 0);
 }

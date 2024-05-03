@@ -243,7 +243,7 @@ message RequestState {}
 message PersistentConfiguration {
     uint32 version = 1;
     MotorCalibration motor = 2;
-    StrainCalibration strain = 3;
+    float strain_scale = 3;
 }
 
 message MotorCalibration {
