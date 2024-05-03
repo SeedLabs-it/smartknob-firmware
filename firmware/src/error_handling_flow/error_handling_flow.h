@@ -69,6 +69,7 @@ private:
     char ap_data[64];
     char ip_data[64];
 
+    TFT_eSprite *renderResetInProgress();
     TFT_eSprite *renderConnectionFailed();
     TFT_eSprite *renderRetryLimitReached();
 };

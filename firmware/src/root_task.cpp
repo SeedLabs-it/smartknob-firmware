@@ -229,6 +229,8 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
@@ -354,6 +356,13 @@ void RootTask::run()
                     break;
                 }
                 break;
+            case SK_RESET_BUTTON_PRESSED:
+                app_state.screen_state.awake_until = millis() + 15000;
+                app_state.screen_state.has_been_engaged = true;
+            case SK_RESET_BUTTON_RELEASED:
+                display_task_->getErrorHandlingFlow()
+                    ->handleEvent(wifi_event);
+                break;
             case SK_MQTT_CONNECTION_FAILED:
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
@@ -399,7 +408,10 @@ void RootTask::run()
         if (app_state.screen_state.has_been_engaged == true)
         {
             app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-            app_state.screen_state.awake_until = millis() + 4000; // 1s
+            if (app_state.screen_state.awake_until < millis())
+            {
+                app_state.screen_state.awake_until = millis() + 4000; // 1s
+            }
         }
         // Check if the knob is awake, and if the time is expired
         // and set it to not engaged
