@@ -371,11 +371,11 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
 
             if (calibrated_weight < calibration_weight)
             {
-                calibration_scale_ -= 1 * abs((calibrated_weight - calibration_weight));
+                calibration_scale_ -= abs((calibrated_weight - calibration_weight));
             }
             else
             {
-                calibration_scale_ += 1 * abs((calibrated_weight - calibration_weight));
+                calibration_scale_ += abs((calibrated_weight - calibration_weight));
             }
 
             strain.set_scale(calibration_scale_);
