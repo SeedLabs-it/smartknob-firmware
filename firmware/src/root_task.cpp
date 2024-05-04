@@ -14,6 +14,7 @@ void delete_me_TriggerMotorCalibration()
 
 RootTask::RootTask(
     const uint8_t task_core,
+    Configuration *configuration,
     MotorTask &motor_task,
     DisplayTask *display_task,
     WifiTask *wifi_task,
@@ -22,6 +23,7 @@ RootTask::RootTask(
     SensorsTask *sensors_task,
     ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
                              stream_(),
+                             configuration_(configuration),
                              motor_task_(motor_task),
                              display_task_(display_task),
                              wifi_task_(wifi_task),
@@ -32,20 +34,21 @@ RootTask::RootTask(
                              plaintext_protocol_(
                                  stream_, [this]()
                                  { motor_task_.runCalibration(); },
-                                 [this]()
-                                 { sensors_task_->factoryStrainCalibrationCallback(); },
+                                 [this](float calibration_weight)
+                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); },
                                  [this]()
                                  {
                                      sensors_task_->weightMeasurementCallback();
                                  }),
                              proto_protocol_(
                                  stream_,
+                                 configuration,
                                  [this](PB_SmartKnobConfig &config)
                                  { applyConfig(config, true); },
                                  [this]()
                                  { motor_task_.runCalibration(); },
-                                 [this]()
-                                 { sensors_task_->factoryStrainCalibrationCallback(); })
+                                 [this](float calibration_weight)
+                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); })
 
 {
 #if SK_DISPLAY
@@ -185,6 +188,10 @@ void RootTask::run()
         xSemaphoreGive(mutex_);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
+
+    configuration_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
+    sensors_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
@@ -341,7 +348,19 @@ void RootTask::run()
                 wifi_task_->retryMqtt(true); //! SUPER UGLY FIX/HACK, NEEDED TO REDIRECT USER IF MQTT CREDENTIALS FAILED
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
-
+            case SK_CONFIGURATION_SAVED:
+                if (current_protocol_ == &proto_protocol_)
+                {
+                    proto_protocol_.sendInitialInfo();
+                }
+                break;
+            case SK_STRAIN_CALIBRATION:
+                if (current_protocol_ == &proto_protocol_)
+                {
+                    LOGD("Sending strain calib state.");
+                    proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
+                }
+                break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
                 break;
@@ -678,10 +697,9 @@ void RootTask::updateHardware(AppState app_state)
     // #endif
 }
 
-void RootTask::setConfiguration(Configuration *configuration)
+void RootTask::loadConfiguration()
 {
     SemaphoreGuard lock(mutex_);
-    configuration_ = configuration;
     if (!configuration_loaded_)
     {
         if (configuration_ != nullptr)

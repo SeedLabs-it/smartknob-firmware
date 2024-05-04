@@ -172,7 +172,7 @@ void SensorsTask::run()
 
                     strain_reading_raw = strain.get_units(1);
 
-                    if (abs(last_strain_reading_raw_ - strain_reading_raw) > 1000)
+                    if (abs(last_strain_reading_raw_ - strain_reading_raw) > 2000)
                     {
                         LOGW("Discarding strain reading, too big difference from last reading.");
                         LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
@@ -302,8 +302,12 @@ void SensorsTask::run()
 }
 
 #if SK_STRAIN
-void SensorsTask::factoryStrainCalibrationCallback()
+void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
 {
+    WiFiEvent event;
+    event.type = SK_STRAIN_CALIBRATION;
+    event.body.calibration_step = factory_strain_calibration_step_;
+    publishEvent(event);
     if (factory_strain_calibration_step_ == 0)
     {
         factory_strain_calibration_step_ = 1;
@@ -346,7 +350,7 @@ void SensorsTask::factoryStrainCalibrationCallback()
 
     for (size_t i = 0; i < 3; i++)
     {
-        calibration_scale_ = raw_value / CALIBRATION_WEIGHT;
+        calibration_scale_ = raw_value / calibration_weight;
         raw_value = strain.get_units(10);
         LOGD("Raw value during calibration: %0.2f", raw_value);
 
@@ -354,10 +358,10 @@ void SensorsTask::factoryStrainCalibrationCallback()
         delay(200);
         float calibrated_weight = strain.get_units(10);
 
-        while (abs(calibrated_weight - CALIBRATION_WEIGHT) > 0.25)
+        while (abs(calibrated_weight - calibration_weight) > 0.25)
         {
             // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
-            if (calibrated_weight < CALIBRATION_WEIGHT - 10 || calibrated_weight > CALIBRATION_WEIGHT + 10)
+            if (calibrated_weight < calibration_weight - 10 || calibrated_weight > calibration_weight + 10)
             {
                 // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
                 calibrated_weight = strain.get_units(10);
@@ -365,13 +369,13 @@ void SensorsTask::factoryStrainCalibrationCallback()
                 continue;
             }
 
-            if (calibrated_weight < CALIBRATION_WEIGHT)
+            if (calibrated_weight < calibration_weight)
             {
-                calibration_scale_ -= 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+                calibration_scale_ -= abs((calibrated_weight - calibration_weight));
             }
             else
             {
-                calibration_scale_ += 1 * abs((calibrated_weight - CALIBRATION_WEIGHT));
+                calibration_scale_ += abs((calibrated_weight - calibration_weight));
             }
 
             strain.set_scale(calibration_scale_);
@@ -435,4 +439,15 @@ void SensorsTask::publishState(const SensorsState &state)
 
         // xQueueOverwrite(listener, &state);
     }
+}
+
+void SensorsTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    this->shared_events_queue = shared_events_queue;
+}
+
+void SensorsTask::publishEvent(WiFiEvent event)
+{
+    event.sent_at = millis();
+    xQueueSendToBack(shared_events_queue, &event, 0);
 }

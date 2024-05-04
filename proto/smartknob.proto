@@ -9,11 +9,13 @@ package PB;
  */
 message FromSmartKnob {
     uint32 protocol_version = 1 [(nanopb).int_size = IS_8];
-    string mac_address = 2 [(nanopb).max_length = 50];
     oneof payload {
-        Ack ack = 3;
-        Log log = 4;
-        SmartKnobState smartknob_state = 5;
+        Knob knob = 3;
+        Ack ack = 4;
+        Log log = 5;
+        SmartKnobState smartknob_state = 6;
+        MotorCalibState motor_calib_state = 7;
+        StrainCalibState strain_calib_state = 8;
     }
 }
 
@@ -28,7 +30,26 @@ message FromSmartKnob {
         RequestState request_state = 3;
         SmartKnobConfig smartknob_config = 4;
         SmartKnobCommand smartknob_command = 5;
+        StrainCalibration strain_calibration = 6;
     }
+}
+
+/** Initial knob information. */
+message Knob {
+    string mac_address = 1 [(nanopb).max_length = 50];
+    string ip_address = 2 [(nanopb).max_length = 50];
+    PersistentConfiguration persistent_config = 3;
+}
+
+/** Motor calibration state information */
+message MotorCalibState {
+    bool calibrated = 1; /** PLACEHOLDER */
+}
+
+/** Strain calibration state information */
+message StrainCalibState {
+    uint32 step = 1;
+    float strain_scale = 2;
 }
 
 /** Lets the host know that a ToSmartknob message was received and should not be retried. */
@@ -230,8 +251,18 @@ message MotorCalibration {
     uint32 pole_pairs = 4;
 }
 
+message StrainState {
+    int32 press_weight = 1;
+    float press_value = 2;
+}
+
 enum SmartKnobCommand {
-    MOTOR_CALIBRATE = 0;
-    STRAIN_CALIBRATE = 1;
+    GET_KNOB_INFO = 0;
+    MOTOR_CALIBRATE = 1;
+    STRAIN_CALIBRATE = 2;
+}
+
+message StrainCalibration {
+  float calibration_weight = 1;
 }
 

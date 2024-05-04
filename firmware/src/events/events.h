@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "configuration.h"
 
 struct WiFiAPStarted
 {
@@ -44,6 +43,14 @@ struct WebClient
 //     uint8_t sta_signal_strenth_status;
 //     int8_t sta_rssi;
 // };
+struct MQTTConfiguration
+{
+    char host[64];
+    uint16_t port;
+    char user[64];
+    char password[64];
+    char knob_id[64];
+};
 
 struct MQTTStateUpdate
 {
@@ -94,6 +101,7 @@ union WiFiEventBody
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
     Error error;
+    uint8_t calibration_step;
 };
 
 // TODO, think events more careful, for example add SK_MQTT_CREDENTIALS_RECIEVED
@@ -136,6 +144,10 @@ enum EventType
 
     SK_MQTT_ERROR,
     SK_WIFI_ERROR,
+
+    SK_CONFIGURATION_SAVED,
+
+    SK_STRAIN_CALIBRATION
 };
 
 typedef unsigned long SentAt;

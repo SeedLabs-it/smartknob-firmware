@@ -8,7 +8,6 @@
 #include "uart_stream.h"
 
 typedef std::function<void(void)> DemoConfigChangeCallback;
-typedef std::function<void(void)> StrainCalibrationCallback;
 typedef std::function<void(void)> OperationModeToggleCallback;
 
 class SerialProtocolPlaintext : public SerialProtocol

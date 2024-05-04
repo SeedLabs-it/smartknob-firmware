@@ -11,15 +11,16 @@
 
 static SerialProtocolProtobuf *singleton_for_packet_serial = 0;
 
-static const uint16_t MIN_STATE_INTERVAL_MILLIS = 5;
+static const uint16_t MIN_STATE_INTERVAL_MILLIS = 1000;
 static const uint16_t PERIODIC_STATE_INTERVAL_MILLIS = 5000;
 
-SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),
-                                                                                                                                                                                                             stream_(stream),
-                                                                                                                                                                                                             config_callback_(config_callback),
-                                                                                                                                                                                                             motor_calibration_callback_(motor_calibration_callback),
-                                                                                                                                                                                                             strain_calibration_callback_(strain_calibration_callback),
-                                                                                                                                                                                                             packet_serial_()
+SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, Configuration *configuration, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),
+                                                                                                                                                                                                                                           stream_(stream),
+                                                                                                                                                                                                                                           configuration_(configuration),
+                                                                                                                                                                                                                                           config_callback_(config_callback),
+                                                                                                                                                                                                                                           motor_calibration_callback_(motor_calibration_callback),
+                                                                                                                                                                                                                                           strain_calibration_callback_(strain_calibration_callback),
+                                                                                                                                                                                                                                           packet_serial_()
 {
     packet_serial_.setStream(&stream);
 
@@ -39,15 +40,13 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        char buf_[200];
-        sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
-                state.current_position,
-                state.config.min_position,
-                state.config.max_position,
-                state.config.detent_strength_unit,
-                degrees(state.config.position_width_radians),
-                state.config.endstop_strength_unit);
-        LOGD(buf_);
+        LOGD("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+             state.current_position,
+             state.config.min_position,
+             state.config.max_position,
+             state.config.detent_strength_unit,
+             degrees(state.config.position_width_radians),
+             state.config.endstop_strength_unit);
     }
 }
 
@@ -68,11 +67,6 @@ void SerialProtocolProtobuf::log(const char *msg)
 
 void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg)
 {
-    // if (isVerbose_ && !isVerbose())
-    // {
-    //     return;
-    // }
-
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
     pb_tx_buffer_.payload.log.level = log_level;
@@ -80,6 +74,38 @@ void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, c
 
     strlcpy(pb_tx_buffer_.payload.log.origin, origin, sizeof(pb_tx_buffer_.payload.log.origin));
     strlcpy(pb_tx_buffer_.payload.log.msg, msg, sizeof(pb_tx_buffer_.payload.log.msg));
+
+    sendPbTxBuffer();
+}
+
+void SerialProtocolProtobuf::sendInitialInfo()
+{
+    pb_tx_buffer_ = {};
+    pb_tx_buffer_.which_payload = PB_FromSmartKnob_knob_tag;
+    strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
+    strlcpy(pb_tx_buffer_.payload.knob.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.payload.knob.mac_address));
+    const PB_PersistentConfiguration config = configuration_->get();
+    if (config.version != 0)
+    {
+        pb_tx_buffer_.payload.knob.has_persistent_config = true;
+        pb_tx_buffer_.payload.knob.persistent_config = config;
+    }
+    else
+    {
+        pb_tx_buffer_.payload.knob.has_persistent_config = false;
+    }
+
+    sendPbTxBuffer();
+}
+
+void SerialProtocolProtobuf::sendStrainCalibState(const uint8_t step)
+
+{
+    LOGD("Sending strain calibration state");
+    pb_tx_buffer_ = {};
+    pb_tx_buffer_.which_payload = PB_FromSmartKnob_strain_calib_state_tag;
+    pb_tx_buffer_.payload.strain_calib_state.step = step;
+    pb_tx_buffer_.payload.strain_calib_state.strain_scale = configuration_->get().strain_scale;
 
     sendPbTxBuffer();
 }
@@ -108,6 +134,7 @@ void SerialProtocolProtobuf::loop()
         last_sent_state_ = latest_state_;
         last_sent_state_millis_ = millis();
     }
+    delay(1);
 }
 
 void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
@@ -127,26 +154,20 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
 
     if (expected_crc != provided_crc)
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Bad CRC (%u byte packet). Expected %08x but got %08x.", size - 4, expected_crc, provided_crc);
-        log(buf);
+        LOGE("Bad CRC (%u byte packet). Expected %08x but got %08x.", size - 4, expected_crc, provided_crc);
         return;
     }
 
     pb_istream_t stream = pb_istream_from_buffer(buffer, size - 4);
     if (!pb_decode(&stream, PB_ToSmartknob_fields, &pb_rx_buffer_))
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Decoding failed: %s", PB_GET_ERROR(&stream));
-        log(buf);
+        LOGE("Decoding failed: %s", PB_GET_ERROR(&stream));
         return;
     }
 
     if (pb_rx_buffer_.protocol_version != PROTOBUF_PROTOCOL_VERSION)
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Invalid protocol version. Expected %u, received %u", PROTOBUF_PROTOCOL_VERSION, pb_rx_buffer_.protocol_version);
-        log(buf);
+        LOGE("Invalid protocol version. Expected %u, received %u", PROTOBUF_PROTOCOL_VERSION, pb_rx_buffer_.protocol_version);
         return;
     }
 
@@ -154,10 +175,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     ack(pb_rx_buffer_.nonce);
     if (pb_rx_buffer_.nonce == last_nonce_)
     {
-        // Ignore any extraneous retries
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Already handled nonce %u", pb_rx_buffer_.nonce);
-        log(buf);
+        LOGD("Already handled nonce %u", pb_rx_buffer_.nonce);
         return;
     }
     last_nonce_ = pb_rx_buffer_.nonce;
@@ -169,31 +187,38 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
         config_callback_(pb_rx_buffer_.payload.smartknob_config);
         break;
     }
+    case PB_ToSmartknob_strain_calibration_tag:
+    {
+        strain_calibration_callback_(pb_rx_buffer_.payload.strain_calibration.calibration_weight);
+        break;
+    }
     case PB_ToSmartknob_smartknob_command_tag:
     {
         // Handle command
-        log("Command received");
+        LOGD("Command received");
         switch (pb_rx_buffer_.payload.smartknob_command)
         {
+        case PB_SmartKnobCommand_GET_KNOB_INFO:
+            LOGD("Get Knob Info");
+            sendInitialInfo();
+            break;
         case PB_SmartKnobCommand_MOTOR_CALIBRATE:
-            log("Motor Calibrate");
+            LOGD("Motor Calibrate");
             motor_calibration_callback_();
             break;
-        case PB_SmartKnobCommand_STRAIN_CALIBRATE:
-            log("Strain Calibrate");
-            strain_calibration_callback_();
-            break;
+        // case PB_SmartKnobCommand_STRAIN_CALIBRATE:
+        //     LOGD("Strain Calibrate");
+        //     strain_calibration_callback_();
+        //     break;
         default:
-            log("Unknown command");
+            LOGD("Unknown command");
             break;
         }
         break;
     }
     default:
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Unknown payload type: %d", pb_rx_buffer_.which_payload);
-        log(buf);
+        LOGW("Unknown payload type: %d", pb_rx_buffer_.which_payload);
         return;
     }
     }
@@ -205,8 +230,6 @@ void SerialProtocolProtobuf::sendPbTxBuffer()
 
     pb_ostream_t stream = pb_ostream_from_buffer(tx_buffer_, sizeof(tx_buffer_));
     pb_tx_buffer_.protocol_version = PROTOBUF_PROTOCOL_VERSION;
-
-    strncpy(pb_tx_buffer_.mac_address, WiFi.macAddress().c_str(), sizeof(pb_tx_buffer_.mac_address));
 
     stream.bytes_written = 0;
     if (!pb_encode(&stream, PB_FromSmartKnob_fields, &pb_tx_buffer_))

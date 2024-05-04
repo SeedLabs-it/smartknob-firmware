@@ -23,8 +23,11 @@ public:
     ~SensorsTask();
 
     void addStateListener(QueueHandle_t queue);
-    void factoryStrainCalibrationCallback();
+    void factoryStrainCalibrationCallback(float calibration_weight);
     void weightMeasurementCallback();
+
+    void setSharedEventsQueue(QueueHandle_t shared_event_queue);
+    void publishEvent(WiFiEvent event);
 
 protected:
     void run();
@@ -32,6 +35,8 @@ protected:
 private:
     SensorsState sensors_state = {};
     QueueHandle_t sensors_state_queue_;
+
+    QueueHandle_t shared_events_queue;
 
     std::vector<QueueHandle_t> state_listeners_;
 
