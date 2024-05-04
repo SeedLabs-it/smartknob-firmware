@@ -23,7 +23,7 @@ public:
     ~SensorsTask();
 
     void addStateListener(QueueHandle_t queue);
-    void factoryStrainCalibrationCallback();
+    void factoryStrainCalibrationCallback(float calibration_weight);
     void weightMeasurementCallback();
 
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);

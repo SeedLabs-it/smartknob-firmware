@@ -187,6 +187,11 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
         config_callback_(pb_rx_buffer_.payload.smartknob_config);
         break;
     }
+    case PB_ToSmartknob_strain_calibration_tag:
+    {
+        strain_calibration_callback_(pb_rx_buffer_.payload.strain_calibration.calibration_weight);
+        break;
+    }
     case PB_ToSmartknob_smartknob_command_tag:
     {
         // Handle command
@@ -201,10 +206,10 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
             LOGD("Motor Calibrate");
             motor_calibration_callback_();
             break;
-        case PB_SmartKnobCommand_STRAIN_CALIBRATE:
-            LOGD("Strain Calibrate");
-            strain_calibration_callback_();
-            break;
+        // case PB_SmartKnobCommand_STRAIN_CALIBRATE:
+        //     LOGD("Strain Calibrate");
+        //     strain_calibration_callback_();
+        //     break;
         default:
             LOGD("Unknown command");
             break;

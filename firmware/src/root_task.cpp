@@ -34,8 +34,8 @@ RootTask::RootTask(
                              plaintext_protocol_(
                                  stream_, [this]()
                                  { motor_task_.runCalibration(); },
-                                 [this]()
-                                 { sensors_task_->factoryStrainCalibrationCallback(); },
+                                 [this](float calibration_weight)
+                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); },
                                  [this]()
                                  {
                                      sensors_task_->weightMeasurementCallback();
@@ -47,8 +47,8 @@ RootTask::RootTask(
                                  { applyConfig(config, true); },
                                  [this]()
                                  { motor_task_.runCalibration(); },
-                                 [this]()
-                                 { sensors_task_->factoryStrainCalibrationCallback(); })
+                                 [this](float calibration_weight)
+                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); })
 
 {
 #if SK_DISPLAY

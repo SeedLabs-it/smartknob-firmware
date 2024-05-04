@@ -186,18 +186,6 @@ typedef struct _PB_RequestState {
     char dummy_field;
 } PB_RequestState;
 
-/* Message TO the Smartknob from the host */
-typedef struct _PB_ToSmartknob {
-    uint8_t protocol_version;
-    uint32_t nonce;
-    pb_size_t which_payload;
-    union {
-        PB_RequestState request_state;
-        PB_SmartKnobConfig smartknob_config;
-        PB_SmartKnobCommand smartknob_command;
-    } payload;
-} PB_ToSmartknob;
-
 typedef struct _PB_MotorCalibration {
     bool calibrated;
     float zero_electrical_offset;
@@ -239,6 +227,23 @@ typedef struct _PB_StrainState {
     float press_value;
 } PB_StrainState;
 
+typedef struct _PB_StrainCalibration {
+    float calibration_weight;
+} PB_StrainCalibration;
+
+/* Message TO the Smartknob from the host */
+typedef struct _PB_ToSmartknob {
+    uint8_t protocol_version;
+    uint32_t nonce;
+    pb_size_t which_payload;
+    union {
+        PB_RequestState request_state;
+        PB_SmartKnobConfig smartknob_config;
+        PB_SmartKnobCommand smartknob_command;
+        PB_StrainCalibration strain_calibration;
+    } payload;
+} PB_ToSmartknob;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -269,6 +274,7 @@ extern "C" {
 
 
 
+
 /* Initializer values for message structs */
 #define PB_FromSmartKnob_init_default            {0, 0, {PB_Knob_init_default}}
 #define PB_ToSmartknob_init_default              {0, 0, 0, {PB_RequestState_init_default}}
@@ -283,6 +289,7 @@ extern "C" {
 #define PB_PersistentConfiguration_init_default  {0, false, PB_MotorCalibration_init_default, 0}
 #define PB_MotorCalibration_init_default         {0, 0, 0, 0}
 #define PB_StrainState_init_default              {0, 0}
+#define PB_StrainCalibration_init_default        {0}
 #define PB_FromSmartKnob_init_zero               {0, 0, {PB_Knob_init_zero}}
 #define PB_ToSmartknob_init_zero                 {0, 0, 0, {PB_RequestState_init_zero}}
 #define PB_Knob_init_zero                        {"", "", false, PB_PersistentConfiguration_init_zero}
@@ -296,6 +303,7 @@ extern "C" {
 #define PB_PersistentConfiguration_init_zero     {0, false, PB_MotorCalibration_init_zero, 0}
 #define PB_MotorCalibration_init_zero            {0, 0, 0, 0}
 #define PB_StrainState_init_zero                 {0, 0}
+#define PB_StrainCalibration_init_zero           {0}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define PB_MotorCalibState_calibrated_tag        1
@@ -323,11 +331,6 @@ extern "C" {
 #define PB_SmartKnobState_sub_position_unit_tag  2
 #define PB_SmartKnobState_config_tag             3
 #define PB_SmartKnobState_press_nonce_tag        4
-#define PB_ToSmartknob_protocol_version_tag      1
-#define PB_ToSmartknob_nonce_tag                 2
-#define PB_ToSmartknob_request_state_tag         3
-#define PB_ToSmartknob_smartknob_config_tag      4
-#define PB_ToSmartknob_smartknob_command_tag     5
 #define PB_MotorCalibration_calibrated_tag       1
 #define PB_MotorCalibration_zero_electrical_offset_tag 2
 #define PB_MotorCalibration_direction_cw_tag     3
@@ -347,6 +350,13 @@ extern "C" {
 #define PB_FromSmartKnob_strain_calib_state_tag  8
 #define PB_StrainState_press_weight_tag          1
 #define PB_StrainState_press_value_tag           2
+#define PB_StrainCalibration_calibration_weight_tag 1
+#define PB_ToSmartknob_protocol_version_tag      1
+#define PB_ToSmartknob_nonce_tag                 2
+#define PB_ToSmartknob_request_state_tag         3
+#define PB_ToSmartknob_smartknob_config_tag      4
+#define PB_ToSmartknob_smartknob_command_tag     5
+#define PB_ToSmartknob_strain_calibration_tag    6
 
 /* Struct field encoding specification for nanopb */
 #define PB_FromSmartKnob_FIELDLIST(X, a) \
@@ -371,11 +381,13 @@ X(a, STATIC,   SINGULAR, UINT32,   protocol_version,   1) \
 X(a, STATIC,   SINGULAR, UINT32,   nonce,             2) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload,request_state,payload.request_state),   3) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload,smartknob_config,payload.smartknob_config),   4) \
-X(a, STATIC,   ONEOF,    UENUM,    (payload,smartknob_command,payload.smartknob_command),   5)
+X(a, STATIC,   ONEOF,    UENUM,    (payload,smartknob_command,payload.smartknob_command),   5) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,strain_calibration,payload.strain_calibration),   6)
 #define PB_ToSmartknob_CALLBACK NULL
 #define PB_ToSmartknob_DEFAULT NULL
 #define PB_ToSmartknob_payload_request_state_MSGTYPE PB_RequestState
 #define PB_ToSmartknob_payload_smartknob_config_MSGTYPE PB_SmartKnobConfig
+#define PB_ToSmartknob_payload_strain_calibration_MSGTYPE PB_StrainCalibration
 
 #define PB_Knob_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, STRING,   mac_address,       1) \
@@ -462,6 +474,11 @@ X(a, STATIC,   SINGULAR, FLOAT,    press_value,       2)
 #define PB_StrainState_CALLBACK NULL
 #define PB_StrainState_DEFAULT NULL
 
+#define PB_StrainCalibration_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, FLOAT,    calibration_weight,   1)
+#define PB_StrainCalibration_CALLBACK NULL
+#define PB_StrainCalibration_DEFAULT NULL
+
 extern const pb_msgdesc_t PB_FromSmartKnob_msg;
 extern const pb_msgdesc_t PB_ToSmartknob_msg;
 extern const pb_msgdesc_t PB_Knob_msg;
@@ -475,6 +492,7 @@ extern const pb_msgdesc_t PB_RequestState_msg;
 extern const pb_msgdesc_t PB_PersistentConfiguration_msg;
 extern const pb_msgdesc_t PB_MotorCalibration_msg;
 extern const pb_msgdesc_t PB_StrainState_msg;
+extern const pb_msgdesc_t PB_StrainCalibration_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define PB_FromSmartKnob_fields &PB_FromSmartKnob_msg
@@ -490,6 +508,7 @@ extern const pb_msgdesc_t PB_StrainState_msg;
 #define PB_PersistentConfiguration_fields &PB_PersistentConfiguration_msg
 #define PB_MotorCalibration_fields &PB_MotorCalibration_msg
 #define PB_StrainState_fields &PB_StrainState_msg
+#define PB_StrainCalibration_fields &PB_StrainCalibration_msg
 
 /* Maximum encoded size of messages (where known) */
 #define PB_Ack_size                              6
@@ -504,6 +523,7 @@ extern const pb_msgdesc_t PB_StrainState_msg;
 #define PB_SmartKnobConfig_size                  184
 #define PB_SmartKnobState_size                   206
 #define PB_StrainCalibState_size                 11
+#define PB_StrainCalibration_size                5
 #define PB_StrainState_size                      16
 #define PB_ToSmartknob_size                      196
 

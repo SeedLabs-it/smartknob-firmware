@@ -77,7 +77,7 @@ void SerialProtocolPlaintext::loop()
         }
         else if (b == 'Y' || b == 'y')
         {
-            factory_strain_calibration_callback_();
+            factory_strain_calibration_callback_((float)CALIBRATION_WEIGHT);
         }
         else if (b == 'U' || b == 'u')
         {
