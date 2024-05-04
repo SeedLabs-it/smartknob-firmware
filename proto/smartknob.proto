@@ -30,6 +30,7 @@ message FromSmartKnob {
         RequestState request_state = 3;
         SmartKnobConfig smartknob_config = 4;
         SmartKnobCommand smartknob_command = 5;
+        StrainCalibration strain_calibration = 6;
     }
 }
 
@@ -259,5 +260,9 @@ enum SmartKnobCommand {
     GET_KNOB_INFO = 0;
     MOTOR_CALIBRATE = 1;
     STRAIN_CALIBRATE = 2;
+}
+
+message StrainCalibration {
+  float calibration_weight = 1;
 }
 
