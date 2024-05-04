@@ -351,14 +351,13 @@ void RootTask::run()
             case SK_CONFIGURATION_SAVED:
                 if (current_protocol_ == &proto_protocol_)
                 {
-                    LOGD("Sending knob info after config saved.");
-                    // proto_protocol_.sendInitialInfo();
-                    proto_protocol_.sendStrainCalibState(2);
+                    proto_protocol_.sendInitialInfo();
                 }
                 break;
             case SK_STRAIN_CALIBRATION:
                 if (current_protocol_ == &proto_protocol_)
                 {
+                    LOGD("Sending strain calib state.");
                     proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
                 }
                 break;

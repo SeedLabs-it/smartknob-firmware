@@ -134,6 +134,7 @@ void SerialProtocolProtobuf::loop()
         last_sent_state_ = latest_state_;
         last_sent_state_millis_ = millis();
     }
+    delay(1);
 }
 
 void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)

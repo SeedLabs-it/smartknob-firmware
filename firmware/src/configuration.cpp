@@ -101,41 +101,44 @@ bool Configuration::loadFromDisk()
 
 bool Configuration::saveToDisk()
 {
-    SemaphoreGuard lock(mutex_);
-
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer_, sizeof(buffer_));
-    pb_buffer_.version = PERSISTENT_CONFIGURATION_VERSION;
-    if (!pb_encode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
     {
-        char buf_[200];
-        snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
-        LOGE(buf_);
-        return false;
+        SemaphoreGuard lock(mutex_);
+
+        pb_ostream_t stream = pb_ostream_from_buffer(buffer_, sizeof(buffer_));
+        pb_buffer_.version = PERSISTENT_CONFIGURATION_VERSION;
+        if (!pb_encode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
+        {
+            char buf_[200];
+            snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
+            LOGE(buf_);
+            return false;
+        }
+
+        FatGuard fatGuard;
+        if (!fatGuard.mounted_)
+        {
+            return false;
+        }
+
+        File f = FFat.open(CONFIG_PATH, FILE_WRITE);
+        if (!f)
+        {
+            LOGE("Failed to read config file");
+            return false;
+        }
+
+        size_t written = f.write(buffer_, stream.bytes_written);
+        f.close();
+
+        LOGD("Saved config. Wrote %d bytes", written);
+
+        if (written != stream.bytes_written)
+        {
+            LOGE("Failed to write all bytes to file");
+            return false;
+        }
     }
 
-    FatGuard fatGuard;
-    if (!fatGuard.mounted_)
-    {
-        return false;
-    }
-
-    File f = FFat.open(CONFIG_PATH, FILE_WRITE);
-    if (!f)
-    {
-        LOGE("Failed to read config file");
-        return false;
-    }
-
-    size_t written = f.write(buffer_, stream.bytes_written);
-    f.close();
-
-    LOGD("Saved config. Wrote %d bytes", written);
-
-    if (written != stream.bytes_written)
-    {
-        LOGE("Failed to write all bytes to file");
-        return false;
-    }
     if (shared_events_queue != NULL)
     {
         WiFiEvent event;
