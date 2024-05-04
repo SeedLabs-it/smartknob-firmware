@@ -349,7 +349,9 @@ void RootTask::run()
             case SK_CONFIGURATION_SAVED:
                 if (current_protocol_ == &proto_protocol_)
                 {
-                    proto_protocol_.sendInitialInfo();
+                    LOGD("Sending knob info after config saved.");
+                    // proto_protocol_.sendInitialInfo();
+                    proto_protocol_.sendStrainCalibState(2);
                 }
                 break;
 

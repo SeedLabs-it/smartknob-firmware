@@ -40,15 +40,13 @@ void SerialProtocolProtobuf::handleState(const PB_SmartKnobState &state)
 
     if (substantial_change)
     {
-        char buf_[200];
-        sprintf(buf_, "STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
-                state.current_position,
-                state.config.min_position,
-                state.config.max_position,
-                state.config.detent_strength_unit,
-                degrees(state.config.position_width_radians),
-                state.config.endstop_strength_unit);
-        LOGD(buf_);
+        LOGD("STATE: %d [%d, %d]  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)",
+             state.current_position,
+             state.config.min_position,
+             state.config.max_position,
+             state.config.detent_strength_unit,
+             degrees(state.config.position_width_radians),
+             state.config.endstop_strength_unit);
     }
 }
 
@@ -155,26 +153,20 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
 
     if (expected_crc != provided_crc)
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Bad CRC (%u byte packet). Expected %08x but got %08x.", size - 4, expected_crc, provided_crc);
-        LOGE(buf);
+        LOGE("Bad CRC (%u byte packet). Expected %08x but got %08x.", size - 4, expected_crc, provided_crc);
         return;
     }
 
     pb_istream_t stream = pb_istream_from_buffer(buffer, size - 4);
     if (!pb_decode(&stream, PB_ToSmartknob_fields, &pb_rx_buffer_))
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Decoding failed: %s", PB_GET_ERROR(&stream));
-        LOGE(buf);
+        LOGE("Decoding failed: %s", PB_GET_ERROR(&stream));
         return;
     }
 
     if (pb_rx_buffer_.protocol_version != PROTOBUF_PROTOCOL_VERSION)
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Invalid protocol version. Expected %u, received %u", PROTOBUF_PROTOCOL_VERSION, pb_rx_buffer_.protocol_version);
-        LOGE(buf);
+        LOGE("Invalid protocol version. Expected %u, received %u", PROTOBUF_PROTOCOL_VERSION, pb_rx_buffer_.protocol_version);
         return;
     }
 
@@ -182,10 +174,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     ack(pb_rx_buffer_.nonce);
     if (pb_rx_buffer_.nonce == last_nonce_)
     {
-        // Ignore any extraneous retries
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Already handled nonce %u", pb_rx_buffer_.nonce);
-        LOGD(buf);
+        LOGD("Already handled nonce %u", pb_rx_buffer_.nonce);
         return;
     }
     last_nonce_ = pb_rx_buffer_.nonce;
@@ -223,9 +212,7 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
     }
     default:
     {
-        char buf[200];
-        snprintf(buf, sizeof(buf), "Unknown payload type: %d", pb_rx_buffer_.which_payload);
-        LOGW(buf);
+        LOGW("Unknown payload type: %d", pb_rx_buffer_.which_payload);
         return;
     }
     }
