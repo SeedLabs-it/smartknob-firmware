@@ -101,6 +101,7 @@ union WiFiEventBody
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
     Error error;
+    uint8_t calibration_step;
 };
 
 // TODO, think events more careful, for example add SK_MQTT_CREDENTIALS_RECIEVED
@@ -144,7 +145,9 @@ enum EventType
     SK_MQTT_ERROR,
     SK_WIFI_ERROR,
 
-    SK_CONFIGURATION_SAVED
+    SK_CONFIGURATION_SAVED,
+
+    SK_STRAIN_CALIBRATION
 };
 
 typedef unsigned long SentAt;

@@ -11,7 +11,7 @@
 
 static SerialProtocolProtobuf *singleton_for_packet_serial = 0;
 
-static const uint16_t MIN_STATE_INTERVAL_MILLIS = 5;
+static const uint16_t MIN_STATE_INTERVAL_MILLIS = 1000;
 static const uint16_t PERIODIC_STATE_INTERVAL_MILLIS = 5000;
 
 SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream, Configuration *configuration, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, StrainCalibrationCallback strain_calibration_callback) : SerialProtocol(),

@@ -191,6 +191,8 @@ void RootTask::run()
 
     configuration_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
+    sensors_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
@@ -354,7 +356,12 @@ void RootTask::run()
                     proto_protocol_.sendStrainCalibState(2);
                 }
                 break;
-
+            case SK_STRAIN_CALIBRATION:
+                if (current_protocol_ == &proto_protocol_)
+                {
+                    proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
+                }
+                break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
                 break;
