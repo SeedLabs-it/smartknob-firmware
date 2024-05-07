@@ -176,7 +176,8 @@ void RootTask::run()
                                             break;
                                         default:
                                             break;
-                                        } });
+                                        } 
+                                        this->configuration_->saveOSConfigurationInMemory(*os_config); });
 
     // waiting for config to be loaded
     bool is_configuration_loaded = false;
