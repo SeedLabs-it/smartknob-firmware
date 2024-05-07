@@ -162,6 +162,7 @@ void RootTask::run()
                                         OSConfiguration *os_config = this->configuration_->getOSConfiguration();
                                         os_config->mode = os_mode;
                                         this->configuration_->saveOSConfiguration(*os_config);
+                                        this->configuration_->saveOSConfigurationInMemory(*os_config); 
 
                                         switch (os_config->mode)
                                         {
@@ -176,8 +177,7 @@ void RootTask::run()
                                             break;
                                         default:
                                             break;
-                                        } 
-                                        this->configuration_->saveOSConfigurationInMemory(*os_config); });
+                                        } });
 
     // waiting for config to be loaded
     bool is_configuration_loaded = false;
@@ -220,6 +220,7 @@ void RootTask::run()
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
+        os_config_notifier_.setOSMode(Onboarding);
         display_task_->enableOnboarding();
         break;
     case Demo:
