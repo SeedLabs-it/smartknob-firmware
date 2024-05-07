@@ -223,7 +223,7 @@ void RootTask::run()
         break;
     case Demo:
         os_config_notifier_.setOSMode(Onboarding);
-        // display_task_->enableOnboarding();
+        display_task_->enableOnboarding();
         break;
     case Hass:
         display_task_->enableHass();
@@ -323,9 +323,25 @@ void RootTask::run()
             case SK_RESET_BUTTON_PRESSED:
                 app_state.screen_state.awake_until = millis() + 15000;
                 app_state.screen_state.has_been_engaged = true;
+                display_task_->getErrorHandlingFlow()
+                    ->handleEvent(wifi_event);
+                break;
             case SK_RESET_BUTTON_RELEASED:
                 display_task_->getErrorHandlingFlow()
                     ->handleEvent(wifi_event);
+                switch (configuration_->getOSConfiguration()->mode)
+                {
+                case Onboarding:
+                    display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
+                    break;
+                case Demo:
+                    display_task_->getDemoApps()->triggerMotorConfigUpdate();
+                    break;
+                case Hass:
+                    display_task_->getHassApps()->triggerMotorConfigUpdate();
+                default:
+                    break;
+                }
                 break;
             case SK_MQTT_CONNECTION_FAILED:
             case SK_MQTT_RETRY_LIMIT_REACHED:
