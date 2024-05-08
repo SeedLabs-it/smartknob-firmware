@@ -27,7 +27,7 @@ static LedRingTask *led_ring_task_p = &led_ring_task;
 static LedRingTask *led_ring_task_p = nullptr;
 #endif
 
-static MotorTask motor_task(0, config);
+static MotorTask motor_task(1, config);
 
 #if SK_WIFI
 static WifiTask wifi_task(1);
@@ -45,7 +45,7 @@ static MqttTask *mqtt_task_p = nullptr;
 
 #endif
 
-static SensorsTask sensors_task(0, &config);
+static SensorsTask sensors_task(1, &config);
 static SensorsTask *sensors_task_p = &sensors_task;
 
 static ResetTask reset_task(1, config);

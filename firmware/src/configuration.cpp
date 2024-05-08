@@ -244,7 +244,10 @@ bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
 
 bool Configuration::saveOSConfiguration(OSConfiguration os_config)
 {
-    EEPROM.put(OS_MODE_EEPROM_POS, os_config.mode);
+    {
+        SemaphoreGuard lock(mutex_);
+        EEPROM.put(OS_MODE_EEPROM_POS, os_config.mode);
+    }
 
     return EEPROM.commit();
 }
