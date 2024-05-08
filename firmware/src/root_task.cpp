@@ -217,6 +217,8 @@ void RootTask::run()
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
 
+    configuration_->loadOSConfiguration();
+
     switch (configuration_->getOSConfiguration()->mode)
     {
     case Onboarding:
