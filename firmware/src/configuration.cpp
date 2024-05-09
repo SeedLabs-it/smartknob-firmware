@@ -94,7 +94,7 @@ bool Configuration::loadFromDisk()
         pb_buffer_.motor.pole_pairs,
         pb_buffer_.motor.zero_electrical_offset,
         pb_buffer_.motor.direction_cw);
-    LOGE(buf_);
+    LOGI(buf_);
 
     return true;
 }
