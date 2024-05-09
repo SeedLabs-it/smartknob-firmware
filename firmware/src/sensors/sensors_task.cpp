@@ -375,18 +375,16 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
         delay(200);
         float calibrated_weight = strain.get_units(10);
 
-        while (abs(calibrated_weight - calibration_weight) > 10)
-        {
-            // LOGE("HMMMMM!!! %f", abs(calibrated_weight - calibration_weight));
-            // LOGE("Calibrated weight is more than 10g off from the calibration weight. Please place the calibration weight on the knob and press 'Y' again");
-            // LOGE("Calibrated weight: %0.2f", calibrated_weight);
-            LOGE("Calibrated weight is more than 10g off from the calibration weight. Should redo calibration from start.");
-            factory_strain_calibration_step_ = 0;
-            return;
-        }
-
         while (abs(calibrated_weight - calibration_weight) > 0.25)
         {
+            if (abs(calibrated_weight - calibration_weight) > 10)
+            {
+                LOGE("Calibrated weight is more than 10g off from the calibration weight. Restart calibration by pressing 'Y' again.");
+                delay(2000);
+                factory_strain_calibration_step_ = 0;
+                return;
+            }
+
             if (calibrated_weight < calibration_weight)
             {
                 calibration_scale_ -= abs((calibrated_weight - calibration_weight));
