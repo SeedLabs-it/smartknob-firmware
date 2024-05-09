@@ -342,6 +342,21 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
     if (abs(abs(raw_initial_value_) - abs(raw_value)) < 10000)
     {
         LOGE("Calibration weight not detected. Please place the calibration weight on the knob and press 'Y' again");
+        if (configuration_->get().strain_scale == 0)
+        {
+            calibration_scale_ = 1.0f;
+        }
+        else
+        {
+            calibration_scale_ = configuration_->get().strain_scale;
+        }
+        LOGV(PB_LogLevel_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
+        strain.set_scale(calibration_scale_);
+        delay(100);
+        strain.set_offset(0);
+        strain.tare();
+        delay(100);
+
         factory_strain_calibration_step_ = 0;
         return;
     }
@@ -350,9 +365,11 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
 
     for (size_t i = 0; i < 3; i++)
     {
-        calibration_scale_ = raw_value / calibration_weight;
+        strain.set_scale();
+        delay(100);
         raw_value = strain.get_units(10);
         LOGD("Raw value during calibration: %0.2f", raw_value);
+        calibration_scale_ = raw_value / calibration_weight;
 
         strain.set_scale(calibration_scale_);
         delay(200);
@@ -360,30 +377,16 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
 
         while (abs(calibrated_weight - calibration_weight) > 10)
         {
-            LOGE("HMMMMM!!! %f", abs(calibrated_weight - calibration_weight));
-            LOGE("Calibrated weight is more than 10g off from the calibration weight. Please place the calibration weight on the knob and press 'Y' again");
-            LOGE("Calibrated weight: %0.2f", calibrated_weight);
-            calibration_scale_ = raw_value / calibration_weight;
-            raw_value = strain.get_units(10);
-            LOGD("Raw value during calibration: %0.2f", raw_value);
-
-            strain.set_scale(calibration_scale_);
-            delay(200);
-            calibrated_weight = strain.get_units(10);
-            delay(500);
+            // LOGE("HMMMMM!!! %f", abs(calibrated_weight - calibration_weight));
+            // LOGE("Calibrated weight is more than 10g off from the calibration weight. Please place the calibration weight on the knob and press 'Y' again");
+            // LOGE("Calibrated weight: %0.2f", calibrated_weight);
+            LOGE("Calibrated weight is more than 10g off from the calibration weight. Should redo calibration from start.");
+            factory_strain_calibration_step_ = 0;
+            return;
         }
 
         while (abs(calibrated_weight - calibration_weight) > 0.25)
         {
-            // // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
-            // if (calibrated_weight < calibration_weight - 10 || calibrated_weight > calibration_weight + 10)
-            // {
-            //     // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
-            //     calibrated_weight = strain.get_units(10);
-            //     delay(500);
-            //     continue;
-            // }
-
             if (calibrated_weight < calibration_weight)
             {
                 calibration_scale_ -= abs((calibrated_weight - calibration_weight));
@@ -399,8 +402,6 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
             LOGD("Measured weight during calibration: %0.2fg", calibrated_weight); // MAKE VERBOSE LATER
         }
         LOGD("Validation run %d, result: %0.2fg", i + 1, calibrated_weight);
-
-        strain.set_scale();
         calibration_scale_validation[i] = calibration_scale_;
     }
 
