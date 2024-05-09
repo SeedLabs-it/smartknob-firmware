@@ -358,16 +358,31 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
         delay(200);
         float calibrated_weight = strain.get_units(10);
 
+        while (abs(calibrated_weight - calibration_weight) > 10)
+        {
+            LOGE("HMMMMM!!! %f", abs(calibrated_weight - calibration_weight));
+            LOGE("Calibrated weight is more than 10g off from the calibration weight. Please place the calibration weight on the knob and press 'Y' again");
+            LOGE("Calibrated weight: %0.2f", calibrated_weight);
+            calibration_scale_ = raw_value / calibration_weight;
+            raw_value = strain.get_units(10);
+            LOGD("Raw value during calibration: %0.2f", raw_value);
+
+            strain.set_scale(calibration_scale_);
+            delay(200);
+            calibrated_weight = strain.get_units(10);
+            delay(500);
+        }
+
         while (abs(calibrated_weight - calibration_weight) > 0.25)
         {
-            // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
-            if (calibrated_weight < calibration_weight - 10 || calibrated_weight > calibration_weight + 10)
-            {
-                // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
-                calibrated_weight = strain.get_units(10);
-                delay(500);
-                continue;
-            }
+            // // If measured calibrated_weight is more than 10g off from the calibration weight get new reading.
+            // if (calibrated_weight < calibration_weight - 10 || calibrated_weight > calibration_weight + 10)
+            // {
+            //     // If this runs for "X" runs it prevents "all" other tasks from running after a while, why??????
+            //     calibrated_weight = strain.get_units(10);
+            //     delay(500);
+            //     continue;
+            // }
 
             if (calibrated_weight < calibration_weight)
             {
