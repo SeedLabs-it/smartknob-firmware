@@ -2,11 +2,12 @@
 
 #if SK_DISPLAY
 
+#include "./display/lv_conf.h"
+#include "lvgl.h"
+
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <HTTPClient.h>
-
-#include "lvgl.h"
 
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
