@@ -58,7 +58,7 @@ private:
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
 
-    OnboardingFlow onboarding_flow = OnboardingFlow(&spr_, TFT_eSprite(&tft_));
+    OnboardingFlow onboarding_flow;
     DemoApps demo_apps;
     HassApps hass_apps;
     ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));

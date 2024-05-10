@@ -1,6 +1,6 @@
 #include "onboarding_flow.h"
 
-OnboardingFlow::OnboardingFlow()
+OnboardingFlow::OnboardingFlow(lv_obj_t *screen) : screen_(screen)
 {
     root_level_motor_config = PB_SmartKnobConfig{
         0,
@@ -36,12 +36,36 @@ OnboardingFlow::OnboardingFlow()
         90,
     };
 
+    // lv_obj_t *screen = lv_obj_create(NULL);
+    // // lv_obj_set_size(screen, TFT_WIDTH, TFT_HEIGHT);
+    lv_obj_t *label = lv_label_create(screen);
+    lv_label_set_text(label, "Onboarding Flow!");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
 #ifdef RELEASE_VERSION
     sprintf(firmware_version, "%s", RELEASE_VERSION);
 #else
     sprintf(firmware_version, "%s", "DEV");
 #endif
 }
+
+void OnboardingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
+{
+    this->motor_notifier = motor_notifier;
+}
+
+void OnboardingFlow::triggerMotorConfigUpdate()
+{
+    if (this->motor_notifier != nullptr)
+    {
+        motor_notifier->requestUpdate(root_level_motor_config);
+    }
+    else
+    {
+        LOGW("Motor_notifier is not set");
+    }
+}
+
 // #include "onboarding_flow.h"
 // #include "apps/icons.h"
 

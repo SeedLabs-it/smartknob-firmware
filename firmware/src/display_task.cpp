@@ -107,8 +107,12 @@ void DisplayTask::run()
     lv_label_set_text(label, "LVGL!!!");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
+    lv_task_handler();
+
+    lv_obj_t *onboardingScreen = lv_obj_create(NULL);
     demo_apps = DemoApps(&spr_);
     hass_apps = HassApps(&spr_);
+    onboarding_flow = OnboardingFlow(onboardingScreen);
 
     AppState app_state;
 
@@ -117,6 +121,8 @@ void DisplayTask::run()
 
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
+
+    lv_scr_load(onboardingScreen);
 
     while (1)
     {

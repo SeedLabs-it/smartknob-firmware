@@ -196,11 +196,11 @@ void RootTask::run()
 
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
-    display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
-    display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
+    // display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
-    display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+    // display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #if SK_MQTT
@@ -260,7 +260,7 @@ void RootTask::run()
             switch (configuration_->getOSConfiguration()->mode)
             {
             case Onboarding:
-                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
                 break;
             case Demo:
                 display_task_->getDemoApps()->handleEvent(wifi_event);
@@ -488,7 +488,7 @@ void RootTask::run()
             switch (configuration_->getOSConfiguration()->mode)
             {
             case Onboarding:
-                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                // entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
                 break;
             case Demo:
                 entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
@@ -567,7 +567,7 @@ void RootTask::updateHardware(AppState app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case Onboarding:
-                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
@@ -602,7 +602,7 @@ void RootTask::updateHardware(AppState app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case Onboarding:
-                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
