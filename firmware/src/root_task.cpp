@@ -488,7 +488,7 @@ void RootTask::run()
             switch (configuration_->getOSConfiguration()->mode)
             {
             case Onboarding:
-                // entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
                 break;
             case Demo:
                 entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);

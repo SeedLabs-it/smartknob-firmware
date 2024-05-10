@@ -1,9 +1,23 @@
-
 #pragma once
+#include "apps/app.h"
+
+// #include "util.h"
+// #include "qrcode.h"
+// #include "navigation/navigation.h"
+// #include "events/events.h"
+
+// // Fonts
+// #include "font/roboto_thin_bold_24.h"
+// #include "font/roboto_thin_20.h"
+// #include "font/NDS125_small.h"
+// #include "font/Pixel62mr11pt7b.h"
 #include "lvgl.h"
 #include "util.h"
 #include "logging.h"
 #include "notify/motor_notifier/motor_notifier.h"
+#include "notify/wifi_notifier/wifi_notifier.h"
+#include "notify/os_config_notifier/os_config_notifier.h"
+// #include "./assets/images/skdk/logo"
 
 class OnboardingFlow
 
@@ -11,38 +25,45 @@ class OnboardingFlow
 public:
     OnboardingFlow();
 
-    // lv_obj_t
+    void render();
 
+    EntityStateUpdate update(AppState state);
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+
+    void setWiFiNotifier(WiFiNotifier *wifi_notifier);
+    void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
 
 private:
+    uint8_t current_position = 0;
+    char firmware_version[16];
+
     PB_SmartKnobConfig root_level_motor_config;
     PB_SmartKnobConfig blocked_motor_config;
-    lv_obj_t *screen_;
 
+    WiFiNotifier *wifi_notifier;
+    OSConfigNotifier *os_config_notifier;
     MotorNotifier *motor_notifier;
 
-    char firmware_version[16];
+    void welcomeScreenInit();
+    void hassScreenInit();
+    void wifiScreenInit();
+    void demoScreenInit();
+    void aboutScreenInit();
+
+    enum OnboardingFlowPage
+    {
+        WELCOME = 0,
+        HASS_1 = 1,
+        WIFI_1 = 2,
+        DEMO_1 = 3,
+        ABOUT = 4,
+        ONBOARDING_FLOW_PAGE_COUNT
+    };
+
+    lv_obj_t *screens[ONBOARDING_FLOW_PAGE_COUNT];
 };
-
-// #pragma once
-// #include "apps/app.h"
-
-// #include "util.h"
-// #include "qrcode.h"
-// #include "navigation/navigation.h"
-// #include "notify/motor_notifier/motor_notifier.h"
-// #include "notify/wifi_notifier/wifi_notifier.h"
-// #include "notify/os_config_notifier/os_config_notifier.h"
-// #include "events/events.h"
-
-// // Fonts
-// #include "font/roboto_thin_bold_24.h"
-// #include "font/roboto_thin_20.h"
-// #include "font/NDS1210pt7b.h"
-// #include "font/NDS125_small.h"
-// #include "font/Pixel62mr11pt7b.h"
 
 // // TODO make this enum ?
 
@@ -64,16 +85,11 @@ private:
 // {
 // public:
 //     OnboardingFlow();
-//     // void setQRCode(char *qr_data);
-//     // TFT_eSprite *render();
-//     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+// void setQRCode(char *qr_data);
 //     void updateStateFromSystem(AppState state);
 //     EntityStateUpdate update(AppState state);
 //     void handleNavigationEvent(NavigationEvent event);
 //     void handleEvent(WiFiEvent event);
-//     void setMotorUpdater(MotorNotifier *motor_notifier);
-//     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
-//     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
 //     void triggerMotorConfigUpdate();
 
 // private:

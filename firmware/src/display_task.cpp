@@ -131,8 +131,6 @@ void DisplayTask::run()
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
 
-    // lv_scr_load(onboardingScreen);
-
     while (1)
     {
         lv_task_handler();
@@ -208,13 +206,9 @@ void DisplayTask::setBrightness(uint16_t brightness)
 
 void DisplayTask::enableOnboarding()
 {
-    while (onboarding_flow == nullptr)
-    {
-        delay(50);
-    }
     os_mode = Onboarding;
+    onboarding_flow->render();
     onboarding_flow->triggerMotorConfigUpdate();
-    // lv_scr_load(onboardingScreen);
 }
 
 void DisplayTask::enableDemo()
