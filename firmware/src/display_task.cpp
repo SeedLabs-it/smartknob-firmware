@@ -30,7 +30,11 @@ DisplayTask::~DisplayTask()
 
 OnboardingFlow *DisplayTask::getOnboardingFlow()
 {
-    return &onboarding_flow;
+    while (onboarding_flow == nullptr)
+    {
+        delay(50);
+    }
+    return onboarding_flow;
 }
 
 DemoApps *DisplayTask::getDemoApps()
@@ -107,12 +111,17 @@ void DisplayTask::run()
     lv_label_set_text(label, "LVGL!!!");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
-    lv_task_handler();
+    // onboardingScreen = lv_obj_create(NULL);
+    demoScreen = lv_obj_create(NULL);
 
-    lv_obj_t *onboardingScreen = lv_obj_create(NULL);
+    lv_obj_t *label_demo = lv_label_create(demoScreen);
+    lv_label_set_text(label_demo, "Demo screen");
+    lv_obj_align(label_demo, LV_ALIGN_CENTER, 0, 0);
+
     demo_apps = DemoApps(&spr_);
     hass_apps = HassApps(&spr_);
-    onboarding_flow = OnboardingFlow(onboardingScreen);
+
+    onboarding_flow = new OnboardingFlow();
 
     AppState app_state;
 
@@ -122,17 +131,18 @@ void DisplayTask::run()
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
 
-    lv_scr_load(onboardingScreen);
+    // lv_scr_load(onboardingScreen);
 
     while (1)
     {
+        lv_task_handler();
         // if (millis() - last_rendering_ms > 3000)
         // {
         //     LOGE("Free heap: %d", ESP.getFreeHeap());
         //     LOGE("Free stack: %d", uxTaskGetStackHighWaterMark(NULL));
         //     last_rendering_ms = millis();
         // }
-        lv_task_handler();
+
         // if (millis() - last_rendering_ms > 1000 / wanted_fps)
         // {
 
@@ -198,14 +208,20 @@ void DisplayTask::setBrightness(uint16_t brightness)
 
 void DisplayTask::enableOnboarding()
 {
+    while (onboarding_flow == nullptr)
+    {
+        delay(50);
+    }
     os_mode = Onboarding;
-    onboarding_flow.triggerMotorConfigUpdate();
+    onboarding_flow->triggerMotorConfigUpdate();
+    // lv_scr_load(onboardingScreen);
 }
 
 void DisplayTask::enableDemo()
 {
     os_mode = Demo;
     demo_apps.triggerMotorConfigUpdate();
+    lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()

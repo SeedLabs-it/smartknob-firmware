@@ -9,8 +9,9 @@ class OnboardingFlow
 
 {
 public:
-    OnboardingFlow(){};
-    OnboardingFlow(lv_obj_t *screen);
+    OnboardingFlow();
+
+    // lv_obj_t
 
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
