@@ -55,19 +55,19 @@ void DisplayTask::run()
 
     LOGD("Push menu sprite: ok");
 
-    spr_.setColorDepth(16);
+    // spr_.setColorDepth(16);
 
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
-    {
-        LOGE("Sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
-    }
-    else
-    {
-        LOGD("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
+    // if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
+    // {
+    //     LOGE("Sprite allocation failed!");
+    //     tft_.fillScreen(TFT_RED);
+    // }
+    // else
+    // {
+    //     LOGD("Sprite created!");
+    //     tft_.fillScreen(TFT_BLACK);
+    // }
+    // spr_.setTextColor(0xFFFF, TFT_BLACK);
 
     demo_apps = DemoApps(&spr_);
 
@@ -75,8 +75,8 @@ void DisplayTask::run()
 
     AppState app_state;
 
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
+    // spr_.setTextDatum(CC_DATUM);
+    // spr_.setTextColor(TFT_WHITE);
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
@@ -88,31 +88,31 @@ void DisplayTask::run()
     {
         if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
-            spr_.fillSprite(TFT_BLACK);
-            spr_.setTextSize(1);
+            // spr_.fillSprite(TFT_BLACK);
+            // spr_.setTextSize(1);
 
-            if (error_handling_flow.getErrorType() == NO_ERROR)
-            {
-                switch (os_mode)
-                {
-                case Onboarding:
-                    onboarding_flow.render()->pushSprite(0, 0);
-                    break;
-                case Demo:
-                    demo_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                case Hass:
-                    hass_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                default:
-                    spr_.pushSprite(0, 0);
-                    break;
-                }
-            }
-            else
-            {
-                error_handling_flow.render()->pushSprite(0, 0);
-            }
+            // if (error_handling_flow.getErrorType() == NO_ERROR)
+            // {
+            //     switch (os_mode)
+            //     {
+            //     case Onboarding:
+            //         onboarding_flow.render()->pushSprite(0, 0);
+            //         break;
+            //     case Demo:
+            //         demo_apps.renderActive()->pushSprite(0, 0);
+            //         break;
+            //     case Hass:
+            //         hass_apps.renderActive()->pushSprite(0, 0);
+            //         break;
+            //     default:
+            //         spr_.pushSprite(0, 0);
+            //         break;
+            //     }
+            // }
+            // else
+            // {
+            //     error_handling_flow.render()->pushSprite(0, 0);
+            // }
 
             {
                 SemaphoreGuard lock(mutex_);
