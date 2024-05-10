@@ -53,9 +53,15 @@ jobs:
       run: |
         pio run \
           -e seedlabs_devkit_github_action_release
+    - name: Zip Firmware
+      run: |
+        cd .pio/build/seedlabs_devkit_github_action_release/
+        cp ./firmware.bin "../firmware_${RELEASE_VERSION}.bin"
+        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin ./boot_app0.bin
+        zip -r "${RELEASE_VERSION}.zip" ./*.bin ./*.elf
     
     - name: Upload Release Assets
       uses: AButler/upload-release-assets@v3.0
       with:
-        files: ".pio/build/seedlabs_devkit_github_action_release/firmware.bin"
+        files: ".pio/build/firmware_*.bin;.pio/build/seedlabs_devkit_github_action_release/*.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
