@@ -563,7 +563,11 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
     spr_->setTextDatum(CC_DATUM);
     uint8_t left_padding = 30;
 
-    sprintf(buf_, "FIRMWARE 0.1b");
+#ifdef RELEASE_VERSION
+    sprintf(buf_, "FIRMWARE %s" RELEASE_VERSION);
+#else
+    sprintf(buf_, "FIRMWARE %s", "DEV");
+#endif
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString(buf_, center_h, 85, 1);
