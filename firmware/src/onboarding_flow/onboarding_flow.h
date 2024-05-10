@@ -35,9 +35,9 @@ const uint8_t ONBOARDING_FLOW_PAGE_STEP_HASS_8 = 11;
 class OnboardingFlow
 {
 public:
-    OnboardingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
-    void setQRCode(char *qr_data);
-    TFT_eSprite *render();
+    OnboardingFlow();
+    // void setQRCode(char *qr_data);
+    // TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
     EntityStateUpdate update(AppState state);
@@ -49,18 +49,18 @@ public:
     void triggerMotorConfigUpdate();
 
 private:
-    TFT_eSprite *renderWelcomePage();
-    TFT_eSprite *renderHass1StepPage();
-    TFT_eSprite *renderHass2StepPage();
-    TFT_eSprite *renderHass3StepPage();
-    TFT_eSprite *renderHass4StepPage();
-    TFT_eSprite *renderHass5StepPage();
-    TFT_eSprite *renderHass6StepPage();
-    TFT_eSprite *renderHass7StepPage();
-    TFT_eSprite *renderHass8StepPage();
-    TFT_eSprite *renderWiFi1StepPage();
-    TFT_eSprite *renderDemo1StepPage();
-    TFT_eSprite *renderAboutPage();
+    // TFT_eSprite *renderWelcomePage();
+    // TFT_eSprite *renderHass1StepPage();
+    // TFT_eSprite *renderHass2StepPage();
+    // TFT_eSprite *renderHass3StepPage();
+    // TFT_eSprite *renderHass4StepPage();
+    // TFT_eSprite *renderHass5StepPage();
+    // TFT_eSprite *renderHass6StepPage();
+    // TFT_eSprite *renderHass7StepPage();
+    // TFT_eSprite *renderHass8StepPage();
+    // TFT_eSprite *renderWiFi1StepPage();
+    // TFT_eSprite *renderDemo1StepPage();
+    // TFT_eSprite *renderAboutPage();
 
     char firmware_version[16];
 
@@ -79,8 +79,8 @@ private:
     char buf_[64];
 
     // UI
-    TFT_eSprite *spr_ = NULL;
-    TFT_eSprite qrcode_spr_;
+    // TFT_eSprite *spr_ = NULL;
+    // TFT_eSprite qrcode_spr_;
 
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);

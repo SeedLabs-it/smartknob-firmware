@@ -101,66 +101,16 @@ void DisplayTask::run()
 #endif
 
     lv_display_t *disp;
-#if LV_USE_TFT_ESPI
-    /*TFT_eSPI can be enabled lv_conf.h to initialize the display in a simple way*/
     disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
-#else
-    /*Else create a display yourself*/
-    disp = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
-    lv_display_set_flush_cb(disp, my_disp_flush);
-    lv_display_set_buffers(disp, draw_buf, NULL, sizeof(draw_buf), LV_DISPLAY_RENDER_MODE_PARTIAL);
-#endif
-
-    /*Initialize the (dummy) input device driver*/
-    lv_indev_t *indev = lv_indev_create();
-    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); /*Touchpad should have POINTER type*/
-    lv_indev_set_read_cb(indev, my_touchpad_read);
-
-    /* Create a simple label
-     * ---------------------
-     lv_obj_t *label = lv_label_create( lv_scr_act() );
-     lv_label_set_text( label, "Hello Arduino, I'm LVGL!" );
-     lv_obj_align( label, LV_ALIGN_CENTER, 0, 0 );
-
-     * Try an example. See all the examples
-     *  - Online: https://docs.lvgl.io/master/examples.html
-     *  - Source codes: https://github.com/lvgl/lvgl/tree/master/examples
-     * ----------------------------------------------------------------
-
-     lv_example_btn_1();
-
-     * Or try out a demo. Don't forget to enable the demos in lv_conf.h. E.g. LV_USE_DEMOS_WIDGETS
-     * -------------------------------------------------------------------------------------------
-
-     lv_demo_widgets();
-     */
 
     lv_obj_t *label = lv_label_create(lv_scr_act());
     lv_label_set_text(label, "LVGL!!!");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
-    // spr_.setColorDepth(16);
-
-    // if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
-    // {
-    //     LOGE("Sprite allocation failed!");
-    //     tft_.fillScreen(TFT_RED);
-    // }
-    // else
-    // {
-    //     LOGD("Sprite created!");
-    //     tft_.fillScreen(TFT_BLACK);
-    // }
-    // spr_.setTextColor(0xFFFF, TFT_BLACK);
-
     demo_apps = DemoApps(&spr_);
-
     hass_apps = HassApps(&spr_);
 
     AppState app_state;
-
-    // spr_.setTextDatum(CC_DATUM);
-    // spr_.setTextColor(TFT_WHITE);
 
     unsigned long last_rendering_ms = millis();
     unsigned long last_fps_check = millis();
@@ -170,13 +120,12 @@ void DisplayTask::run()
 
     while (1)
     {
-        if (millis() - last_rendering_ms > 3000)
-        {
-            LOGE("DisplayTask is running");
-            LOGE("Free heap: %d", ESP.getFreeHeap());
-            LOGE("Free stack: %d", uxTaskGetStackHighWaterMark(NULL));
-            last_rendering_ms = millis();
-        }
+        // if (millis() - last_rendering_ms > 3000)
+        // {
+        //     LOGE("Free heap: %d", ESP.getFreeHeap());
+        //     LOGE("Free stack: %d", uxTaskGetStackHighWaterMark(NULL));
+        //     last_rendering_ms = millis();
+        // }
         lv_task_handler();
         // if (millis() - last_rendering_ms > 1000 / wanted_fps)
         // {
