@@ -86,7 +86,7 @@ void DisplayTask::run()
 {
     tft_.begin();
     tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
+    tft_.setRotation(2);
     tft_.fillScreen(TFT_BLACK);
 
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
@@ -103,7 +103,7 @@ void DisplayTask::run()
     lv_display_t *disp;
 #if LV_USE_TFT_ESPI
     /*TFT_eSPI can be enabled lv_conf.h to initialize the display in a simple way*/
-    disp = lv_tft_espi_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
+    disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
 #else
     /*Else create a display yourself*/
     disp = lv_display_create(TFT_HOR_RES, TFT_VER_RES);

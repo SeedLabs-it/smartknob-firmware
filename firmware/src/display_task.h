@@ -3,6 +3,7 @@
 #if SK_DISPLAY
 
 #include "./display/lv_conf.h"
+#include "./display/driver/lv_skdk.h"
 #include "lvgl.h"
 
 #include <Arduino.h>
