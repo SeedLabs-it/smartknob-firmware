@@ -6,6 +6,8 @@
 #include <TFT_eSPI.h>
 #include <HTTPClient.h>
 
+#include "lvgl.h"
+
 #include "proto_gen/smartknob.pb.h"
 #include "task.h"
 #include "app_config.h"
