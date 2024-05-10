@@ -62,6 +62,8 @@ private:
     TFT_eSprite *renderDemo1StepPage();
     TFT_eSprite *renderAboutPage();
 
+    char firmware_version[16];
+
     int32_t current_position = 0;
     uint8_t current_page = 0;
 

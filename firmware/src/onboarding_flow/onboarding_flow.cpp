@@ -36,6 +36,12 @@ OnboardingFlow::OnboardingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr
         0,
         90,
     };
+
+#ifdef RELEASE_VERSION
+    sprintf(firmware_version, "%s", RELEASE_VERSION);
+#else
+    sprintf(firmware_version, "%s", "DEV");
+#endif
 }
 
 void OnboardingFlow::triggerMotorConfigUpdate()
@@ -563,11 +569,7 @@ TFT_eSprite *OnboardingFlow::renderAboutPage()
     spr_->setTextDatum(CC_DATUM);
     uint8_t left_padding = 30;
 
-#ifdef RELEASE_VERSION
-    sprintf(buf_, "FIRMWARE %s" RELEASE_VERSION);
-#else
-    sprintf(buf_, "FIRMWARE %s", "DEV");
-#endif
+    sprintf(buf_, "FIRMWARE: %s", firmware_version);
     spr_->setFreeFont(&NDS1210pt7b);
     spr_->setTextColor(default_text_color);
     spr_->drawString(buf_, center_h, 85, 1);
