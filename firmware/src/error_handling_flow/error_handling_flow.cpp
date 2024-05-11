@@ -1,34 +1,34 @@
 #include "error_handling_flow.h"
 // TODO Add reset ui flow/"hints".
 
-ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_), qrcode_spr_(qrcode_spr_)
+ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_)
 {
 }
 
-void ErrorHandlingFlow::setQRCode(char *qr_data)
-{
-    QRCode qrcode;
-    uint8_t qrcodeVersion = 6;
-    int moduleSize = 2;
+// void ErrorHandlingFlow::setQRCode(char *qr_data)
+// {
+//     QRCode qrcode;
+//     uint8_t qrcodeVersion = 6;
+//     int moduleSize = 2;
 
-    uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-    qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, qr_data);
+//     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
+//     qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, qr_data);
 
-    int qrCodeWidthHeight = qrcode.size * moduleSize;
-    qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
-    qrcode_spr_.fillSprite(TFT_BLACK);
+//     int qrCodeWidthHeight = qrcode.size * moduleSize;
+//     qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
+//     qrcode_spr_.fillSprite(TFT_BLACK);
 
-    for (uint8_t y = 0; y < qrcode.size; y++)
-    {
-        for (uint8_t x = 0; x < qrcode.size; x++)
-        {
-            if (qrcode_getModule(&qrcode, x, y))
-            {
-                qrcode_spr_.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
-            }
-        }
-    }
-}
+//     for (uint8_t y = 0; y < qrcode.size; y++)
+//     {
+//         for (uint8_t x = 0; x < qrcode.size; x++)
+//         {
+//             if (qrcode_getModule(&qrcode, x, y))
+//             {
+//                 qrcode_spr_.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
+//             }
+//         }
+//     }
+// }
 
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
@@ -46,7 +46,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
         }
-        setQRCode(ip_data);
+        // setQRCode(ip_data);
     case SK_MQTT_CONNECTION_FAILED:
         error_type = MQTT_ERROR;
         latest_event = event;
@@ -64,7 +64,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
         }
-        setQRCode(ip_data);
+        // setQRCode(ip_data);
     case SK_WIFI_STA_CONNECTION_FAILED:
         error_type = WIFI_ERROR;
         latest_event = event;
@@ -261,8 +261,8 @@ TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
     spr_->setTextSize(1);
     spr_->setTextColor(accent_text_color);
 
-    uint8_t qrsize = qrcode_spr_.width();
-    qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2 - 6, TFT_BLACK);
+    // uint8_t qrsize = qrcode_spr_.width();
+    // qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2 - 6, TFT_BLACK);
 
     spr_->setFreeFont(&NDS125_small);
     spr_->drawString("Retry limit reached", center, center - screen_name_label_h * 3.4, 1);
