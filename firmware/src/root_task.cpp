@@ -527,7 +527,7 @@ void RootTask::run()
 
         updateHardware(app_state);
 
-        delay(1);
+        delay(10);
     }
 }
 
@@ -640,14 +640,17 @@ void RootTask::updateHardware(AppState app_state)
 
 #endif
 
-    uint16_t brightness = UINT16_MAX;
-// TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
-#if SK_ALS
-    brightness = app_state.screen_state.brightness;
-#endif
-
 #if SK_DISPLAY
-    display_task_->setBrightness(brightness); // TODO: apply gamma correction
+    if (app_state.screen_state.brightness != brightness)
+    {
+        // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
+#if SK_ALS
+        brightness = app_state.screen_state.brightness;
+#endif
+        LOGE("Setting brightness to %d", brightness);
+        display_task_->setBrightness(brightness); // TODO: apply gamma correction
+    }
+
 #endif
 
     if (led_ring_task_ != nullptr)

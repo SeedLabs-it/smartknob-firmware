@@ -746,7 +746,7 @@
 #define LV_USE_SNAPSHOT 0
 
 /*1: Enable system monitor component*/
-#define LV_USE_SYSMON   0
+#define LV_USE_SYSMON   1
 #if LV_USE_SYSMON
     /*Get the idle percentage. E.g. uint32_t my_get_idle(void);*/
     #define LV_SYSMON_GET_IDLE lv_timer_get_idle
@@ -755,7 +755,7 @@
      * Requires `LV_USE_SYSMON = 1`*/
     #define LV_USE_PERF_MONITOR 1
     #if LV_USE_PERF_MONITOR
-        #define LV_USE_PERF_MONITOR_POS LV_ALIGN_BOTTOM_MID
+        #define LV_USE_PERF_MONITOR_POS LV_ALIGN_CENTER
 
         /*0: Displays performance data on the screen, 1: Prints performance data using log.*/
         #define LV_USE_PERF_MONITOR_LOG_MODE 0

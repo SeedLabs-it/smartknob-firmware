@@ -70,7 +70,7 @@ private:
 
     AppState app_state_;
     SemaphoreHandle_t mutex_;
-    uint16_t brightness_;
+    uint16_t brightness_ = UINT16_MAX;
     char buf_[128];
 
     OSMode os_mode;

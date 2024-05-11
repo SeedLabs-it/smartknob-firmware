@@ -110,6 +110,8 @@ class OnboardingPageManager : public PageManager<OnboardingFlowPages>
 public:
     OnboardingPageManager(lv_obj_t *parent) : PageManager<OnboardingFlowPages>(parent)
     {
+        lv_obj_set_style_bg_color(parent, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+
         add(WELCOME, new WelcomePage(parent));
         add(HASS, new HassPage(parent));
         add(DEMO, new DemoPage(parent));

@@ -81,6 +81,8 @@ private:
     int current_config_ = 0;
     uint8_t press_count_ = 1;
 
+    uint16_t brightness = UINT16_MAX;
+
     uint8_t last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
 
     PB_SmartKnobState latest_state_ = {};
