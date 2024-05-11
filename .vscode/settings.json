@@ -75,7 +75,9 @@
         "locale": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "cstdbool": "cpp"
+        "cstdbool": "cpp",
+        "list": "cpp",
+        "thread": "cpp"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
