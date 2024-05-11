@@ -766,7 +766,7 @@
      * Requires `LV_USE_SYSMON = 1`*/
     #define LV_USE_MEM_MONITOR 0
     #if LV_USE_MEM_MONITOR
-        #define LV_USE_MEM_MONITOR_POS LV_ALIGN_BOTTOM_LEFT
+        #define LV_USE_MEM_MONITOR_POS LV_ALIGN_CENTER
     #endif
 
 #endif /*LV_USE_SYSMON*/
@@ -782,7 +782,7 @@
     #endif
 
     /*Header to include for the profiler*/
-    #define LV_PROFILER_INCLUDE "lvgl/src/misc/lv_profiler_builtin.h"
+    #define LV_PROFILER_INCLUDE "../../../.pio/libdeps/seedlabs_devkit/lvgl/src/misc/lv_profiler_builtin.h"
 
     /*Profiler start point function*/
     #define LV_PROFILER_BEGIN    LV_PROFILER_BUILTIN_BEGIN
