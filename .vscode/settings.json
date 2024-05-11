@@ -77,7 +77,8 @@
         "stack": "cpp",
         "cstdbool": "cpp",
         "list": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "events.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
