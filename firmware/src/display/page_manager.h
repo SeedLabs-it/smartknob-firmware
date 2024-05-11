@@ -38,19 +38,21 @@ public:
         static_assert(std::is_enum<T>::value, "T must be an enum type");
     }
 
-    virtual void createOverlay() = 0;
+    // virtual void createOverlay() = 0;
 
     void add(T page_enum, BasePage *page)
     {
         pages_[page_enum] = page;
     }
 
-    void show(T page_enum)
+    virtual void show(T page_enum)
     {
         for (auto &it : pages_)
         {
             if (it.first == page_enum)
             {
+                old_page_ = current_page_;
+                current_page_ = page_enum;
                 it.second->show();
             }
             else
@@ -72,6 +74,9 @@ public:
     }
 
 protected:
+    T current_page_;
+    T old_page_;
+
     lv_obj_t *parent_;
     lv_obj_t *overlay_;
     std::map<T, BasePage *> pages_;

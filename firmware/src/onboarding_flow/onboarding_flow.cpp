@@ -1,17 +1,5 @@
 #include "onboarding_flow.h"
 
-lv_obj_t *drawCircle(lv_obj_t *parent, const uint8_t dia)
-{
-    static lv_style_t style;
-    lv_style_set_radius(&style, LV_RADIUS_CIRCLE);
-    lv_style_set_border_width(&style, 0);
-
-    lv_obj_t *circle = lv_obj_create(parent);
-    lv_obj_set_size(circle, dia, dia);
-    lv_obj_add_style(circle, &style, 0);
-    return circle;
-}
-
 void screen_load_task(void *param)
 {
     lv_obj_t *screen = (lv_obj_t *)param;

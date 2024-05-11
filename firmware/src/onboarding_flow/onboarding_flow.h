@@ -114,13 +114,50 @@ public:
         add(HASS, new HassPage(parent));
         add(DEMO, new DemoPage(parent));
         add(ABOUT, new AboutPage(parent));
+
+        dotIndicatorInit();
+        show(WELCOME);
     }
 
-    void createOverlay()
+    void show(OnboardingFlowPages page_enum) override
+    {
+        PageManager::show(page_enum);
+        for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
+        {
+            if (i == current_page_)
+            {
+                lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x80, 0xFF, 0x50), 0);
+            }
+            else
+            {
+                lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
+            }
+        }
+    }
+
+    void dotIndicatorInit()
     {
         overlay_ = lv_obj_create(parent_);
+        lv_obj_remove_style_all(overlay_);
         lv_obj_set_size(overlay_, LV_HOR_RES, LV_VER_RES);
+
+        const uint8_t dot_dia = 12;
+        const uint8_t position_circle_radius = LV_HOR_RES / 2 - dot_dia; // the radius of the circle where you want the dots to lay.
+        float degree_per_dot = 9 * PI / 180;                             // the degree (angle) between two points in radian
+        float center_point_degree = 270 * PI / 180;                      //
+        float dot_starting_angle = center_point_degree - (((ONBOARDING_FLOW_PAGE_COUNT - 1) * degree_per_dot) / 2);
+
+        for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
+        {
+            lv_obj_t *dot = lvDrawCircle(overlay_, 12);
+            lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
+            lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
+            dots[i] = dot;
+        }
     }
+
+private:
+    lv_obj_t *dots[ONBOARDING_FLOW_PAGE_COUNT];
 };
 
 class OnboardingFlow
@@ -151,12 +188,6 @@ private:
     MotorNotifier *motor_notifier;
 
     void indicatorDots();
-
-    void welcomeScreenInit();
-    void hassScreenInit();
-    void wifiScreenInit();
-    void demoScreenInit();
-    void aboutScreenInit();
 
     lv_obj_t *overlay;
     lv_obj_t *main_screen = lv_obj_create(NULL);
