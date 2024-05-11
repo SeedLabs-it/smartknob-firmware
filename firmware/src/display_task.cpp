@@ -52,40 +52,6 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
     return &error_handling_flow;
 }
 
-void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
-{
-    /*Copy `px map` to the `area`*/
-
-    /*For example ("my_..." functions needs to be implemented by you)
-    uint32_t w = lv_area_get_width(area);
-    uint32_t h = lv_area_get_height(area);
-
-    my_set_window(area->x1, area->y1, w, h);
-    my_draw_bitmaps(px_map, w * h);
-     */
-
-    /*Call it to tell LVGL you are ready*/
-    lv_disp_flush_ready(disp);
-}
-
-/*Read the touchpad*/
-void my_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
-{
-    /*For example  ("my_..." functions needs to be implemented by you)
-    int32_t x, y;
-    bool touched = my_get_touch( &x, &y );
-
-    if(!touched) {
-        data->state = LV_INDEV_STATE_RELEASED;
-    } else {
-        data->state = LV_INDEV_STATE_PRESSED;
-
-        data->point.x = x;
-        data->point.y = y;
-    }
-     */
-}
-
 void DisplayTask::run()
 {
     tft_.begin();
@@ -107,13 +73,7 @@ void DisplayTask::run()
     lv_display_t *disp;
     disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
 
-    lv_obj_t *label = lv_label_create(lv_scr_act());
-    lv_label_set_text(label, "LVGL!!!");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
-    // onboardingScreen = lv_obj_create(NULL);
     demoScreen = lv_obj_create(NULL);
-
     lv_obj_t *label_demo = lv_label_create(demoScreen);
     lv_label_set_text(label_demo, "Demo screen");
     lv_obj_align(label_demo, LV_ALIGN_CENTER, 0, 0);
