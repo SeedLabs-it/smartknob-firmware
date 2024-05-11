@@ -86,19 +86,15 @@ void OnboardingFlow::welcomeScreenInit()
     screens[WELCOME] = lv_obj_create(NULL);
     lv_obj_set_size(screens[WELCOME], LV_HOR_RES, LV_VER_RES);
 
-    lv_style_t style;
-    lv_style_init(&style);
-    lv_style_set_text_font(&style, &NDS12_10px);
-
     lv_obj_t *label = lv_label_create(screens[WELCOME]);
     lv_label_set_text(label, "SMART KNOB");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, -90);
-    lv_obj_set_style_text_font(label, &NDS12_10px, 0);
+    lv_obj_set_style_text_font(label, &NDS12_14px, 0);
 
     label = lv_label_create(screens[WELCOME]);
     lv_label_set_text_fmt(label, "DEV KIT v0.1");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, -68);
-    lv_obj_set_style_text_font(label, &NDS12_10px, 0);
+    lv_obj_set_style_text_font(label, &NDS12_14px, 0);
 
     lv_obj_t *img = lv_img_create(screens[WELCOME]);
     LV_IMAGE_DECLARE(logo_white_transparent);
@@ -110,7 +106,8 @@ void OnboardingFlow::welcomeScreenInit()
     label = lv_label_create(screens[WELCOME]);
     lv_label_set_text(label, "ROTATE TO START");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 68);
-    lv_obj_set_style_text_font(label, &NDS12_10px, 0);
+    lv_obj_set_style_text_font(label, &NDS12_14px, 0);
+    lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
 }
 
 void OnboardingFlow::hassScreenInit()
