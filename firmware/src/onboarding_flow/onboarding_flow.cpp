@@ -1,13 +1,18 @@
 #include "onboarding_flow.h"
+#include <semaphore_guard.h>
 
-void screen_load_task(void *param)
+void OnboardingFlow::screen_load_task(void *param)
 {
-    lv_obj_t *screen = (lv_obj_t *)param;
-    lv_scr_load(screen);
-    vTaskDelete(NULL);
+    //     if (lv_mutex_lock(lv_mutex_))
+    //     {
+    //         lv_obj_t *screen = (lv_obj_t *)param;
+    //         lv_scr_load(screen);
+    //         lv_mutex_unlock(lv_mutex_);
+    //     }
+    //     vTaskDelete(NULL);
 }
 
-OnboardingFlow::OnboardingFlow()
+OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 {
     root_level_motor_config = PB_SmartKnobConfig{
         0,
@@ -43,6 +48,8 @@ OnboardingFlow::OnboardingFlow()
         90,
     };
 
+    page_mgr = new OnboardingPageManager(main_screen, mutex);
+
     // page_mgr->add(WELCOME, new WelcomePage(main_screen));
     // // page_mgr->add(HASS, new HassPage());
     // // // page_mgr.add_screen(WIFI, new WiFiPage());
@@ -60,8 +67,17 @@ OnboardingFlow::OnboardingFlow()
 
 void OnboardingFlow::render()
 {
+    {
+        SemaphoreGuard lock(mutex_);
+        lv_scr_load(main_screen);
+    }
+    // if (lv_mutex_lock(lv_mutex_))
+    // {
+    //     lv_scr_load(main_screen);
+    //     lv_mutex_unlock(lv_mutex_);
+    // }
     // lv_scr_load(screens[WELCOME]);
-    xTaskCreate(screen_load_task, "Screen load task", 1024 * 3, main_screen, tskIDLE_PRIORITY, NULL);
+    // xTaskCreate(screen_load_task, "Screen load task", 1024 * 3, main_screen, tskIDLE_PRIORITY, NULL);
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)

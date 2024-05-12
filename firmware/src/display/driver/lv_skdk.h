@@ -15,6 +15,7 @@ extern "C"
  *      INCLUDES
  *********************/
 #include "lvgl.h"
+#include "logging.h"
 
 #if LV_USE_TFT_ESPI
 
@@ -29,7 +30,7 @@ extern "C"
     /**********************
      * GLOBAL PROTOTYPES
      **********************/
-    lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf, uint32_t buf_size_bytes);
+    lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf1, void *buf2, uint32_t buf_size_bytes);
 
     /**********************
      *      MACROS

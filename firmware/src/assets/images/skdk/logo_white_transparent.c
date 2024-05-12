@@ -222,6 +222,7 @@ const lv_image_dsc_t logo_white_transparent = {
   .header.magic = LV_IMAGE_HEADER_MAGIC,
   .header.w = 96,
   .header.h = 96,
+  .header.stride = 192,
   .data_size = 9216 * 3,
   .data = logo_white_transparent_map,
 };

@@ -40,7 +40,7 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
  *   GLOBAL FUNCTIONS
  **********************/
 
-lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf, uint32_t buf_size_bytes)
+lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf1, void *buf2, uint32_t buf_size_bytes)
 {
     lv_tft_espi_t *dsc = (lv_tft_espi_t *)lv_malloc_zeroed(sizeof(lv_tft_espi_t));
     LV_ASSERT_MALLOC(dsc);
@@ -56,10 +56,13 @@ lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf, uint
 
     dsc->tft = new TFT_eSPI(hor_res, ver_res);
     dsc->tft->begin();                          /* TFT init */
+    dsc->tft->initDMA(true);                    /* Enable DMA */
     dsc->tft->setRotation(SK_DISPLAY_ROTATION); /* Landscape orientation, flipped */
+    dsc->tft->invertDisplay(1);                 /* Invert display */
+    dsc->tft->setSwapBytes(true);               /* TFT byte order is swapped */
     lv_display_set_driver_data(disp, (void *)dsc);
     lv_display_set_flush_cb(disp, flush_cb);
-    lv_display_set_buffers(disp, (void *)buf, NULL, buf_size_bytes, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, buf_size_bytes, LV_DISPLAY_RENDER_MODE_DIRECT);
     return disp;
 }
 
@@ -73,10 +76,11 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 
     uint32_t w = (area->x2 - area->x1 + 1);
     uint32_t h = (area->y2 - area->y1 + 1);
+    uint32_t size = w * h;
 
     dsc->tft->startWrite();
     dsc->tft->setAddrWindow(area->x1, area->y1, w, h);
-    dsc->tft->pushColors((uint16_t *)px_map, w * h, true);
+    dsc->tft->pushPixelsDMA((uint16_t *)px_map, size);
     dsc->tft->endWrite();
 
     lv_display_flush_ready(disp);

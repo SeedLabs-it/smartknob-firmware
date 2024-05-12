@@ -56,8 +56,11 @@
     #define LV_MEM_ADR 0     /*0: unused*/
     /*Instead of an address give a memory allocator that will be called to get a memory pool for LVGL. E.g. my_malloc*/
     #if LV_MEM_ADR == 0
-        #undef LV_MEM_POOL_INCLUDE
-        #undef LV_MEM_POOL_ALLOC
+        // #undef LV_MEM_POOL_INCLUDE
+        // #undef LV_MEM_POOL_ALLOC
+        // ! Not sure about this but, moves lvgl mem alloc to PSRAM.
+        #define LV_MEM_POOL_INCLUDE     "esp_heap_caps.h"
+        #define LV_MEM_POOL_ALLOC(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM)
     #endif
 #endif  /*LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN*/
 
@@ -208,7 +211,7 @@
  *-----------*/
 
 /*Enable the log module*/
-#define LV_USE_LOG 0
+#define LV_USE_LOG 1
 #if LV_USE_LOG
 
     /*How important log should be added:
@@ -218,11 +221,11 @@
     *LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
     *LV_LOG_LEVEL_USER        Only logs added by the user
     *LV_LOG_LEVEL_NONE        Do not log anything*/
-    #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+    #define LV_LOG_LEVEL LV_LOG_LEVEL_INFO
 
     /*1: Print the log with 'printf';
     *0: User need to register a callback with `lv_log_register_print_cb()`*/
-    #define LV_LOG_PRINTF 0
+    #define LV_LOG_PRINTF 1
 
     /*1: Enable print timestamp;
      *0: Disable print timestamp*/
@@ -758,7 +761,7 @@
         #define LV_USE_PERF_MONITOR_POS LV_ALIGN_CENTER
 
         /*0: Displays performance data on the screen, 1: Prints performance data using log.*/
-        #define LV_USE_PERF_MONITOR_LOG_MODE 0
+        #define LV_USE_PERF_MONITOR_LOG_MODE 1
     #endif
 
     /*1: Show the used memory and the memory fragmentation

@@ -2,28 +2,40 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
+#include "esp_spiram.h"
+#include "esp_heap_caps.h"
 
 #include "cJSON.h"
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
-#define DISP_BUF_SIZE (TFT_WIDTH * 200) // Larger buffer for LVGL allows for more stable FPS - if memory is a concern buffer size can be reduced at the cost of FPS
-uint32_t draw_buf[DISP_BUF_SIZE / 4];
-
 #define TFT_HOR_RES 240
 #define TFT_VER_RES 240
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 16, 1, task_core}
+static const uint32_t DISP_BUF_SIZE = ((TFT_HOR_RES * TFT_HOR_RES) * sizeof(lv_color_t));
+
+static lv_color_t *buf1 = NULL;
+static lv_color_t *buf2 = NULL;
+
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 1, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
 
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
+
+    buf1 = (lv_color_t *)heap_caps_aligned_alloc(16, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    assert(buf1 != NULL);
+
+    buf2 = (lv_color_t *)heap_caps_aligned_alloc(16, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    assert(buf2 != NULL);
 }
 
 DisplayTask::~DisplayTask()
 {
+    heap_caps_free(buf1);
+    heap_caps_free(buf2);
     vQueueDelete(app_state_queue_);
     vSemaphoreDelete(mutex_);
 }
@@ -54,11 +66,6 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 
 void DisplayTask::run()
 {
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(2);
-    tft_.fillScreen(TFT_BLACK);
-
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
@@ -66,12 +73,8 @@ void DisplayTask::run()
     lv_init();
     lv_tick_set_cb((lv_tick_get_cb_t)millis);
 
-#if LV_USE_LOG != 0
-    // lv_log_register_print_cb(my_print);
-#endif
-
     lv_display_t *disp;
-    disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
+    disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, buf1, buf2, DISP_BUF_SIZE);
 
     demoScreen = lv_obj_create(NULL);
     lv_obj_t *label_demo = lv_label_create(demoScreen);
@@ -81,7 +84,7 @@ void DisplayTask::run()
     demo_apps = DemoApps(&spr_);
     hass_apps = HassApps(&spr_);
 
-    onboarding_flow = new OnboardingFlow();
+    onboarding_flow = new OnboardingFlow(mutex_);
 
     AppState app_state;
 
@@ -91,21 +94,22 @@ void DisplayTask::run()
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
 
+    lv_obj_t *rect = lv_obj_create(lv_scr_act());  // Create a new object
+    lv_obj_set_size(rect, LV_HOR_RES, LV_VER_RES); // Set the size to cover the entire screen
+    lv_obj_set_pos(rect, 0, 0);                    // Position it at the top-left corner
+    lv_color_t colors[] = {LV_COLOR_MAKE(255, 0, 255), LV_COLOR_MAKE(255, 0, 0), LV_COLOR_MAKE(0, 255, 0), LV_COLOR_MAKE(0, 0, 255)};
+
     while (1)
     {
-        lv_task_handler();
-        // if (millis() - last_rendering_ms > 3000)
+
+        // SemaphoreGuard lock(mutex_);
+
+        // for (int i = 0; i < 100000; i++)
         // {
-        //     LOGE("Free heap: %d", ESP.getFreeHeap());
-        //     LOGE("Free stack: %d", uxTaskGetStackHighWaterMark(NULL));
-        //     last_rendering_ms = millis();
+        //     lv_obj_set_style_bg_color(rect, colors[i % 4], 0);
+        //     lv_task_handler();
+        //     delay(200);
         // }
-
-        // if (millis() - last_rendering_ms > 1000 / wanted_fps)
-        // {
-
-        // spr_.fillSprite(TFT_BLACK);
-        // spr_.setTextSize(1);
 
         // if (error_handling_flow.getErrorType() == NO_ERROR)
         // {
@@ -147,6 +151,7 @@ void DisplayTask::run()
         // vTaskDelay(pdMS_TO_TICKS(5));
         {
             SemaphoreGuard lock(mutex_);
+            lv_task_handler();
             ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
         }
         delay(5);

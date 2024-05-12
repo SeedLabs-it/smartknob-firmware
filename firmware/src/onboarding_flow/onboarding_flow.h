@@ -1,6 +1,7 @@
 #pragma once
 #include "apps/app.h"
 #include <map>
+#include "semaphore_guard.h"
 #include "./display/page_manager.h"
 
 // #include "util.h"
@@ -108,7 +109,7 @@ public:
 class OnboardingPageManager : public PageManager<OnboardingFlowPages>
 {
 public:
-    OnboardingPageManager(lv_obj_t *parent) : PageManager<OnboardingFlowPages>(parent)
+    OnboardingPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<OnboardingFlowPages>(parent, mutex)
     {
         lv_obj_set_style_bg_color(parent, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
 
@@ -123,16 +124,19 @@ public:
 
     void show(OnboardingFlowPages page_enum) override
     {
-        PageManager::show(page_enum);
-        for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
         {
-            if (i == current_page_)
+            SemaphoreGuard lock(mutex_);
+            PageManager::show(page_enum);
+            for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
             {
-                lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x80, 0xFF, 0x50), 0);
-            }
-            else
-            {
-                lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
+                if (i == current_page_)
+                {
+                    lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x80, 0xFF, 0x50), 0);
+                }
+                else
+                {
+                    lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
+                }
             }
         }
     }
@@ -166,7 +170,7 @@ class OnboardingFlow
 
 {
 public:
-    OnboardingFlow();
+    OnboardingFlow(SemaphoreHandle_t mutex);
 
     void render();
 
@@ -179,6 +183,8 @@ public:
     void triggerMotorConfigUpdate();
 
 private:
+    SemaphoreHandle_t mutex_;
+
     uint8_t current_position = 0;
     char firmware_version[16];
 
@@ -190,9 +196,10 @@ private:
     MotorNotifier *motor_notifier;
 
     void indicatorDots();
+    void screen_load_task(void *param);
 
     lv_obj_t *overlay;
     lv_obj_t *main_screen = lv_obj_create(NULL);
 
-    OnboardingPageManager *page_mgr = new OnboardingPageManager(main_screen);
+    OnboardingPageManager *page_mgr = nullptr;
 };

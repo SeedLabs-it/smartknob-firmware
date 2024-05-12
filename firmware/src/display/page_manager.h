@@ -33,7 +33,7 @@ template <typename T>
 class PageManager
 {
 public:
-    PageManager(lv_obj_t *parent) : parent_(parent)
+    PageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : parent_(parent), mutex_(mutex)
     {
         static_assert(std::is_enum<T>::value, "T must be an enum type");
     }
@@ -74,6 +74,8 @@ public:
     }
 
 protected:
+    SemaphoreHandle_t mutex_;
+
     T current_page_;
     T old_page_;
 
