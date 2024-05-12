@@ -2,6 +2,7 @@
 #include <map>
 #include "logging.h"
 #include "lvgl.h"
+#include "semaphore_guard.h"
 class BasePage
 {
 public:
@@ -36,6 +37,10 @@ public:
     PageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : parent_(parent), mutex_(mutex)
     {
         static_assert(std::is_enum<T>::value, "T must be an enum type");
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_obj_set_style_bg_color(parent, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+        }
     }
 
     // virtual void createOverlay() = 0;
