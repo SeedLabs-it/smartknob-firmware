@@ -62,7 +62,7 @@ lv_display_t *lv_skdk_create(uint32_t hor_res, uint32_t ver_res, void *buf1, voi
     dsc->tft->setSwapBytes(true);               /* TFT byte order is swapped */
     lv_display_set_driver_data(disp, (void *)dsc);
     lv_display_set_flush_cb(disp, flush_cb);
-    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, buf_size_bytes, LV_DISPLAY_RENDER_MODE_DIRECT);
+    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, buf_size_bytes, LV_DISPLAY_RENDER_MODE_FULL);
     return disp;
 }
 

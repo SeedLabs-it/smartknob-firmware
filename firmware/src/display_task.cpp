@@ -94,10 +94,19 @@ void DisplayTask::run()
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
 
-    lv_obj_t *rect = lv_obj_create(lv_scr_act());  // Create a new object
-    lv_obj_set_size(rect, LV_HOR_RES, LV_VER_RES); // Set the size to cover the entire screen
-    lv_obj_set_pos(rect, 0, 0);                    // Position it at the top-left corner
-    lv_color_t colors[] = {LV_COLOR_MAKE(255, 0, 255), LV_COLOR_MAKE(255, 0, 0), LV_COLOR_MAKE(0, 255, 0), LV_COLOR_MAKE(0, 0, 255)};
+    lv_obj_t *scr = lv_obj_create(NULL);
+    lv_scr_load(scr);
+
+    // lv_obj_t *rect = lv_obj_create(lv_scr_act());  // Create a new object
+    // lv_obj_set_size(rect, LV_HOR_RES, LV_VER_RES); // Set the size to cover the entire screen
+    // lv_obj_set_pos(rect, 0, 0);                    // Position it at the top-left corner
+    // lv_color_t colors[] = {LV_COLOR_MAKE(255, 0, 255), LV_COLOR_MAKE(255, 0, 0), LV_COLOR_MAKE(0, 255, 0), LV_COLOR_MAKE(0, 0, 255)};
+
+    // lv_obj_t *obj = lv_obj_create(lv_screen_active());
+    // lv_obj_set_style_bg_color(obj, lv_palette_main(LV_PALETTE_RED), 0);
+    // lv_obj_set_style_radius(obj, LV_RADIUS_CIRCLE, 0);
+
+    // lv_obj_align(obj, LV_ALIGN_LEFT_MID, 10, 0);
 
     while (1)
     {
