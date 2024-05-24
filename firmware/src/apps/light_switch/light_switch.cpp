@@ -29,6 +29,8 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id, char *frie
     lv_obj_t *label = lv_label_create(screen);
     lv_label_set_text(label, friendly_name);
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+    initScreen();
 }
 
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)

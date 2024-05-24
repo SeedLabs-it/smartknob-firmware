@@ -39,7 +39,7 @@ public:
         }
     }
 
-    virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+        virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     virtual void updateStateFromSystem(AppState state);
 
@@ -68,6 +68,8 @@ public:
     char entity_id[64] = "";
 
 protected:
+    virtual void initScreen();
+
     /** Full-size sprite used as a framebuffer */
     SemaphoreHandle_t mutex_;
     int8_t next_ = DONT_NAVIGATE;
