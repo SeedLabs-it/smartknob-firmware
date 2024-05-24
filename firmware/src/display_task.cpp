@@ -5,6 +5,8 @@
 #include "esp_spiram.h"
 #include "esp_heap_caps.h"
 
+#include "apps/light_switch/light_switch.h"
+
 #include "cJSON.h"
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
@@ -49,15 +51,15 @@ OnboardingFlow *DisplayTask::getOnboardingFlow()
     return onboarding_flow;
 }
 
-DemoApps *DisplayTask::getDemoApps()
-{
-    return &demo_apps;
-}
+// DemoApps *DisplayTask::getDemoApps()
+// {
+//     return &demo_apps;
+// }
 
-HassApps *DisplayTask::getHassApps()
-{
-    return &hass_apps;
-}
+// HassApps *DisplayTask::getHassApps()
+// {
+//     return &hass_apps;
+// }
 
 ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 {
@@ -81,8 +83,8 @@ void DisplayTask::run()
     lv_label_set_text(label_demo, "Demo screen");
     lv_obj_align(label_demo, LV_ALIGN_CENTER, 0, 0);
 
-    demo_apps = DemoApps(&spr_);
-    hass_apps = HassApps(&spr_);
+    // demo_apps = DemoApps(&spr_);
+    // hass_apps = HassApps(&spr_);
 
     onboarding_flow = new OnboardingFlow(mutex_);
 
@@ -94,70 +96,14 @@ void DisplayTask::run()
     const uint16_t wanted_fps = 60;
     uint16_t fps_counter = 0;
 
-    lv_obj_t *scr = lv_obj_create(NULL);
-    lv_scr_load(scr);
+    LightSwitchApp light_switch = LightSwitchApp(mutex_, "light_switch", "Light Switch", "light.switch");
+    light_switch.render();
 
-    // lv_obj_t *rect = lv_obj_create(lv_scr_act());  // Create a new object
-    // lv_obj_set_size(rect, LV_HOR_RES, LV_VER_RES); // Set the size to cover the entire screen
-    // lv_obj_set_pos(rect, 0, 0);                    // Position it at the top-left corner
-    // lv_color_t colors[] = {LV_COLOR_MAKE(255, 0, 255), LV_COLOR_MAKE(255, 0, 0), LV_COLOR_MAKE(0, 255, 0), LV_COLOR_MAKE(0, 0, 255)};
-
-    // lv_obj_t *obj = lv_obj_create(lv_screen_active());
-    // lv_obj_set_style_bg_color(obj, lv_palette_main(LV_PALETTE_RED), 0);
-    // lv_obj_set_style_radius(obj, LV_RADIUS_CIRCLE, 0);
-
-    // lv_obj_align(obj, LV_ALIGN_LEFT_MID, 10, 0);
+    // lv_obj_t *scr = lv_obj_create(NULL);
+    // lv_scr_load(scr);
 
     while (1)
     {
-
-        // SemaphoreGuard lock(mutex_);
-
-        // for (int i = 0; i < 100000; i++)
-        // {
-        //     lv_obj_set_style_bg_color(rect, colors[i % 4], 0);
-        //     lv_task_handler();
-        //     delay(200);
-        // }
-
-        // if (error_handling_flow.getErrorType() == NO_ERROR)
-        // {
-        //     switch (os_mode)
-        //     {
-        //     case Onboarding:
-        //         onboarding_flow.render()->pushSprite(0, 0);
-        //         break;
-        //     case Demo:
-        //         demo_apps.renderActive()->pushSprite(0, 0);
-        //         break;
-        //     case Hass:
-        //         hass_apps.renderActive()->pushSprite(0, 0);
-        //         break;
-        //     default:
-        //         spr_.pushSprite(0, 0);
-        //         break;
-        //     }
-        // }
-        // else
-        // {
-        //     error_handling_flow.render()->pushSprite(0, 0);
-        // }
-
-        // {
-        //     SemaphoreGuard lock(mutex_);
-        //     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
-        // }
-        // last_rendering_ms = millis();
-
-        // fps_counter++;
-        // if (last_fps_check + 1000 < millis())
-        // {
-        //     fps_counter = 0;
-        //     last_fps_check = millis();
-        // }
-        // }
-
-        // vTaskDelay(pdMS_TO_TICKS(5));
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
@@ -188,13 +134,13 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableDemo()
 {
     os_mode = Demo;
-    demo_apps.triggerMotorConfigUpdate();
+    // demo_apps.triggerMotorConfigUpdate();
     lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()
 {
     os_mode = Hass;
-    hass_apps.triggerMotorConfigUpdate();
+    // hass_apps.triggerMotorConfigUpdate();
 }
 #endif

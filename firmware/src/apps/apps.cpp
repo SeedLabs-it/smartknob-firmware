@@ -168,13 +168,13 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         add(position, app);
         return app;
     }
-    else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
-    {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name, entity_id);
+    // else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
+    // {
+    //     LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name, entity_id);
 
-        add(position, app);
-        return app;
-    }
+    //     add(position, app);
+    //     return app;
+    // }
     else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
     {
         MusicApp *app = new MusicApp(this->spr_, app_id);

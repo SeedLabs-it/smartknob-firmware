@@ -1,8 +1,9 @@
 #pragma once
-#include "apps/app.h"
+// #include "apps/app.h"
 #include <map>
 #include "semaphore_guard.h"
 #include "./display/page_manager.h"
+#include "app_config.h"
 
 // #include "util.h"
 // #include "qrcode.h"

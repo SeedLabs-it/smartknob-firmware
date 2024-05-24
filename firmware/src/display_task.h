@@ -14,9 +14,9 @@
 #include "task.h"
 #include "app_config.h"
 
-#include "apps/apps.h"
-#include "apps/hass/hass_apps.h"
-#include "apps/demo/demo_apps.h"
+// #include "apps/apps.h"
+// #include "apps/hass/hass_apps.h"
+// #include "apps/demo/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
 #include "error_handling_flow/error_handling_flow.h"
@@ -36,10 +36,10 @@ public:
     QueueHandle_t getKnobStateQueue();
 
     void setBrightness(uint16_t brightness);
-    void setApps(Apps apps);
+    // void setApps(Apps apps);
     OnboardingFlow *getOnboardingFlow();
-    DemoApps *getDemoApps();
-    HassApps *getHassApps();
+    // DemoApps *getDemoApps();
+    // HassApps *getHassApps();
 
     void enableOnboarding();
     void enableHass();
@@ -62,8 +62,8 @@ private:
     lv_obj_t *demoScreen;
 
     OnboardingFlow *onboarding_flow = nullptr;
-    DemoApps demo_apps;
-    HassApps hass_apps;
+    // DemoApps demo_apps;
+    // HassApps hass_apps;
     ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));
 
     QueueHandle_t app_state_queue_;

@@ -1,5 +1,5 @@
 #pragma once
-#include "../app.h"
+#include "../lvgl_app.h"
 
 #include "../../font/roboto_thin_bold_24.h"
 #include "../../font/roboto_thin_20.h"
@@ -7,8 +7,7 @@
 class LightSwitchApp : public App
 {
 public:
-    LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
-    TFT_eSprite *render();
+    LightSwitchApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);

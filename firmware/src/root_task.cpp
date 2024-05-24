@@ -82,10 +82,10 @@ RootTask::~RootTask()
     vSemaphoreDelete(mutex_);
 }
 
-void RootTask::setHassApps(HassApps *apps)
-{
-    this->hass_apps = apps;
-}
+// void RootTask::setHassApps(HassApps *apps)
+// {
+//     this->hass_apps = apps;
+// }
 
 void RootTask::run()
 {
@@ -210,9 +210,9 @@ void RootTask::run()
 #endif
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
-    display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
-    display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
-    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+    // display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
+    // display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
+    // display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
@@ -263,10 +263,10 @@ void RootTask::run()
                 // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
                 break;
             case Demo:
-                display_task_->getDemoApps()->handleEvent(wifi_event);
+                // display_task_->getDemoApps()->handleEvent(wifi_event);
                 break;
             case Hass:
-                display_task_->getHassApps()->handleEvent(wifi_event);
+                // display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
             default:
                 break;
@@ -305,7 +305,7 @@ void RootTask::run()
                 }
                 break;
             case SK_MQTT_STATE_UPDATE:
-                display_task_->getHassApps()->handleEvent(wifi_event);
+                // display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
             case SK_DISMISS_ERROR:
                 display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -339,10 +339,10 @@ void RootTask::run()
                     display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
                     break;
                 case Demo:
-                    display_task_->getDemoApps()->triggerMotorConfigUpdate();
+                    // display_task_->getDemoApps()->triggerMotorConfigUpdate();
                     break;
                 case Hass:
-                    display_task_->getHassApps()->triggerMotorConfigUpdate();
+                    // display_task_->getHassApps()->triggerMotorConfigUpdate();
                 default:
                     break;
                 }
@@ -458,11 +458,11 @@ void RootTask::run()
         {
             LOGD("App sync requested!");
 #if SK_MQTT // Should this be here??
-            hass_apps->sync(mqtt_task_->getApps());
+            // hass_apps->sync(mqtt_task_->getApps());
 
             LOGD("Giving 0.5s for Apps to initialize");
             delay(500);
-            display_task_->getHassApps()->triggerMotorConfigUpdate();
+            // display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
 #endif
         }
@@ -491,10 +491,10 @@ void RootTask::run()
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
                 break;
             case Demo:
-                entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
+                // entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
                 break;
             case Hass:
-                entity_state_update_to_send = hass_apps->update(app_state);
+                // entity_state_update_to_send = hass_apps->update(app_state);
                 break;
             default:
                 break;
@@ -570,10 +570,10 @@ void RootTask::updateHardware(AppState app_state)
                         // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
-                        display_task_->getDemoApps()->handleNavigationEvent(event);
+                        // display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case Hass:
-                        display_task_->getHassApps()->handleNavigationEvent(event);
+                        // display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
                     }
@@ -605,10 +605,10 @@ void RootTask::updateHardware(AppState app_state)
                         // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
-                        display_task_->getDemoApps()->handleNavigationEvent(event);
+                        // display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case Hass:
-                        display_task_->getHassApps()->handleNavigationEvent(event);
+                        // display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
                     }

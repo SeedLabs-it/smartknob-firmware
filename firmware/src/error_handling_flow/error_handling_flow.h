@@ -1,7 +1,8 @@
 #pragma once
 #include <WiFi.h>
+#include <TFT_eSPI.h>
 
-#include "apps/app.h"
+// #include "apps/app.h"
 
 #include "util.h"
 #include "navigation/navigation.h"

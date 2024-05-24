@@ -34,7 +34,7 @@ public:
     virtual ~RootTask();
     void loadConfiguration();
 
-    void setHassApps(HassApps *apps);
+    // void setHassApps(HassApps *apps);
 
     void addListener(QueueHandle_t queue);
 
@@ -56,7 +56,7 @@ private:
     DisplayTask *display_task_;
     WifiTask *wifi_task_;
     MqttTask *mqtt_task_;
-    HassApps *hass_apps;
+    // HassApps *hass_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;

@@ -78,7 +78,7 @@ void setup()
     root_task.addListener(display_task.getKnobStateQueue());
 
     // link apps from display task
-    root_task.setHassApps(display_task.getHassApps());
+    // root_task.setHassApps(display_task.getHassApps());
 
 #endif
 
