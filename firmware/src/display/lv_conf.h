@@ -424,7 +424,7 @@
 /*Optionally declare custom fonts here.
  *You can use these fonts as default font too and they will be available globally.
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
-#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(NDS12_10px) LV_FONT_DECLARE(NDS12_15px) LV_FONT_DECLARE(NDS12_20px)
+#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(NDS12_10px) LV_FONT_DECLARE(NDS12_15px) LV_FONT_DECLARE(NDS12_20px) LV_FONT_DECLARE(EIGHTTWOXC_48px)
 
 /*Always set a default font*/
 #define LV_FONT_DEFAULT &NDS12_10px
@@ -749,7 +749,7 @@
 #define LV_USE_SNAPSHOT 0
 
 /*1: Enable system monitor component*/
-#define LV_USE_SYSMON   1
+#define LV_USE_SYSMON   0
 #if LV_USE_SYSMON
     /*Get the idle percentage. E.g. uint32_t my_get_idle(void);*/
     #define LV_SYSMON_GET_IDLE lv_timer_get_idle

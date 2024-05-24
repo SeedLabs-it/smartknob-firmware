@@ -1,7 +1,7 @@
 #pragma once
 
-#include "app.h"
-#include "font/NDS1210pt7b.h"
+#include "lvgl_app.h"
+// #include "font/NDS1210pt7b.h"
 
 #include <map>
 #include <memory>
@@ -9,9 +9,9 @@
 struct TextItem
 {
     char *text;
-    uint16_t color;
+    lv_color_t color;
 
-    TextItem(char *text = "", uint16_t color = 0) : text(text), color(color){};
+    TextItem(char *text = "", lv_color_t color = lv_color_white()) : text(text), color(color){};
 };
 
 struct IconItem
@@ -49,11 +49,17 @@ struct MenuItem
 class Menu : public App
 {
 public:
-    Menu(TFT_eSprite *spr_) : App(spr_){};
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state){};
-    void updateStateFromSystem(AppState state){};
+    Menu(SemaphoreHandle_t mutex) : App(mutex) { initScreen(); }
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) {}
+    void updateStateFromSystem(AppState state) {};
 
-    TFT_eSprite *render(){};
+    void initScreen()
+    {
+        lv_obj_t *label = lv_label_create(screen);
+        lv_label_set_text(label, "Menu");
+    };
+
+    // TFT_eSprite *render() {};
 
     virtual void add_item(int8_t id, std::shared_ptr<MenuItem> item)
     {
@@ -67,7 +73,7 @@ public:
     void set_menu_position(uint8_t position)
     {
         current_menu_position = position;
-        next = find_item(position)->app_id;
+        next_ = find_item(position)->app_id;
     };
 
     uint8_t get_menu_items_count() { return menu_items_count; };

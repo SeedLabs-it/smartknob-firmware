@@ -1,8 +1,9 @@
 #pragma once
-#include "../app.h"
-#include "../../font/NDS1210pt7b.h"
-#include "../../font/Pixel62mr11pt7b.h"
+#include "../lvgl_app.h"
 #include "../../util.h"
+
+// #include "../../font/NDS1210pt7b.h"
+// #include "../../font/Pixel62mr11pt7b.h"
 
 const uint8_t LIGHT_DIMMER_APP_MODE_DIMMER = 0;
 const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
@@ -10,8 +11,13 @@ const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
 class LightDimmerApp : public App
 {
 public:
-    LightDimmerApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
-    TFT_eSprite *render();
+    LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id);
+    void render()
+    {
+        SemaphoreGuard lock(mutex_);
+        lv_scr_load(screen);
+    }
+
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
@@ -19,9 +25,39 @@ public:
 protected:
     int8_t navigationNext();
     int8_t navigationBack();
-    TFT_eSprite *renderHUEWheel();
 
 private:
+    void initScreen()
+    {
+        SemaphoreGuard lock(mutex_);
+
+        arc_ = lv_arc_create(screen);
+        lv_obj_set_size(arc_, 236, 236);
+        lv_arc_set_rotation(arc_, 150);
+        lv_arc_set_bg_angles(arc_, 0, 240);
+        lv_arc_set_knob_offset(arc_, 0);
+        lv_arc_set_value(arc_, 25);
+        lv_obj_center(arc_);
+
+        lv_obj_set_style_bg_opa(arc_, LV_OPA_0, LV_PART_KNOB);
+
+        lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(0xF5, 0xA4, 0x42), LV_PART_INDICATOR);
+
+        lv_obj_set_style_arc_width(arc_, 18, LV_PART_MAIN);
+        lv_obj_set_style_arc_width(arc_, 18, LV_PART_INDICATOR);
+
+        lv_obj_t *percentage_label = lv_label_create(screen);
+        lv_label_set_text(percentage_label, "25%");
+        lv_obj_set_style_text_font(percentage_label, &EIGHTTWOXC_48px, 0);
+        lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, -12);
+
+        lv_obj_t *friendly_name_label = lv_label_create(screen);
+        lv_label_set_text(friendly_name_label, friendly_name);
+        lv_obj_align_to(friendly_name_label, percentage_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
+    }
+
+    lv_obj_t *arc_;
+
     int16_t current_position = 0;
     int16_t last_position = 0;
     uint8_t num_positions = 0;

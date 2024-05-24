@@ -16,7 +16,7 @@
 
 // #include "apps/apps.h"
 // #include "apps/hass/hass_apps.h"
-// #include "apps/demo/demo_apps.h"
+#include "apps/demo/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
 #include "error_handling_flow/error_handling_flow.h"
@@ -38,7 +38,7 @@ public:
     void setBrightness(uint16_t brightness);
     // void setApps(Apps apps);
     OnboardingFlow *getOnboardingFlow();
-    // DemoApps *getDemoApps();
+    DemoApps *getDemoApps();
     // HassApps *getHassApps();
 
     void enableOnboarding();
@@ -62,7 +62,7 @@ private:
     lv_obj_t *demoScreen;
 
     OnboardingFlow *onboarding_flow = nullptr;
-    // DemoApps demo_apps;
+    DemoApps *demo_apps = nullptr;
     // HassApps hass_apps;
     ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));
 

@@ -6,6 +6,7 @@
 #include "esp_heap_caps.h"
 
 #include "apps/light_switch/light_switch.h"
+#include "apps/light_dimmer/light_dimmer.h"
 
 #include "cJSON.h"
 
@@ -32,6 +33,9 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 1
 
     buf2 = (lv_color_t *)heap_caps_aligned_alloc(16, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     assert(buf2 != NULL);
+
+    onboarding_flow = new OnboardingFlow(mutex_);
+    // demo_apps = new DemoApps(mutex_);
 }
 
 DisplayTask::~DisplayTask()
@@ -51,10 +55,14 @@ OnboardingFlow *DisplayTask::getOnboardingFlow()
     return onboarding_flow;
 }
 
-// DemoApps *DisplayTask::getDemoApps()
-// {
-//     return &demo_apps;
-// }
+DemoApps *DisplayTask::getDemoApps()
+{
+    while (demo_apps == nullptr)
+    {
+        delay(50);
+    }
+    return demo_apps;
+}
 
 // HassApps *DisplayTask::getHassApps()
 // {
@@ -86,24 +94,29 @@ void DisplayTask::run()
     // demo_apps = DemoApps(&spr_);
     // hass_apps = HassApps(&spr_);
 
-    onboarding_flow = new OnboardingFlow(mutex_);
+    // demo_apps->setActive(MENU);
+    // demo_apps->renderActive();
 
-    AppState app_state;
+    // AppState app_state;
 
-    unsigned long last_rendering_ms = millis();
-    unsigned long last_fps_check = millis();
+    // unsigned long last_rendering_ms = millis();
+    // unsigned long last_fps_check = millis();
 
-    const uint16_t wanted_fps = 60;
-    uint16_t fps_counter = 0;
+    // const uint16_t wanted_fps = 60;
+    // uint16_t fps_counter = 0;
 
-    LightSwitchApp light_switch = LightSwitchApp(mutex_, "light_switch", "Light Switch", "light.switch");
-    light_switch.render();
+    // LightSwitchApp light_switch = LightSwitchApp(mutex_, "light_switch", "Light Switch", "light.switch");
+    // light_switch.render();
+
+    // LightDimmerApp light_dimmer = LightDimmerApp(mutex_, "light_dimmer", "Light Dimmer", "light.dim");
+    // light_dimmer.render();
 
     // lv_obj_t *scr = lv_obj_create(NULL);
     // lv_scr_load(scr);
 
     while (1)
     {
+        // LOGE("DisplayTask running");
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
@@ -127,14 +140,14 @@ void DisplayTask::setBrightness(uint16_t brightness)
 void DisplayTask::enableOnboarding()
 {
     os_mode = Onboarding;
-    // onboarding_flow->render();
+    onboarding_flow->render();
     onboarding_flow->triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
 {
     os_mode = Demo;
-    // demo_apps.triggerMotorConfigUpdate();
+    demo_apps->triggerMotorConfigUpdate();
     lv_scr_load(demoScreen);
 }
 

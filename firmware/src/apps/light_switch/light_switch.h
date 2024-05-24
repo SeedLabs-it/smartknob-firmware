@@ -1,9 +1,9 @@
 #pragma once
-#include "../util.h"
 #include "../lvgl_app.h"
+#include "../util.h"
 
-#include "../../font/roboto_thin_bold_24.h"
-#include "../../font/roboto_thin_20.h"
+// #include "../../font/roboto_thin_bold_24.h"
+// #include "../../font/roboto_thin_20.h"
 
 class LightSwitchApp : public App
 {
@@ -19,7 +19,7 @@ protected:
         SemaphoreGuard lock(mutex_);
 
         arc_ = lv_arc_create(screen);
-        lv_obj_set_size(arc_, 210, 210);
+        lv_obj_set_size(arc_, 220, 220);
         lv_arc_set_rotation(arc_, 225);
         lv_arc_set_bg_angles(arc_, 0, 90);
         lv_arc_set_knob_offset(arc_, 0);

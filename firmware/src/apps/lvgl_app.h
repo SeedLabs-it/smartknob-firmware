@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 #include <lvgl.h>
 
 #include "semaphore_guard.h"
@@ -29,8 +28,16 @@ enum SharedAppIds : int8_t
 class App
 {
 public:
-    App() {}
-    App(SemaphoreHandle_t mutex, int8_t next = DONT_NAVIGATE, int8_t back = MENU) : mutex_(mutex), next_(next), back_(back) {}
+    App(SemaphoreHandle_t mutex) : mutex_(mutex)
+    {
+        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    }
+    App(SemaphoreHandle_t mutex, int8_t next, int8_t back) : mutex_(mutex), next_(next), back_(back)
+    {
+        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    }
     void render()
     {
         {
@@ -39,7 +46,7 @@ public:
         }
     }
 
-        virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     virtual void updateStateFromSystem(AppState state);
 
