@@ -42,7 +42,7 @@ public:
         // add(app_position, settings_app);
 
         updateMenu();
-        // setMotorNotifier(motor_notifier);
+        setMotorNotifier(motor_notifier);
         // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
     }
     void handleEvent(WiFiEvent event)

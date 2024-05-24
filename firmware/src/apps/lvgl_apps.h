@@ -82,6 +82,7 @@ public:
             active_app = menu;
             active_id = MENU;
             // unlock();
+            renderActive();
             return;
         }
         LOGD("Set active %d", id);
@@ -94,7 +95,9 @@ public:
         else
         {
             active_app = apps[active_id];
+            renderActive();
         }
+
         // unlock();
     }
 
@@ -159,34 +162,36 @@ public:
     void updateMenu() // BROKEN FOR NOW
     {
         // lock();
-        SemaphoreGuard lock(app_mutex_);
-        menu = std::make_shared<MenuApp>(screen_mutex_);
-
-        std::map<uint8_t, std::shared_ptr<App>>::iterator it;
-
-        uint16_t position = 0;
-
-        // uint16_t active_color = spr_->color565(0, 255, 200);
-        lv_color_t active_color = LV_COLOR_MAKE(0x00, 0xFF, 0xC8);
-        // uint16_t inactive_color = spr_->color565(150, 150, 150);
-
-        for (it = apps.begin(); it != apps.end(); it++)
         {
-            menu->add_item(
-                position,
-                std::make_shared<MenuItem>(
-                    (int8_t)it->first,
-                    TextItem{it->second->friendly_name, active_color}, // TextItem{it->second->friendly_name, inactive_color},
-                    TextItem{},
-                    TextItem{},
-                    IconItem{}, // IconItem{it->second->big_icon, active_color},
-                    IconItem{}) // IconItem{it->second->small_icon, inactive_color}
-            );
+            SemaphoreGuard lock(app_mutex_);
+            menu = std::make_shared<MenuApp>(screen_mutex_);
 
-            position++;
+            std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+
+            uint16_t position = 0;
+
+            // uint16_t active_color = spr_->color565(0, 255, 200);
+            lv_color_t active_color = LV_COLOR_MAKE(0x00, 0xFF, 0xC8);
+            // uint16_t inactive_color = spr_->color565(150, 150, 150);
+            for (it = apps.begin(); it != apps.end(); it++)
+            {
+                menu->add_item(
+                    position,
+                    std::make_shared<MenuItem>(
+                        (int8_t)it->first,
+                        TextItem{it->second->friendly_name, active_color}, // TextItem{it->second->friendly_name, inactive_color},
+                        TextItem{},
+                        TextItem{},
+                        IconItem{}, // IconItem{it->second->big_icon, active_color},
+                        IconItem{}) // IconItem{it->second->small_icon, inactive_color}
+                );
+
+                position++;
+            }
         }
 
         // unlock();
+
         setActive(MENU);
     }
 
@@ -234,6 +239,9 @@ public:
             case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
                 break;
             default:
+                LOGE("Navigation next");
+                LOGE("active_app->navigationNext(): %d", active_app->navigationNext());
+                LOGE("item count menu: %d", menu->get_menu_position());
                 setActive(active_app->navigationNext());
                 break;
             }

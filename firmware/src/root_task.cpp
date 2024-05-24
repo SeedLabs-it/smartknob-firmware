@@ -210,7 +210,7 @@ void RootTask::run()
 #endif
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
-    // display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     // display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     // display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
@@ -339,7 +339,7 @@ void RootTask::run()
                     display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
                     break;
                 case Demo:
-                    // display_task_->getDemoApps()->triggerMotorConfigUpdate();
+                    display_task_->getDemoApps()->triggerMotorConfigUpdate();
                     break;
                 case Hass:
                     // display_task_->getHassApps()->triggerMotorConfigUpdate();
@@ -491,7 +491,7 @@ void RootTask::run()
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
                 break;
             case Demo:
-                // entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
+                entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
                 break;
             case Hass:
                 // entity_state_update_to_send = hass_apps->update(app_state);
@@ -570,7 +570,7 @@ void RootTask::updateHardware(AppState app_state)
                         // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
-                        // display_task_->getDemoApps()->handleNavigationEvent(event);
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case Hass:
                         // display_task_->getHassApps()->handleNavigationEvent(event);
@@ -605,7 +605,7 @@ void RootTask::updateHardware(AppState app_state)
                         // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
-                        // display_task_->getDemoApps()->handleNavigationEvent(event);
+                        display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case Hass:
                         // display_task_->getHassApps()->handleNavigationEvent(event);

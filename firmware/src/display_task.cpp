@@ -33,9 +33,6 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 1
 
     buf2 = (lv_color_t *)heap_caps_aligned_alloc(16, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     assert(buf2 != NULL);
-
-    onboarding_flow = new OnboardingFlow(mutex_);
-    // demo_apps = new DemoApps(mutex_);
 }
 
 DisplayTask::~DisplayTask()
@@ -90,6 +87,10 @@ void DisplayTask::run()
     lv_obj_t *label_demo = lv_label_create(demoScreen);
     lv_label_set_text(label_demo, "Demo screen");
     lv_obj_align(label_demo, LV_ALIGN_CENTER, 0, 0);
+
+    onboarding_flow = new OnboardingFlow(mutex_);
+    demo_apps = new DemoApps(mutex_);
+    // demo_apps->renderActive();
 
     // demo_apps = DemoApps(&spr_);
     // hass_apps = HassApps(&spr_);
@@ -147,8 +148,9 @@ void DisplayTask::enableOnboarding()
 void DisplayTask::enableDemo()
 {
     os_mode = Demo;
+    demo_apps->renderActive();
     demo_apps->triggerMotorConfigUpdate();
-    lv_scr_load(demoScreen);
+    // lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()

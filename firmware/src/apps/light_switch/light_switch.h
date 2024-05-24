@@ -55,5 +55,6 @@ private:
     // needed for UI
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
+    float old_adjusted_sub_position = 0;
     bool first_run = false;
 };

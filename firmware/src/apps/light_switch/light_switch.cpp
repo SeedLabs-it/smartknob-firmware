@@ -45,18 +45,36 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     motor_config.position = current_position;
 
     adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
+    // adjusted_sub_position = logf(1 - sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
 
-    if (state.current_position == motor_config.min_position && sub_position_unit < 0)
+    if (current_position == 0 && adjusted_sub_position < 0)
     {
-        adjusted_sub_position = -logf(1 - sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        adjusted_sub_position = 0;
     }
-    else if (state.current_position == motor_config.max_position && sub_position_unit > 0)
+    else if (current_position == 1 && adjusted_sub_position > 0)
     {
-        adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        adjusted_sub_position = 0;
+    }
+
+    LOGE("LightSwitchApp::updateStateFromKnob: current_position: %d", current_position);
+    LOGE("LightSwitchApp::updateStateFromKnob: sub_position_unit: %.2f", abs(adjusted_sub_position) * 100);
+
+    if (abs(adjusted_sub_position) * 100 - abs(old_adjusted_sub_position) * 100 > 1)
+    {
+        SemaphoreGuard lock(mutex_);
+        if (current_position == 0)
+        {
+            lv_arc_set_value(arc_, abs(adjusted_sub_position) * 100);
+        }
+        else
+        {
+            lv_arc_set_value(arc_, 100 - abs(adjusted_sub_position) * 100);
+        }
     }
 
     if (last_position != current_position && first_run)
     {
+
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();

@@ -12,6 +12,7 @@ class MenuApp : public Menu
 public:
     MenuApp(SemaphoreHandle_t mutex) : Menu(mutex)
     {
+        back_ = MENU;
         motor_config = PB_SmartKnobConfig{
             1,
             0,
@@ -29,6 +30,7 @@ public:
             20,
         };
     }
+
     // TFT_eSprite *render();
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state)
     {
@@ -78,7 +80,7 @@ public:
         items[id] = item;
         menu_items_count++;
     };
-    // void update();
+    void update();
 
 private:
     char room[12];

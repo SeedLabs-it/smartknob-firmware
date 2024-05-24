@@ -40,23 +40,46 @@ public:
     }
     void render()
     {
-        {
-            SemaphoreGuard lock(mutex_);
-            lv_scr_load(screen);
-        }
+        SemaphoreGuard lock(mutex_);
+        lv_scr_load(screen);
     }
 
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     virtual void updateStateFromSystem(AppState state);
 
-    void setMotorNotifier(MotorNotifier *motor_notifier);
-    void triggerMotorConfigUpdate();
+    void setMotorNotifier(MotorNotifier *motor_notifier)
+    {
+        this->motor_notifier = motor_notifier;
+    }
+    void triggerMotorConfigUpdate()
+    {
+        if (this->motor_notifier != nullptr)
+        {
+            motor_notifier->requestUpdate(root_level_motor_config);
+        }
+        else
+        {
+            LOGW("motor_notifier is not set");
+        }
+    }
 
-    virtual int8_t navigationNext();
-    void setNext(int8_t next);
-    virtual int8_t navigationBack();
-    void setBack(int8_t back);
+    int8_t navigationNext()
+    {
+        return next_;
+    }
+    void setNext(int8_t next)
+    {
+        next_ = next;
+    }
+    int8_t navigationBack()
+    {
+        return back_;
+    }
+    void setBack(int8_t back)
+    {
+        back_ = back;
+    }
 
     PB_SmartKnobConfig getMotorConfig()
     {

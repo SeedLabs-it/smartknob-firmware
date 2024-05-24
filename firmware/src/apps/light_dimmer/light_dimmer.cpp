@@ -145,6 +145,11 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
             current_brightness = current_position;
+            SemaphoreGuard lock(mutex_);
+            lv_arc_set_value(arc_, current_brightness);
+            char buf_[16];
+            sprintf(buf_, "%d%%", current_brightness);
+            lv_label_set_text(percentage_label_, buf_);
         }
 
         if (current_brightness == 0)
