@@ -52,19 +52,26 @@ public:
 
     virtual void show(T page_enum)
     {
-        for (auto &it : pages_)
-        {
-            if (it.first == page_enum)
-            {
-                old_page_ = current_page_;
-                current_page_ = page_enum;
-                it.second->show();
-            }
-            else
-            {
-                it.second->hide();
-            }
-        }
+        SemaphoreGuard lock(mutex_);
+
+        pages_[current_page_]->hide();
+        pages_[page_enum]->show();
+
+        old_page_ = current_page_;
+        current_page_ = page_enum;
+        // for (auto &it : pages_)
+        // {
+        //     if (it.first == page_enum)
+        //     {
+        //         old_page_ = current_page_;
+        //         current_page_ = page_enum;
+        //         it.second->show();
+        //     }
+        //     else
+        //     {
+        //         it.second->hide();
+        //     }
+        // }
     }
 
     void hide(T page_enum)

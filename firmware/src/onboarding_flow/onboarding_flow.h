@@ -142,9 +142,10 @@ public:
 
     void show(OnboardingFlowPages page_enum) override
     {
+        PageManager::show(page_enum);
         {
             SemaphoreGuard lock(mutex_);
-            PageManager::show(page_enum);
+
             for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
             {
                 if (i == current_page_)
