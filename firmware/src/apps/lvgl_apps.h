@@ -175,16 +175,34 @@ public:
             // uint16_t inactive_color = spr_->color565(150, 150, 150);
             for (it = apps.begin(); it != apps.end(); it++)
             {
-                menu->add_item(
+                // menu->add_item(
+                //     position,
+                //     std::make_shared<MenuItem>(
+                //         (int8_t)it->first,
+                //         TextItem{it->second->friendly_name, active_color}, // TextItem{it->second->friendly_name, inactive_color},
+                //         TextItem{},
+                //         TextItem{},
+                //         IconItem{}, // IconItem{it->second->big_icon, active_color},
+                //         IconItem{}) // IconItem{it->second->small_icon, inactive_color}
+                // );
+
+                // MenuPage *menuPage = new MenuPage(screen, friendly_name, item->big_icon, item->small_icon, x40_lightbulb_outline);
+                // menuPage->show();
+
+                // menu->add_page(
+                //     position,
+                //     std::make_shared<MenuPage>(
+                //         screen_mutex_,
+                //         it->second->friendly_name,
+                //         it->second->big_icon,
+                //         it->second->small_icon, );
+
+                menu->add_page(
                     position,
-                    std::make_shared<MenuItem>(
-                        (int8_t)it->first,
-                        TextItem{it->second->friendly_name, active_color}, // TextItem{it->second->friendly_name, inactive_color},
-                        TextItem{},
-                        TextItem{},
-                        IconItem{}, // IconItem{it->second->big_icon, active_color},
-                        IconItem{}) // IconItem{it->second->small_icon, inactive_color}
-                );
+                    (int8_t)it->first,
+                    it->second->friendly_name,
+                    it->second->big_icon,
+                    it->second->small_icon);
 
                 position++;
             }

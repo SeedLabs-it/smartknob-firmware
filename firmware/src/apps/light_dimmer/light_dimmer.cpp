@@ -27,8 +27,11 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *frie
 
     num_positions = motor_config.max_position - motor_config.min_position;
 
-    big_icon = light_top_80;
-    small_icon = light_top_40;
+    LV_IMAGE_DECLARE(x80_light_outline);
+    LV_IMAGE_DECLARE(x40_light_outline);
+
+    big_icon = x80_light_outline;
+    small_icon = x40_light_outline;
 
     json = cJSON_CreateObject();
 

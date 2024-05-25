@@ -47,45 +47,66 @@ public:
 
         if (state.current_position < 0)
         {
-            position_for_menu_calc = get_menu_items_count() * 10000 + state.current_position;
+            position_for_menu_calc = get_menu_page_count() * 10000 + state.current_position;
         }
 
-        uint8_t current_menu_position = position_for_menu_calc % get_menu_items_count();
+        uint8_t current_menu_position = position_for_menu_calc % get_menu_page_count();
+        uint8_t old_menu_position = get_menu_position();
+
+        if (current_menu_position == old_menu_position)
+        {
+            return EntityStateUpdate{};
+        }
+
         set_menu_position(current_menu_position);
 
         if (current_menu_position == 0)
         {
-            prev_item = find_item(get_menu_items_count() - 1);
-            next_item = find_item(current_menu_position + 1);
+            prev_page = find_page(get_menu_page_count() - 1);
+            next_page = find_page(current_menu_position + 1);
         }
-        else if (current_menu_position == get_menu_items_count() - 1)
+        else if (current_menu_position == get_menu_page_count() - 1)
         {
-            prev_item = find_item(current_menu_position - 1);
-            next_item = find_item(0);
+            prev_page = find_page(current_menu_position - 1);
+            next_page = find_page(0);
         }
         else
         {
-            prev_item = find_item(current_menu_position - 1);
-            next_item = find_item(current_menu_position + 1);
+            prev_page = find_page(current_menu_position - 1);
+            next_page = find_page(current_menu_position + 1);
         }
 
-        next_ = find_item(current_menu_position)->app_id;
+        next_ = find_page(current_menu_position)->app_id_;
+        {
+            SemaphoreGuard lock(mutex_);
+            find_page(old_menu_position)->hide();
+            find_page(current_menu_position)->show();
+
+            lv_image_set_src(left_image_icon, prev_page->getSmallIcon());
+            lv_image_set_src(right_image_icon, next_page->getSmallIcon());
+        }
 
         return EntityStateUpdate{};
     }
     void updateStateFromSystem(AppState state) {};
 
-    void add_item(int8_t id, std::shared_ptr<MenuItem> item)
-    {
-        items[id] = item;
-        menu_items_count++;
-    };
+    // void add_item(int8_t id, std::shared_ptr<MenuItem> item)
+    // {
+    //     items[id] = item;
+    //     menu_page_count++;
+    // };
     void update();
+
+    void render()
+    {
+        App::render();
+        find_page(get_menu_position())->show();
+    }
 
 private:
     char room[12];
 
-    std::shared_ptr<MenuItem> current_item;
-    std::shared_ptr<MenuItem> prev_item;
-    std::shared_ptr<MenuItem> next_item;
+    std::shared_ptr<MenuPage> current_page;
+    std::shared_ptr<MenuPage> prev_page;
+    std::shared_ptr<MenuPage> next_page;
 };
