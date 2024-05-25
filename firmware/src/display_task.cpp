@@ -61,10 +61,14 @@ DemoApps *DisplayTask::getDemoApps()
     return demo_apps;
 }
 
-// HassApps *DisplayTask::getHassApps()
-// {
-//     return &hass_apps;
-// }
+HassApps *DisplayTask::getHassApps()
+{
+    while (hass_apps == nullptr)
+    {
+        delay(50);
+    }
+    return hass_apps;
+}
 
 ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 {
@@ -85,6 +89,7 @@ void DisplayTask::run()
 
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
+    hass_apps = new HassApps(mutex_);
 
     while (display_os_mode == UNSET)
     {

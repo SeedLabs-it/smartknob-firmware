@@ -212,7 +212,7 @@ void RootTask::run()
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
-    // display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
@@ -342,7 +342,7 @@ void RootTask::run()
                     display_task_->getDemoApps()->triggerMotorConfigUpdate();
                     break;
                 case HASS:
-                    // display_task_->getHassApps()->triggerMotorConfigUpdate();
+                    display_task_->getHassApps()->triggerMotorConfigUpdate();
                 default:
                     break;
                 }
@@ -494,7 +494,7 @@ void RootTask::run()
                 entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
                 break;
             case OSMode::HASS:
-                // entity_state_update_to_send = hass_apps->update(app_state);
+                entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
                 break;
             default:
                 break;
@@ -573,7 +573,7 @@ void RootTask::updateHardware(AppState app_state)
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case HASS:
-                        // display_task_->getHassApps()->handleNavigationEvent(event);
+                        display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
                     }
@@ -608,7 +608,7 @@ void RootTask::updateHardware(AppState app_state)
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case HASS:
-                        // display_task_->getHassApps()->handleNavigationEvent(event);
+                        display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
                     }
