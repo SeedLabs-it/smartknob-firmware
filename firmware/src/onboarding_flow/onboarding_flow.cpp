@@ -95,14 +95,14 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         switch (getPageEnum(current_position))
         {
         case WELCOME:
-            current_position = HASS;
-            page_mgr->show(HASS);
-            motor_notifier->requestUpdate(blocked_motor_config);
+            // current_position = HASS;
+            // page_mgr->show(HASS);
+            // motor_notifier->requestUpdate(blocked_motor_config);
             break;
         case HASS:
-            current_position = WELCOME;
-            page_mgr->show(WELCOME);
-            motor_notifier->requestUpdate(root_level_motor_config);
+            // current_position = WELCOME;
+            // page_mgr->show(WELCOME);
+            // motor_notifier->requestUpdate(root_level_motor_config);
             break;
         case DEMO:
             os_config_notifier->setOSMode(Demo);
@@ -114,19 +114,19 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
         }
     }
 
-    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
-    {
-        switch (getPageEnum(current_position))
-        {
-        case HASS:
-            current_position = WELCOME;
-            page_mgr->show(WELCOME);
-            motor_notifier->requestUpdate(root_level_motor_config);
-            break;
-        default:
-            break;
-        }
-    }
+    // if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    // {
+    //     switch (getPageEnum(current_position))
+    //     {
+    //     case HASS:
+    //         current_position = WELCOME;
+    //         page_mgr->show(WELCOME);
+    //         motor_notifier->requestUpdate(root_level_motor_config);
+    //         break;
+    //     default:
+    //         break;
+    //     }
+    // }
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)

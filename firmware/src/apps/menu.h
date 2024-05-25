@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lvgl_app.h"
+#include "./display/page_manager.h"
 // #include "font/NDS1210pt7b.h"
 
 #include <map>
@@ -46,6 +47,40 @@ struct MenuItem
           small_icon(small_icon){};
 };
 
+class MenuPage : public BasePage
+{
+public:
+    MenuPage(lv_obj_t *parent, const char *friendly_name, lv_image_dsc_t icon, lv_image_dsc_t leftIcon, lv_image_dsc_t rightIcon) : BasePage(parent), friendly_name_(friendly_name), icon_(icon), leftIcon_(leftIcon), rightIcon_(rightIcon)
+    {
+        lv_obj_t *img = lv_img_create(page);
+        lv_img_set_src(img, &icon_);
+        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+
+        lv_obj_t *label = lv_label_create(page);
+        lv_label_set_text(label, friendly_name_);
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, 32);
+        lv_obj_set_style_text_font(label, &NDS12_20px, 0);
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+
+        lv_obj_t *leftIconImg = lv_img_create(page);
+        lv_img_set_src(leftIconImg, &leftIcon_);
+        lv_obj_set_size(leftIconImg, 32, 32);
+        lv_obj_align(leftIconImg, LV_ALIGN_CENTER, -50, 0);
+
+        lv_obj_t *rightIconImg = lv_img_create(page);
+        lv_img_set_src(rightIconImg, &rightIcon_);
+        lv_obj_set_size(rightIconImg, 32, 32);
+        lv_obj_align(rightIconImg, LV_ALIGN_CENTER, 50, 0);
+        return;
+    }
+
+private:
+    const char *friendly_name_;
+    lv_image_dsc_t icon_;
+    lv_image_dsc_t leftIcon_;
+    lv_image_dsc_t rightIcon_;
+};
+
 class Menu : public App
 {
 public:
@@ -55,9 +90,16 @@ public:
 
     void initScreen()
     {
-        lv_obj_t *label = lv_label_create(screen);
-        lv_label_set_text(label, "Menu");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        // lv_obj_t *label = lv_label_create(screen);
+        // lv_label_set_text(label, "Menu");
+        // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+        LV_IMAGE_DECLARE(lightbulb_regular);
+        LV_IMAGE_DECLARE(logo_main_gradient_transparent);
+        LV_IMAGE_DECLARE(logo_white_transparent);
+        const char *friendly_name = "Menu";
+        MenuPage *menuPage = new MenuPage(screen, friendly_name, lightbulb_regular, logo_main_gradient_transparent, logo_white_transparent);
+        menuPage->show();
     };
 
     // TFT_eSprite *render() {};

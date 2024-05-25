@@ -197,7 +197,7 @@ void RootTask::run()
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
     display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
-    // display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     // display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
@@ -211,7 +211,7 @@ void RootTask::run()
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
-    // display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     // display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
