@@ -64,7 +64,7 @@ public:
 
         return new_state_update;
     }
-    void renderActive()
+    void render()
     {
         active_app->render();
     };
@@ -75,7 +75,7 @@ public:
         {
             active_app = menu;
             active_id = MENU;
-            renderActive();
+            render();
             return;
         }
         LOGD("Set active %d", id);
@@ -88,7 +88,7 @@ public:
         else
         {
             active_app = apps[active_id];
-            renderActive();
+            render();
         }
     }
 

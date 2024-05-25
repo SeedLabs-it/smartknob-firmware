@@ -97,7 +97,7 @@ public:
     }
 
     // TFT_eSprite *renderActive();
-    void renderActive()
+    void render()
     {
         LOGE("renderActive");
         LOGE("active_app: %s", active_app->app_id);
@@ -106,7 +106,7 @@ public:
         {
             return lv_screen_load(waiting_for_hass);
         }
-        return Apps::renderActive();
+        return Apps::render();
     }
 
 private:

@@ -94,20 +94,20 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
     {
         switch (getPageEnum(current_position))
         {
-        case WELCOME:
+        case WELCOME_PAGE:
             // current_position = HASS;
             // page_mgr->show(HASS);
             // motor_notifier->requestUpdate(blocked_motor_config);
             break;
-        case HASS:
+        case HASS_PAGE:
             // current_position = WELCOME;
             // page_mgr->show(WELCOME);
             // motor_notifier->requestUpdate(root_level_motor_config);
             break;
-        case DEMO:
-            os_config_notifier->setOSMode(Demo);
+        case DEMO_PAGE:
+            os_config_notifier->setOSMode(OSMode::DEMO);
             break;
-        case ABOUT:
+        case ABOUT_PAGE:
             break;
         default:
             break;

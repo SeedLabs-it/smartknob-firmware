@@ -70,7 +70,7 @@ private:
     uint16_t brightness_ = UINT16_MAX;
     char buf_[128];
 
-    OSMode os_mode;
+    OSMode display_os_mode = UNSET;
     ErrorType error_type;
 };
 

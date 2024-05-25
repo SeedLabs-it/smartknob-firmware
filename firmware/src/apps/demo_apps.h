@@ -16,7 +16,7 @@ public:
         {
             if (active_id == MENU)
             {
-                os_config_notifier->setOSMode(Onboarding);
+                os_config_notifier->setOSMode(ONBOARDING);
                 return;
             }
         }

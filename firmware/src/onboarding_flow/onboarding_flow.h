@@ -26,11 +26,11 @@
 
 enum OnboardingFlowPages
 {
-    WELCOME,
-    HASS,
+    WELCOME_PAGE,
+    HASS_PAGE,
     // WIFI,
-    DEMO,
-    ABOUT,
+    DEMO_PAGE,
+    ABOUT_PAGE,
     ONBOARDING_FLOW_PAGE_COUNT
 };
 
@@ -39,7 +39,6 @@ class WelcomePage : public BasePage
 public:
     WelcomePage(lv_obj_t *parent) : BasePage(parent)
     {
-
         lv_obj_t *img = lv_img_create(page);
         LV_IMAGE_DECLARE(logo_main_gradient_transparent);
         lv_img_set_src(img, &logo_main_gradient_transparent);
@@ -132,13 +131,13 @@ class OnboardingPageManager : public PageManager<OnboardingFlowPages>
 public:
     OnboardingPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<OnboardingFlowPages>(parent, mutex)
     {
-        add(WELCOME, new WelcomePage(parent));
-        add(HASS, new HassPage(parent));
-        add(DEMO, new DemoPage(parent));
-        add(ABOUT, new AboutPage(parent));
+        add(WELCOME_PAGE, new WelcomePage(parent));
+        add(HASS_PAGE, new HassPage(parent));
+        add(DEMO_PAGE, new DemoPage(parent));
+        add(ABOUT_PAGE, new AboutPage(parent));
 
         dotIndicatorInit();
-        show(WELCOME);
+        show(WELCOME_PAGE);
     }
 
     void show(OnboardingFlowPages page_enum) override

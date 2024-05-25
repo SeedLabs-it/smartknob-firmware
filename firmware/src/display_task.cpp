@@ -86,6 +86,11 @@ void DisplayTask::run()
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
 
+    while (display_os_mode == UNSET)
+    {
+        delay(50);
+    }
+
     while (1)
     {
         {
@@ -110,22 +115,22 @@ void DisplayTask::setBrightness(uint16_t brightness)
 
 void DisplayTask::enableOnboarding()
 {
-    os_mode = Onboarding;
+    display_os_mode = ONBOARDING;
     onboarding_flow->render();
     onboarding_flow->triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
 {
-    os_mode = Demo;
-    demo_apps->renderActive();
+    display_os_mode = DEMO;
+    demo_apps->render();
     demo_apps->triggerMotorConfigUpdate();
     // lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()
 {
-    os_mode = Hass;
+    display_os_mode = HASS;
     // hass_apps.triggerMotorConfigUpdate();
 }
 #endif
