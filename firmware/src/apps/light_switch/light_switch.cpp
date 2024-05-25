@@ -26,8 +26,10 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *fri
 
     LV_IMAGE_DECLARE(x80_lightbulb_outline);
     LV_IMAGE_DECLARE(x40_lightbulb_outline);
+    LV_IMAGE_DECLARE(x80_lightbulb_filled);
 
     big_icon = x80_lightbulb_outline;
+    big_icon_active = x80_lightbulb_filled;
     small_icon = x40_lightbulb_outline;
 
     initScreen();
@@ -60,9 +62,6 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = 0;
     }
 
-    LOGE("LightSwitchApp::updateStateFromKnob: current_position: %d", current_position);
-    LOGE("LightSwitchApp::updateStateFromKnob: sub_position_unit: %.2f", abs(adjusted_sub_position) * 100);
-
     if (abs(adjusted_sub_position) * 100 - abs(old_adjusted_sub_position) * 100 > 1)
     {
         SemaphoreGuard lock(mutex_);
@@ -78,7 +77,19 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
-
+        {
+            SemaphoreGuard lock(mutex_);
+            if (current_position == 0)
+            {
+                lv_img_set_src(light_bulb, &big_icon);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+            }
+            else
+            {
+                lv_img_set_src(light_bulb, &big_icon_active);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+            }
+        }
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();

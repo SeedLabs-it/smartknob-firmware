@@ -58,7 +58,6 @@ public:
         // Only send state updates to app using config with same identifier.
         if (strcmp(state.motor_state.config.id, active_app->app_id) == 0)
         {
-            LOGE("Update state from knob");
             new_state_update = active_app->updateStateFromKnob(state.motor_state);
             active_app->updateStateFromSystem(state);
         }

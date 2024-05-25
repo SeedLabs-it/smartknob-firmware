@@ -28,7 +28,7 @@ protected:
 
         lv_obj_set_style_arc_width(arc_, 2, LV_PART_INDICATOR);
 
-        lv_obj_t *light_bulb = lv_img_create(screen);
+        light_bulb = lv_img_create(screen);
         lv_img_set_src(light_bulb, &big_icon);
         lv_obj_set_style_image_recolor_opa(light_bulb, LV_OPA_COVER, 0);
         lv_obj_set_style_image_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
@@ -41,7 +41,10 @@ protected:
     };
 
 private:
+    lv_image_dsc_t big_icon_active;
+
     lv_obj_t *arc_;
+    lv_obj_t *light_bulb;
 
     uint8_t current_position = 0;
     uint8_t last_position = 0;
