@@ -1,7 +1,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
+#include <lvgl.h>
+
+#include "semaphore_guard.h"
 #include "../proto_gen/smartknob.pb.h"
 #include "../app_config.h"
 #include "icons.h"
@@ -26,20 +28,61 @@ enum SharedAppIds : int8_t
 class App
 {
 public:
-    App(TFT_eSprite *spr_) : spr_(spr_) {}
-    App(TFT_eSprite *spr_, int8_t next, int8_t back) : spr_(spr_), next(next), back(back) {}
-    virtual TFT_eSprite *render();
-    virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
-    virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
-    virtual void updateStateFromSystem(AppState state);
+    App(SemaphoreHandle_t mutex) : mutex_(mutex)
+    {
+        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    }
 
-    void setMotorNotifier(MotorNotifier *motor_notifier);
-    void triggerMotorConfigUpdate();
+    App(SemaphoreHandle_t mutex, int8_t next, int8_t back) : mutex_(mutex), next_(next), back_(back)
+    {
+        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    }
 
-    virtual int8_t navigationNext();
-    void setNext(int8_t next);
-    virtual int8_t navigationBack();
-    void setBack(int8_t back);
+    void render()
+    {
+        SemaphoreGuard lock(mutex_);
+        lv_scr_load(screen);
+    }
+
+    virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) { return EntityStateUpdate(); };
+    virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update) {};
+    virtual void updateStateFromSystem(AppState state) {};
+
+    void setMotorNotifier(MotorNotifier *motor_notifier)
+    {
+        this->motor_notifier = motor_notifier;
+    }
+
+    void triggerMotorConfigUpdate()
+    {
+        if (this->motor_notifier != nullptr)
+        {
+            motor_notifier->requestUpdate(root_level_motor_config);
+        }
+        else
+        {
+            LOGW("motor_notifier is not set");
+        }
+    }
+
+    int8_t navigationNext()
+    {
+        return next_;
+    }
+    void setNext(int8_t next)
+    {
+        next_ = next;
+    }
+    int8_t navigationBack()
+    {
+        return back_;
+    }
+    void setBack(int8_t back)
+    {
+        back_ = back;
+    }
 
     PB_SmartKnobConfig getMotorConfig()
     {
@@ -51,17 +94,19 @@ public:
         return "App";
     }
 
-    const unsigned char *small_icon;
-    const unsigned char *big_icon;
+    lv_image_dsc_t small_icon;
+    lv_image_dsc_t big_icon;
     char friendly_name[64] = "";
     char app_id[64] = "";
     char entity_id[64] = "";
 
 protected:
+    virtual void initScreen() {};
+
     /** Full-size sprite used as a framebuffer */
-    int8_t next = DONT_NAVIGATE;
-    int8_t back = MENU;
-    TFT_eSprite *spr_;
+    SemaphoreHandle_t mutex_;
+    int8_t next_ = DONT_NAVIGATE;
+    int8_t back_ = MENU;
     PB_SmartKnobConfig motor_config;
 
     PB_SmartKnobConfig root_level_motor_config;
@@ -70,4 +115,7 @@ protected:
     bool state_sent_from_hass = false;
 
     MotorNotifier *motor_notifier;
+
+    // LVGL
+    lv_obj_t *screen = lv_obj_create(NULL);
 };

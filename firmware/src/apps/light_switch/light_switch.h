@@ -1,10 +1,6 @@
 #pragma once
-#include "../lvgl_app.h"
+#include "../app.h"
 #include "../util.h"
-
-// #include "../../font/roboto_thin_bold_24.h"
-// #include "../../font/roboto_thin_20.h"
-
 class LightSwitchApp : public App
 {
 public:
@@ -32,9 +28,8 @@ protected:
 
         lv_obj_set_style_arc_width(arc_, 2, LV_PART_INDICATOR);
 
-        LV_IMAGE_DECLARE(lightbulb_regular);
         lv_obj_t *light_bulb = lv_img_create(screen);
-        lv_img_set_src(light_bulb, &lightbulb_regular);
+        lv_img_set_src(light_bulb, &big_icon);
         lv_obj_set_style_image_recolor_opa(light_bulb, LV_OPA_COVER, 0);
         lv_obj_set_style_image_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
 

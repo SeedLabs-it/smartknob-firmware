@@ -1,51 +1,51 @@
 #pragma once
 
-#include "lvgl_app.h"
+#include "app.h"
 #include "./display/page_manager.h"
 // #include "font/NDS1210pt7b.h"
 
 #include <map>
 #include <memory>
 
-struct TextItem
-{
-    char *text;
-    lv_color_t color;
+// struct TextItem
+// {
+//     char *text;
+//     lv_color_t color;
 
-    TextItem(char *text = "", lv_color_t color = lv_color_white()) : text(text), color(color){};
-};
+//     TextItem(char *text = "", lv_color_t color = lv_color_white()) : text(text), color(color){};
+// };
 
-struct IconItem
-{
-    const unsigned char *icon;
-    uint16_t color;
+// struct IconItem
+// {
+//     const unsigned char *icon;
+//     uint16_t color;
 
-    IconItem(const unsigned char *icon = nullptr, uint16_t color = 0) : icon(icon), color(color){};
-};
+//     IconItem(const unsigned char *icon = nullptr, uint16_t color = 0) : icon(icon), color(color){};
+// };
 
-struct MenuItem
-{
-    int8_t app_id;
-    TextItem screen_name;
-    TextItem screen_description;
-    TextItem call_to_action;
-    IconItem big_icon;
-    IconItem small_icon;
+// struct MenuItem
+// {
+//     int8_t app_id;
+//     TextItem screen_name;
+//     TextItem screen_description;
+//     TextItem call_to_action;
+//     IconItem big_icon;
+//     IconItem small_icon;
 
-    MenuItem(
-        int8_t app_id = -1,
-        TextItem screen_name = TextItem{},
-        TextItem screen_description = TextItem{},
-        TextItem call_to_action = TextItem{},
-        IconItem big_icon = IconItem{},
-        IconItem small_icon = IconItem{})
-        : app_id(app_id),
-          screen_name(screen_name),
-          screen_description(screen_description),
-          call_to_action(call_to_action),
-          big_icon(big_icon),
-          small_icon(small_icon){};
-};
+//     MenuItem(
+//         int8_t app_id = -1,
+//         TextItem screen_name = TextItem{},
+//         TextItem screen_description = TextItem{},
+//         TextItem call_to_action = TextItem{},
+//         IconItem big_icon = IconItem{},
+//         IconItem small_icon = IconItem{})
+//         : app_id(app_id),
+//           screen_name(screen_name),
+//           screen_description(screen_description),
+//           call_to_action(call_to_action),
+//           big_icon(big_icon),
+//           small_icon(small_icon){};
+// };
 
 class MenuPage : public BasePage
 {
@@ -80,8 +80,6 @@ class Menu : public App
 {
 public:
     Menu(SemaphoreHandle_t mutex) : App(mutex) { initScreen(); }
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) {}
-    void updateStateFromSystem(AppState state) {};
 
     void initScreen()
     {

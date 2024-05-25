@@ -83,41 +83,11 @@ void DisplayTask::run()
     lv_display_t *disp;
     disp = lv_skdk_create(TFT_HOR_RES, TFT_VER_RES, buf1, buf2, DISP_BUF_SIZE);
 
-    demoScreen = lv_obj_create(NULL);
-    lv_obj_t *label_demo = lv_label_create(demoScreen);
-    lv_label_set_text(label_demo, "Demo screen");
-    lv_obj_align(label_demo, LV_ALIGN_CENTER, 0, 0);
-
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
-    // demo_apps->renderActive();
-
-    // demo_apps = DemoApps(&spr_);
-    // hass_apps = HassApps(&spr_);
-
-    // demo_apps->setActive(MENU);
-    // demo_apps->renderActive();
-
-    // AppState app_state;
-
-    // unsigned long last_rendering_ms = millis();
-    // unsigned long last_fps_check = millis();
-
-    // const uint16_t wanted_fps = 60;
-    // uint16_t fps_counter = 0;
-
-    // LightSwitchApp light_switch = LightSwitchApp(mutex_, "light_switch", "Light Switch", "light.switch");
-    // light_switch.render();
-
-    // LightDimmerApp light_dimmer = LightDimmerApp(mutex_, "light_dimmer", "Light Dimmer", "light.dim");
-    // light_dimmer.render();
-
-    // lv_obj_t *scr = lv_obj_create(NULL);
-    // lv_scr_load(scr);
 
     while (1)
     {
-        // LOGE("DisplayTask running");
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();

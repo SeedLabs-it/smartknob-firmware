@@ -305,8 +305,6 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     cJSON_Delete(new_state);
 }
 
-void LightDimmerApp::updateStateFromSystem(AppState state) {}
-
 // TFT_eSprite *LightDimmerApp::renderHUEWheel()
 // {
 //     uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);

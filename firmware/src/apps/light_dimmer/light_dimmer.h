@@ -1,5 +1,5 @@
 #pragma once
-#include "../lvgl_app.h"
+#include "../app.h"
 #include "../../util.h"
 
 // #include "../../font/NDS1210pt7b.h"
@@ -13,16 +13,15 @@ class LightDimmerApp : public App
 public:
     LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id);
 
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
-    void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
-    void updateStateFromSystem(AppState state);
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) override;
+    void updateStateFromHASS(MQTTStateUpdate mqtt_state_update) override;
 
 protected:
     int8_t navigationNext();
     int8_t navigationBack();
 
 private:
-    void initScreen()
+    void initScreen() override
     {
         SemaphoreGuard lock(mutex_);
 

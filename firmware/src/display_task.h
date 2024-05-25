@@ -58,9 +58,6 @@ private:
     /** Full-size sprite used as a framebuffer */
     TFT_eSprite spr_ = TFT_eSprite(&tft_);
 
-    lv_obj_t *onboardingScreen;
-    lv_obj_t *demoScreen;
-
     OnboardingFlow *onboarding_flow = nullptr;
     DemoApps *demo_apps = nullptr;
     // HassApps hass_apps;

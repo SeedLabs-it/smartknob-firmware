@@ -1,5 +1,5 @@
 #pragma once
-#include "../lvgl_apps.h"
+#include "../apps.h"
 #include "../../util.h"
 #include "../../events/events.h"
 
