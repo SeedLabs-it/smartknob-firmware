@@ -12,6 +12,7 @@ class MenuApp : public Menu
 public:
     MenuApp(SemaphoreHandle_t mutex) : Menu(mutex)
     {
+        sprintf(this->app_id, "%s", "MENU");
         back_ = MENU;
         motor_config = PB_SmartKnobConfig{
             1,
@@ -23,7 +24,7 @@ public:
             2,
             1,
             0.55,
-            "", // TODO: clean this
+            "MENU",
             0,
             {},
             0,

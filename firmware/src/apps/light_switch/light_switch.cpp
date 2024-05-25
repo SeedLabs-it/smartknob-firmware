@@ -1,10 +1,10 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id) : App(mutex)
+LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
-    sprintf(this->app_id, "%s", app_id);
-    sprintf(this->friendly_name, "%s", friendly_name);
-    sprintf(this->entity_id, "%s", entity_id);
+    sprintf(app_id, "%s", app_id_);
+    sprintf(friendly_name, "%s", friendly_name_);
+    sprintf(entity_id, "%s", entity_id_);
 
     motor_config = PB_SmartKnobConfig{
         current_position,
@@ -22,6 +22,7 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id, char *frie
         0,
         27,
     };
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
     LV_IMAGE_DECLARE(x80_lightbulb_outline);
     LV_IMAGE_DECLARE(x40_lightbulb_outline);

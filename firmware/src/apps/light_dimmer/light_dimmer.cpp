@@ -24,6 +24,7 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *frie
         0,
         27,
     };
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
     num_positions = motor_config.max_position - motor_config.min_position;
 

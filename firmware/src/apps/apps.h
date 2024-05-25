@@ -55,20 +55,16 @@ public:
         // TODO: update with AppState
         SemaphoreGuard lock(app_mutex_);
         EntityStateUpdate new_state_update;
-        // lock();
-        if (active_app == nullptr)
+        // Only send state updates to app using config with same identifier.
+        if (strcmp(state.motor_state.config.id, active_app->app_id) == 0)
         {
-            // unlock();
-            return new_state_update;
+            LOGE("Update state from knob");
+            new_state_update = active_app->updateStateFromKnob(state.motor_state);
+            active_app->updateStateFromSystem(state);
         }
 
-        new_state_update = active_app->updateStateFromKnob(state.motor_state);
-        active_app->updateStateFromSystem(state);
-
-        // unlock();
         return new_state_update;
     }
-    // TFT_eSprite *renderActive();
     void renderActive()
     {
         active_app->render();
@@ -76,12 +72,10 @@ public:
     void setActive(int8_t id)
     {
         SemaphoreGuard lock(app_mutex_);
-        // lock();
         if (id == MENU)
         {
             active_app = menu;
             active_id = MENU;
-            // unlock();
             renderActive();
             return;
         }
@@ -97,11 +91,8 @@ public:
             active_app = apps[active_id];
             renderActive();
         }
-
-        // unlock();
     }
 
-    // void setSprite(TFT_eSprite *spr_);
     App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
     {
         // if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
@@ -161,7 +152,6 @@ public:
     }
     void updateMenu() // BROKEN FOR NOW
     {
-        // lock();
         {
             SemaphoreGuard lock(app_mutex_);
             menu = std::make_shared<MenuApp>(screen_mutex_);
@@ -170,33 +160,8 @@ public:
 
             uint16_t position = 0;
 
-            // uint16_t active_color = spr_->color565(0, 255, 200);
-            lv_color_t active_color = LV_COLOR_MAKE(0x00, 0xFF, 0xC8);
-            // uint16_t inactive_color = spr_->color565(150, 150, 150);
             for (it = apps.begin(); it != apps.end(); it++)
             {
-                // menu->add_item(
-                //     position,
-                //     std::make_shared<MenuItem>(
-                //         (int8_t)it->first,
-                //         TextItem{it->second->friendly_name, active_color}, // TextItem{it->second->friendly_name, inactive_color},
-                //         TextItem{},
-                //         TextItem{},
-                //         IconItem{}, // IconItem{it->second->big_icon, active_color},
-                //         IconItem{}) // IconItem{it->second->small_icon, inactive_color}
-                // );
-
-                // MenuPage *menuPage = new MenuPage(screen, friendly_name, item->big_icon, item->small_icon, x40_lightbulb_outline);
-                // menuPage->show();
-
-                // menu->add_page(
-                //     position,
-                //     std::make_shared<MenuPage>(
-                //         screen_mutex_,
-                //         it->second->friendly_name,
-                //         it->second->big_icon,
-                //         it->second->small_icon, );
-
                 menu->add_page(
                     position,
                     (int8_t)it->first,
@@ -207,8 +172,6 @@ public:
                 position++;
             }
         }
-
-        // unlock();
 
         setActive(MENU);
     }
@@ -308,10 +271,7 @@ protected:
 
     int8_t active_id = 0;
 
-    // TFT_eSprite *spr_ = nullptr;
     std::shared_ptr<App> active_app = nullptr;
-
-    // TFT_eSprite *rendered_spr_;
 
     std::shared_ptr<App> find(uint8_t id)
     {
