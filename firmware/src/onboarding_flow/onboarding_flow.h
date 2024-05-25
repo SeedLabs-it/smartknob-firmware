@@ -22,6 +22,8 @@
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
 #include "notify/os_config_notifier/os_config_notifier.h"
+
+#include "onboarding_flow/submenus/hass_flow.h"
 // #include "./assets/images/skdk/logo"
 
 enum OnboardingFlowPages
@@ -205,6 +207,8 @@ public:
 private:
     SemaphoreHandle_t mutex_;
 
+    HassOnboardingFlow *hass_flow;
+
     uint8_t current_position = 0;
     char firmware_version[16];
 
@@ -216,7 +220,6 @@ private:
     MotorNotifier *motor_notifier;
 
     void indicatorDots();
-    void screen_load_task(void *param);
 
     lv_obj_t *overlay;
     lv_obj_t *main_screen = lv_obj_create(NULL);

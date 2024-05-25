@@ -59,37 +59,18 @@ public:
 
         old_page_ = current_page_;
         current_page_ = page_enum;
-        // for (auto &it : pages_)
-        // {
-        //     if (it.first == page_enum)
-        //     {
-        //         old_page_ = current_page_;
-        //         current_page_ = page_enum;
-        //         it.second->show();
-        //     }
-        //     else
-        //     {
-        //         it.second->hide();
-        //     }
-        // }
     }
 
     void hide(T page_enum)
     {
-        for (auto &it : pages_)
-        {
-            if (it.first == page_enum)
-            {
-                it.second->hide();
-            }
-        }
+        pages_[page_enum]->hide();
     }
 
 protected:
     SemaphoreHandle_t mutex_;
 
-    T current_page_;
-    T old_page_;
+    T current_page_ = static_cast<T>(0);
+    T old_page_ = static_cast<T>(0);
 
     lv_obj_t *parent_;
     lv_obj_t *overlay_;

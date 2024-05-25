@@ -1,17 +1,6 @@
 #include "onboarding_flow.h"
 #include <semaphore_guard.h>
 
-void OnboardingFlow::screen_load_task(void *param)
-{
-    //     if (lv_mutex_lock(lv_mutex_))
-    //     {
-    //         lv_obj_t *screen = (lv_obj_t *)param;
-    //         lv_scr_load(screen);
-    //         lv_mutex_unlock(lv_mutex_);
-    //     }
-    //     vTaskDelete(NULL);
-}
-
 OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 {
     root_level_motor_config = PB_SmartKnobConfig{
@@ -49,6 +38,11 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
     };
 
     page_mgr = new OnboardingPageManager(main_screen, mutex);
+
+    hass_flow = new HassOnboardingFlow(mutex);
+
+    // hass_flow->setWiFiNotifier(wifi_notifier);
+    // hass_flow->setOSConfigNotifier(os_config_notifier);
 
     // page_mgr->add(WELCOME, new WelcomePage(main_screen));
     // // page_mgr->add(HASS, new HassPage());
@@ -100,9 +94,7 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
             // motor_notifier->requestUpdate(blocked_motor_config);
             break;
         case HASS_PAGE:
-            // current_position = WELCOME;
-            // page_mgr->show(WELCOME);
-            // motor_notifier->requestUpdate(root_level_motor_config);
+            hass_flow->render();
             break;
         case DEMO_PAGE:
             os_config_notifier->setOSMode(OSMode::DEMO);
@@ -170,6 +162,7 @@ void OnboardingFlow::indicatorDots()
 void OnboardingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {
     this->motor_notifier = motor_notifier;
+    hass_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY... FIX
 }
 
 void OnboardingFlow::triggerMotorConfigUpdate()
