@@ -16,7 +16,7 @@
 
 // #include "apps/apps.h"
 // #include "apps/hass/hass_apps.h"
-#include "apps/demo/demo_apps.h"
+#include "./apps/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
 #include "error_handling_flow/error_handling_flow.h"

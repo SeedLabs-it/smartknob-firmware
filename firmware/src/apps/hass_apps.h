@@ -1,7 +1,7 @@
 #pragma once
-#include "../apps.h"
-#include "../../util.h"
-#include "../../events/events.h"
+#include "apps.h"
+#include "../util.h"
+#include "../events/events.h"
 
 class HassApps : public Apps
 {
