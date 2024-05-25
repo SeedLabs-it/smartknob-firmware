@@ -4,6 +4,7 @@
 #include "semaphore_guard.h"
 #include "./display/page_manager.h"
 #include "app_config.h"
+#include "../navigation/navigation.h"
 
 // #include "util.h"
 // #include "qrcode.h"
@@ -199,6 +200,7 @@ public:
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
+    void handleNavigationEvent(NavigationEvent event);
 
 private:
     SemaphoreHandle_t mutex_;

@@ -602,7 +602,7 @@ void RootTask::updateHardware(AppState app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case Onboarding:
-                        // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case Demo:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
