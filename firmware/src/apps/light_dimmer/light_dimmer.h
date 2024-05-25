@@ -52,6 +52,20 @@ private:
         lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
     }
 
+    void initHueScreen()
+    {
+        SemaphoreGuard lock(mutex_);
+
+        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x00, 0xFF), 0);
+
+        lv_obj_t *img = lv_img_create(screen);
+        LV_IMAGE_DECLARE(a4_transp_mask);
+        lv_img_set_src(img, &a4_transp_mask);
+        lv_obj_set_width(img, a4_transp_mask.header.w);
+        lv_obj_set_height(img, a4_transp_mask.header.h);
+        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+    }
+
     lv_obj_t *arc_;
     lv_obj_t *percentage_label_;
 
@@ -77,4 +91,6 @@ private:
     bool first_run = false;
 
     uint16_t calculateAppHuePosition(uint16_t position);
+
+    lv_obj_t *hue_screen;
 };

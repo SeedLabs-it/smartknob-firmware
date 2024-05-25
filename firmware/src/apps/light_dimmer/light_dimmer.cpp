@@ -36,7 +36,8 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *frie
 
     json = cJSON_CreateObject();
 
-    initScreen();
+    // initScreen();
+    initHueScreen();
 }
 
 int8_t LightDimmerApp::navigationNext()

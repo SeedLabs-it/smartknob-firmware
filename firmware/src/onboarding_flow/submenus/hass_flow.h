@@ -23,7 +23,6 @@ class ConnectQRCodePage : public BasePage
 public:
     ConnectQRCodePage(lv_obj_t *parent) : BasePage(parent)
     {
-
         lv_obj_t *qr = lv_qrcode_create(page);
         lv_qrcode_set_size(qr, 80);
         lv_qrcode_set_dark_color(qr, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
