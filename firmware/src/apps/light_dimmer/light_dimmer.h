@@ -56,14 +56,20 @@ private:
     {
         SemaphoreGuard lock(mutex_);
 
-        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x00, 0xFF), 0);
+        // lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x00, 0xFF), 0);
+        lv_obj_t *hue_wheel_img = lv_img_create(screen);
+        LV_IMAGE_DECLARE(hue_wheel);
+        lv_img_set_src(hue_wheel_img, &hue_wheel);
+        lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
+        lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
+        lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
 
-        lv_obj_t *img = lv_img_create(screen);
+        lv_obj_t *mask_img = lv_img_create(screen);
         LV_IMAGE_DECLARE(a4_transp_mask);
-        lv_img_set_src(img, &a4_transp_mask);
-        lv_obj_set_width(img, a4_transp_mask.header.w);
-        lv_obj_set_height(img, a4_transp_mask.header.h);
-        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+        lv_img_set_src(mask_img, &a4_transp_mask);
+        lv_obj_set_width(mask_img, a4_transp_mask.header.w);
+        lv_obj_set_height(mask_img, a4_transp_mask.header.h);
+        lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
     }
 
     lv_obj_t *arc_;
