@@ -219,9 +219,6 @@ public:
             case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
                 break;
             default:
-                LOGE("Navigation next");
-                LOGE("active_app->navigationNext(): %d", active_app->navigationNext());
-                LOGE("item count menu: %d", menu->get_menu_position());
                 setActive(active_app->navigationNext());
                 break;
             }

@@ -67,7 +67,7 @@ public:
         }
     }
 
-    int8_t navigationNext()
+    virtual int8_t navigationNext()
     {
         return next_;
     }
@@ -75,7 +75,7 @@ public:
     {
         next_ = next;
     }
-    int8_t navigationBack()
+    virtual int8_t navigationBack()
     {
         return back_;
     }
