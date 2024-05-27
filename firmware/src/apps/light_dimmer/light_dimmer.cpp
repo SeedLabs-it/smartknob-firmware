@@ -218,7 +218,7 @@ int8_t LightDimmerApp::navigationNext()
             PI * 2 / 180,
             1,
             1,
-            1.1,
+            0.5,
             "",
             0,
             {},
@@ -286,6 +286,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
             SemaphoreGuard lock(mutex_);
             lv_image_set_rotation(mask_img, (app_hue_position * 10));
+            // lv_obj_set_style_transform_rotation(mask_img, (app_hue_position * 10), 0);
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
