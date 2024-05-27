@@ -26,65 +26,8 @@ private:
         initHueScreen();
     }
 
-    void initDimmerScreen()
-    {
-        SemaphoreGuard lock(mutex_);
-
-        dimmer_screen = lv_obj_create(screen);
-        lv_obj_remove_style_all(dimmer_screen);
-        lv_obj_set_size(dimmer_screen, LV_HOR_RES, LV_VER_RES);
-        // lv_obj_add_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
-
-        arc_ = lv_arc_create(dimmer_screen);
-        lv_obj_set_size(arc_, 236, 236);
-        lv_arc_set_rotation(arc_, 150);
-        lv_arc_set_bg_angles(arc_, 0, 240);
-        lv_arc_set_knob_offset(arc_, 0);
-        lv_arc_set_value(arc_, 0);
-        lv_obj_center(arc_);
-
-        lv_obj_set_style_bg_opa(arc_, LV_OPA_0, LV_PART_KNOB);
-
-        lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(0xF5, 0xA4, 0x42), LV_PART_INDICATOR);
-
-        lv_obj_set_style_arc_width(arc_, 18, LV_PART_MAIN);
-        lv_obj_set_style_arc_width(arc_, 18, LV_PART_INDICATOR);
-
-        percentage_label_ = lv_label_create(dimmer_screen);
-        char buf_[16];
-        sprintf(buf_, "%d%%", current_brightness);
-        lv_label_set_text(percentage_label_, buf_);
-        lv_obj_set_style_text_font(percentage_label_, &EIGHTTWOXC_48px, 0);
-        lv_obj_align(percentage_label_, LV_ALIGN_CENTER, 0, -12);
-
-        lv_obj_t *friendly_name_label = lv_label_create(dimmer_screen);
-        lv_label_set_text(friendly_name_label, friendly_name);
-        lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
-    }
-
-    void initHueScreen()
-    {
-        SemaphoreGuard lock(mutex_);
-
-        hue_screen = lv_obj_create(screen);
-        lv_obj_remove_style_all(hue_screen);
-        lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
-        lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
-
-        lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
-        LV_IMAGE_DECLARE(hue_wheel);
-        lv_img_set_src(hue_wheel_img, &hue_wheel);
-        lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
-        lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
-        lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
-
-        lv_obj_t *mask_img = lv_img_create(hue_screen);
-        LV_IMAGE_DECLARE(a4_transp_mask);
-        lv_img_set_src(mask_img, &a4_transp_mask);
-        lv_obj_set_width(mask_img, a4_transp_mask.header.w);
-        lv_obj_set_height(mask_img, a4_transp_mask.header.h);
-        lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
-    }
+    void initDimmerScreen();
+    void initHueScreen();
 
     lv_obj_t *arc_;
     lv_obj_t *percentage_label_;
@@ -112,6 +55,7 @@ private:
 
     uint16_t calculateAppHuePosition(uint16_t position);
 
+    lv_obj_t *mask_img;
     lv_obj_t *dimmer_screen;
     lv_obj_t *hue_screen;
 };
