@@ -101,9 +101,8 @@ void DisplayTask::run()
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
-            ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
         }
-        delay(5);
+        delay(1);
     }
 }
 
