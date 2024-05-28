@@ -15,7 +15,10 @@ static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 #define TFT_HOR_RES 240
 #define TFT_VER_RES 240
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 1, task_core}
+#define LVGL_TASK_MAX_DELAY_MS (500)
+#define LVGL_TASK_MIN_DELAY_MS (1)
+
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 2, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
@@ -84,13 +87,25 @@ void DisplayTask::run()
         delay(50);
     }
 
+    uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+
     while (1)
     {
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
+
+            // task_delay_ms = lv_timer_handler();
         }
-        delay(2);
+        // if (task_delay_ms > LVGL_TASK_MAX_DELAY_MS)
+        // {
+        //     task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+        // }
+        // else if (task_delay_ms < LVGL_TASK_MIN_DELAY_MS)
+        // {
+        //     task_delay_ms = LVGL_TASK_MIN_DELAY_MS;
+        // }
+        // vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
     }
 }
 

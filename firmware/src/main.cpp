@@ -21,7 +21,7 @@ static DisplayTask *display_task_p = nullptr;
 #endif
 
 #if SK_LEDS
-static LedRingTask led_ring_task(0);
+static LedRingTask led_ring_task(1);
 static LedRingTask *led_ring_task_p = &led_ring_task;
 #else
 static LedRingTask *led_ring_task_p = nullptr;

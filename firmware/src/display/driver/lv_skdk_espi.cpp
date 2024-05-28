@@ -78,7 +78,7 @@ lv_display_t *lv_skdk_create()
 
     lv_display_set_driver_data(disp, (void *)dsc);
     lv_display_set_flush_cb(disp, flush_cb);
-    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, DISP_BUF_SIZE, LV_DISPLAY_RENDER_MODE_DIRECT);
+    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, DISP_BUF_SIZE, LV_DISPLAY_RENDER_MODE_FULL);
     return disp;
 }
 
@@ -94,12 +94,13 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
     uint32_t h = (area->y2 - area->y1 + 1);
     uint32_t size = w * h;
 
-    lv_draw_buf_t *off_screen = lv_display_get_buf_active(disp);
-    lv_draw_buf_t *on_screen = (lv_color_t *)off_screen == buf1 ? (lv_draw_buf_t *)buf1 : (lv_draw_buf_t *)buf2;
+    // lv_draw_buf_t *off_screen = lv_display_get_buf_active(disp);
+    // lv_draw_buf_t *on_screen = (lv_color_t *)off_screen == buf1 ? (lv_draw_buf_t *)buf1 : (lv_draw_buf_t *)buf2;
 
     dsc->tft->startWrite();
     dsc->tft->setAddrWindow(area->x1, area->y1, w, h);
-    dsc->tft->pushImageDMA(area->x1, area->y1, w, h, (uint16_t *)px_map, (uint16_t *)on_screen->data);
+    // dsc->tft->pushPixelsDMA((uint16_t *)px_map, size);
+    dsc->tft->pushImageDMA(area->x1, area->y1, w, h, (uint16_t *)px_map);
     dsc->tft->endWrite();
 
     lv_display_flush_ready(disp);
