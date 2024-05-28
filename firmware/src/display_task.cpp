@@ -114,7 +114,7 @@ QueueHandle_t DisplayTask::getKnobStateQueue()
 void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
-    brightness_ = brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH);
+    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH));
 }
 
 void DisplayTask::enableOnboarding()
