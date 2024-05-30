@@ -318,7 +318,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         if (color_set)
         {
 
-            RGBColor rgb = uint32ToRGB(ToRGBA(app_hue_position));
+            RGBColor_Custom rgb = uint32ToRGB(ToRGBA(app_hue_position));
 
             cJSON *rgb_array = cJSON_CreateArray();
             cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.r));
@@ -405,7 +405,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
         uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
 
-        HSVColor hsv = ToHSV(RGBColor{r, g, b});
+        HSVColor hsv = ToHSV(RGBColor_Custom{r, g, b});
 
         app_hue_position = hsv.h;
 

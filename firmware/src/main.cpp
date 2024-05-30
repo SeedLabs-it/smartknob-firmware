@@ -63,6 +63,7 @@ void initTempSensor()
 
 void setup()
 {
+
     initTempSensor();
 
     // TODO: move from eeprom to ffatfs
@@ -72,6 +73,7 @@ void setup()
     }
 
 #if SK_DISPLAY
+    // Create the task pinned to the specified core
     display_task.begin();
 
     // Connect display to motor_task's knob state feed

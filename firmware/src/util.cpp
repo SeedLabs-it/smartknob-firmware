@@ -83,7 +83,7 @@ uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b)
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
 
-RGBColor uint32ToRGB(uint32_t color)
+RGBColor_Custom uint32ToRGB(uint32_t color)
 {
     return {(color >> 8) & 0xF8, (color >> 3) & 0xFC, (color << 3) & 0xF8};
 }
@@ -168,7 +168,7 @@ HEXColor hToHEX(float h)
     return result;
 }
 
-HSVColor ToHSV(RGBColor color)
+HSVColor ToHSV(RGBColor_Custom color)
 {
     double cmax = std::max({color.r, color.g, color.b});
     double cmin = std::min({color.r, color.g, color.b});

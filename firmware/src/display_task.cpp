@@ -73,8 +73,6 @@ void DisplayTask::run()
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
     lv_init();
-    lv_tick_set_cb((lv_tick_get_cb_t)millis);
-
     lv_display_t *disp;
     disp = lv_skdk_create();
 
@@ -87,10 +85,11 @@ void DisplayTask::run()
         delay(50);
     }
 
-    uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+    // uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
 
     while (1)
     {
+        vTaskDelay(pdMS_TO_TICKS(5));
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
@@ -106,6 +105,7 @@ void DisplayTask::run()
         //     task_delay_ms = LVGL_TASK_MIN_DELAY_MS;
         // }
         // vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+        // delay(5);
     }
 }
 

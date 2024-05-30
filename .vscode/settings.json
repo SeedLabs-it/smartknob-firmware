@@ -79,7 +79,8 @@
         "list": "cpp",
         "thread": "cpp",
         "events.h": "c",
-        "app_config.h": "c"
+        "app_config.h": "c",
+        "logging.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
