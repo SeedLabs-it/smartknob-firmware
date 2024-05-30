@@ -68,11 +68,11 @@ lv_display_t *lv_skdk_create()
     lcd.setSwapBytes(true);
     lcd.setColorDepth(16);
 
-    buf1 = (lv_color_t *)heap_caps_aligned_alloc(32, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    buf1 = (lv_color_t *)heap_caps_aligned_alloc(4, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     // buf1 = (lv_color_t *)heap_caps_malloc(DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     assert(buf1 != NULL);
 
-    buf2 = (lv_color_t *)heap_caps_aligned_alloc(32, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    buf2 = (lv_color_t *)heap_caps_aligned_alloc(4, DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     // buf2 = (lv_color_t *)heap_caps_malloc(DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     assert(buf2 != NULL);
 
@@ -112,6 +112,7 @@ lv_display_t *lv_skdk_create()
     lv_display_set_flush_cb(disp, flush_cb);
     lv_display_set_driver_data(disp, (void *)buf1);
     lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, DISP_BUF_SIZE, LV_DISPLAY_RENDER_MODE_FULL);
+
     return disp;
 }
 

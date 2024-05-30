@@ -85,11 +85,42 @@ void DisplayTask::run()
         delay(50);
     }
 
-    // uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+    lv_obj_t *screen = lv_obj_create(NULL);
+    lv_obj_t *label = lv_label_create(screen);
+    lv_label_set_text(label, "Loading..........!!!!!!");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    // lv_scr_load(screen);
+
+    // // uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+
+    lv_obj_t *hue_screen = lv_obj_create(screen);
+    lv_obj_remove_style_all(hue_screen);
+    lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
+    // lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
+    LV_IMAGE_DECLARE(hue_wheel);
+    lv_img_set_src(hue_wheel_img, &hue_wheel);
+    lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
+    lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
+    lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t *mask_img = lv_img_create(hue_screen);
+    LV_IMAGE_DECLARE(a8_transp_mask);
+    lv_img_set_src(mask_img, &a8_transp_mask);
+    lv_obj_set_width(mask_img, a8_transp_mask.header.w);
+    lv_obj_set_height(mask_img, a8_transp_mask.header.h);
+    lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
+
+    lv_scr_load(screen);
 
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(5));
+        // {
+        //     SemaphoreGuard lock(mutex_);
+        //     lv_image_set_rotation(mask_img, lv_image_get_rotation(mask_img) + 10);
+        // }
+        vTaskDelay(pdMS_TO_TICKS(2));
         {
             SemaphoreGuard lock(mutex_);
             lv_task_handler();
