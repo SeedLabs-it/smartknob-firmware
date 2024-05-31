@@ -5,9 +5,9 @@ name = "pypi"
 
 [packages]
 grpcio-tools = "*"
-protobuf = "==3.20.3"
+protobuf = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"

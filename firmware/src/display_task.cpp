@@ -2,12 +2,23 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
+#include "esp_spiram.h"
+#include "esp_heap_caps.h"
+
+#include "apps/light_switch/light_switch.h"
+#include "apps/light_dimmer/light_dimmer.h"
 
 #include "cJSON.h"
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 12, 1, task_core}
+#define TFT_HOR_RES 240
+#define TFT_VER_RES 240
+
+#define LVGL_TASK_MAX_DELAY_MS (500)
+#define LVGL_TASK_MIN_DELAY_MS (1)
+
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 2, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
@@ -18,23 +29,36 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 12, 1
 
 DisplayTask::~DisplayTask()
 {
+
     vQueueDelete(app_state_queue_);
     vSemaphoreDelete(mutex_);
 }
 
 OnboardingFlow *DisplayTask::getOnboardingFlow()
 {
-    return &onboarding_flow;
+    while (onboarding_flow == nullptr)
+    {
+        delay(50);
+    }
+    return onboarding_flow;
 }
 
 DemoApps *DisplayTask::getDemoApps()
 {
-    return &demo_apps;
+    while (demo_apps == nullptr)
+    {
+        delay(50);
+    }
+    return demo_apps;
 }
 
 HassApps *DisplayTask::getHassApps()
 {
-    return &hass_apps;
+    while (hass_apps == nullptr)
+    {
+        delay(50);
+    }
+    return hass_apps;
 }
 
 ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
@@ -44,91 +68,75 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 
 void DisplayTask::run()
 {
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
-    tft_.fillScreen(TFT_BLACK);
-
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
-    LOGD("Push menu sprite: ok");
+    lv_init();
+    lv_display_t *disp;
+    disp = lv_skdk_create();
 
-    spr_.setColorDepth(16);
+    onboarding_flow = new OnboardingFlow(mutex_);
+    demo_apps = new DemoApps(mutex_);
+    hass_apps = new HassApps(mutex_);
 
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
+    while (display_os_mode == UNSET)
     {
-        LOGE("Sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
+        delay(50);
     }
-    else
-    {
-        LOGD("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    demo_apps = DemoApps(&spr_);
+    // lv_obj_t *screen = lv_obj_create(NULL);
+    // lv_obj_t *label = lv_label_create(screen);
+    // lv_label_set_text(label, "Loading..........!!!!!!");
+    // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    // // lv_scr_load(screen);
 
-    hass_apps = HassApps(&spr_);
+    // // // uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
 
-    AppState app_state;
+    // lv_obj_t *hue_screen = lv_obj_create(screen);
+    // lv_obj_remove_style_all(hue_screen);
+    // lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
+    // // lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
 
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
+    // lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
+    // LV_IMAGE_DECLARE(hue_wheel);
+    // lv_img_set_src(hue_wheel_img, &hue_wheel);
+    // lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
+    // lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
+    // lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
 
-    unsigned long last_rendering_ms = millis();
-    unsigned long last_fps_check = millis();
+    // lv_obj_t *mask_img = lv_img_create(hue_screen);
+    // LV_IMAGE_DECLARE(a8_transp_mask);
+    // lv_img_set_src(mask_img, &a8_transp_mask);
+    // lv_obj_set_width(mask_img, a8_transp_mask.header.w);
+    // lv_obj_set_height(mask_img, a8_transp_mask.header.h);
+    // lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
 
-    const uint16_t wanted_fps = 60;
-    uint16_t fps_counter = 0;
+    // lv_scr_load(screen);
 
     while (1)
     {
-        if (millis() - last_rendering_ms > 1000 / wanted_fps)
+        // {
+        //     SemaphoreGuard lock(mutex_);
+        //     lv_image_set_rotation(mask_img, lv_image_get_rotation(mask_img) + 10);
+        // }
+        vTaskDelay(pdMS_TO_TICKS(2));
         {
-            spr_.fillSprite(TFT_BLACK);
-            spr_.setTextSize(1);
+            SemaphoreGuard lock(mutex_);
+            lv_task_handler();
 
-            if (error_handling_flow.getErrorType() == NO_ERROR)
-            {
-                switch (os_mode)
-                {
-                case Onboarding:
-                    onboarding_flow.render()->pushSprite(0, 0);
-                    break;
-                case Demo:
-                    demo_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                case Hass:
-                    hass_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                default:
-                    spr_.pushSprite(0, 0);
-                    break;
-                }
-            }
-            else
-            {
-                error_handling_flow.render()->pushSprite(0, 0);
-            }
-
-            {
-                SemaphoreGuard lock(mutex_);
-                ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
-            }
-            last_rendering_ms = millis();
-
-            fps_counter++;
-            if (last_fps_check + 1000 < millis())
-            {
-                fps_counter = 0;
-                last_fps_check = millis();
-            }
+            // task_delay_ms = lv_timer_handler();
         }
-
-        vTaskDelay(pdMS_TO_TICKS(1));
+        // if (task_delay_ms > LVGL_TASK_MAX_DELAY_MS)
+        // {
+        //     task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+        // }
+        // else if (task_delay_ms < LVGL_TASK_MIN_DELAY_MS)
+        // {
+        //     task_delay_ms = LVGL_TASK_MIN_DELAY_MS;
+        // }
+        // vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+        // delay(5);
     }
 }
 
@@ -140,24 +148,27 @@ QueueHandle_t DisplayTask::getKnobStateQueue()
 void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
-    brightness_ = brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH);
+    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH));
 }
 
 void DisplayTask::enableOnboarding()
 {
-    os_mode = Onboarding;
-    onboarding_flow.triggerMotorConfigUpdate();
+    display_os_mode = ONBOARDING;
+    onboarding_flow->render();
+    onboarding_flow->triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
 {
-    os_mode = Demo;
-    demo_apps.triggerMotorConfigUpdate();
+    display_os_mode = DEMO;
+    demo_apps->render();
+    demo_apps->triggerMotorConfigUpdate();
+    // lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()
 {
-    os_mode = Hass;
-    hass_apps.triggerMotorConfigUpdate();
+    display_os_mode = HASS;
+    // hass_apps.triggerMotorConfigUpdate();
 }
 #endif

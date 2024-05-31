@@ -200,7 +200,7 @@ message SmartKnobConfig {
      * in effect at the time of the State snapshot instead of having to infer it from the
      * other config fields.
      */
-    string text = 10 [(nanopb).max_length = 50];
+    string id = 10 [(nanopb).max_length = 64];
 
     /**
      * For a "magnetic" detent mode - where not all positions should have detents - this

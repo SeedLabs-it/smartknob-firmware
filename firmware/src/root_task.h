@@ -1,8 +1,6 @@
 #pragma once
 
-#include <AceButton.h>
 #include <Arduino.h>
-
 #include "configuration.h"
 #include "display_task.h"
 #include "logger.h"
@@ -36,7 +34,7 @@ public:
     virtual ~RootTask();
     void loadConfiguration();
 
-    void setHassApps(HassApps *apps);
+    // void setHassApps(HassApps *apps);
 
     void addListener(QueueHandle_t queue);
 
@@ -58,7 +56,7 @@ private:
     DisplayTask *display_task_;
     WifiTask *wifi_task_;
     MqttTask *mqtt_task_;
-    HassApps *hass_apps;
+    // HassApps *hass_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
@@ -80,6 +78,8 @@ private:
     bool remote_controlled_ = false;
     int current_config_ = 0;
     uint8_t press_count_ = 1;
+
+    uint16_t brightness = UINT16_MAX;
 
     uint8_t last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
 

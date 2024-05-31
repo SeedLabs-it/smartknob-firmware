@@ -1,10 +1,10 @@
 #pragma once
 #include <WiFi.h>
+#include <TFT_eSPI.h>
 
-#include "apps/app.h"
+// #include "apps/app.h"
 
 #include "util.h"
-#include "qrcode.h"
 #include "navigation/navigation.h"
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
@@ -17,7 +17,7 @@ class ErrorHandlingFlow
 public:
     ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
 
-    void setQRCode(char *qr_data);
+    // void setQRCode(char *qr_data);
 
     TFT_eSprite *render();
     void handleNavigationEvent(NavigationEvent event);
@@ -32,7 +32,7 @@ public:
 
 private:
     TFT_eSprite *spr_ = NULL;
-    TFT_eSprite qrcode_spr_;
+    // TFT_eSprite qrcode_spr_;
 
     char buf_[64];
 

@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 #include "Arduino.h"
+#include "lvgl.h"
+
+lv_obj_t *lvDrawCircle(lv_obj_t *parent, const uint8_t dia);
 
 template <typename T>
 T CLAMP(const T &value, const T &low, const T &high)
@@ -26,7 +29,7 @@ struct HSVColor
     float v;
 };
 
-struct RGBColor
+struct RGBColor_Custom
 {
     uint8_t r;
     uint8_t g;
@@ -60,7 +63,7 @@ private:
 };
 
 HEXColor hToHEX(float h);
-HSVColor ToHSV(RGBColor color);
+HSVColor ToHSV(RGBColor_Custom color);
 uint32_t ToRGBA(float h);
 uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b);
-RGBColor uint32ToRGB(uint32_t color);
+RGBColor_Custom uint32ToRGB(uint32_t color);

@@ -82,10 +82,10 @@ RootTask::~RootTask()
     vSemaphoreDelete(mutex_);
 }
 
-void RootTask::setHassApps(HassApps *apps)
-{
-    this->hass_apps = apps;
-}
+// void RootTask::setHassApps(HassApps *apps)
+// {
+//     this->hass_apps = apps;
+// }
 
 void RootTask::run()
 {
@@ -104,23 +104,23 @@ void RootTask::run()
 
                                  switch (os_config->mode)
                                  {
-                                 case Onboarding:
-                                     os_config->mode = Demo;
+                                 case ONBOARDING:
+                                     os_config->mode = DEMO;
                                      display_task_->enableDemo();
                                      //  CHANGE MOTOR CONFIG
                                      break;
-                                 case Demo:
-                                     os_config->mode = Hass;
+                                 case DEMO:
+                                     os_config->mode = HASS;
                                      display_task_->enableHass();
                                      //  CHANGE MOTOR CONFIG
 
                                      break;
-                                 case Hass:
-                                     os_config->mode = Onboarding;
+                                 case HASS:
+                                     os_config->mode = ONBOARDING;
                                      display_task_->enableOnboarding();
                                      break;
                                  default:
-                                     os_config->mode = Hass;
+                                     os_config->mode = HASS;
                                      display_task_->enableHass();
                                      //  CHANGE MOTOR CONFIG
 
@@ -166,13 +166,13 @@ void RootTask::run()
 
                                         switch (os_config->mode)
                                         {
-                                        case Onboarding:
+                                        case ONBOARDING:
                                             display_task_->enableOnboarding();
                                             break;
-                                        case Demo:
+                                        case DEMO:
                                             display_task_->enableDemo();
                                             break;
-                                        case Hass:
+                                        case HASS:
                                             display_task_->enableHass();
                                             break;
                                         default:
@@ -196,11 +196,11 @@ void RootTask::run()
 
     reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 
-    display_task_->getOnboardingFlow()->setMotorUpdater(&motor_notifier);
+    display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
 #if SK_WIFI
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
-    display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
+    // display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
     display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
 #if SK_MQTT
@@ -221,15 +221,15 @@ void RootTask::run()
 
     switch (configuration_->getOSConfiguration()->mode)
     {
-    case Onboarding:
-        os_config_notifier_.setOSMode(Onboarding);
+    case ONBOARDING:
+        os_config_notifier_.setOSMode(ONBOARDING);
         display_task_->enableOnboarding();
         break;
-    case Demo:
-        os_config_notifier_.setOSMode(Onboarding);
+    case DEMO:
+        os_config_notifier_.setOSMode(ONBOARDING);
         display_task_->enableOnboarding();
         break;
-    case Hass:
+    case HASS:
         display_task_->enableHass();
         break;
 
@@ -259,14 +259,14 @@ void RootTask::run()
         {
             switch (configuration_->getOSConfiguration()->mode)
             {
-            case Onboarding:
-                display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+            case ONBOARDING:
+                // display_task_->getOnboardingFlow()->handleEvent(wifi_event);
                 break;
-            case Demo:
-                display_task_->getDemoApps()->handleEvent(wifi_event);
+            case DEMO:
+                // display_task_->getDemoApps()->handleEvent(wifi_event);
                 break;
-            case Hass:
-                display_task_->getHassApps()->handleEvent(wifi_event);
+            case HASS:
+                // display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
             default:
                 break;
@@ -284,10 +284,10 @@ void RootTask::run()
             case SK_RESET_ERROR:
                 switch (configuration_->getOSConfiguration()->mode)
                 {
-                case Onboarding:
+                case ONBOARDING:
                     display_task_->enableOnboarding();
                     break;
-                case Hass:
+                case HASS:
                     display_task_->enableHass();
                     break;
                 default:
@@ -298,26 +298,26 @@ void RootTask::run()
                 display_task_->getErrorHandlingFlow()->handleEvent(wifi_event); // if reset error or dismiss error is triggered elsewhere.
                 break;
             case SK_WIFI_STA_CONNECTED:
-                if (configuration_->getOSConfiguration()->mode == Hass)
+                if (configuration_->getOSConfiguration()->mode == HASS)
                 {
                     MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                     mqtt_task_->getNotifier()->requestConnect(mqtt_config);
                 }
                 break;
             case SK_MQTT_STATE_UPDATE:
-                display_task_->getHassApps()->handleEvent(wifi_event);
+                // display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
             case SK_DISMISS_ERROR:
                 display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
                 switch (configuration_->getOSConfiguration()->mode)
                 {
-                case Onboarding:
+                case ONBOARDING:
                     display_task_->enableOnboarding();
                     break;
-                case Demo:
+                case DEMO:
                     display_task_->enableDemo();
                     break;
-                case Hass:
+                case HASS:
                     display_task_->enableHass();
                     break;
                 default:
@@ -335,13 +335,13 @@ void RootTask::run()
                     ->handleEvent(wifi_event);
                 switch (configuration_->getOSConfiguration()->mode)
                 {
-                case Onboarding:
+                case ONBOARDING:
                     display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
                     break;
-                case Demo:
+                case DEMO:
                     display_task_->getDemoApps()->triggerMotorConfigUpdate();
                     break;
-                case Hass:
+                case HASS:
                     display_task_->getHassApps()->triggerMotorConfigUpdate();
                 default:
                     break;
@@ -458,11 +458,11 @@ void RootTask::run()
         {
             LOGD("App sync requested!");
 #if SK_MQTT // Should this be here??
-            hass_apps->sync(mqtt_task_->getApps());
+            // hass_apps->sync(mqtt_task_->getApps());
 
             LOGD("Giving 0.5s for Apps to initialize");
             delay(500);
-            display_task_->getHassApps()->triggerMotorConfigUpdate();
+            // display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
 #endif
         }
@@ -487,14 +487,14 @@ void RootTask::run()
 
             switch (configuration_->getOSConfiguration()->mode)
             {
-            case Onboarding:
+            case OSMode::ONBOARDING:
                 entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
                 break;
-            case Demo:
+            case OSMode::DEMO:
                 entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
                 break;
-            case Hass:
-                entity_state_update_to_send = hass_apps->update(app_state);
+            case OSMode::HASS:
+                entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
                 break;
             default:
                 break;
@@ -527,7 +527,7 @@ void RootTask::run()
 
         updateHardware(app_state);
 
-        delay(1);
+        delay(10);
     }
 }
 
@@ -566,13 +566,13 @@ void RootTask::updateHardware(AppState app_state)
                 case NO_ERROR:
                     switch (configuration_->getOSConfiguration()->mode)
                     {
-                    case Onboarding:
-                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                    case ONBOARDING:
+                        // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
-                    case Demo:
+                    case DEMO:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
-                    case Hass:
+                    case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
@@ -601,13 +601,13 @@ void RootTask::updateHardware(AppState app_state)
                 case NO_ERROR:
                     switch (configuration_->getOSConfiguration()->mode)
                     {
-                    case Onboarding:
+                    case ONBOARDING:
                         display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
-                    case Demo:
+                    case DEMO:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
-                    case Hass:
+                    case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
                     default:
                         break;
@@ -640,14 +640,17 @@ void RootTask::updateHardware(AppState app_state)
 
 #endif
 
-    uint16_t brightness = UINT16_MAX;
-// TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
-#if SK_ALS
-    brightness = app_state.screen_state.brightness;
-#endif
-
 #if SK_DISPLAY
-    display_task_->setBrightness(brightness); // TODO: apply gamma correction
+    if (app_state.screen_state.brightness != brightness)
+    {
+        // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
+#if SK_ALS
+        brightness = app_state.screen_state.brightness;
+#endif
+        LOGE("Setting brightness to %d", brightness);
+        display_task_->setBrightness(brightness); // TODO: apply gamma correction
+    }
+
 #endif
 
     if (led_ring_task_ != nullptr)
@@ -730,7 +733,7 @@ void RootTask::loadConfiguration()
             configuration_->loadOSConfiguration();
 
 #if SK_WIFI
-            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadWiFiConfiguration())
+            if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadWiFiConfiguration())
             {
 
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
@@ -739,7 +742,7 @@ void RootTask::loadConfiguration()
             }
 #endif
 #if SK_MQTT
-            if (configuration_->getOSConfiguration()->mode == Hass && configuration_->loadMQTTConfiguration())
+            if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadMQTTConfiguration())
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                 LOGD("MQTT_CONFIG: %s", mqtt_config.host);
