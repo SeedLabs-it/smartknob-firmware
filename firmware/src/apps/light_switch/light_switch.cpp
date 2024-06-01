@@ -24,9 +24,9 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *fri
     };
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    LV_IMAGE_DECLARE(x80_lightbulb_outline);
-    LV_IMAGE_DECLARE(x40_lightbulb_outline);
-    LV_IMAGE_DECLARE(x80_lightbulb_filled);
+    LV_IMG_DECLARE(x80_lightbulb_outline);
+    LV_IMG_DECLARE(x40_lightbulb_outline);
+    LV_IMG_DECLARE(x80_lightbulb_filled);
 
     big_icon = x80_lightbulb_outline;
     big_icon_active = x80_lightbulb_filled;

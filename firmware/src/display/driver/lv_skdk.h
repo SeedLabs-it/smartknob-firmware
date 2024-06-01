@@ -30,7 +30,7 @@ extern "C"
     /**********************
      * GLOBAL PROTOTYPES
      **********************/
-    lv_display_t *lv_skdk_create();
+    lv_disp_drv_t *lv_skdk_create();
 
     /**********************
      *      MACROS

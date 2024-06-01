@@ -104,7 +104,7 @@ public:
         LOGE("apps.size(): %d", apps.size());
         if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
         {
-            return lv_screen_load(waiting_for_hass);
+            return lv_scr_load(waiting_for_hass);
         }
         return Apps::render();
     }

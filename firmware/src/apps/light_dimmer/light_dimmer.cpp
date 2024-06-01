@@ -37,8 +37,8 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, char *app_id, char *frie
 
     num_positions = motor_config.max_position - motor_config.min_position;
 
-    LV_IMAGE_DECLARE(x80_light_outline);
-    LV_IMAGE_DECLARE(x40_light_outline);
+    LV_IMG_DECLARE(x80_light_outline);
+    LV_IMG_DECLARE(x40_light_outline);
 
     big_icon = x80_light_outline;
     small_icon = x40_light_outline;
@@ -61,7 +61,7 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_set_size(arc_, 236, 236);
     lv_arc_set_rotation(arc_, 150);
     lv_arc_set_bg_angles(arc_, 0, 240);
-    lv_arc_set_knob_offset(arc_, 0);
+    // lv_arc_set_knob_offset(arc_, 0);
     lv_arc_set_value(arc_, 0);
     lv_obj_center(arc_);
 
@@ -149,25 +149,57 @@ void LightDimmerApp::initHueScreen()
 {
     SemaphoreGuard lock(mutex_);
 
+    // create lines for a hue wheel going from 0 to 360
     hue_screen = lv_obj_create(screen);
     lv_obj_remove_style_all(hue_screen);
     lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
+    lv_obj_center(hue_screen);
     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
 
-    lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
-    LV_IMAGE_DECLARE(hue_wheel);
-    lv_img_set_src(hue_wheel_img, &hue_wheel);
-    lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
-    lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
-    lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
+    static lv_style_t style_line;
+    lv_style_init(&style_line);
+    lv_style_set_line_width(&style_line, 2);                               // Set the line width
+    lv_style_set_line_color(&style_line, LV_COLOR_MAKE(0xFF, 0x00, 0x00)); // Set the line color
+    lv_style_set_line_rounded(&style_line, false);                         // Set the line rounding
 
-    mask_img = lv_img_create(hue_screen);
-    LV_IMAGE_DECLARE(a8_transp_mask);
-    lv_img_set_src(mask_img, &a8_transp_mask);
-    lv_obj_set_width(mask_img, a8_transp_mask.header.w);
-    lv_obj_set_height(mask_img, a8_transp_mask.header.h);
-    lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
+    // Define the points of the line
+    lv_point_t line_points[] = {{120, 234}, {120, 224}};
+
+    // Create a line and apply the style
+    lv_obj_t *line1 = lv_line_create(hue_screen);
+    lv_line_set_points(line1, line_points, 2); // Set the points
+    lv_obj_add_style(line1, &style_line, 0);
+
+    // Align the line
+    lv_obj_align(line1, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 }
+
+// void LightDimmerApp::initHueScreen()
+// {
+//     SemaphoreGuard lock(mutex_);
+
+//     hue_screen = lv_obj_create(screen);
+//     lv_obj_remove_style_all(hue_screen);
+//     lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
+//     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
+
+//     lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
+//     LV_IMG_DECLARE(hue_wheel);
+//     lv_img_set_src(hue_wheel_img, &hue_wheel);
+//     lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
+//     lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
+//     lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
+
+//     mask_img = lv_img_create(hue_screen);
+//     LV_IMG_DECLARE(transp_mask);
+//     lv_img_set_src(mask_img, &transp_mask);
+//     // lv_img_set_pivot(mask_img, 120, 120);
+//     lv_img_set_pivot(mask_img, 120, 120);
+//     lv_img_set_angle(mask_img, 45);
+//     lv_obj_set_width(mask_img, transp_mask.header.w);
+//     lv_obj_set_height(mask_img, transp_mask.header.h);
+//     lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
+// }
 
 int8_t LightDimmerApp::navigationNext()
 {
@@ -176,13 +208,15 @@ int8_t LightDimmerApp::navigationNext()
         app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
         SemaphoreGuard lock(mutex_);
         lv_obj_add_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_remove_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
+        // lv_obj_remove_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
     }
     else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
         app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
         SemaphoreGuard lock(mutex_);
-        lv_obj_remove_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
+        // lv_obj_remove_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
     }
 
@@ -287,7 +321,8 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             if (app_hue_position % 2 == 0)
             {
                 SemaphoreGuard lock(mutex_);
-                lv_image_set_rotation(mask_img, (app_hue_position * 10));
+                // lv_img_set_rotation(mask_img, (app_hue_position * 10));
+                // lv_img_set_angle(mask_img, (app_hue_position * 10));
             }
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)

@@ -41,12 +41,12 @@ class WelcomePage : public BasePage
 public:
     WelcomePage(lv_obj_t *parent) : BasePage(parent)
     {
-        lv_obj_t *img = lv_img_create(page);
-        LV_IMAGE_DECLARE(logo_main_gradient_transparent);
-        lv_img_set_src(img, &logo_main_gradient_transparent);
-        lv_obj_set_width(img, logo_main_gradient_transparent.header.w);
-        lv_obj_set_height(img, logo_main_gradient_transparent.header.h);
-        lv_obj_align(img, LV_ALIGN_CENTER, 0, -54);
+        // lv_obj_t *img = lv_img_create(page);
+        // LV_IMG_DECLARE(logo_main_gradient_transparent);
+        // lv_img_set_src(img, &logo_main_gradient_transparent);
+        // lv_obj_set_width(img, logo_main_gradient_transparent.header.w);
+        // lv_obj_set_height(img, logo_main_gradient_transparent.header.h);
+        // lv_obj_align(img, LV_ALIGN_CENTER, 0, -54);
 
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "SMART KNOB\nDEV KIT v0.1");
@@ -67,13 +67,14 @@ class HassPage : public BasePage
 public:
     HassPage(lv_obj_t *parent) : BasePage(parent)
     {
-        lv_obj_t *img = lv_img_create(page);
-        LV_IMAGE_DECLARE(home_assistant_logomark_color_on_light);
-        lv_img_set_src(img, &home_assistant_logomark_color_on_light);
-        lv_image_set_scale(img, 200);
-        lv_obj_set_width(img, home_assistant_logomark_color_on_light.header.w);
-        lv_obj_set_height(img, home_assistant_logomark_color_on_light.header.h);
-        lv_obj_align(img, LV_ALIGN_CENTER, 0, -54);
+        // lv_obj_t *img = lv_img_create(page);
+        // LV_IMG_DECLARE(home_assistant_logomark_color_on_light);
+        // lv_img_set_src(img, &home_assistant_logomark_color_on_light);
+        // // lv_img_set_scale(img, 200);
+        // // lv_img_set_size_mod
+        // lv_obj_set_width(img, home_assistant_logomark_color_on_light.header.w);
+        // lv_obj_set_height(img, home_assistant_logomark_color_on_light.header.h);
+        // lv_obj_align(img, LV_ALIGN_CENTER, 0, -54);
 
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "HOME ASSISTANT\nINTEGRATION");

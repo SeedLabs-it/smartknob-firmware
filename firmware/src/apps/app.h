@@ -94,8 +94,8 @@ public:
         return "App";
     }
 
-    lv_image_dsc_t small_icon;
-    lv_image_dsc_t big_icon;
+    lv_img_dsc_t small_icon;
+    lv_img_dsc_t big_icon;
     char friendly_name[64] = "";
     char app_id[64] = "";
     char entity_id[64] = "";

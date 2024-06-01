@@ -17,7 +17,8 @@ public:
 
     void show()
     {
-        lv_obj_remove_flag(page, LV_OBJ_FLAG_HIDDEN);
+        // lv_obj_remove_flag(page, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(page, LV_OBJ_FLAG_HIDDEN);
     }
 
     void hide()

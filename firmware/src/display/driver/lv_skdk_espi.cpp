@@ -35,13 +35,16 @@ typedef struct
  *  STATIC PROTOTYPES
  **********************/
 static void lv_tick_task(void *arg);
-static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *color_p);
+static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
 
 /**********************
  *  STATIC VARIABLES
  **********************/
 static LGFX lcd;                 // Instance of LGFX
 static LGFX_Sprite sprite(&lcd); // Instance of LGFX_Sprite when using sprites
+
+static lv_disp_draw_buf_t draw_buf;
+static lv_disp_drv_t disp_drv;
 
 #define TFT_HOR_RES 240
 #define TFT_VER_RES 240
@@ -59,7 +62,7 @@ static lv_color_t *buf2 = NULL;
  *   GLOBAL FUNCTIONS
  **********************/
 
-lv_display_t *lv_skdk_create()
+lv_disp_drv_t *lv_skdk_create()
 {
     lcd.init();
     lcd.initDMA();
@@ -76,44 +79,28 @@ lv_display_t *lv_skdk_create()
     // buf2 = (lv_color_t *)heap_caps_malloc(DISP_BUF_SIZE, MALLOC_CAP_SPIRAM);
     assert(buf2 != NULL);
 
-    // lv_tft_espi_t *dsc = (lv_tft_espi_t *)lv_malloc_zeroed(sizeof(lv_tft_espi_t));
-    // LV_ASSERT_MALLOC(dsc);
-    // if (dsc == NULL)
-    //     return NULL;
+    lv_disp_draw_buf_init(&draw_buf, buf1, buf2, TFT_HOR_RES * TFT_VER_RES);
 
-    lv_display_t *disp = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
-    if (disp == NULL)
-    {
-        // lv_free(dsc);
-        return NULL;
-    }
-
-    // dsc->tft = new TFT_eSPI(TFT_HOR_RES, TFT_VER_RES);
-    // dsc->tft->begin();                          /* TFT init */
-    // dsc->tft->initDMA(true);                    /* Enable DMA */
-    // dsc->tft->setRotation(SK_DISPLAY_ROTATION); /* Landscape orientation, flipped */
-    // dsc->tft->invertDisplay(1);                 /* Invert display */
-    // dsc->tft->setSwapBytes(true);               /* TFT byte order is swapped */
-
-    // lv_display_set_driver_data(disp, (void *)dsc);
-
-    // lv_display_set_driver_data(disp, (void *)dsc);
-
-    // static lv_disp_drv_t disp_drv;
-    // lv_disp_drv_init(&disp_drv);
+    static lv_disp_drv_t disp_drv;
+    lv_disp_drv_init(&disp_drv);
+    /*Change the following line to your display resolution*/
+    disp_drv.hor_res = TFT_HOR_RES;
+    disp_drv.ver_res = TFT_VER_RES;
+    disp_drv.flush_cb = flush_cb;
+    disp_drv.draw_buf = &draw_buf;
+    disp_drv.full_refresh = 0;
+    disp_drv.direct_mode = 0;
+    lv_disp_drv_register(&disp_drv);
 
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = &lv_tick_task,
-        .name = "periodic_gui_timer"};
+        .name = "lv_tick_task"};
+
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, LV_TICK_PERIOD_MS * 1000));
 
-    lv_display_set_flush_cb(disp, flush_cb);
-    lv_display_set_driver_data(disp, (void *)buf1);
-    lv_display_set_buffers(disp, (void *)buf1, (void *)buf2, DISP_BUF_SIZE, LV_DISPLAY_RENDER_MODE_FULL);
-
-    return disp;
+    return &disp_drv;
 }
 
 /**********************
@@ -127,7 +114,7 @@ static void lv_tick_task(void *arg)
     lv_tick_inc(LV_TICK_PERIOD_MS);
 }
 
-static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *color_p)
+static void flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
     uint32_t w = lv_area_get_width(area);
     uint32_t h = lv_area_get_height(area);
@@ -143,7 +130,7 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *color_p
     lcd.endWrite();
 
     // Indicate you are ready with the flushing
-    lv_display_flush_ready(disp);
+    lv_disp_flush_ready(disp);
 }
 
 #endif /*LV_USE_TFT_ESPI*/

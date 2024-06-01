@@ -83,8 +83,8 @@ public:
             find_page(old_menu_position)->hide();
             find_page(current_menu_position)->show();
 
-            lv_image_set_src(left_image_icon, prev_page->getSmallIcon());
-            lv_image_set_src(right_image_icon, next_page->getSmallIcon());
+            lv_img_set_src(left_image_icon, prev_page->getSmallIcon());
+            lv_img_set_src(right_image_icon, next_page->getSmallIcon());
         }
 
         return EntityStateUpdate{};

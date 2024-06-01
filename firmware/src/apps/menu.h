@@ -10,12 +10,14 @@
 class MenuPage : public BasePage
 {
 public:
-    MenuPage(lv_obj_t *parent, int8_t app_id, const char *friendly_name, lv_image_dsc_t icon, lv_image_dsc_t small_icon) : BasePage(parent), app_id_(app_id), friendly_name_(friendly_name), icon_(icon), small_icon_(small_icon)
+    MenuPage(lv_obj_t *parent, int8_t app_id, const char *friendly_name, lv_img_dsc_t icon, lv_img_dsc_t small_icon) : BasePage(parent), app_id_(app_id), friendly_name_(friendly_name), icon_(icon), small_icon_(small_icon)
     {
         lv_obj_t *img = lv_img_create(page);
-        lv_image_set_src(img, &icon_);
-        lv_obj_set_style_image_recolor_opa(img, LV_OPA_COVER, 0);
-        lv_obj_set_style_image_recolor(img, LV_COLOR_MAKE(0x00, 0xFF, 0xFF), 0);
+        lv_img_set_src(img, &icon_);
+        // lv_obj_set_style_image_recolor_opa(img, LV_OPA_COVER, 0);
+        lv_obj_set_style_img_recolor_opa(img, LV_OPA_COVER, 0);
+        // lv_obj_set_style_image_recolor(img, LV_COLOR_MAKE(0x00, 0xFF, 0xFF), 0);
+        lv_obj_set_style_img_recolor(img, LV_COLOR_MAKE(0x00, 0xFF, 0xFF), 0);
         lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
 
         lv_obj_t *label = lv_label_create(page);
@@ -26,14 +28,14 @@ public:
         return;
     }
 
-    lv_image_dsc_t *getSmallIcon() { return &small_icon_; }
+    lv_img_dsc_t *getSmallIcon() { return &small_icon_; }
 
     int8_t app_id_;
 
 private:
     const char *friendly_name_;
-    lv_image_dsc_t icon_;
-    lv_image_dsc_t small_icon_;
+    lv_img_dsc_t icon_;
+    lv_img_dsc_t small_icon_;
 };
 
 class Menu : public App
@@ -48,8 +50,10 @@ public:
     {
         static lv_style_t style;
         lv_style_init(&style);
-        lv_style_set_image_recolor_opa(&style, LV_OPA_COVER);
-        lv_style_set_image_recolor(&style, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
+        // lv_style_set_image_recolor_opa(&style, LV_OPA_COVER);
+        lv_style_set_img_recolor_opa(&style, LV_OPA_COVER);
+        // lv_style_set_image_recolor(&style, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
+        lv_style_set_img_recolor(&style, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
 
         lv_obj_t *overlay = lv_obj_create(screen);
         lv_obj_remove_style_all(overlay);
@@ -68,7 +72,7 @@ public:
         lv_obj_align(right_image_icon, LV_ALIGN_RIGHT_MID, -20, 6);
     };
 
-    void add_page(int8_t id, int8_t app_id, const char *friendly_name, lv_image_dsc_t icon, lv_image_dsc_t small_icon)
+    void add_page(int8_t id, int8_t app_id, const char *friendly_name, lv_img_dsc_t icon, lv_img_dsc_t small_icon)
     {
         pages[id] = std::make_shared<MenuPage>(screen, app_id, friendly_name, icon, small_icon);
         menu_page_count++;
@@ -90,8 +94,8 @@ public:
 protected:
     lv_obj_t *left_image_icon;
     lv_obj_t *right_image_icon;
-    // lv_image_dsc_t left_icon;
-    // lv_image_dsc_t right_icon;
+    lv_img_dsc_t left_icon;
+    lv_img_dsc_t right_icon;
 
     uint8_t menu_page_count = 0;
     uint8_t current_menu_position = 0;
