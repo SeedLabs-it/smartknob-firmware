@@ -112,16 +112,19 @@ void LightDimmerApp::initHueScreen()
     // // Align the line
     // lv_obj_align(line1, LV_ALIGN_TOP_LEFT, 0, 0);
 
-    static lv_style_t styles[120];
-    static lv_point_t points[120][2];
-    lv_obj_t *lines[120];
+#define skip_degrees 5
+#define lines_count (360 / skip_degrees)
+
+    static lv_style_t styles[lines_count];
+    static lv_point_t points[lines_count][2];
+    lv_obj_t *lines[lines_count];
 
     int radius = 120;
     int start_radius = radius - 24; // From edge of screen.
     int line_length = 16;
 
     int line_index = 0;
-    for (int i = 0; i < 360; i += 5)
+    for (int i = 0; i < 360; i += skip_degrees)
     {
         lv_coord_t x_start = 120 + start_radius * cos(i * M_PI / 180);
         lv_coord_t y_start = 120 + start_radius * sin(i * M_PI / 180);
