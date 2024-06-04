@@ -84,11 +84,13 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-#define skip_degrees 4
+#define skip_degrees 5
 #define lines_count (360 / skip_degrees)
 #define radius 120
 #define start_radius (radius - 24)
 #define line_length 16
+
+#define deg_1_rad (M_PI / 180.0)
 
 static lv_style_t styles[lines_count];
 static lv_obj_t *lines[lines_count];
@@ -122,11 +124,11 @@ void LightDimmerApp::initHueScreen()
     // // Align the line
     // lv_obj_align(line1, LV_ALIGN_TOP_LEFT, 0, 0);
 
-    int line_index = 0;
-    for (int i = 0; i < 360; i += skip_degrees)
+    // int line_index = 0;
+    for (int i = 0; i < lines_count; i++)
     {
-        int angle = (i + current_position) % 360;
-        float x = angle * M_PI / 180;
+        int angle = (i * skip_degrees + current_position) % 360;
+        float x = angle * deg_1_rad;
 
         lv_coord_t x_start = 120 + start_radius * cos(x);
         lv_coord_t y_start = 120 + start_radius * sin(x);
@@ -134,20 +136,18 @@ void LightDimmerApp::initHueScreen()
         lv_coord_t x_end = x_start + line_length * cos(x);
         lv_coord_t y_end = y_start + line_length * sin(x);
 
-        points[line_index][0] = {x_start, y_start};
-        points[line_index][1] = {x_end, y_end};
+        points[i][0] = {x_start, y_start};
+        points[i][1] = {x_end, y_end};
 
-        lv_style_init(&styles[line_index]);
-        lv_style_set_line_width(&styles[line_index], 2);
-        lv_style_set_line_color(&styles[line_index], lv_color_hsv_to_rgb(angle, 100, 100));
+        lv_style_init(&styles[i]);
+        lv_style_set_line_width(&styles[i], 2);
+        lv_style_set_line_color(&styles[i], lv_color_hsv_to_rgb(angle, 100, 100));
 
-        lines[line_index] = lv_line_create(hue_screen);
-        lv_line_set_points(lines[line_index], points[line_index], 2);
-        lv_obj_add_style(lines[line_index], &styles[line_index], 0);
+        lines[i] = lv_line_create(hue_screen);
+        lv_line_set_points(lines[i], points[i], 2);
+        lv_obj_add_style(lines[i], &styles[i], 0);
 
-        lv_obj_align(lines[line_index], LV_ALIGN_TOP_LEFT, 0, 0);
-
-        line_index++;
+        lv_obj_align(lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
     }
 
     // updateHueWheel();
@@ -155,82 +155,23 @@ void LightDimmerApp::initHueScreen()
 
 void LightDimmerApp::updateHueWheel()
 {
-
-    int line_index = 0;
-    for (int i = 0; i < 360; i += skip_degrees)
+    for (int i = 0; i < lines_count; i++)
     {
-        int angle = (i + current_position) % 360;
-        float x = angle * M_PI / 180;
+        int angle = (i * skip_degrees + current_position) % 360;
+        float x = angle * deg_1_rad;
+
         lv_coord_t x_start = 120 + start_radius * cos(x);
         lv_coord_t y_start = 120 + start_radius * sin(x);
 
-        lv_coord_t x_end = x_start + line_length * cos(x);
-        lv_coord_t y_end = y_start + line_length * sin(x);
+        lv_coord_t x_end = 120 + (start_radius + line_length) * cos(x);
+        lv_coord_t y_end = 120 + (start_radius + line_length) * sin(x);
 
-        points[line_index][0] = {x_start, y_start};
-        points[line_index][1] = {x_end, y_end};
+        points[i][0] = {x_start, y_start};
+        points[i][1] = {x_end, y_end};
 
-        lv_line_set_points(lines[line_index], points[line_index], 2);
-
-        line_index++;
+        lv_line_set_points(lines[i], points[i], 2);
     }
-
-    // lv_obj_t *lines[lines_count];
-
-    // int radius = 120;
-    // int start_radius = radius - 24; // From edge of screen.
-    // int line_length = 16;
-
-    // int line_index = 0;
-    // for (int i = 0; i < 360; i += skip_degrees)
-    // {
-    //     int angle = (i + current_position) % 360;
-    //     float x = angle * M_PI / 180;
-    //     lv_coord_t x_start = 120 + start_radius * cos(x);
-    //     lv_coord_t y_start = 120 + start_radius * sin(x);
-
-    //     lv_coord_t x_end = x_start + line_length * cos(x);
-    //     lv_coord_t y_end = y_start + line_length * sin(x);
-
-    //     points[line_index][0] = {x_start, y_start};
-    //     points[line_index][1] = {x_end, y_end};
-
-    //     lines[line_index] = lv_line_create(hue_screen);
-    //     lv_line_set_points(lines[line_index], points[line_index], 2);
-    //     lv_obj_add_style(lines[line_index], &styles[line_index], 0);
-
-    //     lv_obj_align(lines[line_index], LV_ALIGN_TOP_LEFT, 0, 0);
-
-    //     line_index++;
-    // }
 }
-
-// void LightDimmerApp::initHueScreen()
-// {
-//     SemaphoreGuard lock(mutex_);
-
-//     hue_screen = lv_obj_create(screen);
-//     lv_obj_remove_style_all(hue_screen);
-//     lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
-//     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
-
-//     lv_obj_t *hue_wheel_img = lv_img_create(hue_screen);
-//     LV_IMG_DECLARE(hue_wheel);
-//     lv_img_set_src(hue_wheel_img, &hue_wheel);
-//     lv_obj_set_width(hue_wheel_img, hue_wheel.header.w);
-//     lv_obj_set_height(hue_wheel_img, hue_wheel.header.h);
-//     lv_obj_align(hue_wheel_img, LV_ALIGN_CENTER, 0, 0);
-
-//     mask_img = lv_img_create(hue_screen);
-//     LV_IMG_DECLARE(transp_mask);
-//     lv_img_set_src(mask_img, &transp_mask);
-//     // lv_img_set_pivot(mask_img, 120, 120);
-//     lv_img_set_pivot(mask_img, 120, 120);
-//     lv_img_set_angle(mask_img, 45);
-//     lv_obj_set_width(mask_img, transp_mask.header.w);
-//     lv_obj_set_height(mask_img, transp_mask.header.h);
-//     lv_obj_align(mask_img, LV_ALIGN_CENTER, 0, 0);
-// }
 
 int8_t LightDimmerApp::navigationNext()
 {
