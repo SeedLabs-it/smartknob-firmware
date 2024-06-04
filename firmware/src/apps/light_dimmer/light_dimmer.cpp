@@ -153,23 +153,45 @@ void LightDimmerApp::initHueScreen()
     // updateHueWheel();
 }
 
+// void LightDimmerApp::updateHueWheel()
+// {
+//     for (int i = 0; i < lines_count; i++)
+//     {
+//         int angle = (i * skip_degrees + current_position) % 360;
+//         float x = angle * deg_1_rad;
+
+//         lv_coord_t x_start = 120 + start_radius * cos(x);
+//         lv_coord_t y_start = 120 + start_radius * sin(x);
+
+//         lv_coord_t x_end = 120 + (start_radius + line_length) * cos(x);
+//         lv_coord_t y_end = 120 + (start_radius + line_length) * sin(x);
+
+//         points[i][0] = {x_start, y_start};
+//         points[i][1] = {x_end, y_end};
+
+//         {
+//             SemaphoreGuard lock(mutex_);
+//             lv_line_set_points(lines[i], points[i], 2);
+//         }
+//         delay(1); // DONT UN COMMENT ME
+//     }
+// }
+
 void LightDimmerApp::updateHueWheel()
 {
     for (int i = 0; i < lines_count; i++)
     {
-        int angle = (i * skip_degrees + current_position) % 360;
+        int angle = (i * skip_degrees + (360 - current_position)) % 360; // Reverse the calculation of the angle
         float x = angle * deg_1_rad;
 
-        lv_coord_t x_start = 120 + start_radius * cos(x);
-        lv_coord_t y_start = 120 + start_radius * sin(x);
+        lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100);
+        lv_style_set_line_color(&styles[i], color);
 
-        lv_coord_t x_end = 120 + (start_radius + line_length) * cos(x);
-        lv_coord_t y_end = 120 + (start_radius + line_length) * sin(x);
-
-        points[i][0] = {x_start, y_start};
-        points[i][1] = {x_end, y_end};
-
-        lv_line_set_points(lines[i], points[i], 2);
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_obj_refresh_style(lines[i], LV_PART_MAIN, LV_STYLE_PROP_INV);
+        }
+        // delay(1); // DONT UN COMMENT ME
     }
 }
 
@@ -292,7 +314,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
             // if (app_hue_position % 2 == 0)
             // {
-            SemaphoreGuard lock(mutex_);
+            // SemaphoreGuard lock(mutex_);
             updateHueWheel();
             // }
         }
