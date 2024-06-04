@@ -84,6 +84,16 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
+#define skip_degrees 4
+#define lines_count (360 / skip_degrees)
+#define radius 120
+#define start_radius (radius - 24)
+#define line_length 16
+
+static lv_style_t styles[lines_count];
+static lv_obj_t *lines[lines_count];
+static lv_point_t points[lines_count][2];
+
 void LightDimmerApp::initHueScreen()
 {
     SemaphoreGuard lock(mutex_);
@@ -112,32 +122,24 @@ void LightDimmerApp::initHueScreen()
     // // Align the line
     // lv_obj_align(line1, LV_ALIGN_TOP_LEFT, 0, 0);
 
-#define skip_degrees 5
-#define lines_count (360 / skip_degrees)
-
-    static lv_style_t styles[lines_count];
-    static lv_point_t points[lines_count][2];
-    lv_obj_t *lines[lines_count];
-
-    int radius = 120;
-    int start_radius = radius - 24; // From edge of screen.
-    int line_length = 16;
-
     int line_index = 0;
     for (int i = 0; i < 360; i += skip_degrees)
     {
-        lv_coord_t x_start = 120 + start_radius * cos(i * M_PI / 180);
-        lv_coord_t y_start = 120 + start_radius * sin(i * M_PI / 180);
+        int angle = (i + current_position) % 360;
+        float x = angle * M_PI / 180;
 
-        lv_coord_t x_end = x_start + line_length * cos(i * M_PI / 180);
-        lv_coord_t y_end = y_start + line_length * sin(i * M_PI / 180);
+        lv_coord_t x_start = 120 + start_radius * cos(x);
+        lv_coord_t y_start = 120 + start_radius * sin(x);
+
+        lv_coord_t x_end = x_start + line_length * cos(x);
+        lv_coord_t y_end = y_start + line_length * sin(x);
 
         points[line_index][0] = {x_start, y_start};
         points[line_index][1] = {x_end, y_end};
 
         lv_style_init(&styles[line_index]);
         lv_style_set_line_width(&styles[line_index], 2);
-        lv_style_set_line_color(&styles[line_index], lv_color_hsv_to_rgb(i, 100, 100));
+        lv_style_set_line_color(&styles[line_index], lv_color_hsv_to_rgb(angle, 100, 100));
 
         lines[line_index] = lv_line_create(hue_screen);
         lv_line_set_points(lines[line_index], points[line_index], 2);
@@ -147,6 +149,60 @@ void LightDimmerApp::initHueScreen()
 
         line_index++;
     }
+
+    // updateHueWheel();
+}
+
+void LightDimmerApp::updateHueWheel()
+{
+
+    int line_index = 0;
+    for (int i = 0; i < 360; i += skip_degrees)
+    {
+        int angle = (i + current_position) % 360;
+        float x = angle * M_PI / 180;
+        lv_coord_t x_start = 120 + start_radius * cos(x);
+        lv_coord_t y_start = 120 + start_radius * sin(x);
+
+        lv_coord_t x_end = x_start + line_length * cos(x);
+        lv_coord_t y_end = y_start + line_length * sin(x);
+
+        points[line_index][0] = {x_start, y_start};
+        points[line_index][1] = {x_end, y_end};
+
+        lv_line_set_points(lines[line_index], points[line_index], 2);
+
+        line_index++;
+    }
+
+    // lv_obj_t *lines[lines_count];
+
+    // int radius = 120;
+    // int start_radius = radius - 24; // From edge of screen.
+    // int line_length = 16;
+
+    // int line_index = 0;
+    // for (int i = 0; i < 360; i += skip_degrees)
+    // {
+    //     int angle = (i + current_position) % 360;
+    //     float x = angle * M_PI / 180;
+    //     lv_coord_t x_start = 120 + start_radius * cos(x);
+    //     lv_coord_t y_start = 120 + start_radius * sin(x);
+
+    //     lv_coord_t x_end = x_start + line_length * cos(x);
+    //     lv_coord_t y_end = y_start + line_length * sin(x);
+
+    //     points[line_index][0] = {x_start, y_start};
+    //     points[line_index][1] = {x_end, y_end};
+
+    //     lines[line_index] = lv_line_create(hue_screen);
+    //     lv_line_set_points(lines[line_index], points[line_index], 2);
+    //     lv_obj_add_style(lines[line_index], &styles[line_index], 0);
+
+    //     lv_obj_align(lines[line_index], LV_ALIGN_TOP_LEFT, 0, 0);
+
+    //     line_index++;
+    // }
 }
 
 // void LightDimmerApp::initHueScreen()
@@ -293,12 +349,11 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
                 color_set = true;
             }
 
-            if (app_hue_position % 2 == 0)
-            {
-                SemaphoreGuard lock(mutex_);
-                // lv_img_set_rotation(mask_img, (app_hue_position * 10));
-                // lv_img_set_angle(mask_img, (app_hue_position * 10));
-            }
+            // if (app_hue_position % 2 == 0)
+            // {
+            SemaphoreGuard lock(mutex_);
+            updateHueWheel();
+            // }
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {

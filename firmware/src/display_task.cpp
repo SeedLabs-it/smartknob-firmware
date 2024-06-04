@@ -89,9 +89,9 @@ void DisplayTask::run()
     {
         {
             SemaphoreGuard lock(mutex_);
-            lv_timer_handler();
+            lv_task_handler();
         }
-        vTaskDelay(pdMS_TO_TICKS(2));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 

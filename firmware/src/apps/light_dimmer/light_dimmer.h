@@ -29,6 +29,8 @@ private:
     void initDimmerScreen();
     void initHueScreen();
 
+    void updateHueWheel();
+
     lv_obj_t *arc_;
     lv_obj_t *percentage_label_;
 
