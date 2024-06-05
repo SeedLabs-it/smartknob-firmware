@@ -2,8 +2,8 @@
 #include "cJSON.h"
 #include <cstring>
 
-#define TFT_HOR_RES 240
-#define TFT_VER_RES 240
+#define TFT_HOR_RES 240 // TODO inherit this from config rather than redefine.
+#define TFT_VER_RES 240 // TODO inherit this from config rather than redefine.
 
 #define CANVAS_BUF_SIZE ((TFT_HOR_RES * TFT_VER_RES) * 4)
 uint32_t *canvas_buf = NULL;
@@ -84,17 +84,18 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-#define skip_degrees 5
-#define lines_count (360 / skip_degrees)
-#define radius 120
-#define start_radius (radius - 24)
-#define line_length 16
-
+#define skip_degrees 5                   // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
+#define lines_count (360 / skip_degrees) // number of lines in a 360 circle. // [TODO] refactor, this should account of line thickness + space_between_lines.
+#define distance_from_center 70          // distance from center (pixel) from where the line starts (and goes outword towards the edge of the display)
+#define line_length 120                  // length of the ticker line (in pixel)
 #define deg_1_rad (M_PI / 180.0)
 
 static lv_style_t styles[lines_count];
+static lv_style_t styles_indicator[lines_count];
 static lv_obj_t *lines[lines_count];
 static lv_point_t points[lines_count][2];
+static lv_obj_t *lines_indicator[lines_count];
+static lv_point_t points_indicator[lines_count][2];
 
 void LightDimmerApp::initHueScreen()
 {
@@ -130,8 +131,10 @@ void LightDimmerApp::initHueScreen()
         int angle = (i * skip_degrees + current_position) % 360;
         float x = angle * deg_1_rad;
 
-        lv_coord_t x_start = 120 + start_radius * cos(x);
-        lv_coord_t y_start = 120 + start_radius * sin(x);
+        lv_coord_t x_start = TFT_HOR_RES / 2;
+        // x_start and x_float_coordinates are different
+
+        lv_coord_t y_start = TFT_VER_RES / 2;
 
         lv_coord_t x_end = x_start + line_length * cos(x);
         lv_coord_t y_end = y_start + line_length * sin(x);
@@ -146,9 +149,74 @@ void LightDimmerApp::initHueScreen()
         lines[i] = lv_line_create(hue_screen);
         lv_line_set_points(lines[i], points[i], 2);
         lv_obj_add_style(lines[i], &styles[i], 0);
-
         lv_obj_align(lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
     }
+    // create masks to avoid pixel snapping (pixel snap to closest integer pixel) to be visibile.
+
+    // Outer mask
+    outer_mask_arc = lv_arc_create(hue_screen);
+    lv_obj_set_size(outer_mask_arc, TFT_HOR_RES + 2, TFT_VER_RES + 2); // the plus 2 is to prevent the aliasing of the border to reveal some pixel from underneath.
+    lv_arc_set_bg_angles(outer_mask_arc, 0, 360);
+    lv_arc_set_value(outer_mask_arc, 120);
+    lv_obj_center(outer_mask_arc);
+    lv_obj_set_style_bg_opa(outer_mask_arc, LV_OPA_0, LV_PART_KNOB);
+    lv_obj_set_style_arc_color(outer_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_MAIN);
+    // innter mask
+    inner_mask_arc = lv_arc_create(hue_screen);
+    lv_obj_set_size(inner_mask_arc, 150, 150); // the size of the inner mask is the full display, minus the line length on each side (hence times 2)
+    lv_arc_set_bg_angles(inner_mask_arc, 0, 360);
+    lv_arc_set_value(inner_mask_arc, 140);
+    lv_obj_center(inner_mask_arc);
+    lv_obj_set_style_bg_opa(inner_mask_arc, LV_OPA_0, LV_PART_KNOB);
+    lv_obj_set_style_arc_color(inner_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(inner_mask_arc, 75, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(inner_mask_arc, 75, LV_PART_MAIN);
+
+    // Draw the coloured indicator.
+    for (int i = 270 - skip_degrees; i <= 270 + skip_degrees; i++) // shift the indicator to 270 so it's vertical top. (x=0).
+    {
+        int angle = (i + current_position) % 360;
+        float x = angle * deg_1_rad;
+        lv_coord_t x_start = TFT_HOR_RES / 2;
+        // x_start and x_float_coordinates are different
+        lv_coord_t y_start = TFT_VER_RES / 2;
+        lv_coord_t x_end = x_start + line_length * cos(x);
+        lv_coord_t y_end = y_start + line_length * sin(x);
+        points_indicator[i][0] = {x_start, y_start};
+        points_indicator[i][1] = {x_end, y_end};
+        lv_style_init(&styles_indicator[i]);
+        lv_style_set_line_width(&styles_indicator[i], 3);
+        lv_style_set_line_color(&styles_indicator[i], lv_color_hsv_to_rgb(angle, 100, 100));
+
+        lines_indicator[i] = lv_line_create(hue_screen);
+        lv_line_set_points(lines_indicator[i], points_indicator[i], 2);
+        lv_obj_add_style(lines_indicator[i], &styles_indicator[i], 0);
+        lv_obj_align(lines_indicator[i], LV_ALIGN_TOP_LEFT, 0, 0);
+    }
+
+    // innter mask for the indicator
+    inner_indicator_mask_arc = lv_arc_create(hue_screen);
+
+    lv_obj_set_size(inner_indicator_mask_arc, 120, 120); // the size of the inner mask is the full display, minus the line length on each side (hence times 2)
+    lv_arc_set_bg_angles(inner_indicator_mask_arc, 0, 360);
+    lv_arc_set_value(inner_indicator_mask_arc, 140);
+    lv_obj_center(inner_indicator_mask_arc);
+    lv_obj_set_style_bg_opa(inner_indicator_mask_arc, LV_OPA_0, LV_PART_KNOB);
+    lv_obj_set_style_arc_color(inner_indicator_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(inner_indicator_mask_arc, 75, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(inner_indicator_mask_arc, 75, LV_PART_MAIN);
+    // Outer mask
+    outer_mask_arc = lv_arc_create(hue_screen);
+    lv_obj_set_size(outer_mask_arc, TFT_HOR_RES + 2, TFT_VER_RES + 2); // the plus 2 is to prevent the aliasing of the border to reveal some pixel from underneath.
+    lv_arc_set_bg_angles(outer_mask_arc, 0, 360);
+    lv_arc_set_value(outer_mask_arc, 120);
+    lv_obj_center(outer_mask_arc);
+    lv_obj_set_style_bg_opa(outer_mask_arc, LV_OPA_0, LV_PART_KNOB);
+    lv_obj_set_style_arc_color(outer_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_MAIN);
 
     // updateHueWheel();
 }
