@@ -24,6 +24,7 @@ private:
     {
         initDimmerScreen();
         initHueScreen();
+        updateHueWheel();
     }
 
     void initDimmerScreen();
@@ -33,7 +34,8 @@ private:
 
     lv_obj_t *arc_;
     lv_obj_t *outer_mask_arc;
-    lv_obj_t *inner_mask_arc;
+    lv_obj_t *inner_mask_circle;
+    lv_obj_t *selector_inner_mask_circle;
     lv_obj_t *inner_indicator_mask_arc;
 
     lv_obj_t *percentage_label_;

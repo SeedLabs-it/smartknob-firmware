@@ -177,7 +177,7 @@ public:
 
         for (uint16_t i = 0; i < ONBOARDING_FLOW_PAGE_COUNT; i++)
         {
-            lv_obj_t *dot = lvDrawCircle(overlay_, 12);
+            lv_obj_t *dot = lvDrawCircle(12, overlay_);
             lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
             lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
             dots[i] = dot;

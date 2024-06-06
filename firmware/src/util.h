@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "lvgl.h"
 
-lv_obj_t *lvDrawCircle(lv_obj_t *parent, const uint8_t dia);
+lv_obj_t *lvDrawCircle(const uint8_t dia, lv_obj_t *parent = NULL);
 
 template <typename T>
 T CLAMP(const T &value, const T &low, const T &high)

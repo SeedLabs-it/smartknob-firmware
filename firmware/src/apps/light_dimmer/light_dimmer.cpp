@@ -91,11 +91,18 @@ void LightDimmerApp::initDimmerScreen()
 #define deg_1_rad (M_PI / 180.0)
 
 static lv_style_t styles[lines_count];
+
 static lv_style_t styles_indicator[lines_count];
+
 static lv_obj_t *lines[lines_count];
 static lv_point_t points[lines_count][2];
+
 static lv_obj_t *lines_indicator[lines_count];
 static lv_point_t points_indicator[lines_count][2];
+
+static lv_style_t selector_style;
+static lv_point_t selector_line_points[3][2];
+static lv_obj_t *selector_lines[3];
 
 void LightDimmerApp::initHueScreen()
 {
@@ -108,32 +115,12 @@ void LightDimmerApp::initHueScreen()
     lv_obj_center(hue_screen);
     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
 
-    // static lv_style_t style_line;
-    // lv_style_init(&style_line);
-    // lv_style_set_line_width(&style_line, 2);                               // Set the line width
-    // lv_style_set_line_color(&style_line, LV_COLOR_MAKE(0xFF, 0x00, 0x00)); // Set the line color
-    // lv_style_set_line_rounded(&style_line, false);                         // Set the line rounding
-
-    // // Define the points of the line
-    // static lv_point_t points[] = {{120, 6}, {120, 20}}; // {{120, 120}}
-
-    // // Create a line and apply the style
-    // lv_obj_t *line1 = lv_line_create(hue_screen);
-    // lv_line_set_points(line1, points, 2); // Set the points
-    // lv_obj_add_style(line1, &style_line, 0);
-
-    // // Align the line
-    // lv_obj_align(line1, LV_ALIGN_TOP_LEFT, 0, 0);
-
-    // int line_index = 0;
     for (int i = 0; i < lines_count; i++)
     {
         int angle = (i * skip_degrees + current_position) % 360;
         float x = angle * deg_1_rad;
 
         lv_coord_t x_start = TFT_HOR_RES / 2;
-        // x_start and x_float_coordinates are different
-
         lv_coord_t y_start = TFT_VER_RES / 2;
 
         lv_coord_t x_end = x_start + line_length * cos(x);
@@ -151,63 +138,22 @@ void LightDimmerApp::initHueScreen()
         lv_obj_add_style(lines[i], &styles[i], 0);
         lv_obj_align(lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
     }
-    // create masks to avoid pixel snapping (pixel snap to closest integer pixel) to be visibile.
 
-    // Outer mask
-    outer_mask_arc = lv_arc_create(hue_screen);
-    lv_obj_set_size(outer_mask_arc, TFT_HOR_RES + 2, TFT_VER_RES + 2); // the plus 2 is to prevent the aliasing of the border to reveal some pixel from underneath.
-    lv_arc_set_bg_angles(outer_mask_arc, 0, 360);
-    lv_arc_set_value(outer_mask_arc, 120);
-    lv_obj_center(outer_mask_arc);
-    lv_obj_set_style_bg_opa(outer_mask_arc, LV_OPA_0, LV_PART_KNOB);
-    lv_obj_set_style_arc_color(outer_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_MAIN);
-    // innter mask
-    inner_mask_arc = lv_arc_create(hue_screen);
-    lv_obj_set_size(inner_mask_arc, 150, 150); // the size of the inner mask is the full display, minus the line length on each side (hence times 2)
-    lv_arc_set_bg_angles(inner_mask_arc, 0, 360);
-    lv_arc_set_value(inner_mask_arc, 140);
-    lv_obj_center(inner_mask_arc);
-    lv_obj_set_style_bg_opa(inner_mask_arc, LV_OPA_0, LV_PART_KNOB);
-    lv_obj_set_style_arc_color(inner_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(inner_mask_arc, 75, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(inner_mask_arc, 75, LV_PART_MAIN);
+    inner_mask_circle = lvDrawCircle(180, hue_screen);
+    lv_obj_set_style_bg_color(inner_mask_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_center(inner_mask_circle);
 
-    // Draw the coloured indicator.
-    for (int i = 270 - skip_degrees; i <= 270 + skip_degrees; i++) // shift the indicator to 270 so it's vertical top. (x=0).
+    lv_style_init(&selector_style);
+    lv_style_set_line_width(&selector_style, 2);
+
+    for (int i = 0; i < 3; i++)
     {
-        int angle = (i + current_position) % 360;
-        float x = angle * deg_1_rad;
-        lv_coord_t x_start = TFT_HOR_RES / 2;
-        // x_start and x_float_coordinates are different
-        lv_coord_t y_start = TFT_VER_RES / 2;
-        lv_coord_t x_end = x_start + line_length * cos(x);
-        lv_coord_t y_end = y_start + line_length * sin(x);
-        points_indicator[i][0] = {x_start, y_start};
-        points_indicator[i][1] = {x_end, y_end};
-        lv_style_init(&styles_indicator[i]);
-        lv_style_set_line_width(&styles_indicator[i], 3);
-        lv_style_set_line_color(&styles_indicator[i], lv_color_hsv_to_rgb(angle, 100, 100));
+        selector_lines[i] = lv_line_create(hue_screen);
 
-        lines_indicator[i] = lv_line_create(hue_screen);
-        lv_line_set_points(lines_indicator[i], points_indicator[i], 2);
-        lv_obj_add_style(lines_indicator[i], &styles_indicator[i], 0);
-        lv_obj_align(lines_indicator[i], LV_ALIGN_TOP_LEFT, 0, 0);
+        lv_obj_add_style(selector_lines[i], &styles[i], 0);
+        lv_obj_align(selector_lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
     }
 
-    // innter mask for the indicator
-    inner_indicator_mask_arc = lv_arc_create(hue_screen);
-
-    lv_obj_set_size(inner_indicator_mask_arc, 120, 120); // the size of the inner mask is the full display, minus the line length on each side (hence times 2)
-    lv_arc_set_bg_angles(inner_indicator_mask_arc, 0, 360);
-    lv_arc_set_value(inner_indicator_mask_arc, 140);
-    lv_obj_center(inner_indicator_mask_arc);
-    lv_obj_set_style_bg_opa(inner_indicator_mask_arc, LV_OPA_0, LV_PART_KNOB);
-    lv_obj_set_style_arc_color(inner_indicator_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(inner_indicator_mask_arc, 75, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(inner_indicator_mask_arc, 75, LV_PART_MAIN);
-    // Outer mask
     outer_mask_arc = lv_arc_create(hue_screen);
     lv_obj_set_size(outer_mask_arc, TFT_HOR_RES + 2, TFT_VER_RES + 2); // the plus 2 is to prevent the aliasing of the border to reveal some pixel from underneath.
     lv_arc_set_bg_angles(outer_mask_arc, 0, 360);
@@ -218,7 +164,44 @@ void LightDimmerApp::initHueScreen()
     lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_INDICATOR);
     lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_MAIN);
 
-    // updateHueWheel();
+    selector_inner_mask_circle = lvDrawCircle(160, hue_screen);
+    lv_obj_set_style_bg_color(selector_inner_mask_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_center(selector_inner_mask_circle);
+}
+void LightDimmerApp::updateHueWheel()
+{
+    int angle = (current_position * skip_degrees) % 360;
+    if (angle < 0)
+    {
+        angle += 360; // Make sure angle is positive
+    }
+    float x = angle * deg_1_rad;
+    float skip_deg_rad = skip_degrees * deg_1_rad;
+
+    lv_coord_t x_start = TFT_HOR_RES / 2;
+    lv_coord_t y_start = TFT_VER_RES / 2;
+
+    lv_coord_t x_end = x_start + line_length * cos(x - skip_deg_rad);
+    lv_coord_t y_end = y_start + line_length * sin(x - skip_deg_rad);
+    selector_line_points[0][0] = {x_start, y_start};
+    selector_line_points[0][1] = {x_end, y_end};
+
+    x_end = x_start + line_length * cos(x);
+    y_end = y_start + line_length * sin(x);
+    selector_line_points[1][0] = {x_start, y_start};
+    selector_line_points[1][1] = {x_end, y_end};
+
+    x_end = x_start + line_length * cos(x + skip_deg_rad);
+    y_end = y_start + line_length * sin(x + skip_deg_rad);
+    selector_line_points[2][0] = {x_start, y_start};
+    selector_line_points[2][1] = {x_end, y_end};
+
+    SemaphoreGuard lock(mutex_);
+    for (int i = 0; i < 3; i++)
+    {
+        lv_line_set_points(selector_lines[i], selector_line_points[i], 2);
+        lv_obj_set_style_line_color(selector_lines[i], lv_color_hsv_to_rgb(angle, 100, 100), 0);
+    }
 }
 
 // void LightDimmerApp::updateHueWheel()
@@ -228,11 +211,11 @@ void LightDimmerApp::initHueScreen()
 //         int angle = (i * skip_degrees + current_position) % 360;
 //         float x = angle * deg_1_rad;
 
-//         lv_coord_t x_start = 120 + start_radius * cos(x);
-//         lv_coord_t y_start = 120 + start_radius * sin(x);
+//         lv_coord_t x_start = TFT_HOR_RES / 2;
+//         lv_coord_t y_start = TFT_VER_RES / 2;
 
-//         lv_coord_t x_end = 120 + (start_radius + line_length) * cos(x);
-//         lv_coord_t y_end = 120 + (start_radius + line_length) * sin(x);
+//         lv_coord_t x_end = x_start + line_length * cos(x);
+//         lv_coord_t y_end = y_start + line_length * sin(x);
 
 //         points[i][0] = {x_start, y_start};
 //         points[i][1] = {x_end, y_end};
@@ -245,25 +228,25 @@ void LightDimmerApp::initHueScreen()
 //     }
 // }
 
-void LightDimmerApp::updateHueWheel()
-{
-    for (int i = 0; i < lines_count; i++)
-    {
-        int angle = (i * skip_degrees + (360 - current_position)) % 360; // Reverse the calculation of the angle
-        float x = angle * deg_1_rad;
+// void LightDimmerApp::updateHueWheel()
+// {
+//     for (int i = 0; i < lines_count; i++)
+//     {
+//         int angle = (i * skip_degrees + (360 - current_position)) % 360; // Reverse the calculation of the angle
+//         float x = angle * deg_1_rad;
 
-        lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100);
-        lv_style_set_line_color(&styles[i], color);
-    }
+//         lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100);
+//         lv_style_set_line_color(&styles[i], color);
+//     }
 
-    {
-        SemaphoreGuard lock(mutex_);
-        for (int i = 0; i < lines_count; i++)
-        {
-            lv_obj_refresh_style(lines[i], LV_PART_MAIN, LV_STYLE_PROP_INV);
-        }
-    }
-}
+//     {
+//         SemaphoreGuard lock(mutex_);
+//         for (int i = 0; i < lines_count; i++)
+//         {
+//             lv_obj_refresh_style(lines[i], LV_PART_MAIN, LV_STYLE_PROP_INV);
+//         }
+//     }
+// }
 
 int8_t LightDimmerApp::navigationNext()
 {
@@ -313,7 +296,7 @@ int8_t LightDimmerApp::navigationNext()
             app_hue_position / 2,
             0,
             -1,
-            PI * 2 / 180,
+            skip_degrees * PI / 180,
             1,
             1,
             0.5,
