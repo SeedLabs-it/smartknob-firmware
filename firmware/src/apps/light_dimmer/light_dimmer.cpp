@@ -254,12 +254,14 @@ void LightDimmerApp::updateHueWheel()
 
         lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100);
         lv_style_set_line_color(&styles[i], color);
+    }
 
+    {
+        SemaphoreGuard lock(mutex_);
+        for (int i = 0; i < lines_count; i++)
         {
-            SemaphoreGuard lock(mutex_);
             lv_obj_refresh_style(lines[i], LV_PART_MAIN, LV_STYLE_PROP_INV);
         }
-        // delay(1); // DONT UN COMMENT ME
     }
 }
 

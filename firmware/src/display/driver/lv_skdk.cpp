@@ -9,9 +9,9 @@
 #pragma once
 #include "display/driver/lv_skdk.h"
 #include "display_task.h"
-#if LV_USE_TFT_ESPI
+// #if LV_USE_TFT_ESPI
 
-#include <TFT_eSPI.h>
+// #include <TFT_eSPI.h>
 
 #include "LGFX_SKDK.hpp"
 
@@ -90,15 +90,16 @@ lv_disp_drv_t *lv_skdk_create()
     disp_drv.draw_buf = &draw_buf;
     disp_drv.full_refresh = 0;
     disp_drv.direct_mode = 0;
+
     lv_disp_drv_register(&disp_drv);
 
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &lv_tick_task,
-        .name = "lv_tick_task"};
+    // const esp_timer_create_args_t periodic_timer_args = {
+    //     .callback = &lv_tick_task,
+    //     .name = "lv_tick_task"};
 
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, LV_TICK_PERIOD_MS * 1000));
+    // esp_timer_handle_t periodic_timer;
+    // ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    // ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, LV_TICK_PERIOD_MS * 1000));
 
     return &disp_drv;
 }
@@ -108,11 +109,11 @@ lv_disp_drv_t *lv_skdk_create()
  **********************/
 static bool buf1_in_use = true; // Flag to track which buffer is in use
 
-static void lv_tick_task(void *arg)
-{
-    (void)arg;
-    lv_tick_inc(LV_TICK_PERIOD_MS);
-}
+// static void lv_tick_task(void *arg)
+// {
+//     (void)arg;
+//     lv_tick_inc(LV_TICK_PERIOD_MS);
+// }
 
 static void flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
@@ -133,7 +134,7 @@ static void flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *col
     lv_disp_flush_ready(disp);
 }
 
-#endif /*LV_USE_TFT_ESPI*/
+// #endif /*LV_USE_TFT_ESPI*/
 
 // uint32_t w = lv_area_get_width(area);
 // uint32_t h = lv_area_get_height(area);

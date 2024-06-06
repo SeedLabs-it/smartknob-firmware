@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef LV_TFT_ESPI_H
-#define LV_TFT_ESPI_H
+// #ifndef LV_TFT_ESPI_H
+// #define LV_TFT_ESPI_H
 
 #ifdef __cplusplus
 extern "C"
@@ -17,7 +17,7 @@ extern "C"
 #include "lvgl.h"
 #include "logging.h"
 
-#if LV_USE_TFT_ESPI
+    // #if LV_USE_TFT_ESPI
 
     /*********************
      *      DEFINES
@@ -36,10 +36,10 @@ extern "C"
      *      MACROS
      **********************/
 
-#endif /* LV_USE_TFT_ESPI */
+    // #endif /* LV_USE_TFT_ESPI */
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* LV_TFT_ESPI_H */
+// #endif /* LV_TFT_ESPI_H */
