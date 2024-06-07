@@ -66,4 +66,5 @@ private:
     lv_obj_t *mask_img;
     lv_obj_t *dimmer_screen;
     lv_obj_t *hue_screen;
+    lv_obj_t *hue_wheel;
 };

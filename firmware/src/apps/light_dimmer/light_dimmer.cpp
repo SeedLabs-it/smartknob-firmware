@@ -84,7 +84,7 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-#define skip_degrees 5                   // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
+#define skip_degrees 4                   // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
 #define lines_count (360 / skip_degrees) // number of lines in a 360 circle. // [TODO] refactor, this should account of line thickness + space_between_lines.
 #define distance_from_center 70          // distance from center (pixel) from where the line starts (and goes outword towards the edge of the display)
 #define line_length 120                  // length of the ticker line (in pixel)
@@ -104,150 +104,92 @@ static lv_style_t selector_style;
 static lv_point_t selector_line_points[3][2];
 static lv_obj_t *selector_lines[3];
 
+// static void draw_arc_with_gradient(lv_event_t *e)
+// {
+//     if (e->code == LV_EVENT_DRAW_PART_BEGIN)
+//     {
+//         lv_obj_draw_part_dsc_t *draw_dsc = (lv_obj_draw_part_dsc_t *)lv_event_get_param(e);
+//         if (draw_dsc->part == LV_PART_INDICATOR)
+//         {
+//             uint16_t part = draw_dsc->id;
+
+//             // Calculate the angle position
+//             uint16_t angle_start = draw_dsc->arc_dsc->start_angle;
+//             uint16_t angle_end = draw_dsc->arc_dsc->end_angle;
+//             uint16_t angle_range = angle_end - angle_start;
+
+//             draw_dsc->arc_dsc->color = lv_color_make(0, 255, 0);
+//         }
+//     }
+// }
+
+static lv_obj_t *meter;
+static lv_meter_indicator_t *indic_hue;
+
+// static void set_value(void *indic, int32_t v)
+// {
+//     lv_meter_set_indicator_end_value(meter, (lv_meter_indicator_t *)indic, v);
+// }
+
+static void meter_draw_event_cb(lv_event_t *e)
+{
+    lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
+    uint16_t *user_data = (uint16_t *)lv_event_get_user_data(e);
+    uint16_t val = *user_data >= 0 ? *user_data % lines_count : lines_count + *user_data % lines_count;
+    if (dsc->type == LV_METER_DRAW_PART_NEEDLE_LINE)
+    {
+        dsc->line_dsc->color = lv_color_hsv_to_rgb(val * skip_degrees, 100, 100);
+    }
+    else if (dsc->type == LV_METER_DRAW_PART_TICK)
+    {
+        dsc->line_dsc->color = lv_color_hsv_to_rgb(dsc->id * skip_degrees, 100, 100);
+        // if user_data
+        // dsc->line_dsc->width = 10;
+    }
+}
+
 void LightDimmerApp::initHueScreen()
 {
-    SemaphoreGuard lock(mutex_);
 
-    // create lines for a hue wheel going from 0 to 360
     hue_screen = lv_obj_create(screen);
     lv_obj_remove_style_all(hue_screen);
     lv_obj_set_size(hue_screen, LV_HOR_RES, LV_VER_RES);
     lv_obj_center(hue_screen);
     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
 
-    for (int i = 0; i < lines_count; i++)
-    {
-        int angle = (i * skip_degrees + current_position) % 360;
-        float x = angle * deg_1_rad;
+    // lv_obj_t *arc = lv_arc_create(screen);
+    // lv_obj_set_size(arc, 200, 200);
+    // lv_arc_set_bg_angles(arc, 0, 360);
+    // lv_arc_set_angles(arc, 0, 30);
+    // // lv_obj_set_style_bg_color(arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_ARC_DRAW_PART_KNOB);
+    // lv_obj_align(arc, LV_ALIGN_CENTER, 0, 0);
+    // lv_obj_add_event_cb(arc, draw_arc_with_gradient, LV_EVENT_DRAW_PART_BEGIN, NULL);
 
-        lv_coord_t x_start = TFT_HOR_RES / 2;
-        lv_coord_t y_start = TFT_VER_RES / 2;
+    /* USING DEFAULKT COLOR WHEEL OF LVGL 15fps*/
 
-        lv_coord_t x_end = x_start + line_length * cos(x);
-        lv_coord_t y_end = y_start + line_length * sin(x);
+    // hue_wheel = lv_colorwheel_create(screen, true);
+    // lv_colorwheel_set_mode(hue_wheel, LV_COLORWHEEL_MODE_HUE);
+    // lv_obj_set_size(hue_wheel, 200, 200);
+    // lv_obj_center(hue_wheel);
 
-        points[i][0] = {x_start, y_start};
-        points[i][1] = {x_end, y_end};
+    /*TEST LVGL METER*/
+    meter = lv_meter_create(hue_screen);
+    lv_obj_remove_style_all(meter);
+    lv_obj_set_size(meter, 210, 210);
+    lv_obj_center(meter);
 
-        lv_style_init(&styles[i]);
-        lv_style_set_line_width(&styles[i], 2);
-        lv_style_set_line_color(&styles[i], lv_color_hsv_to_rgb(angle, 100, 100));
+    lv_meter_scale_t *scale_hue = lv_meter_add_scale(meter);
+    lv_meter_set_scale_ticks(meter, scale_hue, lines_count - 1, 2, 12, lv_palette_main(LV_PALETTE_GREY));
+    lv_meter_set_scale_range(meter, scale_hue, 0, lines_count, 360, 270);
 
-        lines[i] = lv_line_create(hue_screen);
-        lv_line_set_points(lines[i], points[i], 2);
-        lv_obj_add_style(lines[i], &styles[i], 0);
-        lv_obj_align(lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
-    }
+    indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
 
-    inner_mask_circle = lvDrawCircle(180, hue_screen);
-    lv_obj_set_style_bg_color(inner_mask_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    lv_obj_center(inner_mask_circle);
-
-    lv_style_init(&selector_style);
-    lv_style_set_line_width(&selector_style, 2);
-
-    for (int i = 0; i < 3; i++)
-    {
-        selector_lines[i] = lv_line_create(hue_screen);
-
-        lv_obj_add_style(selector_lines[i], &styles[i], 0);
-        lv_obj_align(selector_lines[i], LV_ALIGN_TOP_LEFT, 0, 0);
-    }
-
-    outer_mask_arc = lv_arc_create(hue_screen);
-    lv_obj_set_size(outer_mask_arc, TFT_HOR_RES + 2, TFT_VER_RES + 2); // the plus 2 is to prevent the aliasing of the border to reveal some pixel from underneath.
-    lv_arc_set_bg_angles(outer_mask_arc, 0, 360);
-    lv_arc_set_value(outer_mask_arc, 120);
-    lv_obj_center(outer_mask_arc);
-    lv_obj_set_style_bg_opa(outer_mask_arc, LV_OPA_0, LV_PART_KNOB);
-    lv_obj_set_style_arc_color(outer_mask_arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(outer_mask_arc, 12, LV_PART_MAIN);
-
-    selector_inner_mask_circle = lvDrawCircle(160, hue_screen);
-    lv_obj_set_style_bg_color(selector_inner_mask_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    lv_obj_center(selector_inner_mask_circle);
+    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &current_position);
 }
+
 void LightDimmerApp::updateHueWheel()
 {
-    int angle = (current_position * skip_degrees) % 360;
-    if (angle < 0)
-    {
-        angle += 360; // Make sure angle is positive
-    }
-    float x = angle * deg_1_rad;
-    float skip_deg_rad = skip_degrees * deg_1_rad;
-
-    lv_coord_t x_start = TFT_HOR_RES / 2;
-    lv_coord_t y_start = TFT_VER_RES / 2;
-
-    lv_coord_t x_end = x_start + line_length * cos(x - skip_deg_rad);
-    lv_coord_t y_end = y_start + line_length * sin(x - skip_deg_rad);
-    selector_line_points[0][0] = {x_start, y_start};
-    selector_line_points[0][1] = {x_end, y_end};
-
-    x_end = x_start + line_length * cos(x);
-    y_end = y_start + line_length * sin(x);
-    selector_line_points[1][0] = {x_start, y_start};
-    selector_line_points[1][1] = {x_end, y_end};
-
-    x_end = x_start + line_length * cos(x + skip_deg_rad);
-    y_end = y_start + line_length * sin(x + skip_deg_rad);
-    selector_line_points[2][0] = {x_start, y_start};
-    selector_line_points[2][1] = {x_end, y_end};
-
-    SemaphoreGuard lock(mutex_);
-    for (int i = 0; i < 3; i++)
-    {
-        lv_line_set_points(selector_lines[i], selector_line_points[i], 2);
-        lv_obj_set_style_line_color(selector_lines[i], lv_color_hsv_to_rgb(angle, 100, 100), 0);
-    }
 }
-
-// void LightDimmerApp::updateHueWheel()
-// {
-//     for (int i = 0; i < lines_count; i++)
-//     {
-//         int angle = (i * skip_degrees + current_position) % 360;
-//         float x = angle * deg_1_rad;
-
-//         lv_coord_t x_start = TFT_HOR_RES / 2;
-//         lv_coord_t y_start = TFT_VER_RES / 2;
-
-//         lv_coord_t x_end = x_start + line_length * cos(x);
-//         lv_coord_t y_end = y_start + line_length * sin(x);
-
-//         points[i][0] = {x_start, y_start};
-//         points[i][1] = {x_end, y_end};
-
-//         {
-//             SemaphoreGuard lock(mutex_);
-//             lv_line_set_points(lines[i], points[i], 2);
-//         }
-//         delay(1); // DONT UN COMMENT ME
-//     }
-// }
-
-// void LightDimmerApp::updateHueWheel()
-// {
-//     for (int i = 0; i < lines_count; i++)
-//     {
-//         int angle = (i * skip_degrees + (360 - current_position)) % 360; // Reverse the calculation of the angle
-//         float x = angle * deg_1_rad;
-
-//         lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100);
-//         lv_style_set_line_color(&styles[i], color);
-//     }
-
-//     {
-//         SemaphoreGuard lock(mutex_);
-//         for (int i = 0; i < lines_count; i++)
-//         {
-//             lv_obj_refresh_style(lines[i], LV_PART_MAIN, LV_STYLE_PROP_INV);
-//         }
-//     }
-// }
-
 int8_t LightDimmerApp::navigationNext()
 {
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
@@ -368,8 +310,18 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             // if (app_hue_position % 2 == 0)
             // {
             // SemaphoreGuard lock(mutex_);
-            updateHueWheel();
+            // updateHueWheel();
             // }
+
+            uint16_t val = current_position >= 0 ? current_position % lines_count : lines_count + current_position % lines_count;
+            SemaphoreGuard lock(mutex_);
+            lv_meter_set_indicator_end_value(meter, indic_hue, val);
+            // lv_meter_set_indicator_value(hue_wheel, 0, 0, app_hue_position / 2);
+
+            // LOGE("current_position: %d", current_position);
+            // LOGE("current_hsv: h%d s%d v%d", lv_colorwheel_get_hsv(hue_wheel).h, lv_colorwheel_get_hsv(hue_wheel).s, lv_colorwheel_get_hsv(hue_wheel).v);
+            // lv_color_hsv_t hsv = {current_position, 100, 100};
+            // lv_colorwheel_set_hsv(hue_wheel, hsv);
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
