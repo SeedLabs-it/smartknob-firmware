@@ -104,25 +104,6 @@ static lv_style_t selector_style;
 static lv_point_t selector_line_points[3][2];
 static lv_obj_t *selector_lines[3];
 
-// static void draw_arc_with_gradient(lv_event_t *e)
-// {
-//     if (e->code == LV_EVENT_DRAW_PART_BEGIN)
-//     {
-//         lv_obj_draw_part_dsc_t *draw_dsc = (lv_obj_draw_part_dsc_t *)lv_event_get_param(e);
-//         if (draw_dsc->part == LV_PART_INDICATOR)
-//         {
-//             uint16_t part = draw_dsc->id;
-
-//             // Calculate the angle position
-//             uint16_t angle_start = draw_dsc->arc_dsc->start_angle;
-//             uint16_t angle_end = draw_dsc->arc_dsc->end_angle;
-//             uint16_t angle_range = angle_end - angle_start;
-
-//             draw_dsc->arc_dsc->color = lv_color_make(0, 255, 0);
-//         }
-//     }
-// }
-
 static lv_obj_t *meter;
 static lv_meter_indicator_t *indic_hue;
 
@@ -143,8 +124,6 @@ static void meter_draw_event_cb(lv_event_t *e)
     else if (dsc->type == LV_METER_DRAW_PART_TICK)
     {
         dsc->line_dsc->color = lv_color_hsv_to_rgb(dsc->id * skip_degrees, 100, 100);
-        // if user_data
-        // dsc->line_dsc->width = 10;
     }
 }
 
@@ -157,22 +136,6 @@ void LightDimmerApp::initHueScreen()
     lv_obj_center(hue_screen);
     lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
 
-    // lv_obj_t *arc = lv_arc_create(screen);
-    // lv_obj_set_size(arc, 200, 200);
-    // lv_arc_set_bg_angles(arc, 0, 360);
-    // lv_arc_set_angles(arc, 0, 30);
-    // // lv_obj_set_style_bg_color(arc, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_ARC_DRAW_PART_KNOB);
-    // lv_obj_align(arc, LV_ALIGN_CENTER, 0, 0);
-    // lv_obj_add_event_cb(arc, draw_arc_with_gradient, LV_EVENT_DRAW_PART_BEGIN, NULL);
-
-    /* USING DEFAULKT COLOR WHEEL OF LVGL 15fps*/
-
-    // hue_wheel = lv_colorwheel_create(screen, true);
-    // lv_colorwheel_set_mode(hue_wheel, LV_COLORWHEEL_MODE_HUE);
-    // lv_obj_set_size(hue_wheel, 200, 200);
-    // lv_obj_center(hue_wheel);
-
-    /*TEST LVGL METER*/
     meter = lv_meter_create(hue_screen);
     lv_obj_remove_style_all(meter);
     lv_obj_set_size(meter, 210, 210);
@@ -197,14 +160,12 @@ int8_t LightDimmerApp::navigationNext()
         app_state_mode = LIGHT_DIMMER_APP_MODE_HUE;
         SemaphoreGuard lock(mutex_);
         lv_obj_add_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
-        // lv_obj_remove_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
     }
     else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
     {
         app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
         SemaphoreGuard lock(mutex_);
-        // lv_obj_remove_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(hue_screen, LV_OBJ_FLAG_HIDDEN);
     }
