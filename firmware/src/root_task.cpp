@@ -393,14 +393,25 @@ void RootTask::run()
         {
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;
             app_state.proximiti_state.RangeStatus = latest_sensors_state_.proximity.RangeStatus;
-
-            // wake up the screen
-            // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
-            if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
-            {
-                app_state.screen_state.has_been_engaged = true;
-            }
         }
+
+        // wake up the screen
+        // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
+        // Add motor encoder detection? or disable motor if not "enaged detected presence"
+        if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200 && app_state.screen_state.has_been_engaged == false)
+        {
+            app_state.screen_state.has_been_engaged = true;
+            sensors_task_->strainPowerUp();
+        }
+
+        // Check if the knob is awake, and if the time is expired
+        // and set it to not engaged
+        else if (app_state.screen_state.has_been_engaged && app_state.screen_state.awake_until < millis())
+        {
+            app_state.screen_state.has_been_engaged = false;
+            sensors_task_->strainPowerDown();
+        }
+
         if (app_state.screen_state.has_been_engaged == true)
         {
             app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
@@ -409,12 +420,7 @@ void RootTask::run()
                 app_state.screen_state.awake_until = millis() + 4000; // 1s
             }
         }
-        // Check if the knob is awake, and if the time is expired
-        // and set it to not engaged
-        if (app_state.screen_state.has_been_engaged && millis() < app_state.screen_state.awake_until)
-        {
-            app_state.screen_state.has_been_engaged = false;
-        }
+
 #if SK_ALS
         // We are multiplying the current luminosity of the enviroment (0,1 range)
         // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.

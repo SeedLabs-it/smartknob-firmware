@@ -438,6 +438,20 @@ void SensorsTask::weightMeasurementCallback()
         weight_measurement_step_ = 0;
     }
 }
+
+void SensorsTask::strainPowerDown()
+{
+    LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
+    strain.power_down();
+}
+
+void SensorsTask::strainPowerUp()
+{
+    LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
+    strain.power_up();
+    delay(100);
+    strain.tare();
+}
 #endif
 
 void SensorsTask::addStateListener(QueueHandle_t queue)

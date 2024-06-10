@@ -29,6 +29,9 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
+    void strainPowerDown();
+    void strainPowerUp();
+
 protected:
     void run();
 
