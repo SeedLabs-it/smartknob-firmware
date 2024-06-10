@@ -393,6 +393,18 @@ void RootTask::run()
         {
             app_state.proximiti_state.RangeMilliMeter = latest_sensors_state_.proximity.RangeMilliMeter;
             app_state.proximiti_state.RangeStatus = latest_sensors_state_.proximity.RangeStatus;
+
+            // wake up the screen
+            // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
+            // Add motor encoder detection? or disable motor if not "enaged detected presence"
+            if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
+            {
+                app_state.screen_state.has_been_engaged = true;
+                if (app_state.screen_state.awake_until < millis() + 2000)
+                {
+                    app_state.screen_state.awake_until = millis() + 4000; // stay awake for 4 seconds after last interaction
+                }
+            }
         }
 
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
@@ -413,22 +425,6 @@ void RootTask::run()
 #endif
         }
 
-        // wake up the screen
-        // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
-        // Add motor encoder detection? or disable motor if not "enaged detected presence"
-        if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200 && app_state.screen_state.has_been_engaged == false)
-        {
-            app_state.screen_state.has_been_engaged = true;
-            sensors_task_->strainPowerUp();
-        }
-        // Check if the knob is awake, and if the time is expired
-        // and set it to not engaged
-        else if (app_state.screen_state.has_been_engaged && app_state.screen_state.awake_until < millis())
-        {
-            app_state.screen_state.has_been_engaged = false;
-            sensors_task_->strainPowerDown();
-        }
-
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
@@ -437,13 +433,15 @@ void RootTask::run()
             // This if is used to understand if we have touched the knob since last state.
             if (isCurrentSubPositionSet)
             {
-                if (currentSubPosition != roundedNewPosition && app_state.screen_state.has_been_engaged == false)
+                if (currentSubPosition != roundedNewPosition)
                 {
-                    LOGE("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    LOGE("current: %f, roundednew: %f", currentSubPosition, roundedNewPosition);
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
+                    if (app_state.screen_state.awake_until < millis() + 2000)
+                    {
+                        app_state.screen_state.awake_until = millis() + 10000; // stay awake for 4 seconds after last interaction
+                    }
                 }
             }
             isCurrentSubPositionSet = true;
@@ -463,15 +461,6 @@ void RootTask::run()
                 break;
             default:
                 break;
-            }
-
-            if (app_state.screen_state.has_been_engaged == true)
-            {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-                if (app_state.screen_state.awake_until < millis())
-                {
-                    app_state.screen_state.awake_until = millis() + 4000; // 1s
-                }
             }
 
 #if SK_ALS
@@ -521,6 +510,13 @@ void RootTask::run()
             publishState();
         }
 
+        // // Check if the knob is awake, and if the time is expired
+        // // and set it to not engaged
+        // else
+        // {
+        //     app_state.screen_state.has_been_engaged = false;
+        //         }
+
         current_protocol_->loop();
 
         // std::string *log_string;
@@ -534,6 +530,21 @@ void RootTask::run()
         os_config_notifier_.loopTick();
 
         updateHardware(app_state);
+
+        if (app_state.screen_state.has_been_engaged == true)
+        {
+            if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
+            {
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                sensors_task_->strainPowerUp();
+            }
+
+            if (millis() > app_state.screen_state.awake_until)
+            {
+                app_state.screen_state.has_been_engaged = false;
+                sensors_task_->strainPowerDown();
+            }
+        }
 
         delay(1);
     }
@@ -643,6 +654,15 @@ void RootTask::updateHardware(AppState app_state)
         default:
             last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
             break;
+        }
+
+        if (last_strain_pressed_played_ != VIRTUAL_BUTTON_IDLE)
+        {
+            app_state.screen_state.has_been_engaged = true;
+            if (app_state.screen_state.awake_until < millis() + 8000)
+            {
+                app_state.screen_state.awake_until = millis() + 10000; // stay awake for 4 seconds after last interaction
+            }
         }
     }
 

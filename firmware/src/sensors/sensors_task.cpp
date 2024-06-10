@@ -449,8 +449,8 @@ void SensorsTask::strainPowerUp()
 {
     LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
     strain.power_up();
-    delay(100);
-    strain.tare();
+    // delay(100);
+    // strain.tare();
 }
 #endif
 
