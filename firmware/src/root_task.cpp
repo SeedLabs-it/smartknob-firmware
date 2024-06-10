@@ -395,66 +395,6 @@ void RootTask::run()
             app_state.proximiti_state.RangeStatus = latest_sensors_state_.proximity.RangeStatus;
         }
 
-        // wake up the screen
-        // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
-        // Add motor encoder detection? or disable motor if not "enaged detected presence"
-        if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200 && app_state.screen_state.has_been_engaged == false)
-        {
-            app_state.screen_state.has_been_engaged = true;
-            sensors_task_->strainPowerUp();
-        }
-
-        // Check if the knob is awake, and if the time is expired
-        // and set it to not engaged
-        else if (app_state.screen_state.has_been_engaged && app_state.screen_state.awake_until < millis())
-        {
-            app_state.screen_state.has_been_engaged = false;
-            sensors_task_->strainPowerDown();
-        }
-
-        if (app_state.screen_state.has_been_engaged == true)
-        {
-            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-            if (app_state.screen_state.awake_until < millis())
-            {
-                app_state.screen_state.awake_until = millis() + 4000; // 1s
-            }
-        }
-
-#if SK_ALS
-        // We are multiplying the current luminosity of the enviroment (0,1 range)
-        // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-        // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-        // [0, MIN_LCD_BRIGHTNESS]
-        uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
-
-        if (app_state.screen_state.has_been_engaged == false &&
-            abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-            millis() > app_state.screen_state.awake_until)
-        {
-            if ((app_state.screen_state.brightness < targetLuminosity))
-            {
-                app_state.screen_state.brightness = (targetLuminosity);
-            }
-            else
-            {
-                // TODO: I don't like this decay function. It's too slow for delta too small
-                app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-            }
-        }
-        else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
-        {
-            // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-            app_state.screen_state.brightness = (targetLuminosity);
-        }
-#endif
-#if !SK_ALS
-        if (app_state.screen_state.has_been_engaged == false)
-        {
-            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-        }
-#endif
-
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
         {
             app_state.connectivity_state = latest_connectivity_state_;
@@ -472,6 +412,23 @@ void RootTask::run()
             mqtt_task_->unlock();
 #endif
         }
+
+        // wake up the screen
+        // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
+        // Add motor encoder detection? or disable motor if not "enaged detected presence"
+        if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200 && app_state.screen_state.has_been_engaged == false)
+        {
+            app_state.screen_state.has_been_engaged = true;
+            sensors_task_->strainPowerUp();
+        }
+        // Check if the knob is awake, and if the time is expired
+        // and set it to not engaged
+        else if (app_state.screen_state.has_been_engaged && app_state.screen_state.awake_until < millis())
+        {
+            app_state.screen_state.has_been_engaged = false;
+            sensors_task_->strainPowerDown();
+        }
+
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
@@ -480,8 +437,10 @@ void RootTask::run()
             // This if is used to understand if we have touched the knob since last state.
             if (isCurrentSubPositionSet)
             {
-                if (currentSubPosition != roundedNewPosition)
+                if (currentSubPosition != roundedNewPosition && app_state.screen_state.has_been_engaged == false)
                 {
+                    LOGE("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    LOGE("current: %f, roundednew: %f", currentSubPosition, roundedNewPosition);
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
@@ -505,6 +464,49 @@ void RootTask::run()
             default:
                 break;
             }
+
+            if (app_state.screen_state.has_been_engaged == true)
+            {
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                if (app_state.screen_state.awake_until < millis())
+                {
+                    app_state.screen_state.awake_until = millis() + 4000; // 1s
+                }
+            }
+
+#if SK_ALS
+            // We are multiplying the current luminosity of the enviroment (0,1 range)
+            // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+            // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+            // [0, MIN_LCD_BRIGHTNESS]
+            uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
+            if (app_state.screen_state.has_been_engaged == false &&
+                abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                millis() > app_state.screen_state.awake_until)
+            {
+                if ((app_state.screen_state.brightness < targetLuminosity))
+                {
+                    app_state.screen_state.brightness = (targetLuminosity);
+                }
+                else
+                {
+                    // TODO: I don't like this decay function. It's too slow for delta too small
+                    app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                }
+            }
+            else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+            {
+                // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
+                app_state.screen_state.brightness = (targetLuminosity);
+            }
+#endif
+#if !SK_ALS
+            if (app_state.screen_state.has_been_engaged == false)
+            {
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+            }
+#endif
 
 #if SK_MQTT
             mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
