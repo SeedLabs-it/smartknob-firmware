@@ -57,6 +57,7 @@ void SensorsTask::run()
     strain.tare();
     delay(100);
 
+    strain_powered = true;
     raw_initial_value_ = strain.get_units(10);
 #endif
 
@@ -125,7 +126,7 @@ void SensorsTask::run()
     long last_system_temperature_check = 0;
     float last_system_temperature = 0;
 
-    bool do_strain = false;
+    uint8_t discarded_strain_reading_count = 0;
 
     while (1)
     {
@@ -152,18 +153,17 @@ void SensorsTask::run()
 #if SK_STRAIN
         if (millis() - last_strain_check_ms > 1000 / strain_poling_rate_hz)
         {
-            if (strain.wait_ready_timeout(100))
+            if (strain_powered && strain.wait_ready_timeout(100))
             {
-                if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
-                {
-                    delay(100);
-                    do_strain = false;
-                }
-
                 if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0)
                 {
                     LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
                     delay(2000);
+                    do_strain = false;
+                }
+                else if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
+                {
+                    delay(100);
                     do_strain = false;
                 }
 
@@ -174,12 +174,28 @@ void SensorsTask::run()
 
                     if (abs(last_strain_reading_raw_ - strain_reading_raw) > 2000)
                     {
+                        discarded_strain_reading_count++;
+                        if (discarded_strain_reading_count > 20)
+                        {
+                            LOGE("HERE!!!!!!!!!!!!!!!!!!!!!!!!!! RESET STRAIN!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                            LOGV(PB_LogLevel_WARNING, "Resetting strain sensor. 20 consecutive readings discarded.");
+                            strain.power_down();
+                            delay(100);
+                            strain.power_up();
+                            delay(100);
+                            strain.set_offset(0);
+                            strain.tare();
+                            delay(100);
+                            discarded_strain_reading_count = 0;
+                        }
+
                         LOGW("Discarding strain reading, too big difference from last reading.");
                         LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
                         LOGV(PB_LogLevel_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
                     }
                     else
                     {
+                        discarded_strain_reading_count = 0;
                         sensors_state.strain.raw_value = strain_filter.addSample(strain_reading_raw);
 
                         // LOGD("Strain raw reading: %f", sensors_state.strain.raw_value);
@@ -261,7 +277,20 @@ void SensorsTask::run()
                         last_strain_check_ms = millis();
                     }
                 }
+
                 do_strain = true;
+            }
+            else
+            {
+                if (do_strain)
+                {
+                    LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+                }
+                else
+                {
+
+                    LOGV(PB_LogLevel_DEBUG, "Strain sensor is disabled. (Might be because of factory calib or its powered off because no engagement of knob)");
+                }
             }
         }
 #endif
@@ -442,6 +471,7 @@ void SensorsTask::weightMeasurementCallback()
 void SensorsTask::strainPowerDown()
 {
     LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
+    strain_powered = false;
     strain.power_down();
 }
 
@@ -449,8 +479,14 @@ void SensorsTask::strainPowerUp()
 {
     LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
     strain.power_up();
+    delay(25);
+    strain.set_offset(0);
+    strain.tare();
+    delay(100);
+    last_strain_reading_raw_ = strain.get_units(10);
+    LOGE("Strain value after power up: %f", last_strain_reading_raw_);
+    strain_powered = true;
     // delay(100);
-    // strain.tare();
 }
 #endif
 
