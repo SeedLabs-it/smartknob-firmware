@@ -99,6 +99,7 @@ void SensorsTask::run()
     unsigned long last_illumination_check_ms = 0;
 
     unsigned long log_ms = 0;
+    unsigned long log_ms_strain = 0;
 
     const uint8_t proximity_poling_rate_hz = 20;
     const uint8_t strain_poling_rate_hz = 120;
@@ -282,14 +283,15 @@ void SensorsTask::run()
             }
             else
             {
-                if (do_strain)
+                if (do_strain && millis() - log_ms_strain > 4000)
                 {
                     LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+                    log_ms_strain = millis();
                 }
-                else
+                else if (millis() - log_ms_strain > 4000)
                 {
-
                     LOGV(PB_LogLevel_DEBUG, "Strain sensor is disabled. (Might be because of factory calib or its powered off because no engagement of knob)");
+                    log_ms_strain = millis();
                 }
             }
         }
