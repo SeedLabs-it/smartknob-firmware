@@ -402,7 +402,7 @@ void RootTask::run()
                 app_state.screen_state.has_been_engaged = true;
                 if (app_state.screen_state.awake_until < millis() + 2000)
                 {
-                    app_state.screen_state.awake_until = millis() + 4000; // stay awake for 4 seconds after last interaction
+                    app_state.screen_state.awake_until = millis() + 8000; // stay awake for 4 seconds after last interaction
                 }
             }
         }
@@ -440,7 +440,7 @@ void RootTask::run()
                     app_state.screen_state.has_been_engaged = true;
                     if (app_state.screen_state.awake_until < millis() + 2000)
                     {
-                        app_state.screen_state.awake_until = millis() + 10000; // stay awake for 4 seconds after last interaction
+                        app_state.screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
                     }
                 }
             }
@@ -529,7 +529,7 @@ void RootTask::run()
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
 
-        updateHardware(app_state);
+        updateHardware(&app_state);
 
         if (app_state.screen_state.has_been_engaged == true)
         {
@@ -550,7 +550,7 @@ void RootTask::run()
     }
 }
 
-void RootTask::updateHardware(AppState app_state)
+void RootTask::updateHardware(AppState *app_state)
 {
     static bool pressed;
 #if SK_STRAIN
@@ -658,10 +658,10 @@ void RootTask::updateHardware(AppState app_state)
 
         if (last_strain_pressed_played_ != VIRTUAL_BUTTON_IDLE)
         {
-            app_state.screen_state.has_been_engaged = true;
-            if (app_state.screen_state.awake_until < millis() + 8000)
+            app_state->screen_state.has_been_engaged = true;
+            if (app_state->screen_state.awake_until < millis() + 8000)
             {
-                app_state.screen_state.awake_until = millis() + 10000; // stay awake for 4 seconds after last interaction
+                app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
             }
         }
     }
@@ -671,7 +671,7 @@ void RootTask::updateHardware(AppState app_state)
     uint16_t brightness = UINT16_MAX;
 // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
 #if SK_ALS
-    brightness = app_state.screen_state.brightness;
+    brightness = app_state->screen_state.brightness;
 #endif
 
 #if SK_DISPLAY
@@ -690,7 +690,7 @@ void RootTask::updateHardware(AppState app_state)
         // if 2: led ring is fully off.
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
 
-        if (brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS)
+        if (brightness > app_state->screen_state.MIN_LCD_BRIGHTNESS)
         {
             // case 1. FADE-IN led
             effect_settings.effect_id = 4; // FADE-IN
@@ -703,7 +703,7 @@ void RootTask::updateHardware(AppState app_state)
             effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
             led_ring_task_->setEffect(effect_settings);
         }
-        else if (brightness == app_state.screen_state.MIN_LCD_BRIGHTNESS)
+        else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
         {
             // case 2. FADE-OUT led
             effect_settings.effect_id = 5;

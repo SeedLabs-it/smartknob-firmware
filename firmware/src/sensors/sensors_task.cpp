@@ -475,18 +475,17 @@ void SensorsTask::strainPowerDown()
     strain.power_down();
 }
 
-void SensorsTask::strainPowerUp()
+void SensorsTask::strainPowerUp() // Delays caused to a perceived delay in the activation of strain.
 {
     LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
     strain.power_up();
-    delay(25);
+    // delay(25);
     strain.set_offset(0);
     strain.tare();
-    delay(100);
-    last_strain_reading_raw_ = strain.get_units(10);
-    LOGE("Strain value after power up: %f", last_strain_reading_raw_);
-    strain_powered = true;
     // delay(100);
+    last_strain_reading_raw_ = strain.get_units(10);
+    LOGV(PB_LogLevel_DEBUG, "Strain value after power up: %f", last_strain_reading_raw_);
+    strain_powered = true;
 }
 #endif
 
