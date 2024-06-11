@@ -559,9 +559,16 @@ void RootTask::updateHardware(AppState *app_state)
     {
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
+
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
+                app_state->screen_state.has_been_engaged = true;
+                if (app_state->screen_state.awake_until < millis() + 8000)
+                {
+                    app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+                }
+
                 LOGD("Handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
@@ -571,6 +578,12 @@ void RootTask::updateHardware(AppState *app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
+                app_state->screen_state.has_been_engaged = true;
+                if (app_state->screen_state.awake_until < millis() + 8000)
+                {
+                    app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+                }
+
                 LOGD("Handling long press");
 
                 motor_task_.playHaptic(true, true);
@@ -656,14 +669,14 @@ void RootTask::updateHardware(AppState *app_state)
             break;
         }
 
-        if (last_strain_pressed_played_ != VIRTUAL_BUTTON_IDLE)
-        {
-            app_state->screen_state.has_been_engaged = true;
-            if (app_state->screen_state.awake_until < millis() + 8000)
-            {
-                app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
-            }
-        }
+        // if (latest_sensors_state_.strain.virtual_button_code != VIRTUAL_BUTTON_IDLE)
+        // {
+        //     app_state->screen_state.has_been_engaged = true;
+        //     if (app_state->screen_state.awake_until < millis() + 8000)
+        //     {
+        //         app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+        //     }
+        // }
     }
 
 #endif
