@@ -283,7 +283,7 @@ void SensorsTask::run()
             }
             else
             {
-                if (do_strain && millis() - log_ms_strain > 4000)
+                if (do_strain && strain_powered && millis() - log_ms_strain > 4000)
                 {
                     LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
                     log_ms_strain = millis();
@@ -472,22 +472,36 @@ void SensorsTask::weightMeasurementCallback()
 
 void SensorsTask::strainPowerDown()
 {
-    LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
-    strain_powered = false;
-    strain.power_down();
+    if (strain.wait_ready_timeout(10)) // Make sure sensor is on before powering down.
+    {
+        LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
+
+        strain_powered = false;
+        strain.power_down();
+    }
 }
 
 void SensorsTask::strainPowerUp() // Delays caused to a perceived delay in the activation of strain.
 {
-    LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
-    strain.power_up();
-    // delay(25);
-    strain.set_offset(0);
-    strain.tare();
-    // delay(100);
-    last_strain_reading_raw_ = strain.get_units(10);
-    LOGV(PB_LogLevel_DEBUG, "Strain value after power up: %f", last_strain_reading_raw_);
-    strain_powered = true;
+    if (!strain.wait_ready_timeout(10)) // Make sure sensor is off before powering up.
+    {
+        LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
+
+        strain.power_up();
+        if (strain.wait_ready_timeout(100))
+        {
+            // delay(25);
+            strain.set_offset(0);
+            strain.tare();
+            last_strain_reading_raw_ = strain.get_units(10);
+            // LOGV(PB_LogLevel_DEBUG, "Strain value after power up: %f", last_strain_reading_raw_);
+            strain_powered = true;
+        }
+        else
+        {
+            LOGE("Strain sensor not ready after power up!!!");
+        }
+    }
 }
 #endif
 
