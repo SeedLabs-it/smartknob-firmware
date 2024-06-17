@@ -406,7 +406,7 @@ void RootTask::run()
             app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
             if (app_state.screen_state.awake_until < millis())
             {
-                app_state.screen_state.awake_until = millis() + 4000; // 1s
+                app_state.screen_state.awake_until = millis() + 15000; // 1s
             }
         }
         // Check if the knob is awake, and if the time is expired
