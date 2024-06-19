@@ -178,7 +178,6 @@ void SensorsTask::run()
                         discarded_strain_reading_count++;
                         if (discarded_strain_reading_count > 20)
                         {
-                            LOGE("HERE!!!!!!!!!!!!!!!!!!!!!!!!!! RESET STRAIN!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                             LOGV(PB_LogLevel_WARNING, "Resetting strain sensor. 20 consecutive readings discarded.");
                             strain.power_down();
                             delay(100);
@@ -481,7 +480,7 @@ void SensorsTask::strainPowerDown()
     }
 }
 
-void SensorsTask::strainPowerUp() // Delays caused to a perceived delay in the activation of strain.
+void SensorsTask::strainPowerUp() // Delays caused a perceived delay in the activation of strain.
 {
     if (!strain.wait_ready_timeout(10)) // Make sure sensor is off before powering up.
     {
@@ -490,11 +489,9 @@ void SensorsTask::strainPowerUp() // Delays caused to a perceived delay in the a
         strain.power_up();
         if (strain.wait_ready_timeout(100))
         {
-            // delay(25);
             strain.set_offset(0);
             strain.tare();
             last_strain_reading_raw_ = strain.get_units(10);
-            // LOGV(PB_LogLevel_DEBUG, "Strain value after power up: %f", last_strain_reading_raw_);
             strain_powered = true;
         }
         else

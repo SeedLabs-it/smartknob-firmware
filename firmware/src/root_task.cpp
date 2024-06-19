@@ -400,9 +400,9 @@ void RootTask::run()
             if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
             {
                 app_state.screen_state.has_been_engaged = true;
-                if (app_state.screen_state.awake_until < millis() + 2000)
+                if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_NONE_PHYSICAL) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state.screen_state.awake_until = millis() + 8000; // stay awake for 4 seconds after last interaction
+                    app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_NONE_PHYSICAL;
                 }
             }
         }
@@ -438,9 +438,9 @@ void RootTask::run()
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
-                    if (app_state.screen_state.awake_until < millis() + 2000)
+                    if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                     {
-                        app_state.screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+                        app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
                     }
                 }
             }
@@ -510,21 +510,7 @@ void RootTask::run()
             publishState();
         }
 
-        // // Check if the knob is awake, and if the time is expired
-        // // and set it to not engaged
-        // else
-        // {
-        //     app_state.screen_state.has_been_engaged = false;
-        //         }
-
         current_protocol_->loop();
-
-        // std::string *log_string;
-        // while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
-        // {
-        //     // LOGI(log_string->c_str());
-        //     delete log_string;
-        // }
 
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
@@ -564,9 +550,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + 8000)
+                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling short press");
@@ -579,9 +565,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + 8000)
+                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling long press");
@@ -668,15 +654,6 @@ void RootTask::updateHardware(AppState *app_state)
             last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
             break;
         }
-
-        // if (latest_sensors_state_.strain.virtual_button_code != VIRTUAL_BUTTON_IDLE)
-        // {
-        //     app_state->screen_state.has_been_engaged = true;
-        //     if (app_state->screen_state.awake_until < millis() + 8000)
-        //     {
-        //         app_state->screen_state.awake_until = millis() + 30000; // stay awake for 4 seconds after last interaction
-        //     }
-        // }
     }
 
 #endif
