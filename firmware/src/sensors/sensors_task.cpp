@@ -411,6 +411,8 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
             {
                 LOGE("Calibrated weight is more than 10g off from the calibration weight. Restart calibration by pressing 'Y' again.");
                 delay(2000);
+                strain.set_scale(1.0f);
+                calibration_scale_ = 1.0f;
                 factory_strain_calibration_step_ = 0;
                 return;
             }
