@@ -188,6 +188,15 @@ private:
     lv_obj_t *dots[ONBOARDING_FLOW_PAGE_COUNT];
 };
 
+enum ActiveSubMenu
+{
+    NONE,
+    HASS_SUB_MENU,
+    WIFI_SUB_MENU,
+    DEMO_SUB_MENU,
+    ACTIVE_SUB_MENU_COUNT
+};
+
 class OnboardingFlow
 
 {
@@ -209,6 +218,8 @@ private:
     SemaphoreHandle_t mutex_;
 
     HassOnboardingFlow *hass_flow;
+
+    ActiveSubMenu active_sub_menu = NONE;
 
     uint8_t current_position = 0;
     char firmware_version[16];

@@ -8,7 +8,7 @@ HassOnboardingPages getHassPageEnum(uint8_t screen)
     }
 };
 
-HassOnboardingFlow::HassOnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
+HassOnboardingFlow::HassOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent) : mutex_(mutex), render_parent_(render_parent)
 {
     root_level_motor_config = PB_SmartKnobConfig{
         0,
@@ -36,6 +36,18 @@ void HassOnboardingFlow::render()
     SemaphoreGuard lock(mutex_);
     lv_scr_load(main_screen);
     triggerMotorConfigUpdate();
+}
+
+void HassOnboardingFlow::handleNavigationEvent(NavigationEvent event)
+{
+    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    {
+        if (current_position == 0)
+        {
+            render_parent_();
+            return;
+        }
+    }
 }
 
 EntityStateUpdate HassOnboardingFlow::update(AppState state)

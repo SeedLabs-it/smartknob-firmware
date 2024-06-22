@@ -82,10 +82,12 @@ public:
     }
 };
 
+typedef std::function<void(void)> RenderParentCallback;
+
 class HassOnboardingFlow
 {
 public:
-    HassOnboardingFlow(SemaphoreHandle_t mutex);
+    HassOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent);
 
     void render();
 
@@ -96,6 +98,8 @@ public:
     // void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
+
+    void handleNavigationEvent(NavigationEvent event);
 
 private:
     SemaphoreHandle_t mutex_;
@@ -112,4 +116,5 @@ private:
     lv_obj_t *main_screen = lv_obj_create(NULL);
 
     HassOnboardingPageManager *page_mgr = nullptr;
+    RenderParentCallback render_parent_; // Weird workaround.
 };

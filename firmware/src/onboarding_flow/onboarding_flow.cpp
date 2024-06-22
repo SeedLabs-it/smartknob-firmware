@@ -39,7 +39,8 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 
     page_mgr = new OnboardingPageManager(main_screen, mutex);
 
-    hass_flow = new HassOnboardingFlow(mutex);
+    hass_flow = new HassOnboardingFlow(mutex, [this]()
+                                       { this->render(); });
 
     // hass_flow->setWiFiNotifier(wifi_notifier);
     // hass_flow->setOSConfigNotifier(os_config_notifier);
@@ -59,21 +60,6 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 #endif
 }
 
-void OnboardingFlow::render()
-{
-    {
-        SemaphoreGuard lock(mutex_);
-        lv_scr_load(main_screen);
-    }
-    // if (lv_mutex_lock(lv_mutex_))
-    // {
-    //     lv_scr_load(main_screen);
-    //     lv_mutex_unlock(lv_mutex_);
-    // }
-    // lv_scr_load(screens[WELCOME]);
-    // xTaskCreate(screen_load_task, "Screen load task", 1024 * 3, main_screen, tskIDLE_PRIORITY, NULL);
-}
-
 OnboardingFlowPages getPageEnum(uint8_t screen)
 {
     if (screen >= 0 && screen <= ONBOARDING_FLOW_PAGE_COUNT - 1)
@@ -82,43 +68,51 @@ OnboardingFlowPages getPageEnum(uint8_t screen)
     }
 }
 
+void OnboardingFlow::render()
+{
+    active_sub_menu = NONE;
+    page_mgr->show(getPageEnum(current_position));
+
+    {
+        SemaphoreGuard lock(mutex_);
+        lv_scr_load(main_screen);
+    }
+}
+
 void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 {
-    if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
+    if (active_sub_menu == HASS_SUB_MENU)
     {
-        switch (getPageEnum(current_position))
+        hass_flow->handleNavigationEvent(event);
+        return;
+    }
+    if (active_sub_menu == NONE)
+    {
+
+        if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
         {
-        case WELCOME_PAGE:
-            // current_position = HASS;
-            // page_mgr->show(HASS);
-            // motor_notifier->requestUpdate(blocked_motor_config);
-            break;
-        case HASS_PAGE:
-            hass_flow->render();
-            break;
-        case DEMO_PAGE:
-            os_config_notifier->setOSMode(OSMode::DEMO);
-            break;
-        case ABOUT_PAGE:
-            break;
-        default:
-            break;
+            switch (getPageEnum(current_position))
+            {
+            case WELCOME_PAGE: // No submenus available for welcome page nor about page.
+            case ABOUT_PAGE:
+                break;
+            case HASS_PAGE:
+                active_sub_menu = HASS_SUB_MENU;
+                hass_flow->render();
+                break;
+            case DEMO_PAGE:
+                os_config_notifier->setOSMode(OSMode::DEMO);
+                break;
+
+                break;
+            default:
+                break;
+            }
         }
+        return;
     }
 
-    // if (event.press == NAVIGATION_EVENT_PRESS_LONG)
-    // {
-    //     switch (getPageEnum(current_position))
-    //     {
-    //     case HASS:
-    //         current_position = WELCOME;
-    //         page_mgr->show(WELCOME);
-    //         motor_notifier->requestUpdate(root_level_motor_config);
-    //         break;
-    //     default:
-    //         break;
-    //     }
-    // }
+    LOGE("Unhandled navigation event");
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)

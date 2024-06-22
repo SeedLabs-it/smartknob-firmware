@@ -567,7 +567,7 @@ void RootTask::updateHardware(AppState app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case ONBOARDING:
-                        // display_task_->getOnboardingFlow()->handleNavigationEvent(event);
+                        display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case DEMO:
                         display_task_->getDemoApps()->handleNavigationEvent(event);
