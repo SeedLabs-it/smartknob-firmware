@@ -397,7 +397,7 @@ void RootTask::run()
             // wake up the screen
             // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
             // Add motor encoder detection? or disable motor if not "enaged detected presence"
-            if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
+            if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < PROXIMITY_WAKE_DISTANCE)
             {
                 app_state.screen_state.has_been_engaged = true;
                 if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_NONE_PHYSICAL) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
@@ -705,15 +705,28 @@ void RootTask::updateHardware(AppState *app_state)
         }
         else
         {
-            // case 3 - Beacon
-            effect_settings.effect_id = 2;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            if (NIGHT_LIGHT)
+            {
+                // case 3 - Beacon
+                effect_settings.effect_id = 2;
+                effect_settings.effect_start_pixel = 0;
+                effect_settings.effect_end_pixel = NUM_LEDS;
+                effect_settings.effect_accent_pixel = 0;
+                effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+                led_ring_task_->setEffect(effect_settings);
+            }
+            else
+            {
+                // case 3 - off
+                effect_settings.effect_id = 2;
+                effect_settings.effect_start_pixel = 0;
+                effect_settings.effect_end_pixel = NUM_LEDS;
+                effect_settings.effect_accent_pixel = 0;
+                effect_settings.effect_main_color = 0;
+                led_ring_task_->setEffect(effect_settings);
+            }
         }
-        led_ring_task_->setEffect(effect_settings);
+        // led_ring_task_->setEffect(effect_settings);
 
         // latest_config_.led_hue
         // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);

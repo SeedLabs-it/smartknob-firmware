@@ -145,7 +145,17 @@ void SensorsTask::run()
 
             lox.rangingTest(&measure, false);
 
-            sensors_state.proximity.RangeMilliMeter = measure.RangeMilliMeter - PROXIMITY_SENSOR_OFFSET_MM;
+            uint16_t adjustedRangeMM = measure.RangeMilliMeter;
+            if (adjustedRangeMM < PROXIMITY_SENSOR_OFFSET_MM)
+            {
+                adjustedRangeMM = 0;
+            }
+            else
+            {
+                adjustedRangeMM = adjustedRangeMM - PROXIMITY_SENSOR_OFFSET_MM;
+            }
+
+            sensors_state.proximity.RangeMilliMeter = adjustedRangeMM;
             sensors_state.proximity.RangeStatus = measure.RangeStatus;
             // todo: call this once per tick
             publishState(sensors_state);
