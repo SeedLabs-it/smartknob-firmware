@@ -109,7 +109,7 @@ private:
     uint32_t last_calib_state_sent_ = 0;
 
     // void changeConfig(int8_t id);
-    void updateHardware(AppState app_state);
+    void updateHardware(AppState *app_state);
     void publishState();
     void applyConfig(PB_SmartKnobConfig config, bool from_remote);
     void publish(const AppState &state);

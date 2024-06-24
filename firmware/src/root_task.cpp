@@ -396,58 +396,16 @@ void RootTask::run()
 
             // wake up the screen
             // RangeStatus is usually 0,2,4. We want to caputure the level of confidence 0 and 2.
+            // Add motor encoder detection? or disable motor if not "enaged detected presence"
             if (app_state.proximiti_state.RangeStatus < 3 && app_state.proximiti_state.RangeMilliMeter < 200)
             {
                 app_state.screen_state.has_been_engaged = true;
+                if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_NONE_PHYSICAL) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                {
+                    app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_NONE_PHYSICAL;
+                }
             }
         }
-        if (app_state.screen_state.has_been_engaged == true)
-        {
-            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-            if (app_state.screen_state.awake_until < millis())
-            {
-                app_state.screen_state.awake_until = millis() + 4000; // 1s
-            }
-        }
-        // Check if the knob is awake, and if the time is expired
-        // and set it to not engaged
-        if (app_state.screen_state.has_been_engaged && millis() < app_state.screen_state.awake_until)
-        {
-            app_state.screen_state.has_been_engaged = false;
-        }
-#if SK_ALS
-        // We are multiplying the current luminosity of the enviroment (0,1 range)
-        // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-        // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-        // [0, MIN_LCD_BRIGHTNESS]
-        uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
-
-        if (app_state.screen_state.has_been_engaged == false &&
-            abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-            millis() > app_state.screen_state.awake_until)
-        {
-            if ((app_state.screen_state.brightness < targetLuminosity))
-            {
-                app_state.screen_state.brightness = (targetLuminosity);
-            }
-            else
-            {
-                // TODO: I don't like this decay function. It's too slow for delta too small
-                app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-            }
-        }
-        else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
-        {
-            // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-            app_state.screen_state.brightness = (targetLuminosity);
-        }
-#endif
-#if !SK_ALS
-        if (app_state.screen_state.has_been_engaged == false)
-        {
-            app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-        }
-#endif
 
         if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
         {
@@ -466,6 +424,7 @@ void RootTask::run()
             mqtt_task_->unlock();
 #endif
         }
+
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
@@ -479,6 +438,10 @@ void RootTask::run()
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
+                    if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                    {
+                        app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                    }
                 }
             }
             isCurrentSubPositionSet = true;
@@ -500,38 +463,170 @@ void RootTask::run()
                 break;
             }
 
-#if SK_MQTT
-            mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
+#if SK_ALS
+            // We are multiplying the current luminosity of the enviroment (0,1 range)
+            // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+            // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+            // [0, MIN_LCD_BRIGHTNESS]
+            uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
+            if (app_state.screen_state.has_been_engaged == false &&
+                abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                millis() > app_state.screen_state.awake_until)
+            {
+                if ((app_state.screen_state.brightness < targetLuminosity))
+                {
+                    app_state.screen_state.brightness = (targetLuminosity);
+                }
+                else
+                {
+                    // TODO: I don't like this decay function. It's too slow for delta too small
+                    app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                }
+            }
+            else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+            {
+                // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
+                app_state.screen_state.brightness = (targetLuminosity);
+            }
+#endif
+#if !SK_ALS
+            if (app_state.screen_state.has_been_engaged == false)
+            {
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+            }
 #endif
 
-            if (entity_state_update_to_send.play_haptic)
+            if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
             {
-                motor_task_.playHaptic(true, false);
+                app_state.connectivity_state = latest_connectivity_state_;
             }
 
-            publish(app_state);
-            publishState();
+            if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
+            {
+                LOGD("App sync requested!");
+#if SK_MQTT // Should this be here??
+            // hass_apps->sync(mqtt_task_->getApps());
+
+                LOGD("Giving 0.5s for Apps to initialize");
+                delay(500);
+                // display_task_->getHassApps()->triggerMotorConfigUpdate();
+                mqtt_task_->unlock();
+#endif
+            }
+            if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
+            {
+
+                // The following is a smoothing filter (rounding) on the sub position unit (to avoid flakines).
+                float roundedNewPosition = round(latest_state_.sub_position_unit * 3) / 3.0;
+                // This if is used to understand if we have touched the knob since last state.
+                if (isCurrentSubPositionSet)
+                {
+                    if (currentSubPosition != roundedNewPosition)
+                    {
+                        // We set a flag on the object Screen State.
+                        //  Todo: this property should be at app state and not screen state
+                        app_state.screen_state.has_been_engaged = true;
+                        if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                        {
+                            app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                        }
+                    }
+                }
+                isCurrentSubPositionSet = true;
+                currentSubPosition = roundedNewPosition;
+                app_state.motor_state = latest_state_;
+
+                switch (configuration_->getOSConfiguration()->mode)
+                {
+                case OSMode::ONBOARDING:
+                    entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                    break;
+                case OSMode::DEMO:
+                    entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
+                    break;
+                case OSMode::HASS:
+                    entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
+                    break;
+                default:
+                    break;
+                }
+
+#if SK_ALS
+                // We are multiplying the current luminosity of the enviroment (0,1 range)
+                // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+                // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+                // [0, MIN_LCD_BRIGHTNESS]
+                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
+                if (app_state.screen_state.has_been_engaged == false &&
+                    abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                    millis() > app_state.screen_state.awake_until)
+                {
+                    if ((app_state.screen_state.brightness < targetLuminosity))
+                    {
+                        app_state.screen_state.brightness = (targetLuminosity);
+                    }
+                    else
+                    {
+                        // TODO: I don't like this decay function. It's too slow for delta too small
+                        app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                    }
+                }
+                else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+                {
+                    // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
+                    app_state.screen_state.brightness = (targetLuminosity);
+                }
+#endif
+#if !SK_ALS
+                if (app_state.screen_state.has_been_engaged == false)
+                {
+                    app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                }
+#endif
+
+#if SK_MQTT
+                mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
+#endif
+
+                if (entity_state_update_to_send.play_haptic)
+                {
+                    motor_task_.playHaptic(true, false);
+                }
+
+                publish(app_state);
+                publishState();
+            }
+
+            current_protocol_->loop();
+
+            motor_notifier.loopTick();
+            os_config_notifier_.loopTick();
+
+            updateHardware(&app_state);
+
+            if (app_state.screen_state.has_been_engaged == true)
+            {
+                if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
+                {
+                    app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                    sensors_task_->strainPowerUp();
+                }
+
+                if (millis() > app_state.screen_state.awake_until)
+                {
+                    app_state.screen_state.has_been_engaged = false;
+                    sensors_task_->strainPowerDown();
+                }
+            }
+
+            delay(10);
         }
-
-        current_protocol_->loop();
-
-        // std::string *log_string;
-        // while (xQueueReceive(log_queue_, &log_string, 0) == pdTRUE)
-        // {
-        //     // LOGI(log_string->c_str());
-        //     delete log_string;
-        // }
-
-        motor_notifier.loopTick();
-        os_config_notifier_.loopTick();
-
-        updateHardware(app_state);
-
-        delay(10);
     }
 }
 
-void RootTask::updateHardware(AppState app_state)
+void RootTask::updateHardware(AppState *app_state)
 {
     static bool pressed;
 #if SK_STRAIN
@@ -540,9 +635,16 @@ void RootTask::updateHardware(AppState app_state)
     {
         switch (latest_sensors_state_.strain.virtual_button_code)
         {
+
         case VIRTUAL_BUTTON_SHORT_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
+                app_state->screen_state.has_been_engaged = true;
+                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                {
+                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                }
+
                 LOGD("Handling short press");
                 motor_task_.playHaptic(true, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_PRESSED;
@@ -552,6 +654,12 @@ void RootTask::updateHardware(AppState app_state)
         case VIRTUAL_BUTTON_LONG_PRESSED:
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
+                app_state->screen_state.has_been_engaged = true;
+                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                {
+                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                }
+
                 LOGD("Handling long press");
 
                 motor_task_.playHaptic(true, true);
@@ -641,11 +749,11 @@ void RootTask::updateHardware(AppState app_state)
 #endif
 
 #if SK_DISPLAY
-    if (app_state.screen_state.brightness != brightness)
+    if (app_state->screen_state.brightness != brightness)
     {
         // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
 #if SK_ALS
-        brightness = app_state.screen_state.brightness;
+        brightness = app_state->screen_state.brightness;
 #endif
         LOGE("Setting brightness to %d", brightness);
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
@@ -665,7 +773,7 @@ void RootTask::updateHardware(AppState app_state)
         // if 2: led ring is fully off.
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
 
-        if (brightness > app_state.screen_state.MIN_LCD_BRIGHTNESS)
+        if (brightness > app_state->screen_state.MIN_LCD_BRIGHTNESS)
         {
             // case 1. FADE-IN led
             effect_settings.effect_id = 4; // FADE-IN
@@ -678,7 +786,7 @@ void RootTask::updateHardware(AppState app_state)
             effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
             led_ring_task_->setEffect(effect_settings);
         }
-        else if (brightness == app_state.screen_state.MIN_LCD_BRIGHTNESS)
+        else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
         {
             // case 2. FADE-OUT led
             effect_settings.effect_id = 5;

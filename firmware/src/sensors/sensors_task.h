@@ -29,12 +29,18 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
+    void strainPowerDown();
+    void strainPowerUp();
+
 protected:
     void run();
 
 private:
     SensorsState sensors_state = {};
     QueueHandle_t sensors_state_queue_;
+
+    bool do_strain = false;
+    bool strain_powered = false;
 
     QueueHandle_t shared_events_queue;
 
