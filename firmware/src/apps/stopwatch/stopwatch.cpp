@@ -3,17 +3,19 @@
 void my_timer(lv_timer_t *timer)
 {
     /*Use the user_data*/
-    lv_obj_t *user_data = (lv_obj_t *)timer->user_data;
-    // printf("my_timer called with user data: %d\n", *user_data);
-    lv_label_set_text_fmt(user_data, "%02d", user_data);
-    LOGE("my_timer called with user data: %d\n", user_data);
+    CurrentStopwatchState *user_data = (CurrentStopwatchState *)timer->user_data;
+    unsigned long now = millis();
+    unsigned long diff_ms = now - user_data->start_ms;
+    unsigned long stopwatch_ms = 0;
+    unsigned long stopwatch_sec = 0;
+    unsigned long stopwatch_min = 0;
 
-    // /*Do something with LVGL*/
-    // if (something_happened)
-    // {
-    //     something_happened = false;
-    //     lv_btn_create(lv_scr_act(), NULL);
-    // }
+    stopwatch_ms = diff_ms % 100;
+    stopwatch_sec = floor((diff_ms / 1000) % 60);
+    stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
+
+    lv_label_set_text_fmt(user_data->time_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
+    lv_label_set_text_fmt(user_data->ms_label, "%02d", stopwatch_ms);
 }
 
 StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mutex)
@@ -82,6 +84,7 @@ void StopwatchApp::clear()
 
 EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    static lv_timer_t *timer;
     current_position = state.current_position;
     sub_position_unit = state.sub_position_unit;
 
@@ -95,6 +98,7 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
     {
         new_state.play_haptic = true;
         started = false;
+        lv_timer_del(timer);
     }
 
     if (!started && sub_position_unit > 2)
@@ -102,7 +106,7 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
         started = true;
         current_stopwatch_state.start_ms = millis();
         clear();
-        // lv_timer_t *timer = lv_timer_create(my_timer, 500, &current_stopwatch_state);
+        timer = lv_timer_create(my_timer, 25, &current_stopwatch_state);
 
         new_state.play_haptic = true;
     }
