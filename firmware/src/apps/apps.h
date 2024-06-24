@@ -16,7 +16,7 @@
 #include "apps/light_switch/light_switch.h"
 // #include "apps/music/music.h"
 // #include "apps/settings/settings.h"
-// #include "apps/stopwatch/stopwatch.h"
+#include "apps/stopwatch/stopwatch.h"
 // #include "apps/pomodoro/pomodoro.h"
 
 // include all "menu" apps
@@ -135,14 +135,13 @@ public:
         //     add(position, app);
         //     return app;
         // }
-        // else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
-        // {
-        //     StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
-        //     // app->friendly_name = friendly_name;
-        //     sprintf(app->friendly_name, "%s", friendly_name);
-        //     add(position, app);
-        //     return app;
-        // }
+        else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
+        {
+            StopwatchApp *app = new StopwatchApp(screen_mutex_, entity_id);
+            // sprintf(app->friendly_name, "%s", friendly_name);
+            add(position, app);
+            return app;
+        }
         else
         {
             LOGW("Can't find app with slug '%s'", app_slug.c_str());

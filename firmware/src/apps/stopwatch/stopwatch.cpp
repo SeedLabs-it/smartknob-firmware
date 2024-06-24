@@ -1,0 +1,167 @@
+#include "stopwatch.h"
+
+void my_timer(lv_timer_t *timer)
+{
+    /*Use the user_data*/
+    lv_obj_t *user_data = (lv_obj_t *)timer->user_data;
+    // printf("my_timer called with user data: %d\n", *user_data);
+    lv_label_set_text_fmt(user_data, "%02d", user_data);
+    LOGE("my_timer called with user data: %d\n", user_data);
+
+    // /*Do something with LVGL*/
+    // if (something_happened)
+    // {
+    //     something_happened = false;
+    //     lv_btn_create(lv_scr_act(), NULL);
+    // }
+}
+
+StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mutex)
+{
+    sprintf(app_id, "%s", "stopwatch");
+    sprintf(entitiy_id, "%s", entitiy_id);
+    sprintf(friendly_name, "%s", "Stopwatch");
+
+    motor_config = PB_SmartKnobConfig{
+        0,
+        0,
+        4,
+        0,
+        0,
+        60 * PI / 180,
+        0.01,
+        0.6,
+        1.1,
+        "",
+        0,
+        {},
+        0,
+        45,
+    };
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+
+    // big_icon = stopwatch_80;
+    // small_icon = stopwatch_40;
+    // friendly_name = "Stopwatch";
+
+    initScreen();
+    // static uint32_t user_data = 10;
+}
+
+// stopwatch task
+// void StopwatchApp::timer_task(lv_timer_t *timer)
+// {
+//     while (1)
+//     {
+//         unsigned long now = millis();
+//         unsigned long diff_ms = now - start_ms;
+//         unsigned long stopwatch_ms = 0;
+//         unsigned long stopwatch_sec = 0;
+//         unsigned long stopwatch_min = 0;
+//         if (started)
+//         {
+//             stopwatch_ms = diff_ms % 100;
+//             stopwatch_sec = floor((diff_ms / 1000) % 60);
+//             stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
+
+//             lv_label_set_text_fmt(seconds_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
+//             lv_label_set_text_fmt(ms_label, "%02d", stopwatch_ms);
+//         }
+//         vTaskDelay(1000 / portTICK_PERIOD_MS);
+//     }
+// }
+
+void StopwatchApp::clear()
+{
+    for (int i = 0; i < laps_max; i++)
+    {
+        laps[i] = LapTime{};
+    }
+    last_lap_added = 0;
+}
+
+EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
+{
+    current_position = state.current_position;
+    sub_position_unit = state.sub_position_unit;
+
+    // needed to next reload of App
+    motor_config.position_nonce = state.current_position;
+    motor_config.position = state.current_position;
+
+    EntityStateUpdate new_state;
+
+    if (started && sub_position_unit < -2)
+    {
+        new_state.play_haptic = true;
+        started = false;
+    }
+
+    if (!started && sub_position_unit > 2)
+    {
+        started = true;
+        current_stopwatch_state.start_ms = millis();
+        clear();
+        // lv_timer_t *timer = lv_timer_create(my_timer, 500, &current_stopwatch_state);
+
+        new_state.play_haptic = true;
+    }
+
+    // new_state.entity_name = entity_name;
+    // new_state.new_value = current_volume * 1.0;
+
+    // if (last_volume != current_volume)
+    // {
+    //     last_volume = current_volume;
+    //     new_state.changed = true;
+    //     sprintf(new_state.app_slug, "%s", APP_SLUG_MUSIC);
+    // }
+
+    return new_state;
+}
+
+void StopwatchApp::updateStateFromSystem(AppState state) {}
+
+// int8_t StopwatchApp::navigationNext()
+// {
+//     if (last_lap_added >= laps_max)
+//     {
+//         return DONT_NAVIGATE;
+//     }
+
+//     if (started)
+//     {
+//         unsigned long now = millis();
+//         uint32_t diff_ms = now - start_ms; // diff will not be that big ever
+
+//         uint32_t lap_ms = diff_ms;
+
+//         if (last_lap_added > 0)
+//         {
+//             lap_ms = diff_ms - laps[last_lap_added - 1].raw_ms;
+//         }
+
+//         uint32_t stopwatch_ms = 0;
+//         uint32_t stopwatch_sec = 0;
+//         uint32_t stopwatch_min = 0;
+
+//         stopwatch_ms = lap_ms % 100;
+//         stopwatch_sec = floor((lap_ms / 1000) % 60);
+//         stopwatch_min = floor((lap_ms / (1000 * 60)) % 60);
+
+//         laps[last_lap_added].m = stopwatch_min;
+//         laps[last_lap_added].s = stopwatch_sec;
+//         laps[last_lap_added].ms = stopwatch_ms;
+//         laps[last_lap_added].raw_ms = diff_ms;
+//         laps[last_lap_added].lap_ms = lap_ms;
+
+//         if (last_lap_added > 0)
+//         {
+//             laps[last_lap_added].improvement = int32_t(laps[last_lap_added].lap_ms) - int32_t(laps[last_lap_added - 1].lap_ms);
+//         }
+
+//         last_lap_added++;
+//     }
+
+//     return DONT_NAVIGATE;
+// }

@@ -15,7 +15,7 @@ protected:
         SemaphoreGuard lock(mutex_);
 
         arc_ = lv_arc_create(screen);
-        lv_obj_set_size(arc_, 220, 220);
+        lv_obj_set_size(arc_, 210, 210);
         lv_arc_set_rotation(arc_, 225);
         lv_arc_set_bg_angles(arc_, 0, 90);
         // lv_arc_set_knob_offset(arc_, 0);
@@ -26,7 +26,7 @@ protected:
         lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_INDICATOR);
         lv_obj_set_style_bg_color(arc_, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_KNOB);
 
-        lv_obj_set_style_arc_width(arc_, 2, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_width(arc_, 1, LV_PART_INDICATOR);
 
         light_bulb = lv_img_create(screen);
         lv_img_set_src(light_bulb, &big_icon);

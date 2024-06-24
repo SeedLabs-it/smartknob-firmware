@@ -8,7 +8,7 @@ public:
     // DemoApps(){};
     DemoApps(SemaphoreHandle_t mutex) : HassApps(mutex)
     {
-        HassApps::sync(cJSON_Parse(R"([{"app_slug": "light_switch","app_id": "light.ceiling1","friendly_name": "Ceiling1","area": "Kitchen1","menu_color": "#ffffff","entity_id": "ceiling_light_entity_id1"},{"app_slug": "light_switch","app_id": "light.ceiling","friendly_name": "Ceiling","area": "Kitchen","menu_color": "#ffffff","entity_id": "ceiling_light_entity_id"},{"app_slug": "light_dimmer","app_id": "light.workbench","friendly_name": "Workbench","area": "Kitchen","menu_color": "#ffffff","entity_id": "workbench_light_entity_id"}])"));
+        HassApps::sync(cJSON_Parse(R"([{"app_slug": "stopwatch","app_id": "light.ceiling1","friendly_name": "Ceiling1","area": "Kitchen1","menu_color": "#ffffff","entity_id": "stopwatch"},{"app_slug": "light_switch","app_id": "light.ceiling1","friendly_name": "Ceiling1","area": "Kitchen1","menu_color": "#ffffff","entity_id": "ceiling_light_entity_id1"},{"app_slug": "light_switch","app_id": "light.ceiling","friendly_name": "Ceiling","area": "Kitchen","menu_color": "#ffffff","entity_id": "ceiling_light_entity_id"},{"app_slug": "light_dimmer","app_id": "light.workbench","friendly_name": "Workbench","area": "Kitchen","menu_color": "#ffffff","entity_id": "workbench_light_entity_id"}])"));
     }
     void handleNavigationEvent(NavigationEvent event)
     {
