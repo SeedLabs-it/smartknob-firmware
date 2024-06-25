@@ -343,6 +343,8 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
         factory_strain_calibration_step_ = 1;
         LOGI("Factory strain calibration step 1");
 
+        strainPowerUp();
+
         delay(200);
 
         strain.set_scale();
@@ -447,7 +449,7 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
         LOGD("Verify calibrated weight: %0.0fg", strain.get_units(10));
     }
     LOGI("\nRemove calibration weight.\n");
-    delay(5000);
+    delay(8000);
     LOGI("Factory strain calibration complete!");
     strain.set_offset(0);
     strain.tare();
@@ -473,6 +475,11 @@ void SensorsTask::weightMeasurementCallback()
 
 void SensorsTask::strainPowerDown()
 {
+    if ((calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0) || (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0))
+    {
+        return;
+    }
+
     if (strain.wait_ready_timeout(10)) // Make sure sensor is on before powering down.
     {
         LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
