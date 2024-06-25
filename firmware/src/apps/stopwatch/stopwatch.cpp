@@ -42,36 +42,8 @@ StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mute
     };
     strncpy(motor_config.id, "stopwatch", sizeof(motor_config.id) - 1);
 
-    // big_icon = stopwatch_80;
-    // small_icon = stopwatch_40;
-    // friendly_name = "Stopwatch";
-
     initScreen();
-    // static uint32_t user_data = 10;
 }
-
-// stopwatch task
-// void StopwatchApp::timer_task(lv_timer_t *timer)
-// {
-//     while (1)
-//     {
-//         unsigned long now = millis();
-//         unsigned long diff_ms = now - start_ms;
-//         unsigned long stopwatch_ms = 0;
-//         unsigned long stopwatch_sec = 0;
-//         unsigned long stopwatch_min = 0;
-//         if (started)
-//         {
-//             stopwatch_ms = diff_ms % 100;
-//             stopwatch_sec = floor((diff_ms / 1000) % 60);
-//             stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
-
-//             lv_label_set_text_fmt(seconds_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
-//             lv_label_set_text_fmt(ms_label, "%02d", stopwatch_ms);
-//         }
-//         vTaskDelay(1000 / portTICK_PERIOD_MS);
-//     }
-// }
 
 void StopwatchApp::clear()
 {
@@ -94,7 +66,24 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    if (started && sub_position_unit < -2)
+    lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
+    {
+        SemaphoreGuard lock(mutex_);
+        if (sub_position_unit >= 0)
+        {
+            lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0xff, 0x00), LV_PART_INDICATOR);
+        }
+        else if (sub_position_unit < 0)
+        {
+            lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0xff, 0x00, 0x00), LV_PART_INDICATOR);
+        }
+        if (sub_position_unit <= 1.5 && sub_position_unit >= -1.5)
+        {
+            lv_bar_set_value(start_stop_indicator, abs(sub_position_unit) / 1.5 * 25, LV_ANIM_OFF);
+        }
+    }
+
+    if (started && sub_position_unit < -1.5)
     {
         started = false;
         lv_timer_del(timer);
@@ -102,8 +91,9 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
         new_state.play_haptic = true;
     }
 
-    if (!started && sub_position_unit > 2)
+    if (!started && sub_position_unit > 1.5)
     {
+
         started = true;
         current_stopwatch_state.start_ms = millis();
         clear();
@@ -112,61 +102,57 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
         new_state.play_haptic = true;
     }
 
-    // new_state.entity_name = entity_name;
-    // new_state.new_value = current_volume * 1.0;
-
-    // if (last_volume != current_volume)
-    // {
-    //     last_volume = current_volume;
-    //     new_state.changed = true;
-    //     sprintf(new_state.app_slug, "%s", APP_SLUG_MUSIC);
-    // }
-
     return new_state;
 }
 
 void StopwatchApp::updateStateFromSystem(AppState state) {}
 
-// int8_t StopwatchApp::navigationNext()
-// {
-//     if (last_lap_added >= laps_max)
-//     {
-//         return DONT_NAVIGATE;
-//     }
+int8_t StopwatchApp::navigationNext()
+{
+    // if (last_lap_added >= laps_max)
+    // {
+    //     return DONT_NAVIGATE;
+    // }
 
-//     if (started)
-//     {
-//         unsigned long now = millis();
-//         uint32_t diff_ms = now - start_ms; // diff will not be that big ever
+    // if (started)
+    // {
+    //     unsigned long now = millis();
+    //     uint32_t diff_ms = now - current_stopwatch_state.start_ms; // diff will not be that big ever
 
-//         uint32_t lap_ms = diff_ms;
+    //     uint32_t lap_ms = diff_ms;
 
-//         if (last_lap_added > 0)
-//         {
-//             lap_ms = diff_ms - laps[last_lap_added - 1].raw_ms;
-//         }
+    //     if (last_lap_added > 0)
+    //     {
+    //         lap_ms = diff_ms - laps[last_lap_added - 1].raw_ms;
+    //     }
 
-//         uint32_t stopwatch_ms = 0;
-//         uint32_t stopwatch_sec = 0;
-//         uint32_t stopwatch_min = 0;
+    //     uint32_t stopwatch_ms = 0;
+    //     uint32_t stopwatch_sec = 0;
+    //     uint32_t stopwatch_min = 0;
 
-//         stopwatch_ms = lap_ms % 100;
-//         stopwatch_sec = floor((lap_ms / 1000) % 60);
-//         stopwatch_min = floor((lap_ms / (1000 * 60)) % 60);
+    //     stopwatch_ms = lap_ms % 100;
+    //     stopwatch_sec = floor((lap_ms / 1000) % 60);
+    //     stopwatch_min = floor((lap_ms / (1000 * 60)) % 60);
 
-//         laps[last_lap_added].m = stopwatch_min;
-//         laps[last_lap_added].s = stopwatch_sec;
-//         laps[last_lap_added].ms = stopwatch_ms;
-//         laps[last_lap_added].raw_ms = diff_ms;
-//         laps[last_lap_added].lap_ms = lap_ms;
+    //     laps[last_lap_added].m = stopwatch_min;
+    //     laps[last_lap_added].s = stopwatch_sec;
+    //     laps[last_lap_added].ms = stopwatch_ms;
+    //     laps[last_lap_added].raw_ms = diff_ms;
+    //     laps[last_lap_added].lap_ms = lap_ms;
 
-//         if (last_lap_added > 0)
-//         {
-//             laps[last_lap_added].improvement = int32_t(laps[last_lap_added].lap_ms) - int32_t(laps[last_lap_added - 1].lap_ms);
-//         }
+    //     if (last_lap_added > 0)
+    //     {
+    //         laps[last_lap_added].improvement = int32_t(laps[last_lap_added].lap_ms) - int32_t(laps[last_lap_added - 1].lap_ms);
+    //     }
 
-//         last_lap_added++;
-//     }
+    //     last_lap_added++;
 
-//     return DONT_NAVIGATE;
-// }
+    //     {
+    //         // SemaphoreGuard lock(mutex_);
+    //         // lv_label_set_text_fmt(current_stopwatch_state.lap_time_label, "%02d:%02d.%02d", stopwatch_min, stopwatch_sec, stopwatch_ms);
+    //     }
+    // }
+    LOGE("Stopwatch navigationNext");
+
+    return DONT_NAVIGATE;
+}

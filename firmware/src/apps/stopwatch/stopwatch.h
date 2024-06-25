@@ -14,8 +14,12 @@ struct LapTime
 struct CurrentStopwatchState
 {
     unsigned long start_ms;
+
+    lv_obj_t *lap_time_label;
     lv_obj_t *time_label;
     lv_obj_t *ms_label;
+
+    lv_obj_t *start_stop_indicator;
 };
 
 class StopwatchApp : public App
@@ -24,33 +28,43 @@ public:
     StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-    // void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
-
-    // protected:
-    //     int8_t navigationNext();
+    int8_t navigationNext();
 
 private:
     void initScreen()
     {
         SemaphoreGuard lock(mutex_);
 
+        current_stopwatch_state.start_stop_indicator = lv_bar_create(screen);
+        lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
+        lv_obj_set_size(start_stop_indicator, 240, 260);
+        lv_obj_set_style_bg_opa(start_stop_indicator, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+        lv_obj_set_style_radius(start_stop_indicator, 0, LV_PART_MAIN);
+        lv_obj_set_style_radius(start_stop_indicator, 0, LV_PART_INDICATOR);
+        lv_obj_center(start_stop_indicator);
+        lv_bar_set_value(start_stop_indicator, 0, LV_ANIM_OFF);
+
+        current_stopwatch_state.lap_time_label = lv_label_create(screen);
+        lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
+
         current_stopwatch_state.time_label = lv_label_create(screen);
-        lv_label_set_text(current_stopwatch_state.time_label, "00:00.");
-        lv_obj_set_style_text_font(current_stopwatch_state.time_label, &NDS12_20px, 0);
-        lv_obj_align(current_stopwatch_state.time_label, LV_ALIGN_CENTER, 0, 0);
-
         current_stopwatch_state.ms_label = lv_label_create(screen);
-        lv_label_set_text(current_stopwatch_state.ms_label, "00");
-        lv_obj_set_style_text_font(current_stopwatch_state.ms_label, &NDS12_10px, 0);
-        lv_obj_align_to(current_stopwatch_state.ms_label, current_stopwatch_state.time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, 0);
-    }
 
-    // lv_obj_t *time_label;
-    // lv_obj_t *ms_label;
+        lv_obj_t *time_label = current_stopwatch_state.time_label;
+        lv_obj_t *ms_label = current_stopwatch_state.ms_label;
+
+        lv_label_set_text(time_label, "00:00.");
+        lv_obj_set_style_text_font(time_label, &NDS12_20px, 0);
+        lv_obj_align(time_label, LV_ALIGN_CENTER, 0, 0);
+
+        lv_label_set_text(ms_label, "00");
+        lv_obj_set_style_text_font(ms_label, &NDS12_10px, 0);
+        lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, 0);
+    }
 
     CurrentStopwatchState current_stopwatch_state;
 
-    // unsigned long start_ms;
     bool started = false;
 
     uint16_t current_position = 0;
