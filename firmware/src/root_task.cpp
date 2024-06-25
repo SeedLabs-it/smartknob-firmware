@@ -514,115 +514,39 @@ void RootTask::run()
                 mqtt_task_->unlock();
 #endif
             }
-            if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
+
+            if (entity_state_update_to_send.play_haptic)
             {
-
-                // The following is a smoothing filter (rounding) on the sub position unit (to avoid flakines).
-                float roundedNewPosition = round(latest_state_.sub_position_unit * 3) / 3.0;
-                // This if is used to understand if we have touched the knob since last state.
-                if (isCurrentSubPositionSet)
-                {
-                    if (currentSubPosition != roundedNewPosition)
-                    {
-                        // We set a flag on the object Screen State.
-                        //  Todo: this property should be at app state and not screen state
-                        app_state.screen_state.has_been_engaged = true;
-                        if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
-                        {
-                            app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
-                        }
-                    }
-                }
-                isCurrentSubPositionSet = true;
-                currentSubPosition = roundedNewPosition;
-                app_state.motor_state = latest_state_;
-
-                switch (configuration_->getOSConfiguration()->mode)
-                {
-                case OSMode::ONBOARDING:
-                    entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
-                    break;
-                case OSMode::DEMO:
-                    entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);
-                    break;
-                case OSMode::HASS:
-                    entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
-                    break;
-                default:
-                    break;
-                }
-
-#if SK_ALS
-                // We are multiplying the current luminosity of the enviroment (0,1 range)
-                // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-                // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-                // [0, MIN_LCD_BRIGHTNESS]
-                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
-
-                if (app_state.screen_state.has_been_engaged == false &&
-                    abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-                    millis() > app_state.screen_state.awake_until)
-                {
-                    if ((app_state.screen_state.brightness < targetLuminosity))
-                    {
-                        app_state.screen_state.brightness = (targetLuminosity);
-                    }
-                    else
-                    {
-                        // TODO: I don't like this decay function. It's too slow for delta too small
-                        app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-                    }
-                }
-                else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
-                {
-                    // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-                    app_state.screen_state.brightness = (targetLuminosity);
-                }
-#endif
-#if !SK_ALS
-                if (app_state.screen_state.has_been_engaged == false)
-                {
-                    app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-                }
-#endif
-
-#if SK_MQTT
-                mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
-#endif
-
-                if (entity_state_update_to_send.play_haptic)
-                {
-                    motor_task_.playHaptic(true, false);
-                }
-
-                publish(app_state);
-                publishState();
+                motor_task_.playHaptic(true, false);
             }
 
-            current_protocol_->loop();
-
-            motor_notifier.loopTick();
-            os_config_notifier_.loopTick();
-
-            updateHardware(&app_state);
-
-            if (app_state.screen_state.has_been_engaged == true)
-            {
-                if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
-                {
-                    app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
-                    sensors_task_->strainPowerUp();
-                }
-
-                if (millis() > app_state.screen_state.awake_until)
-                {
-                    app_state.screen_state.has_been_engaged = false;
-                    sensors_task_->strainPowerDown();
-                }
-            }
-
-            delay(10);
+            publish(app_state);
+            publishState();
         }
+
+        current_protocol_->loop();
+
+        motor_notifier.loopTick();
+        os_config_notifier_.loopTick();
+
+        updateHardware(&app_state);
+
+        if (app_state.screen_state.has_been_engaged == true)
+        {
+            if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
+            {
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                sensors_task_->strainPowerUp();
+            }
+
+            if (millis() > app_state.screen_state.awake_until)
+            {
+                app_state.screen_state.has_been_engaged = false;
+                sensors_task_->strainPowerDown();
+            }
+        }
+
+        delay(10);
     }
 }
 

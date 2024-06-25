@@ -40,7 +40,7 @@ StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mute
         0,
         45,
     };
-    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+    strncpy(motor_config.id, "stopwatch", sizeof(motor_config.id) - 1);
 
     // big_icon = stopwatch_80;
     // small_icon = stopwatch_40;
@@ -96,9 +96,10 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (started && sub_position_unit < -2)
     {
-        new_state.play_haptic = true;
         started = false;
         lv_timer_del(timer);
+
+        new_state.play_haptic = true;
     }
 
     if (!started && sub_position_unit > 2)
