@@ -16,7 +16,7 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *fri
         1,
         1,
         0.55, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
-        "",   // Change the type of app_id from char to char*
+        "",
         0,
         {},
         0,

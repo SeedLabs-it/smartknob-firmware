@@ -140,6 +140,12 @@ void DisplayTask::run()
     lv_init();
     lv_disp_drv_t *disp_drv = lv_skdk_create();
 
+    // lv_theme_t *th = lv_theme_default_init(lv_disp_get_default(),
+    //                                        LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0x00, 0x00, 0x00),
+    //                                        false, &NDS12_10px);
+
+    // lv_disp_set_theme(lv_disp_get_default(), th);
+
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
     hass_apps = new HassApps(mutex_);

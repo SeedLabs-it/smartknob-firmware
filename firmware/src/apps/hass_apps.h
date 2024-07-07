@@ -38,8 +38,8 @@ public:
             app_position++;
         }
 
-        // SettingsApp *settings_app = new SettingsApp(this->spr_);
-        // add(app_position, settings_app);
+        SettingsApp *settings_app = new SettingsApp(screen_mutex_);
+        add(app_position, settings_app);
 
         updateMenu();
         setMotorNotifier(motor_notifier);
