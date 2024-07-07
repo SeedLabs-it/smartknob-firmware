@@ -20,6 +20,7 @@ struct CurrentStopwatchState
     lv_obj_t *ms_label;
 
     lv_obj_t *start_stop_indicator;
+    lv_obj_t *start_stop_label;
 };
 
 class StopwatchApp : public App
@@ -45,8 +46,11 @@ private:
         lv_obj_center(start_stop_indicator);
         lv_bar_set_value(start_stop_indicator, 0, LV_ANIM_OFF);
 
-        current_stopwatch_state.lap_time_label = lv_label_create(screen);
-        lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
+        current_stopwatch_state.start_stop_label = lv_label_create(screen);
+        lv_obj_t *start_stop_label = current_stopwatch_state.start_stop_label;
+        lv_label_set_text(start_stop_label, "START");
+        lv_obj_set_style_text_color(start_stop_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+        lv_obj_align_to(start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
 
         current_stopwatch_state.time_label = lv_label_create(screen);
         current_stopwatch_state.ms_label = lv_label_create(screen);
@@ -55,12 +59,18 @@ private:
         lv_obj_t *ms_label = current_stopwatch_state.ms_label;
 
         lv_label_set_text(time_label, "00:00.");
-        lv_obj_set_style_text_font(time_label, &NDS12_20px, 0);
-        lv_obj_align(time_label, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_set_style_text_font(time_label, &kode_mono_40, 0);
+        lv_obj_align(time_label, LV_ALIGN_CENTER, -10, 0);
 
         lv_label_set_text(ms_label, "00");
-        lv_obj_set_style_text_font(ms_label, &NDS12_10px, 0);
-        lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, 0);
+        lv_obj_set_style_text_font(ms_label, &kode_mono_20, 0);
+        lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -2);
+
+        current_stopwatch_state.lap_time_label = lv_label_create(screen);
+        lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
+        lv_obj_align(lap_time_label, LV_ALIGN_CENTER, 0, 30);
+        lv_label_set_text(lap_time_label, "Lap 1 - 00:00.00");
+        lv_obj_set_style_text_font(lap_time_label, &kode_mono_16, 0);
     }
 
     CurrentStopwatchState current_stopwatch_state;
