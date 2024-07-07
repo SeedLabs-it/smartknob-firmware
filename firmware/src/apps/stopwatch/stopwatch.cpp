@@ -42,6 +42,12 @@ StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mute
     };
     strncpy(motor_config.id, "stopwatch", sizeof(motor_config.id) - 1);
 
+    LV_IMG_DECLARE(x80_timer);
+    LV_IMG_DECLARE(x40_timer);
+
+    big_icon = x80_timer;
+    small_icon = x40_timer;
+
     initScreen();
 }
 
@@ -52,6 +58,9 @@ void StopwatchApp::clear()
         laps[i] = LapTime{};
     }
     last_lap_added = 0;
+
+    lv_label_set_text(current_stopwatch_state.lap_time_label, "");
+    lv_label_set_text(current_stopwatch_state.relative_time_label, "");
 }
 
 EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -66,11 +75,22 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
+    if (sub_position_unit < 0.1 && sub_position_unit > -0.1)
+    {
+        if (lv_bar_get_value(current_stopwatch_state.start_stop_indicator) != 0)
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_bar_set_value(current_stopwatch_state.start_stop_indicator, 0, LV_ANIM_OFF);
+        }
+        return new_state;
+    }
+
     lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
     {
-        SemaphoreGuard lock(mutex_);
-        if (sub_position_unit >= 0)
+
+        if (sub_position_unit > 0.1)
         {
+            SemaphoreGuard lock(mutex_);
             lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0xFF, 0x00), LV_PART_INDICATOR);
             if (!started && lv_label_get_text(current_stopwatch_state.start_stop_label) != "START")
             {
@@ -81,8 +101,9 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
                 lv_label_set_text(current_stopwatch_state.start_stop_label, "STARTED");
             }
         }
-        else if (sub_position_unit < 0)
+        else if (sub_position_unit < -0.1)
         {
+            SemaphoreGuard lock(mutex_);
             lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0xFF, 0x00, 0x00), LV_PART_INDICATOR);
             if (lv_label_get_text(current_stopwatch_state.start_stop_label) != "RESET")
             {
@@ -92,6 +113,7 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 
         if (sub_position_unit <= 1.5 && sub_position_unit >= -1.5)
         {
+            SemaphoreGuard lock(mutex_);
             lv_bar_set_value(start_stop_indicator, abs(sub_position_unit) / 1.5 * 25, LV_ANIM_OFF);
         }
     }
@@ -162,11 +184,39 @@ int8_t StopwatchApp::navigationNext()
         last_lap_added++;
 
         {
-            // SemaphoreGuard lock(mutex_);
-            // lv_label_set_text_fmt(current_stopwatch_state.lap_time_label, "%02d:%02d.%02d", stopwatch_min, stopwatch_sec, stopwatch_ms);
+            SemaphoreGuard lock(mutex_);
+            char lap_times[256] = "";
+            for (int i = max(0, last_lap_added - 6); i < last_lap_added; i++)
+            {
+                char lap_buffer[64];
+                snprintf(lap_buffer, sizeof(lap_buffer), "Lap %02d - %02d:%02d.%02d\n",
+                         i + 1, laps[i].m, laps[i].s, laps[i].ms);
+                char temp_buffer[256];
+                snprintf(temp_buffer, sizeof(temp_buffer), "%s%s", lap_buffer, lap_times);
+                strncpy(lap_times, temp_buffer, sizeof(lap_times) - 1);
+                lap_times[sizeof(lap_times) - 1] = '\0';
+            }
+
+            lv_label_set_text(current_stopwatch_state.lap_time_label, lap_times);
+
+            if (last_lap_added > 1)
+            {
+                int32_t lap_improvement_ms = abs(laps[last_lap_added - 1].improvement % 100);
+                int32_t lap_improvementh_sec = abs(floor((laps[last_lap_added - 1].improvement / 1000) % 60));
+                int32_t lap_improvement_min = abs(floor((laps[last_lap_added - 1].improvement / (1000 * 60)) % 60));
+
+                char sign = '+';
+                lv_obj_set_style_text_color(current_stopwatch_state.relative_time_label, LV_COLOR_MAKE(0xFF, 0x00, 0x00), 0);
+                if (laps[last_lap_added - 1].improvement < 0)
+                {
+                    lv_obj_set_style_text_color(current_stopwatch_state.relative_time_label, LV_COLOR_MAKE(0x00, 0xFF, 0x00), 0);
+                    sign = '-';
+                }
+
+                lv_label_set_text_fmt(current_stopwatch_state.relative_time_label, "%c%02d:%02d.%02d", sign, lap_improvement_min, lap_improvementh_sec, lap_improvement_ms);
+            }
         }
     }
-    // LOGE("Stopwatch navigationNext");
 
     return DONT_NAVIGATE;
 }

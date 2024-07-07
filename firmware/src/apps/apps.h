@@ -59,10 +59,6 @@ public:
         if (strcmp(state.motor_state.config.id, active_app->app_id) == 0)
         {
             new_state_update = active_app->updateStateFromKnob(state.motor_state);
-            if (strcmp(state.motor_state.config.id, "stopwatch") == 0 && new_state_update.play_haptic)
-            {
-                LOGE("Stopwatch update");
-            }
             active_app->updateStateFromSystem(state);
         }
 

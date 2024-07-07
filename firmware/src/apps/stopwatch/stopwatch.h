@@ -15,9 +15,11 @@ struct CurrentStopwatchState
 {
     unsigned long start_ms;
 
-    lv_obj_t *lap_time_label;
+    lv_obj_t *relative_time_label;
     lv_obj_t *time_label;
     lv_obj_t *ms_label;
+
+    lv_obj_t *lap_time_label;
 
     lv_obj_t *start_stop_indicator;
     lv_obj_t *start_stop_label;
@@ -36,6 +38,32 @@ private:
     {
         SemaphoreGuard lock(mutex_);
 
+        current_stopwatch_state.time_label = lv_label_create(screen);
+        current_stopwatch_state.ms_label = lv_label_create(screen);
+
+        lv_obj_t *time_label = current_stopwatch_state.time_label;
+        lv_obj_t *ms_label = current_stopwatch_state.ms_label;
+
+        current_stopwatch_state.relative_time_label = lv_label_create(screen);
+        lv_obj_t *relative_time_label = current_stopwatch_state.relative_time_label;
+        lv_obj_align(relative_time_label, LV_ALIGN_TOP_MID, 0, 50);
+        lv_label_set_text(relative_time_label, "");
+        lv_obj_set_style_text_font(relative_time_label, &kode_mono_16, 0);
+
+        lv_label_set_text(time_label, "00:00.");
+        lv_obj_set_style_text_font(time_label, &kode_mono_40, 0);
+        lv_obj_align(time_label, LV_ALIGN_CENTER, -10, -10);
+
+        lv_label_set_text(ms_label, "00");
+        lv_obj_set_style_text_font(ms_label, &kode_mono_20, 0);
+        lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -4);
+
+        current_stopwatch_state.lap_time_label = lv_label_create(screen);
+        lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
+        lv_obj_align_to(lap_time_label, time_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 4);
+        lv_label_set_text(lap_time_label, "");
+        lv_obj_set_style_text_font(lap_time_label, &kode_mono_16, 0);
+
         current_stopwatch_state.start_stop_indicator = lv_bar_create(screen);
         lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
         lv_obj_set_size(start_stop_indicator, 240, 260);
@@ -51,26 +79,6 @@ private:
         lv_label_set_text(start_stop_label, "START");
         lv_obj_set_style_text_color(start_stop_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
         lv_obj_align_to(start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
-
-        current_stopwatch_state.time_label = lv_label_create(screen);
-        current_stopwatch_state.ms_label = lv_label_create(screen);
-
-        lv_obj_t *time_label = current_stopwatch_state.time_label;
-        lv_obj_t *ms_label = current_stopwatch_state.ms_label;
-
-        lv_label_set_text(time_label, "00:00.");
-        lv_obj_set_style_text_font(time_label, &kode_mono_40, 0);
-        lv_obj_align(time_label, LV_ALIGN_CENTER, -10, 0);
-
-        lv_label_set_text(ms_label, "00");
-        lv_obj_set_style_text_font(ms_label, &kode_mono_20, 0);
-        lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -2);
-
-        current_stopwatch_state.lap_time_label = lv_label_create(screen);
-        lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
-        lv_obj_align(lap_time_label, LV_ALIGN_CENTER, 0, 30);
-        lv_label_set_text(lap_time_label, "Lap 1 - 00:00.00");
-        lv_obj_set_style_text_font(lap_time_label, &kode_mono_16, 0);
     }
 
     CurrentStopwatchState current_stopwatch_state;
@@ -84,9 +92,9 @@ private:
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
     // TODO: move to a shared const
-    const uint8_t laps_max = 20;
+    const uint8_t laps_max = 100;
     uint8_t last_lap_added = 0;
-    LapTime laps[20];
+    LapTime laps[100];
 
     void timer_task(lv_timer_t *timer);
     void clear();
