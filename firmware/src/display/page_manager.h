@@ -3,6 +3,7 @@
 #include "logging.h"
 #include "lvgl.h"
 #include "semaphore_guard.h"
+#include "../app_config.h"
 class BasePage
 {
 public:
@@ -24,6 +25,11 @@ public:
     void hide()
     {
         lv_obj_add_flag(page, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    virtual void updateFromSystem(AppState state)
+    {
+        // Do nothing by default
     }
 
 protected:
@@ -65,6 +71,11 @@ public:
     void hide(T page_enum)
     {
         pages_[page_enum]->hide();
+    }
+
+    BasePage *getCurrentPage()
+    {
+        return pages_[current_page_];
     }
 
 protected:

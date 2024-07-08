@@ -60,6 +60,7 @@ public:
 
 class SettingsPageManager : public PageManager<SettingsPages>
 {
+
 public:
     SettingsPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<SettingsPages>(parent, mutex)
     {
@@ -70,6 +71,10 @@ public:
         add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
 
         dotIndicatorInit();
+
+        page_name = lv_label_create(overlay_);
+        lv_obj_align(page_name, LV_ALIGN_TOP_MID, 0, 10);
+
         show(WIFI_PAGE_SETTINGS);
     }
 
@@ -84,6 +89,28 @@ public:
                 if (i == current_page_)
                 {
                     lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0xD9, 0xD9, 0xD9), 0);
+
+                    switch (current_page_)
+                    {
+                    case WIFI_PAGE_SETTINGS:
+                        lv_label_set_text(page_name, "WiFi");
+                        break;
+                    case HASS_PAGE_SETTINGS:
+                        lv_label_set_text(page_name, "HASS");
+                        break;
+                    case DEMO_PAGE_SETTINGS:
+                        lv_label_set_text(page_name, "DEMO");
+                        break;
+                    case MOTOR_CALIBRATION_SETTINGS:
+                        lv_label_set_text(page_name, "MOTOR");
+                        break;
+                    case STRAIN_CALIBRATION_SETTINGS:
+                        lv_label_set_text(page_name, "STRAIN");
+                        break;
+                    default:
+                        lv_label_set_text(page_name, "Unknown");
+                        break;
+                    }
                 }
                 else
                 {
@@ -116,6 +143,7 @@ public:
 
 private:
     lv_obj_t *dots[SETTINGS_PAGE_COUNT];
+    lv_obj_t *page_name;
 };
 
 class SettingsApp : public App
@@ -123,6 +151,7 @@ class SettingsApp : public App
 public:
     SettingsApp(SemaphoreHandle_t mutex);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    void updateStateFromSystem(AppState state);
 
 protected:
     void initScreen()
@@ -166,6 +195,10 @@ private:
 
     // lv_obj_t *;
     // lv_obj_t *light_bulb;
+
+    ConnectivityState connectivity_state;
+    char ip_address[20];
+    char ssid[128];
 
     uint8_t current_position = 0;
     uint8_t last_position = 0;
