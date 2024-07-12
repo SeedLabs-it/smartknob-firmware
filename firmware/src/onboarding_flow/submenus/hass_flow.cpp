@@ -48,6 +48,40 @@ void HassOnboardingFlow::handleNavigationEvent(NavigationEvent event)
             return;
         }
     }
+
+    if (event.press == NAVIGATION_EVENT_PRESS_SHORT) // ! REMOVE JUST FOR TESTING
+    {
+        if (current_position == 0)
+        {
+            current_position = WEBSERVER_QRCODE_PAGE;
+            page_mgr->show(getHassPageEnum(WEBSERVER_QRCODE_PAGE));
+        }
+        else if (current_position == WEBSERVER_QRCODE_PAGE)
+        {
+            current_position = CONTINUE_IN_BROWSER_WIFI_PAGE;
+            page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_WIFI_PAGE));
+        }
+        else if (current_position == CONTINUE_IN_BROWSER_WIFI_PAGE)
+        {
+            current_position = CONNECTING_TO_WIFI_PAGE;
+            page_mgr->show(getHassPageEnum(CONNECTING_TO_WIFI_PAGE));
+        }
+        else if (current_position == CONNECTING_TO_WIFI_PAGE)
+        {
+            current_position = CONTINUE_IN_BROWSER_MQTT_PAGE;
+            page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_MQTT_PAGE));
+        }
+        else if (current_position == CONTINUE_IN_BROWSER_MQTT_PAGE)
+        {
+            current_position = CONNECTING_TO_MQTT_PAGE;
+            page_mgr->show(getHassPageEnum(CONNECTING_TO_MQTT_PAGE));
+        }
+        else if (current_position == CONNECTING_TO_MQTT_PAGE)
+        {
+            current_position = 0;
+            page_mgr->show(getHassPageEnum(0));
+        }
+    }
 }
 
 EntityStateUpdate HassOnboardingFlow::update(AppState state)
