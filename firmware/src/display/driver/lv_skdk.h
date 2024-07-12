@@ -5,8 +5,11 @@
 
 // #ifndef LV_TFT_ESPI_H
 // #define LV_TFT_ESPI_H
+#include "LGFX_SKDK.hpp"
 
+#include <LovyanGFX.hpp>
 #ifdef __cplusplus
+
 extern "C"
 {
 #endif
@@ -14,6 +17,7 @@ extern "C"
 /*********************
  *      INCLUDES
  *********************/
+#pragma once
 #include "lvgl.h"
 #include "logging.h"
 
@@ -30,7 +34,10 @@ extern "C"
     /**********************
      * GLOBAL PROTOTYPES
      **********************/
-    lv_disp_drv_t *lv_skdk_create();
+    void lv_skdk_create();
+
+    lv_disp_drv_t *lv_skdk_get_disp_drv();
+    LGFX *lv_skdk_get_lcd();
 
     /**********************
      *      MACROS

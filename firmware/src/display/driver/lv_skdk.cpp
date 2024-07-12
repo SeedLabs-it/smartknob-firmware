@@ -9,9 +9,6 @@
 #pragma once
 #include "display/driver/lv_skdk.h"
 #include "display_task.h"
-// #if LV_USE_TFT_ESPI
-
-// #include <TFT_eSPI.h>
 
 #include "LGFX_SKDK.hpp"
 
@@ -62,7 +59,7 @@ static lv_color_t *buf2 = NULL;
  *   GLOBAL FUNCTIONS
  **********************/
 
-lv_disp_drv_t *lv_skdk_create()
+void lv_skdk_create()
 {
     lcd.init();
     lcd.initDMA();
@@ -101,7 +98,17 @@ lv_disp_drv_t *lv_skdk_create()
     // ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     // ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, LV_TICK_PERIOD_MS * 1000));
 
+    // return &disp_drv;
+}
+
+lv_disp_drv_t *lv_skdk_get_disp_drv()
+{
     return &disp_drv;
+}
+
+LGFX *lv_skdk_get_lcd()
+{
+    return &lcd;
 }
 
 /**********************

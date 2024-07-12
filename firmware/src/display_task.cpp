@@ -10,7 +10,7 @@
 
 #include "cJSON.h"
 
-static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
+// static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
 #define TFT_HOR_RES 240
 #define TFT_VER_RES 240
@@ -138,7 +138,8 @@ void DisplayTask::run()
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
     lv_init();
-    lv_disp_drv_t *disp_drv = lv_skdk_create();
+    lv_skdk_create();
+    lv_disp_drv_t *disp_drv = lv_skdk_get_disp_drv();
 
     // lv_theme_t *th = lv_theme_default_init(lv_disp_get_default(),
     //                                        LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0x00, 0x00, 0x00),
@@ -180,7 +181,7 @@ QueueHandle_t DisplayTask::getKnobStateQueue()
 void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
-    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH));
+    lv_skdk_get_lcd()->setBrightness((((float)brightness / UINT16_MAX) * 255)); // Quickly implemented brightness for lvgl with old (current) impl.
 }
 
 void DisplayTask::enableOnboarding()

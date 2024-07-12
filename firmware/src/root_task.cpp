@@ -679,7 +679,6 @@ void RootTask::updateHardware(AppState *app_state)
 #if SK_ALS
         brightness = app_state->screen_state.brightness;
 #endif
-        LOGE("Setting brightness to %d", brightness);
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     }
 
