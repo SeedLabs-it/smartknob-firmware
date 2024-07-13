@@ -1,0 +1,15 @@
+---
+# We'll use defaults from the LLVM style, but with 4 columns indentation.
+BasedOnStyle: Microsoft
+BraceWrapping:
+  AfterFunction: false
+  AfterControlStatement: false
+  AfterClass: true
+  AfterNamespace: true
+  AfterStruct: false
+  AfterExternBlock: false
+  AfterEnum: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+---
