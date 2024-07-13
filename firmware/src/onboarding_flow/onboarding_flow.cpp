@@ -40,7 +40,7 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
     page_mgr = new OnboardingPageManager(main_screen, mutex);
 
     hass_flow = new HassOnboardingFlow(mutex, [this]()
-                                       { this->render(); });
+                                       { this->render(); this->triggerMotorConfigUpdate(); });
 
     // hass_flow->setWiFiNotifier(wifi_notifier);
 

@@ -109,41 +109,42 @@ void HassOnboardingFlow::handleNavigationEvent(NavigationEvent event)
 {
     if (event.press == NAVIGATION_EVENT_PRESS_LONG)
     {
-        if (page_mgr->getCurrentPageNum() == 0)
-        {
-            render_parent_();
-            return;
-        }
+        render_parent_();
+        // if (page_mgr->getCurrentPageNum() == 0)
+        // {
+        //     render_parent_();
+        //     return;
+        // }
     }
 
-    if (event.press == NAVIGATION_EVENT_PRESS_SHORT) // ! REMOVE JUST FOR TESTING
-    {
-        uint8_t page_num = page_mgr->getCurrentPageNum();
-        if (page_num == 0)
-        {
-            page_mgr->show(getHassPageEnum(WEBSERVER_QRCODE_PAGE));
-        }
-        else if (page_num == WEBSERVER_QRCODE_PAGE)
-        {
-            page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_WIFI_PAGE));
-        }
-        else if (page_num == CONTINUE_IN_BROWSER_WIFI_PAGE)
-        {
-            page_mgr->show(getHassPageEnum(CONNECTING_TO_WIFI_PAGE));
-        }
-        else if (page_num == CONNECTING_TO_WIFI_PAGE)
-        {
-            page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_MQTT_PAGE));
-        }
-        else if (page_num == CONTINUE_IN_BROWSER_MQTT_PAGE)
-        {
-            page_mgr->show(getHassPageEnum(CONNECTING_TO_MQTT_PAGE));
-        }
-        else if (page_num == CONNECTING_TO_MQTT_PAGE)
-        {
-            page_mgr->show(getHassPageEnum(0));
-        }
-    }
+    // if (event.press == NAVIGATION_EVENT_PRESS_SHORT) // ! REMOVE JUST FOR TESTING
+    // {
+    //     uint8_t page_num = page_mgr->getCurrentPageNum();
+    //     if (page_num == 0)
+    //     {
+    //         page_mgr->show(getHassPageEnum(WEBSERVER_QRCODE_PAGE));
+    //     }
+    //     else if (page_num == WEBSERVER_QRCODE_PAGE)
+    //     {
+    //         page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_WIFI_PAGE));
+    //     }
+    //     else if (page_num == CONTINUE_IN_BROWSER_WIFI_PAGE)
+    //     {
+    //         page_mgr->show(getHassPageEnum(CONNECTING_TO_WIFI_PAGE));
+    //     }
+    //     else if (page_num == CONNECTING_TO_WIFI_PAGE)
+    //     {
+    //         page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_MQTT_PAGE));
+    //     }
+    //     else if (page_num == CONTINUE_IN_BROWSER_MQTT_PAGE)
+    //     {
+    //         page_mgr->show(getHassPageEnum(CONNECTING_TO_MQTT_PAGE));
+    //     }
+    //     else if (page_num == CONNECTING_TO_MQTT_PAGE)
+    //     {
+    //         page_mgr->show(getHassPageEnum(0));
+    //     }
+    // }
 }
 
 EntityStateUpdate HassOnboardingFlow::update(AppState state)
