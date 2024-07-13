@@ -13,6 +13,16 @@
 #include "font/NDS1210pt7b.h"
 #include "font/NDS125_small.h"
 
+struct CurrentErrorState
+{
+    unsigned long start_ms;
+
+    lv_obj_t *error_msg_label;
+
+    lv_obj_t *parent;
+    lv_obj_t *page;
+};
+
 class ErrorHandlingFlow : public BasePage
 {
 public:
@@ -31,6 +41,9 @@ public:
 
 private:
     SemaphoreHandle_t mutex_;
+
+    lv_timer_t *timer;
+    CurrentErrorState current_error_state;
 
     char buf_[64];
 

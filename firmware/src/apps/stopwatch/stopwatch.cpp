@@ -1,6 +1,6 @@
 #include "stopwatch.h"
 
-void my_timer(lv_timer_t *timer)
+void stopwatch_timer(lv_timer_t *timer)
 {
     /*Use the user_data*/
     CurrentStopwatchState *user_data = (CurrentStopwatchState *)timer->user_data;
@@ -133,7 +133,7 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
         // lv_label_set_text(current_stopwatch_state.start_stop_label, "STARTED");
         current_stopwatch_state.start_ms = millis();
         clear();
-        timer = lv_timer_create(my_timer, 25, &current_stopwatch_state);
+        timer = lv_timer_create(stopwatch_timer, 25, &current_stopwatch_state);
 
         new_state.play_haptic = true;
     }
