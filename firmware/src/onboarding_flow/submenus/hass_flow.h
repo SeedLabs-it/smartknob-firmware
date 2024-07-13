@@ -109,9 +109,15 @@ public:
     ContinueInBrowserWifiPage(lv_obj_t *parent) : BasePage(parent)
     {
         lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "PLEASE CONTINUE WIFI\nSETUP IN BROWSER");
-        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        lv_obj_set_style_text_font(label, &nds12_20px, LV_PART_MAIN);
+        lv_label_set_text(label, "CONTINUE IN\nBROWSER");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
+
+        lv_obj_t *wifi_label = lv_label_create(page);
+        lv_label_set_text(wifi_label, "WiFi");
+        lv_obj_align(wifi_label, LV_ALIGN_BOTTOM_MID, 0, -12);
     }
 };
 
@@ -132,9 +138,15 @@ public:
     ContinueInBrowserMqttPage(lv_obj_t *parent) : BasePage(parent)
     {
         lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "PLEASE CONTINUE MQTT\nSETUP IN BROWSER");
-        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        lv_obj_set_style_text_font(label, &nds12_20px, LV_PART_MAIN);
+        lv_label_set_text(label, "CONTINUE IN\nBROWSER");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
+
+        lv_obj_t *wifi_label = lv_label_create(page);
+        lv_label_set_text(wifi_label, "MQTT");
+        lv_obj_align(wifi_label, LV_ALIGN_BOTTOM_MID, 0, -12);
     }
 };
 
