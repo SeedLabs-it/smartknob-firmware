@@ -498,23 +498,9 @@ void RootTask::run()
             }
 #endif
 
-            if (xQueueReceive(connectivity_status_queue_, &latest_connectivity_state_, 0) == pdTRUE)
-            {
-                app_state.connectivity_state = latest_connectivity_state_;
-            }
-
-            if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
-            {
-                LOGD("App sync requested!");
-#if SK_MQTT // Should this be here??
-            // hass_apps->sync(mqtt_task_->getApps());
-
-                LOGD("Giving 0.5s for Apps to initialize");
-                delay(500);
-                // display_task_->getHassApps()->triggerMotorConfigUpdate();
-                mqtt_task_->unlock();
+#if SK_MQTT
+            mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
 #endif
-            }
 
             if (entity_state_update_to_send.play_haptic)
             {
