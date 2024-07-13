@@ -230,6 +230,7 @@ void RootTask::run()
         display_task_->enableOnboarding();
         break;
     case HASS:
+        // os_config_notifier_.setOSMode(HASS);
         display_task_->enableHass();
         break;
 
@@ -416,11 +417,11 @@ void RootTask::run()
         {
             LOGD("App sync requested!");
 #if SK_MQTT // Should this be here??
-            // hass_apps->sync(mqtt_task_->getApps());
+            display_task_->getHassApps()->sync(mqtt_task_->getApps());
 
             LOGD("Giving 0.5s for Apps to initialize");
             delay(500);
-            // display_task_->getHassApps()->triggerMotorConfigUpdate();
+            display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
 #endif
         }

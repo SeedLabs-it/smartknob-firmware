@@ -99,9 +99,6 @@ public:
     // TFT_eSprite *renderActive();
     void render()
     {
-        LOGE("renderActive");
-        LOGE("active_app: %s", active_app->app_id);
-        LOGE("apps.size(): %d", apps.size());
         if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
         {
             return lv_scr_load(waiting_for_hass);
