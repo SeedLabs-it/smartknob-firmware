@@ -43,7 +43,6 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
                                        { this->render(); });
 
     // hass_flow->setWiFiNotifier(wifi_notifier);
-    // hass_flow->setOSConfigNotifier(os_config_notifier);
 
     // page_mgr->add(WELCOME, new WelcomePage(main_screen));
     // // page_mgr->add(HASS, new HassPage());
@@ -97,6 +96,7 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
             case ABOUT_PAGE:
                 break;
             case HASS_PAGE:
+                wifi_notifier->requestAP();
                 active_sub_menu = HASS_SUB_MENU;
                 hass_flow->render();
                 break;
@@ -179,6 +179,7 @@ void OnboardingFlow::setWiFiNotifier(WiFiNotifier *wifi_notifier)
 void OnboardingFlow::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
 {
     this->os_config_notifier = os_config_notifier;
+    hass_flow->setOSConfigNotifier(os_config_notifier);
 }
 
 // #include "onboarding_flow.h"
@@ -286,87 +287,28 @@ void OnboardingFlow::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
 // }
 
 // // TODO: rename to generic event
-// void OnboardingFlow::handleEvent(WiFiEvent event)
-// {
+void OnboardingFlow::handleEvent(WiFiEvent event)
+{
 
-//     latest_event = event;
-//     switch (event.type)
-//     {
-//     case SK_WIFI_AP_STARTED:
-//         is_wifi_ap_started = true;
-//         sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
-//         sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
-//         sprintf(ap_data, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
-//         setQRCode(ap_data);
-//         // // std::string wifiqrcode_test = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
-
-//         break;
-//     case SK_AP_CLIENT:
-//         is_wifi_ap_client_connected = event.body.ap_client.connected;
-//         if (is_wifi_ap_client_connected)
-//         {
-//             if (is_wifi_ap_client_connected)
-//             {
-//                 sprintf(ip_data, "%s", "http://192.168.4.1"); // always the same
-//             }
-//             else
-//             {
-//                 sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
-//             }
-//             setQRCode(ip_data);
-
-//             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
-//         }
-//         else
-//         {
-//             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_2;
-//         }
-//         break;
-//     case SK_WEB_CLIENT:
-//         is_web_client_connected = event.body.ap_client.connected;
-//         if (is_web_client_connected)
-//         {
-//             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
-//         }
-//         else
-//         {
-//             // TODO: possible problem after setup finished
-//             current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_3;
-//         }
-//         break;
-//     case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
-//         sta_connecting_tick = event.body.wifi_sta_connecting.retry_count;
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_5;
-//         sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
-//         sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
-//         break;
-//     case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
-//         new_wifi_credentials_failed = true;
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
-//         break;
-//     case SK_WEB_CLIENT_MQTT:
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
-//         break;
-//     case SK_MQTT_TRY_NEW_CREDENTIALS:
-//         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_7;
-//         break;
-//     case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
-//         new_mqtt_credentials_failed = true;
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
-//         break;
-//     case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
-//         current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
-//         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
-//         is_onboarding_finished = true;
-//         os_config_notifier->setOSMode(Hass);
-//         break;
-//     case SK_MQTT_STATE_UPDATE:
-//         break;
-//     default:
-//         break;
-//     }
-// }
+    // latest_event = event;
+    switch (event.type)
+    {
+    case SK_WIFI_AP_STARTED:
+    case SK_AP_CLIENT:
+    case SK_WEB_CLIENT:
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
+    case SK_WEB_CLIENT_MQTT:
+    case SK_MQTT_TRY_NEW_CREDENTIALS:
+    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
+    case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
+    case SK_MQTT_STATE_UPDATE:
+        hass_flow->handleEvent(event);
+        break;
+    default:
+        break;
+    }
+}
 
 // void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 // {

@@ -208,6 +208,8 @@ public:
     EntityStateUpdate update(AppState state);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
 
+    void handleEvent(WiFiEvent event);
+
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);

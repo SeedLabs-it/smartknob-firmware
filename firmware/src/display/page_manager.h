@@ -78,6 +78,16 @@ public:
         return pages_[current_page_];
     }
 
+    BasePage *getPage(T page_enum)
+    {
+        return pages_[page_enum];
+    }
+
+    T getCurrentPageNum()
+    {
+        return current_page_;
+    }
+
 protected:
     SemaphoreHandle_t mutex_;
 
