@@ -43,18 +43,19 @@ void ResetTask::run()
         }
         else // Button is pressed when low (0)
         {
-            if (!held)
-            {
-                WiFiEvent event = {
-                    .type = EventType::SK_RESET_BUTTON_PRESSED,
-                };
-                publishEvent(event);
-                held = true;
-            }
+
             reset_button_released = millis();
 
             if (millis() - reset_button_pressed > 1 * 1000)
             {
+                if (!held)
+                {
+                    WiFiEvent event = {
+                        .type = EventType::SK_RESET_BUTTON_PRESSED,
+                    };
+                    publishEvent(event);
+                    held = true;
+                }
                 motor_task_->playHaptic(true, false);
                 delay(100);
             }

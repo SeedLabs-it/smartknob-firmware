@@ -1,9 +1,16 @@
 #include "error_handling_flow.h"
 // TODO Add reset ui flow/"hints".
 
-ErrorHandlingFlow::ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_) : spr_(spr_)
+ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex), BasePage(lv_obj_create(NULL))
 {
+    lv_obj_t *label = lv_label_create(page);
+    lv_label_set_text(label, "ERROR PAGE");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
 }
+
+// ErrorHandlingFlow::ErrorHandlingFlow()
+// {
+// }
 
 // void ErrorHandlingFlow::setQRCode(char *qr_data)
 // {
@@ -75,11 +82,15 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     case SK_RESET_BUTTON_PRESSED:
         error_type = RESET;
         latest_event = event;
+        lv_scr_load(parent);
+        show();
+
         break;
     case SK_RESET_BUTTON_RELEASED:
     case SK_DISMISS_ERROR:
     case SK_RESET_ERROR:
         error_type = NO_ERROR;
+        hide();
         break;
     default:
         break;
@@ -120,172 +131,173 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
     }
 }
 
-TFT_eSprite *ErrorHandlingFlow::render()
-{
-    switch (error_type)
-    {
-    case NO_ERROR:
-        return spr_;
-        break;
-    case MQTT_ERROR:
-        switch (latest_event.type)
-        {
-        case SK_MQTT_CONNECTION_FAILED:
-            return renderConnectionFailed();
-            break;
-        case SK_MQTT_RETRY_LIMIT_REACHED:
-            return renderRetryLimitReached();
-            break;
-        default:
-            spr_->drawString("MQTT ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-            return spr_;
-        }
-        break;
-    case WIFI_ERROR:
-        switch (latest_event.type)
-        {
-        case SK_WIFI_STA_CONNECTION_FAILED:
-            return renderConnectionFailed();
-            break;
-        case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-            return renderRetryLimitReached();
-            break;
-        default:
-            spr_->drawString("WIFI ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-            return spr_;
-        }
-    case RESET:
-        return renderResetInProgress();
-        break;
-    default:
-        spr_->drawString("ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-        return spr_;
-    }
-    return spr_;
-}
+// TFT_eSprite *ErrorHandlingFlow::render()
+// {
+//     switch (error_type)
+//     {
+//     case NO_ERROR:
+//         return spr_;
+//         break;
+//     case MQTT_ERROR:
+//         switch (latest_event.type)
+//         {
+//         case SK_MQTT_CONNECTION_FAILED:
+//             return renderConnectionFailed();
+//             break;
+//         case SK_MQTT_RETRY_LIMIT_REACHED:
+//             return renderRetryLimitReached();
+//             break;
+//         default:
+//             spr_->drawString("MQTT ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+//             return spr_;
+//         }
+//         break;
+//     case WIFI_ERROR:
+//         switch (latest_event.type)
+//         {
+//         case SK_WIFI_STA_CONNECTION_FAILED:
+//             // return renderConnectionFailed();
+//             break;
+//         case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+//             // return renderRetryLimitReached();
+//             break;
+//         default:
+//             spr_->drawString("WIFI ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+//             return spr_;
+//         }
+//     case RESET:
+//         LOGE("RESET");
+//         // return renderResetInProgress();
+//         break;
+//     default:
+//         spr_->drawString("ERROR", TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+//         return spr_;
+//     }
+//     // return spr_;
+// }
 
-TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
-{
-    uint16_t center = TFT_WIDTH / 2;
-    int8_t screen_name_label_h = spr_->fontHeight(1);
+// TFT_eSprite *ErrorHandlingFlow::renderResetInProgress()
+// {
+//     uint16_t center = TFT_WIDTH / 2;
+//     int8_t screen_name_label_h = spr_->fontHeight(1);
 
-    spr_->setTextDatum(CC_DATUM);
-    spr_->setTextSize(1);
-    spr_->setTextColor(TFT_BLACK);
+//     spr_->setTextDatum(CC_DATUM);
+//     spr_->setTextSize(1);
+//     spr_->setTextColor(TFT_BLACK);
 
-    spr_->setFreeFont(&NDS1210pt7b);
-    uint8_t held_for = (int)((millis() - latest_event.sent_at) / 1000);
-    bool factory_reset = held_for > SOFT_RESET_SECONDS;
+//     spr_->setFreeFont(&NDS1210pt7b);
+//     uint8_t held_for = (int)((millis() - latest_event.sent_at) / 1000);
+//     bool factory_reset = held_for > SOFT_RESET_SECONDS;
 
-    spr_->fillScreen(factory_reset ? rgbToUint32(255, 0, 0) : rgbToUint32(255, 110, 0));
+//     spr_->fillScreen(factory_reset ? rgbToUint32(255, 0, 0) : rgbToUint32(255, 110, 0));
 
-    sprintf(buf_, "%s", factory_reset ? "Factory reset" : "For soft reset");
-    spr_->drawString(buf_, center, center - screen_name_label_h * 1.4, 1);
+//     sprintf(buf_, "%s", factory_reset ? "Factory reset" : "For soft reset");
+//     spr_->drawString(buf_, center, center - screen_name_label_h * 1.4, 1);
 
-    sprintf(buf_, "%sin %ds", factory_reset ? "" : "release ", factory_reset ? max(0, HARD_RESET_SECONDS - held_for) : max(0, SOFT_RESET_SECONDS - held_for));
-    spr_->drawString(buf_, center, center - screen_name_label_h * 0.4, 1);
-    if (factory_reset)
-    {
-        spr_->drawString("Release for soft reset", center, center + screen_name_label_h, 1);
-    }
-    else
-    {
-        spr_->drawString("Release to cancel", center, center + screen_name_label_h, 1);
-    }
+//     sprintf(buf_, "%sin %ds", factory_reset ? "" : "release ", factory_reset ? max(0, HARD_RESET_SECONDS - held_for) : max(0, SOFT_RESET_SECONDS - held_for));
+//     spr_->drawString(buf_, center, center - screen_name_label_h * 0.4, 1);
+//     if (factory_reset)
+//     {
+//         spr_->drawString("Release for soft reset", center, center + screen_name_label_h, 1);
+//     }
+//     else
+//     {
+//         spr_->drawString("Release to cancel", center, center + screen_name_label_h, 1);
+//     }
 
-    return this->spr_;
-}
+//     return this->spr_;
+// }
 
-TFT_eSprite *ErrorHandlingFlow::renderConnectionFailed()
-{
-    uint16_t center_vertical = TFT_HEIGHT / 2;
-    uint16_t center_horizontal = TFT_WIDTH / 2;
-    int8_t screen_name_label_h = spr_->fontHeight(1);
+// TFT_eSprite *ErrorHandlingFlow::renderConnectionFailed()
+// {
+//     uint16_t center_vertical = TFT_HEIGHT / 2;
+//     uint16_t center_horizontal = TFT_WIDTH / 2;
+//     int8_t screen_name_label_h = spr_->fontHeight(1);
 
-    spr_->setTextDatum(CC_DATUM);
-    spr_->setTextSize(1);
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(default_text_color);
+//     spr_->setTextDatum(CC_DATUM);
+//     spr_->setTextSize(1);
+//     spr_->setFreeFont(&NDS1210pt7b);
+//     spr_->setTextColor(default_text_color);
 
-    sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
-    spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 1.6, 1);
+//     sprintf(buf_, "%ds", max(0, 10 - (int)((millis() - latest_event.sent_at) / 1000))); // 10 should be same as wifi_client timeout in mqtt_task.cpp
+//     spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 1.6, 1);
 
-    switch (error_type)
-    {
-    case MQTT_ERROR:
-        sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);
+//     switch (error_type)
+//     {
+//     case MQTT_ERROR:
+//         sprintf(buf_, "Retry %d", latest_event.body.error.body.mqtt_error.retry_count);
 
-        break;
-    case WIFI_ERROR:
-        sprintf(buf_, "Retry %d", latest_event.body.error.body.wifi_error.retry_count);
-        break;
-    default:
-        sprintf(buf_, "No retry count.");
-        break;
-    }
+//         break;
+//     case WIFI_ERROR:
+//         sprintf(buf_, "Retry %d", latest_event.body.error.body.wifi_error.retry_count);
+//         break;
+//     default:
+//         sprintf(buf_, "No retry count.");
+//         break;
+//     }
 
-    spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 0.6, 1);
+//     spr_->drawString(buf_, center_horizontal, center_vertical - screen_name_label_h * 0.6, 1);
 
-    spr_->setFreeFont(&NDS125_small);
-    spr_->setTextColor(accent_text_color);
+//     spr_->setFreeFont(&NDS125_small);
+//     spr_->setTextColor(accent_text_color);
 
-    sprintf(buf_, "Connection failed");
-    spr_->drawString(buf_, center_horizontal, center_vertical + screen_name_label_h * 2, 1);
+//     sprintf(buf_, "Connection failed");
+//     spr_->drawString(buf_, center_horizontal, center_vertical + screen_name_label_h * 2, 1);
 
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(default_text_color);
+//     spr_->setFreeFont(&NDS1210pt7b);
+//     spr_->setTextColor(default_text_color);
 
-    switch (error_type)
-    {
-    case MQTT_ERROR:
-        sprintf(buf_, "MQTT");
-        break;
-    case WIFI_ERROR:
-        sprintf(buf_, "WIFI");
-        break;
-    default:
-        sprintf(buf_, "ERROR");
-        break;
-    }
-    spr_->drawString(buf_, center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
+//     switch (error_type)
+//     {
+//     case MQTT_ERROR:
+//         sprintf(buf_, "MQTT");
+//         break;
+//     case WIFI_ERROR:
+//         sprintf(buf_, "WIFI");
+//         break;
+//     default:
+//         sprintf(buf_, "ERROR");
+//         break;
+//     }
+//     spr_->drawString(buf_, center_horizontal, TFT_HEIGHT - screen_name_label_h * 2, 1);
 
-    return this->spr_;
-}
+//     return this->spr_;
+// }
 
-TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
-{
-    uint16_t center = TFT_WIDTH / 2;
-    int8_t screen_name_label_h = spr_->fontHeight(1);
+// TFT_eSprite *ErrorHandlingFlow::renderRetryLimitReached()
+// {
+//     uint16_t center = TFT_WIDTH / 2;
+//     int8_t screen_name_label_h = spr_->fontHeight(1);
 
-    spr_->setTextDatum(CC_DATUM);
-    spr_->setTextSize(1);
-    spr_->setTextColor(accent_text_color);
+//     spr_->setTextDatum(CC_DATUM);
+//     spr_->setTextSize(1);
+//     spr_->setTextColor(accent_text_color);
 
-    // uint8_t qrsize = qrcode_spr_.width();
-    // qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2 - 6, TFT_BLACK);
+//     // uint8_t qrsize = qrcode_spr_.width();
+//     // qrcode_spr_.pushToSprite(spr_, center - qrsize / 2, center - qrsize / 2 - 6, TFT_BLACK);
 
-    spr_->setFreeFont(&NDS125_small);
-    spr_->drawString("Retry limit reached", center, center - screen_name_label_h * 3.4, 1);
-    spr_->drawString("Press to retry", center, center - screen_name_label_h * 2.8, 1);
-    spr_->drawString("Hold to dismiss", center, center + screen_name_label_h * 2, 1);
+//     spr_->setFreeFont(&NDS125_small);
+//     spr_->drawString("Retry limit reached", center, center - screen_name_label_h * 3.4, 1);
+//     spr_->drawString("Press to retry", center, center - screen_name_label_h * 2.8, 1);
+//     spr_->drawString("Hold to dismiss", center, center + screen_name_label_h * 2, 1);
 
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(default_text_color);
-    switch (error_type)
-    {
-    case MQTT_ERROR:
-        spr_->drawString("MQTT", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
-        break;
-    case WIFI_ERROR:
-        spr_->drawString("WIFI", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
-        break;
-    default:
-        spr_->drawString("ERROR", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
-        break;
-    }
+//     spr_->setFreeFont(&NDS1210pt7b);
+//     spr_->setTextColor(default_text_color);
+//     switch (error_type)
+//     {
+//     case MQTT_ERROR:
+//         spr_->drawString("MQTT", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
+//         break;
+//     case WIFI_ERROR:
+//         spr_->drawString("WIFI", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
+//         break;
+//     default:
+//         spr_->drawString("ERROR", center, TFT_HEIGHT - screen_name_label_h * 2, 1);
+//         break;
+//     }
 
-    return this->spr_;
-}
+//     return this->spr_;
+// }
 
 void ErrorHandlingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {

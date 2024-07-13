@@ -60,8 +60,8 @@ private:
 
     OnboardingFlow *onboarding_flow = nullptr;
     DemoApps *demo_apps = nullptr;
-    HassApps *hass_apps;
-    ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));
+    HassApps *hass_apps = nullptr;
+    ErrorHandlingFlow *error_handling_flow = nullptr;
 
     QueueHandle_t app_state_queue_;
 

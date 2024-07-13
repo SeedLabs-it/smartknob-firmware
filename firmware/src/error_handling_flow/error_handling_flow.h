@@ -5,6 +5,7 @@
 // #include "apps/app.h"
 
 #include "util.h"
+#include "display/page_manager.h"
 #include "navigation/navigation.h"
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
@@ -12,14 +13,12 @@
 #include "font/NDS1210pt7b.h"
 #include "font/NDS125_small.h"
 
-class ErrorHandlingFlow
+class ErrorHandlingFlow : public BasePage
 {
 public:
-    ErrorHandlingFlow(TFT_eSprite *spr_, TFT_eSprite qrcode_spr_);
+    ErrorHandlingFlow(SemaphoreHandle_t mutex);
 
     // void setQRCode(char *qr_data);
-
-    TFT_eSprite *render();
     void handleNavigationEvent(NavigationEvent event);
     void handleEvent(WiFiEvent event);
     void setMotorNotifier(MotorNotifier *motor_notifier);
@@ -31,8 +30,7 @@ public:
     ErrorType getErrorType();
 
 private:
-    TFT_eSprite *spr_ = NULL;
-    // TFT_eSprite qrcode_spr_;
+    SemaphoreHandle_t mutex_;
 
     char buf_[64];
 
@@ -68,8 +66,4 @@ private:
 
     char ap_data[64];
     char ip_data[64];
-
-    TFT_eSprite *renderResetInProgress();
-    TFT_eSprite *renderConnectionFailed();
-    TFT_eSprite *renderRetryLimitReached();
 };

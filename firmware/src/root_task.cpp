@@ -337,12 +337,15 @@ void RootTask::run()
                 switch (configuration_->getOSConfiguration()->mode)
                 {
                 case ONBOARDING:
+                    display_task_->enableOnboarding();
                     display_task_->getOnboardingFlow()->triggerMotorConfigUpdate();
                     break;
                 case DEMO:
+                    display_task_->enableDemo();
                     display_task_->getDemoApps()->triggerMotorConfigUpdate();
                     break;
                 case HASS:
+                    display_task_->enableHass();
                     display_task_->getHassApps()->triggerMotorConfigUpdate();
                 default:
                     break;

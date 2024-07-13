@@ -123,9 +123,24 @@ class AboutPage : public BasePage
 public:
     AboutPage(lv_obj_t *parent) : BasePage(parent)
     {
-        lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "About");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_t *url_qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+        lv_qrcode_update(url_qr, "https://store.seedlabs.it/products/smartknob-devkit-v0-1", strlen("https://store.seedlabs.it/products/smartknob-devkit-v0-1"));
+        lv_obj_align(url_qr, LV_ALIGN_CENTER, 0, -24);
+
+        lv_obj_t *url_label = lv_label_create(page);
+        lv_label_set_text(url_label, "seedlabs.it");
+        lv_obj_set_style_text_color(url_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        lv_obj_align_to(url_label, url_qr, LV_ALIGN_OUT_TOP_MID, 0, -2);
+
+        lv_obj_t *hardware_version_label = lv_label_create(page);
+        lv_obj_set_style_text_color(hardware_version_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        lv_label_set_text(hardware_version_label, MODEL);
+        lv_obj_align(hardware_version_label, LV_ALIGN_BOTTOM_MID, 0, -56);
+
+        lv_obj_t *firmware_version_label = lv_label_create(page);
+        lv_label_set_text_fmt(firmware_version_label, "FIRMWARE %s", RELEASE_VERSION);
+        // lv_obj_center(firmware_version_label);
+        lv_obj_align_to(firmware_version_label, hardware_version_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
     }
 };
 

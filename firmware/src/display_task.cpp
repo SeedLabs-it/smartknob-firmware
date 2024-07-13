@@ -63,7 +63,11 @@ HassApps *DisplayTask::getHassApps()
 
 ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 {
-    return &error_handling_flow;
+    while (error_handling_flow == nullptr)
+    {
+        delay(50);
+    }
+    return error_handling_flow;
 }
 
 // /* Define the points of the line */
@@ -150,6 +154,7 @@ void DisplayTask::run()
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
     hass_apps = new HassApps(mutex_);
+    error_handling_flow = new ErrorHandlingFlow(mutex_);
 
     // lv_obj_t *screen = lv_obj_create(NULL);
 
