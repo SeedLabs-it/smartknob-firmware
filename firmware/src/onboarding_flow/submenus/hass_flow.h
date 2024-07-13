@@ -7,7 +7,8 @@
 #include "notify/wifi_notifier/wifi_notifier.h"
 #include "semaphore_guard.h"
 
-enum HassOnboardingPages {
+enum HassOnboardingPages
+{
     CONNECT_QRCODE_PAGE = 0,
     WEBSERVER_QRCODE_PAGE,
     CONTINUE_IN_BROWSER_WIFI_PAGE,
@@ -19,8 +20,9 @@ enum HassOnboardingPages {
 
 class ConnectQRCodePage : public BasePage
 {
-  public:
-    ConnectQRCodePage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    ConnectQRCodePage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
         char data[128];
         sprintf(data, "WIFI:T:WPA;S:%s;P:%s;H:;;", "Fam Wall", "TEST_PASSWORD");
@@ -44,8 +46,9 @@ class ConnectQRCodePage : public BasePage
 
 class WebServerQRCodePage : public BasePage
 {
-  public:
-    WebServerQRCodePage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    WebServerQRCodePage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
 
         char data[128];
@@ -57,8 +60,9 @@ class WebServerQRCodePage : public BasePage
 
 class ContinueInBrowserWifiPage : public BasePage
 {
-  public:
-    ContinueInBrowserWifiPage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    ContinueInBrowserWifiPage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "PLEASE CONTINUE WIFI\nSETUP IN BROWSER");
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
@@ -68,8 +72,9 @@ class ContinueInBrowserWifiPage : public BasePage
 
 class ConnectingToWifiPage : public BasePage
 {
-  public:
-    ConnectingToWifiPage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    ConnectingToWifiPage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "CONNECTING TO WIFI...");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
@@ -78,8 +83,9 @@ class ConnectingToWifiPage : public BasePage
 
 class ContinueInBrowserMqttPage : public BasePage
 {
-  public:
-    ContinueInBrowserMqttPage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    ContinueInBrowserMqttPage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "PLEASE CONTINUE MQTT\nSETUP IN BROWSER");
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
@@ -89,8 +95,9 @@ class ContinueInBrowserMqttPage : public BasePage
 
 class ConnectingToMqttPage : public BasePage
 {
-  public:
-    ConnectingToMqttPage(lv_obj_t *parent) : BasePage(parent) {
+public:
+    ConnectingToMqttPage(lv_obj_t *parent) : BasePage(parent)
+    {
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "CONNECTING TO MQTT...");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
@@ -99,9 +106,10 @@ class ConnectingToMqttPage : public BasePage
 
 class HassOnboardingPageManager : public PageManager<HassOnboardingPages>
 {
-  public:
+public:
     HassOnboardingPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex)
-        : PageManager<HassOnboardingPages>(parent, mutex) {
+        : PageManager<HassOnboardingPages>(parent, mutex)
+    {
         add(CONNECT_QRCODE_PAGE, new ConnectQRCodePage(parent));
         add(WEBSERVER_QRCODE_PAGE, new WebServerQRCodePage(parent));
         add(CONTINUE_IN_BROWSER_WIFI_PAGE, new ContinueInBrowserWifiPage(parent));
@@ -117,7 +125,7 @@ typedef std::function<void(void)> RenderParentCallback;
 
 class HassOnboardingFlow
 {
-  public:
+public:
     HassOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent);
 
     void render();
@@ -132,7 +140,7 @@ class HassOnboardingFlow
 
     void handleNavigationEvent(NavigationEvent event);
 
-  private:
+private:
     SemaphoreHandle_t mutex_;
 
     uint8_t current_position = 0;
