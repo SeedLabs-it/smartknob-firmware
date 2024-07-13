@@ -156,7 +156,7 @@ void OnboardingFlow::indicatorDots()
 void OnboardingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {
     this->motor_notifier = motor_notifier;
-    hass_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY... FIX
+    hass_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
 }
 
 void OnboardingFlow::triggerMotorConfigUpdate()

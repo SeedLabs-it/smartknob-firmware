@@ -47,31 +47,18 @@ void HassOnboardingFlow::handleEvent(WiFiEvent event)
     switch (event.type)
     {
     case SK_WIFI_AP_STARTED:
-        LOGE("SK_WIFI_AP_STARTED");
-        is_wifi_ap_started = true;
-        sprintf(wifi_ap_ssid, "%s", event.body.wifi_ap_started.ssid);
-        sprintf(wifi_ap_passphrase, "%s", event.body.wifi_ap_started.passphrase);
-        sprintf(ap_data, "WIFI:T:WPA;S:%s;P:%s;H:;;", wifi_ap_ssid, wifi_ap_passphrase);
-        // setQRCode(ap_data);
+        sprintf(ap_data, "WIFI:T:WPA;S:%s;P:%s;H:;;", event.body.wifi_ap_started.ssid, event.body.wifi_ap_started.passphrase);
         lv_qrcode_update(page_connect->qr, ap_data, strlen(ap_data));
 
+        lv_label_set_text_fmt(page_connect->ssid_label, "SSID: #FFFFFF %s#", event.body.wifi_ap_started.ssid);
+
         page_mgr->show(getHassPageEnum(CONNECT_QRCODE_PAGE));
-        // // std::string wifiqrcode_test = "WIFI:T:WPA;S:SMARTKNOB-AP;P:smartknob;H:;;";
 
         break;
     case SK_AP_CLIENT:
-        is_wifi_ap_client_connected = event.body.ap_client.connected;
-        if (is_wifi_ap_client_connected)
+        if (event.body.ap_client.connected)
         {
-            if (is_wifi_ap_client_connected)
-            {
-                sprintf(ip_data, "%s", "http://192.168.4.1"); // always the same
-            }
-            else
-            {
-                sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
-            }
-
+            sprintf(ip_data, "%s", "http://192.168.4.1"); // always the same
             lv_qrcode_update(page_server->qr, ip_data, strlen(ip_data));
 
             page_mgr->show(getHassPageEnum(WEBSERVER_QRCODE_PAGE));
@@ -82,8 +69,7 @@ void HassOnboardingFlow::handleEvent(WiFiEvent event)
         }
         break;
     case SK_WEB_CLIENT:
-        is_web_client_connected = event.body.ap_client.connected;
-        if (is_web_client_connected)
+        if (event.body.ap_client.connected)
         {
             page_mgr->show(getHassPageEnum(WEBSERVER_QRCODE_PAGE));
         }
@@ -92,16 +78,12 @@ void HassOnboardingFlow::handleEvent(WiFiEvent event)
             page_mgr->show(getHassPageEnum(CONNECT_QRCODE_PAGE));
         }
         break;
-    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
-        sta_connecting_tick = event.body.wifi_sta_connecting.retry_count;
-        sprintf(wifi_sta_ssid, "%s", event.body.wifi_sta_connecting.ssid);
-        sprintf(wifi_sta_passphrase, "%s", event.body.wifi_sta_connecting.passphrase);
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS:                                 // Credentials for connect event available in body. If we want to display for user.
+        sta_connecting_tick = event.body.wifi_sta_connecting.retry_count; // Will leave if i or someone wants to add countdown timer for connecting event.
 
         page_mgr->show(getHassPageEnum(CONNECTING_TO_WIFI_PAGE));
         break;
-    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
-        // new_wifi_credentials_failed = true;
-        // current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_4;
+    case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED: //! Not needed?
         break;
     case SK_WEB_CLIENT_MQTT:
         page_mgr->show(getHassPageEnum(CONTINUE_IN_BROWSER_MQTT_PAGE));
@@ -110,16 +92,11 @@ void HassOnboardingFlow::handleEvent(WiFiEvent event)
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
         page_mgr->show(getHassPageEnum(CONNECTING_TO_MQTT_PAGE));
         break;
-    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
-        // new_mqtt_credentials_failed = true;
-        // current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_6;
+    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED: //! Not needed?
         break;
     case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
-        // current_page = ONBOARDING_FLOW_PAGE_STEP_HASS_8;
         sprintf(mqtt_server, "%s:%d", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port);
-        // is_onboarding_finished = true;
         os_config_notifier->setOSMode(HASS);
-
         break;
     case SK_MQTT_STATE_UPDATE:
         break;
@@ -202,11 +179,6 @@ void HassOnboardingFlow::triggerMotorConfigUpdate()
         LOGW("Motor_notifier is not set");
     }
 }
-
-// void HassOnboardingFlow::setWiFiNotifier(WiFiNotifier *wifi_notifier)
-// {
-//     this->wifi_notifier = wifi_notifier;
-// }
 
 void HassOnboardingFlow::setOSConfigNotifier(OSConfigNotifier
                                                  *os_config_notifier)

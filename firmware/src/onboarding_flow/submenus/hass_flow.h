@@ -49,13 +49,28 @@ public:
         lv_obj_align_to(scan_to_connect_label, qr, LV_ALIGN_OUT_TOP_MID, 0, -12);
 
         lv_obj_t *or_connect_label = lv_label_create(page);
-        lv_label_set_text(or_connect_label, "OR CONNECT TO\nSSID\n12345678");
+        lv_label_set_text(or_connect_label, "OR CONNECT TO");
         lv_obj_set_style_text_color(or_connect_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
         lv_obj_set_style_text_align(or_connect_label, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_align_to(or_connect_label, qr, LV_ALIGN_OUT_BOTTOM_MID, 0, 12);
+
+        ssid_label = lv_label_create(page);
+        lv_label_set_recolor(ssid_label, true);
+        lv_label_set_text(ssid_label, "SSID: SKDK_000000"); // TODO PLACEHOLDER FOR ALIGNMENT / Improve
+        lv_obj_set_style_text_color(ssid_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        // lv_obj_set_style_text_align(ssid_label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_align_to(ssid_label, or_connect_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
+
+        lv_obj_t *pswd_label = lv_label_create(page);
+        lv_label_set_recolor(pswd_label, true);
+        lv_label_set_text(pswd_label, "PSWD: #FFFFFF 12345678#");
+        lv_obj_set_style_text_color(pswd_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
+        // lv_obj_set_style_text_align(pswd_label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_align_to(pswd_label, ssid_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 1);
     }
 
     lv_obj_t *qr;
+    lv_obj_t *ssid_label;
 };
 
 class WebServerQRCodePage : public BasePage
@@ -78,7 +93,7 @@ public:
 
         lv_obj_t *or_connect_label = lv_label_create(page);
         lv_label_set_recolor(or_connect_label, true);
-        sprintf(buf, "OR OPEN http://192.168.4.1\n IN YOUR BROWSER");
+        sprintf(buf, "OR OPEN #FFFFFF http://192.168.4.1#\n IN YOUR BROWSER");
         lv_label_set_text(or_connect_label, buf);
         lv_obj_set_style_text_color(or_connect_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
         lv_obj_set_style_text_align(or_connect_label, LV_TEXT_ALIGN_CENTER, 0);
@@ -188,15 +203,7 @@ private:
     HassOnboardingPageManager *page_mgr = nullptr;
     RenderParentCallback render_parent_; // Weird workaround.
 
-    bool is_wifi_ap_started = false;
-    char wifi_ap_ssid[12];
-    char wifi_ap_passphrase[9];
-    bool is_wifi_ap_client_connected = false;
-    bool is_web_client_connected = false;
-    bool is_sta_connecting = false;
     uint8_t sta_connecting_tick = 0;
-    char wifi_sta_ssid[128];
-    char wifi_sta_passphrase[128];
     char ap_data[64];
     char ip_data[64];
     char mqtt_server[32];
