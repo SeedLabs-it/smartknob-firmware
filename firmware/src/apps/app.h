@@ -28,73 +28,33 @@ enum SharedAppIds : int8_t
 class App
 {
 public:
-    App(SemaphoreHandle_t mutex) : mutex_(mutex)
-    {
-        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
-        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
-        lv_obj_set_scrollbar_mode(screen, LV_SCROLLBAR_MODE_OFF);
-    }
+    App(SemaphoreHandle_t mutex);
 
-    App(SemaphoreHandle_t mutex, int8_t next, int8_t back) : mutex_(mutex), next_(next), back_(back)
-    {
-        lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
-        lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
-        lv_obj_set_scrollbar_mode(screen, LV_SCROLLBAR_MODE_OFF);
-    }
-
-    void render()
-    {
-        SemaphoreGuard lock(mutex_);
-        lv_scr_load(screen);
-    }
+    App(SemaphoreHandle_t mutex, int8_t next, int8_t back);
+    void render();
 
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) { return EntityStateUpdate(); };
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update) {};
     virtual void updateStateFromSystem(AppState state) {};
 
-    void setMotorNotifier(MotorNotifier *motor_notifier)
-    {
-        this->motor_notifier = motor_notifier;
-    }
+    void setMotorNotifier(MotorNotifier *motor_notifier);
 
-    void triggerMotorConfigUpdate()
-    {
-        if (this->motor_notifier != nullptr)
-        {
-            motor_notifier->requestUpdate(root_level_motor_config);
-        }
-        else
-        {
-            LOGW("motor_notifier is not set");
-        }
-    }
+    void triggerMotorConfigUpdate();
 
     virtual int8_t navigationNext()
     {
         return next_;
     }
-    void setNext(int8_t next)
-    {
-        next_ = next;
-    }
+    void setNext(int8_t next);
     virtual int8_t navigationBack()
     {
         return back_;
     }
-    void setBack(int8_t back)
-    {
-        back_ = back;
-    }
+    void setBack(int8_t back);
 
-    PB_SmartKnobConfig getMotorConfig()
-    {
-        return motor_config;
-    }
+    PB_SmartKnobConfig getMotorConfig();
 
-    std::string getClassName()
-    {
-        return "App";
-    }
+    std::string getClassName();
 
     lv_img_dsc_t small_icon;
     lv_img_dsc_t big_icon;
