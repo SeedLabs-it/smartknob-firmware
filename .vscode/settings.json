@@ -82,7 +82,9 @@
         "app_config.h": "c",
         "logging.h": "c",
         "x40_light_filled.c": "cpp",
-        "x40_light_outline.c": "cpp"
+        "x40_light_outline.c": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

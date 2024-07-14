@@ -1,6 +1,5 @@
 #pragma once
 #include "menu.h"
-#include "font/roboto_thin_bold_24.h"
 
 #include <map>
 
