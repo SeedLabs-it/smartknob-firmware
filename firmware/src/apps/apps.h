@@ -10,6 +10,7 @@
 #include "apps/light_switch/light_switch.h"
 #include "apps/settings/settings.h"
 #include "apps/stopwatch/stopwatch.h"
+#include "apps/blinds/blinds.h"
 
 #include "app_menu.h"
 

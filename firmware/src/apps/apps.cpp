@@ -81,13 +81,13 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     //     add(position, app);
     //     return app;
     // }
-    // else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
-    // {
-    //     BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name, entity_id);
-    //     add(position, app);
-    //     return app;
-    // }
-    if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
+    if (app_slug.compare(APP_SLUG_BLINDS) == 0)
+    {
+        BlindsApp *app = new BlindsApp(screen_mutex_, app_id, friendly_name, entity_id);
+        add(position, app);
+        return app;
+    }
+    else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
         LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_id, friendly_name, entity_id);
         add(position, app);
