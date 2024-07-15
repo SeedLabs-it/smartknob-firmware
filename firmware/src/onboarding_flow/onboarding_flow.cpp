@@ -69,6 +69,9 @@ OnboardingFlowPages getPageEnum(uint8_t screen)
 
 void OnboardingFlow::render()
 {
+    root_level_motor_config.position = current_position;
+    motor_notifier->requestUpdate(root_level_motor_config); // Prevents state after moving back from submenus to be reset to page 0, i.e. moves user to correct page on the onboarding menu.
+
     active_sub_menu = NONE;
     page_mgr->show(getPageEnum(current_position));
 
