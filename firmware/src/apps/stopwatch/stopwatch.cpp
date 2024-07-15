@@ -94,11 +94,13 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
             lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0xFF, 0x00), LV_PART_INDICATOR);
             if (!started && lv_label_get_text(current_stopwatch_state.start_stop_label) != "START")
             {
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
                 lv_label_set_text(current_stopwatch_state.start_stop_label, "START");
             }
             else if (lv_label_get_text(current_stopwatch_state.start_stop_label) != "STARTED")
             {
                 lv_label_set_text(current_stopwatch_state.start_stop_label, "STARTED");
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
             }
         }
         else if (sub_position_unit < -0.1)
@@ -107,6 +109,7 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
             lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0xFF, 0x00, 0x00), LV_PART_INDICATOR);
             if (lv_label_get_text(current_stopwatch_state.start_stop_label) != "RESET")
             {
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
                 lv_label_set_text(current_stopwatch_state.start_stop_label, "RESET");
             }
         }
