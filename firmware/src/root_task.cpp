@@ -455,7 +455,10 @@ void RootTask::run()
             switch (configuration_->getOSConfiguration()->mode)
             {
             case OSMode::ONBOARDING:
-                entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                if (strcmp(latest_state_.config.id, "ONBOARDING") == 0)
+                {
+                    entity_state_update_to_send = display_task_->getOnboardingFlow()->update(app_state);
+                }
                 break;
             case OSMode::DEMO:
                 entity_state_update_to_send = display_task_->getDemoApps()->update(app_state);

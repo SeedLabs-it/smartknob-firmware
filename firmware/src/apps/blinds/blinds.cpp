@@ -40,18 +40,28 @@ void BlindsApp::initScreen()
 {
     SemaphoreGuard lock(mutex_);
 
-    lv_obj_t *label = lv_label_create(screen);
-    lv_label_set_text(label, friendly_name);
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
     blinds_bar = lv_bar_create(screen);
     lv_obj_set_size(blinds_bar, 240, 260);
     lv_obj_set_style_bg_opa(blinds_bar, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(blinds_bar, LV_COLOR_MAKE(0xF8, 0xCA, 0x05), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(blinds_bar, LV_COLOR_MAKE(0xCC, 0xCC, 0xCC), LV_PART_INDICATOR);
     lv_obj_set_style_radius(blinds_bar, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(blinds_bar, 0, LV_PART_INDICATOR);
     lv_obj_center(blinds_bar);
     lv_bar_set_value(blinds_bar, 100, LV_ANIM_OFF);
+
+    lv_obj_set_style_border_side(blinds_bar, LV_BORDER_SIDE_TOP, LV_PART_INDICATOR);
+    lv_obj_set_style_border_width(blinds_bar, 8, LV_PART_INDICATOR);
+    lv_obj_set_style_border_color(blinds_bar, LV_COLOR_MAKE(0xF8, 0xCA, 0x05), LV_PART_INDICATOR);
+
+    lv_obj_t *friendly_name_label = lv_label_create(screen);
+    lv_obj_set_style_text_font(friendly_name_label, &nds12_14px, 0);
+    lv_label_set_text(friendly_name_label, friendly_name);
+    lv_obj_align(friendly_name_label, LV_ALIGN_CENTER, 0, -30);
+
+    percentage_label = lv_label_create(screen);
+    lv_obj_set_style_text_font(percentage_label, &nds12_20px, 0);
+    lv_label_set_text(percentage_label, "");
+    lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
 }
 
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -72,7 +82,10 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
     {
         {
             SemaphoreGuard lock(mutex_);
+            uint8_t percentage = (20 - current_closed_position) * 5;
             lv_bar_set_value(blinds_bar, (20 - current_closed_position) * 5, LV_ANIM_OFF);
+            lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
+            lv_label_set_text_fmt(percentage_label, "%d%%", percentage);
         }
 
         sprintf(new_state.app_id, "%s", app_id);
@@ -97,7 +110,16 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 }
 void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-}
-void BlindsApp::updateStateFromSystem(AppState state)
-{
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *position = cJSON_GetObjectItem(new_state, "position");
+
+    if (position != NULL)
+    {
+        current_closed_position = (20 - position->valueint / 5);
+        motor_config.position = current_closed_position;
+        motor_config.position_nonce = current_closed_position;
+        state_sent_from_hass = true;
+    }
+
+    cJSON_Delete(new_state);
 }
