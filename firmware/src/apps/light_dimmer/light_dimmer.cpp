@@ -69,7 +69,7 @@ void LightDimmerApp::initDimmerScreen()
 
     lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(0xF5, 0xA4, 0x42), LV_PART_INDICATOR);
 
-    lv_obj_set_style_arc_width(arc_, 18, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(arc_, 0, LV_PART_MAIN);
     lv_obj_set_style_arc_width(arc_, 18, LV_PART_INDICATOR);
 
     percentage_label_ = lv_label_create(dimmer_screen);
