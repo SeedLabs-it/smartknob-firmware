@@ -229,7 +229,7 @@ public:
 
 private:
     const uint8_t dot_dia = 6;
-    const uint8_t position_circle_radius = LV_HOR_RES / 2 - dot_dia; // the radius of the circle where you want the dots to lay.
+    const uint8_t position_circle_radius = LV_HOR_RES / 2 - dot_dia * 1.2; // the radius of the circle where you want the dots to lay.
     const float degree_per_dot = dot_dia * 1.2 * PI / 180;
     const float center_point_degree = (270 - 90) * PI / 180; // 270 is bottom
     const float dot_starting_angle = center_point_degree - (((ONBOARDING_FLOW_PAGE_COUNT - 1) * degree_per_dot) / 2);
