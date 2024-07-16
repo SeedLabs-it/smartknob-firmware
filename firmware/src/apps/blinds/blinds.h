@@ -8,6 +8,8 @@ public:
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
 
+    int8_t navigationNext() override;
+
 private:
     void initScreen();
 

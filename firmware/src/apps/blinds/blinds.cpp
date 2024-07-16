@@ -7,7 +7,7 @@ BlindsApp::BlindsApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name
     sprintf(entity_id, "%s", entity_id_);
 
     motor_config = PB_SmartKnobConfig{
-        15,
+        current_closed_position,
         0,
         15,
         0,
@@ -108,6 +108,7 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 
     return new_state;
 }
+
 void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
     cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
@@ -122,4 +123,23 @@ void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 
     cJSON_Delete(new_state);
+}
+
+int8_t BlindsApp::navigationNext()
+{
+    motor_config.position_nonce = motor_config.position;
+    motor_notifier->requestUpdate(motor_config);
+
+    if (motor_config.position == 0)
+    {
+        motor_config.position = 20;
+    }
+    else if (motor_config.position > 0)
+    {
+        motor_config.position = 0;
+    }
+
+    motor_config.position_nonce = motor_config.position;
+
+    return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
