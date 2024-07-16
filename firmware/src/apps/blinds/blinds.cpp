@@ -41,7 +41,7 @@ void BlindsApp::initScreen()
     SemaphoreGuard lock(mutex_);
 
     blinds_bar = lv_bar_create(screen);
-    lv_obj_set_size(blinds_bar, 240, 260);
+    lv_obj_set_size(blinds_bar, 240, 242); //-Border width
     lv_obj_set_style_bg_opa(blinds_bar, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_bg_color(blinds_bar, LV_COLOR_MAKE(0xCC, 0xCC, 0xCC), LV_PART_INDICATOR);
     lv_obj_set_style_radius(blinds_bar, 0, LV_PART_MAIN);
@@ -60,7 +60,7 @@ void BlindsApp::initScreen()
 
     percentage_label = lv_label_create(screen);
     lv_obj_set_style_text_font(percentage_label, &nds12_20px, 0);
-    lv_label_set_text(percentage_label, "");
+    lv_label_set_text(percentage_label, "Open");
     lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
 }
 
@@ -84,8 +84,20 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
             SemaphoreGuard lock(mutex_);
             uint8_t percentage = (20 - current_closed_position) * 5;
             lv_bar_set_value(blinds_bar, (20 - current_closed_position) * 5, LV_ANIM_OFF);
+
+            if (current_closed_position == 0)
+            {
+                lv_label_set_text(percentage_label, "Open");
+            }
+            else if (current_closed_position == 20)
+            {
+                lv_label_set_text(percentage_label, "Closed");
+            }
+            else if (current_closed_position > 0 && current_closed_position < 20)
+            {
+                lv_label_set_text_fmt(percentage_label, "%d%%", percentage);
+            }
             lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
-            lv_label_set_text_fmt(percentage_label, "%d%%", percentage);
         }
 
         sprintf(new_state.app_id, "%s", app_id);
