@@ -7,23 +7,23 @@
 enum SettingsPages
 {
     WIFI_PAGE_SETTINGS,
-    HASS_PAGE_SETTINGS,
+    // HASS_PAGE_SETTINGS,
     DEMO_PAGE_SETTINGS,
     MOTOR_CALIBRATION_SETTINGS,
-    STRAIN_CALIBRATION_SETTINGS,
+    // STRAIN_CALIBRATION_SETTINGS,
     SETTINGS_PAGE_COUNT
 };
 
-class HASSSettingsPage : public BasePage
-{
-public:
-    HASSSettingsPage(lv_obj_t *parent) : BasePage(parent)
-    {
-        lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "Home Assistant Settings");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-    }
-};
+// class HASSSettingsPage : public BasePage
+// {
+// public:
+//     HASSSettingsPage(lv_obj_t *parent) : BasePage(parent)
+//     {
+//         lv_obj_t *label = lv_label_create(page);
+//         lv_label_set_text(label, "Home Assistant Settings");
+//         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+//     }
+// };
 
 class DemoSettingsPage : public BasePage
 {
@@ -47,16 +47,16 @@ public:
     }
 };
 
-class StrainCalibrationSettingsPage : public BasePage
-{
-public:
-    StrainCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
-    {
-        lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "Strain Gauge Calibration");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-    }
-};
+// class StrainCalibrationSettingsPage : public BasePage
+// {
+// public:
+//     StrainCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
+//     {
+//         lv_obj_t *label = lv_label_create(page);
+//         lv_label_set_text(label, "Strain Gauge Calibration");
+//         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+//     }
+// };
 
 class SettingsPageManager : public PageManager<SettingsPages>
 {
@@ -65,10 +65,10 @@ public:
     SettingsPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<SettingsPages>(parent, mutex)
     {
         add(WIFI_PAGE_SETTINGS, new WiFiSettingsPage(parent));
-        add(HASS_PAGE_SETTINGS, new HASSSettingsPage(parent));
+        // add(HASS_PAGE_SETTINGS, new HASSSettingsPage(parent));
         add(DEMO_PAGE_SETTINGS, new DemoSettingsPage(parent));
         add(MOTOR_CALIBRATION_SETTINGS, new MotorCalibrationSettingsPage(parent));
-        add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
+        // add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
 
         dotIndicatorInit();
 
@@ -95,18 +95,18 @@ public:
                     case WIFI_PAGE_SETTINGS:
                         lv_label_set_text(page_name, "WiFi");
                         break;
-                    case HASS_PAGE_SETTINGS:
-                        lv_label_set_text(page_name, "HASS");
-                        break;
+                    // case HASS_PAGE_SETTINGS:
+                    //     lv_label_set_text(page_name, "HASS");
+                    //     break;
                     case DEMO_PAGE_SETTINGS:
                         lv_label_set_text(page_name, "DEMO");
                         break;
                     case MOTOR_CALIBRATION_SETTINGS:
                         lv_label_set_text(page_name, "MOTOR");
                         break;
-                    case STRAIN_CALIBRATION_SETTINGS:
-                        lv_label_set_text(page_name, "STRAIN");
-                        break;
+                    // case STRAIN_CALIBRATION_SETTINGS:
+                    //     lv_label_set_text(page_name, "STRAIN");
+                    //     break;
                     default:
                         lv_label_set_text(page_name, "Unknown");
                         break;
