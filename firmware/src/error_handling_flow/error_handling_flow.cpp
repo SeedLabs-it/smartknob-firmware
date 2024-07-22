@@ -35,12 +35,19 @@ ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex), B
     current_error_state.page = page;
     current_error_state.error_msg_label = lv_label_create(page);
 
+    lv_obj_t *error_label = lv_label_create(page);
+    lv_obj_set_style_text_color(error_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_set_style_text_font(error_label, &nds12_20px, LV_PART_MAIN);
+    lv_label_set_text(error_label, "ERROR");
+    lv_obj_set_style_text_align(error_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_align(error_label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
+
     lv_obj_t *error_msg_label = current_error_state.error_msg_label;
-    lv_obj_set_style_text_color(error_msg_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    lv_obj_set_style_text_font(error_msg_label, &nds12_20px, LV_PART_MAIN);
-    lv_label_set_text(error_msg_label, "ERROR");
-    lv_obj_set_style_text_align(error_msg_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_align(error_msg_label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
+    // lv_label_set_text(error_msg_label, current_error_state.);
+    // lv_obj_set_style_text_color(error_msg_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    // lv_obj_set_style_text_font(error_msg_label, &nds12_20px, LV_PART_MAIN);
+    // lv_obj_align_to(error_msg_label, error_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+
     show();
 }
 
@@ -100,6 +107,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 
         send_event.type = SK_MQTT_ERROR;
         publishEvent(send_event);
+        lv_label_set_text(error_msg_label, "MQTT ERROR");
         break;
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         if (!WiFi.isConnected())
@@ -118,6 +126,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 
         send_event.type = SK_WIFI_ERROR;
         publishEvent(send_event);
+        lv_label_set_text(error_msg_label, "WIFI ERROR");
         break;
     case SK_RESET_BUTTON_PRESSED:
         error_type = RESET;
@@ -148,9 +157,9 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
     WiFiEvent send_event;
     send_event.body.error.type = error_type;
 
-    switch (event.press)
+    switch (event)
     {
-    case NAVIGATION_EVENT_PRESS_SHORT:
+    case NavigationEvent::SHORT:
         send_event.type = SK_RESET_ERROR;
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
@@ -161,7 +170,7 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
             publishEvent(send_event);
         }
         break;
-    case NAVIGATION_EVENT_PRESS_LONG:
+    case NavigationEvent::LONG:
         send_event.type = SK_DISMISS_ERROR;
         if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {

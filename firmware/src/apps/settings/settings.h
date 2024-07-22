@@ -3,6 +3,7 @@
 #include "../util.h"
 #include "./display/page_manager.h"
 #include "pages/wifi.h"
+#include "pages/demo.h"
 
 enum SettingsPages
 {
@@ -24,32 +25,6 @@ enum SettingsPages
 //         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 //     }
 // };
-
-class DemoSettingsPage : public BasePage
-{
-public:
-    DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
-    {
-        demo_mode_label = lv_label_create(page);
-        lv_label_set_text(demo_mode_label, "Demo Mode");
-        lv_obj_align(demo_mode_label, LV_ALIGN_CENTER, 0, 0);
-    }
-
-    void updateFromSystem(AppState state) override
-    {
-        LOGE("DemoSettingsPage::updateFromSystem");
-        if (state.os_mode_state == DEMO)
-        {
-            lv_label_set_text(demo_mode_label, "DISABLED");
-        }
-        else
-        {
-            lv_label_set_text(demo_mode_label, "ENABLED");
-        }
-    }
-
-    lv_obj_t *demo_mode_label;
-};
 
 class MotorCalibrationSettingsPage : public BasePage
 {

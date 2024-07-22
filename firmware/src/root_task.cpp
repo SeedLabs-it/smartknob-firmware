@@ -581,8 +581,7 @@ void RootTask::updateHardware(AppState *app_state)
 
                 motor_task_.playHaptic(true, true);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_LONG_PRESSED;
-                NavigationEvent event;
-                event.press = NAVIGATION_EVENT_PRESS_LONG;
+                NavigationEvent event = NavigationEvent::LONG;
 
                 //! GET ACTIVE FLOW? SO WE DONT HAVE DIFFERENT
                 // display_task_->getActiveFlow()->handleNavigationEvent(event);
@@ -619,8 +618,7 @@ void RootTask::updateHardware(AppState *app_state)
 
                 motor_task_.playHaptic(false, false);
                 last_strain_pressed_played_ = VIRTUAL_BUTTON_SHORT_RELEASED;
-                NavigationEvent event;
-                event.press = NAVIGATION_EVENT_PRESS_SHORT;
+                NavigationEvent event = NavigationEvent::SHORT;
                 switch (display_task_->getErrorHandlingFlow()->getErrorType())
                 {
                 case NO_ERROR:

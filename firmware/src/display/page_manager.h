@@ -3,7 +3,8 @@
 #include "logging.h"
 #include "lvgl.h"
 #include "semaphore_guard.h"
-#include "../app_config.h"
+#include "./app_config.h"
+#include "./navigation/navigation.h"
 class BasePage
 {
 public:
@@ -18,16 +19,24 @@ public:
 
     void show()
     {
-        // lv_obj_remove_flag(page, LV_OBJ_FLAG_HIDDEN);
+        if (!lv_obj_has_flag(page, LV_OBJ_FLAG_HIDDEN))
+            return;
         lv_obj_clear_flag(page, LV_OBJ_FLAG_HIDDEN);
     }
 
     void hide()
     {
+        if (lv_obj_has_flag(page, LV_OBJ_FLAG_HIDDEN))
+            return;
         lv_obj_add_flag(page, LV_OBJ_FLAG_HIDDEN);
     }
 
     virtual void updateFromSystem(AppState state)
+    {
+        // Do nothing by default
+    }
+
+    virtual void handleNavigation(NavigationEvent event)
     {
         // Do nothing by default
     }

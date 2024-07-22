@@ -179,8 +179,9 @@ void Apps::triggerMotorConfigUpdate()
 
 void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
+    switch (event)
     {
+    case NavigationEvent::SHORT:
         switch (active_app->navigationNext())
         {
         case DONT_NAVIGATE:
@@ -193,10 +194,8 @@ void Apps::handleNavigationEvent(NavigationEvent event)
             break;
         }
         motor_notifier->requestUpdate(active_app->getMotorConfig());
-    }
-
-    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
-    {
+        break;
+    case NavigationEvent::LONG:
         switch (active_app->navigationBack())
         {
         case DONT_NAVIGATE:
@@ -209,6 +208,9 @@ void Apps::handleNavigationEvent(NavigationEvent event)
             break;
         }
         motor_notifier->requestUpdate(active_app->getMotorConfig());
+        break;
+    default:
+        break;
     }
 }
 

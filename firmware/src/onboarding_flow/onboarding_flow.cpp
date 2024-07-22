@@ -90,9 +90,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
     }
     if (active_sub_menu == NONE)
     {
-
-        if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
+        switch (event)
         {
+        case NavigationEvent::SHORT:
             switch (getPageEnum(current_position))
             {
             case WELCOME_PAGE: // No submenus available for welcome page nor about page.
@@ -109,13 +109,11 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 
                 break;
             default:
+                LOGE("Unhandled navigation event");
                 break;
             }
         }
-        return;
     }
-
-    LOGE("Unhandled navigation event");
 }
 
 EntityStateUpdate OnboardingFlow::update(AppState state)

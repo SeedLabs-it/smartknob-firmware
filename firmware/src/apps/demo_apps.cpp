@@ -7,13 +7,15 @@ DemoApps::DemoApps(SemaphoreHandle_t mutex) : HassApps(mutex)
 
 void DemoApps::handleNavigationEvent(NavigationEvent event)
 {
-    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    switch (event)
     {
+    case NavigationEvent::LONG:
         if (active_id == MENU)
         {
             os_config_notifier->setOSMode(ONBOARDING);
             return;
         }
+        break;
     }
     Apps::handleNavigationEvent(event);
 }

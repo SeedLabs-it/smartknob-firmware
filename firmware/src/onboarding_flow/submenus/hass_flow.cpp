@@ -107,14 +107,16 @@ void HassOnboardingFlow::handleEvent(WiFiEvent event)
 
 void HassOnboardingFlow::handleNavigationEvent(NavigationEvent event)
 {
-    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
+    switch (event)
     {
+    case NavigationEvent::LONG:
         render_parent_();
         // if (page_mgr->getCurrentPageNum() == 0)
         // {
         //     render_parent_();
         //     return;
         // }
+        break;
     }
 
     // if (event.press == NAVIGATION_EVENT_PRESS_SHORT) // ! REMOVE JUST FOR TESTING
