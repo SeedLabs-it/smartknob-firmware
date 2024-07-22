@@ -9,6 +9,7 @@
 #include "icons.h"
 #include "../events/events.h"
 #include "../notify/motor_notifier/motor_notifier.h"
+#include "navigation/navigation.h"
 
 const char APP_SLUG_CLIMATE[48] = "climate";
 const char APP_SLUG_BLINDS[48] = "blinds";
@@ -36,6 +37,10 @@ public:
     virtual EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state) { return EntityStateUpdate(); };
     virtual void updateStateFromHASS(MQTTStateUpdate mqtt_state_update) {};
     virtual void updateStateFromSystem(AppState state) {};
+
+    virtual void handleNavigation(NavigationEvent event) {
+        // DO NOTHING BY DEFAULT
+    };
 
     void setMotorNotifier(MotorNotifier *motor_notifier);
 

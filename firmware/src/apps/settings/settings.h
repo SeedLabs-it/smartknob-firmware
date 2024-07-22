@@ -4,6 +4,7 @@
 #include "./display/page_manager.h"
 #include "pages/wifi.h"
 #include "pages/demo.h"
+#include "./notify/os_config_notifier/os_config_notifier.h"
 
 enum SettingsPages
 {
@@ -52,11 +53,13 @@ class SettingsPageManager : public PageManager<SettingsPages>
 {
 
 public:
-    SettingsPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<SettingsPages>(parent, mutex)
+    SettingsPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex, OSConfigNotifier *os_config_notifier) : PageManager<SettingsPages>(parent, mutex)
     {
         add(WIFI_PAGE_SETTINGS, new WiFiSettingsPage(parent));
         // add(HASS_PAGE_SETTINGS, new HASSSettingsPage(parent));
-        add(DEMO_PAGE_SETTINGS, new DemoSettingsPage(parent));
+        DemoSettingsPage *demo_page = new DemoSettingsPage(parent);
+        demo_page->setOSConfigNotifier(os_config_notifier);
+        add(DEMO_PAGE_SETTINGS, demo_page);
         add(MOTOR_CALIBRATION_SETTINGS, new MotorCalibrationSettingsPage(parent));
         // add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
 
@@ -142,6 +145,8 @@ public:
     SettingsApp(SemaphoreHandle_t mutex);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
+    void handleNavigation(NavigationEvent event);
+    void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
 
 protected:
     void initScreen()
@@ -201,4 +206,6 @@ private:
     bool first_run = false;
 
     SettingsPageManager *page_mgr = nullptr;
+
+    OSConfigNotifier *os_config_notifier_ = nullptr;
 };

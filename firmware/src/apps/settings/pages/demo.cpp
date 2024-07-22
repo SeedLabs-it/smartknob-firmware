@@ -2,7 +2,7 @@
 
 DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
 {
-    in_demo_mode_page = new InDemoModeSettingsPage(page, this);
+
     // demo_mode_label = lv_label_create(page);
     // lv_label_set_text(demo_mode_label, "Demo Mode");
     // lv_obj_align(demo_mode_label, LV_ALIGN_CENTER, 0, 0);
@@ -35,7 +35,7 @@ DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_align(purple_colored_dot, LV_ALIGN_CENTER, -(distance_between * 2), -distance_between - y_offset);
     lv_obj_set_style_bg_color(purple_colored_dot, LV_COLOR_MAKE(0x9D, 0x58, 0xF5), LV_PART_MAIN);
 
-    lv_obj_t *prompt_label = lv_label_create(page);
+    prompt_label = lv_label_create(page);
     lv_label_set_text(prompt_label, "PRESS TO START");
     lv_obj_align(prompt_label, LV_ALIGN_CENTER, 0, 52);
     lv_obj_set_style_text_font(prompt_label, &nds12_14px, 0);
@@ -46,35 +46,46 @@ void DemoSettingsPage::updateFromSystem(AppState state)
 {
     if (state.os_mode_state == DEMO)
     {
-        // lv_label_set_text(demo_mode_label, "DISABLED");
-        this->hide();
-        in_demo_mode_page->updateFromSystem(state);
+        lv_label_set_text(prompt_label, "DISABLED,\n ALREADY IN DEMO MODE");
+        // this->hide();
+        // in_demo_mode_page->updateFromSystem(state);
     }
     else
     {
-        this->show();
-        // lv_label_set_text(demo_mode_label, "ENABLED");
+        // this->show();
+        lv_label_set_text(prompt_label, "PRESS TO START");
     }
 }
 
 void DemoSettingsPage::handleNavigation(NavigationEvent event)
 {
+    LOGE("DemoSettingsPage::handleNavigation");
     switch (event)
     {
     case NavigationEvent::SHORT:
-        // os_config_notifier->setOSMode(DEMO);
+        if (os_config_notifier_ != nullptr)
+            os_config_notifier_->setOSMode(OSMode::DEMO);
+        else
+            LOGE("os_config_notifier_ is nullptr");
         break;
     default:
         break;
     }
 }
 
-InDemoModeSettingsPage::InDemoModeSettingsPage(lv_obj_t *parent, BasePage *demo_page) : BasePage(parent)
+void DemoSettingsPage::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    os_config_notifier_ = os_config_notifier;
+    in_demo_mode_page = new InDemoModeSettingsPage(page, this, os_config_notifier); // Ugly............
+}
+
+InDemoModeSettingsPage::InDemoModeSettingsPage(lv_obj_t *parent, BasePage *demo_page, OSConfigNotifier *os_config_notifier) : BasePage(parent)
 {
     demo_page_ = demo_page;
+    os_config_notifier_ = os_config_notifier;
 
     demo_mode_label = lv_label_create(page);
-    lv_label_set_text(demo_mode_label, "Demo Mode");
+    lv_label_set_text(demo_mode_label, "DISABLED");
     lv_obj_align(demo_mode_label, LV_ALIGN_CENTER, 0, 0);
 }
 
@@ -87,6 +98,7 @@ void InDemoModeSettingsPage::updateFromSystem(AppState state)
     }
     else
     {
+        os_config_notifier_->setOSMode(OSMode::HASS);
         this->hide();
     }
 }

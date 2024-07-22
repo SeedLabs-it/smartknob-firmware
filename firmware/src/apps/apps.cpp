@@ -179,6 +179,7 @@ void Apps::triggerMotorConfigUpdate()
 
 void Apps::handleNavigationEvent(NavigationEvent event)
 {
+    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
     switch (event)
     {
     case NavigationEvent::SHORT:
@@ -230,4 +231,9 @@ std::shared_ptr<App> Apps::find(char *app_id)
         }
     }
     return nullptr;
+}
+
+void Apps::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    os_config_notifier_ = os_config_notifier;
 }

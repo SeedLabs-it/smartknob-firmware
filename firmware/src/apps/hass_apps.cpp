@@ -32,6 +32,7 @@ void HassApps::sync(cJSON *json_apps)
     }
 
     SettingsApp *settings_app = new SettingsApp(screen_mutex_);
+    settings_app->setOSConfigNotifier(os_config_notifier_);
     add(app_position, settings_app);
 
     updateMenu();

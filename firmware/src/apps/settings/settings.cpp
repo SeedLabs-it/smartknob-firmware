@@ -30,8 +30,6 @@ SettingsApp::SettingsApp(SemaphoreHandle_t mutex) : App(mutex)
     big_icon = x80_settings;
     small_icon = x40_settings;
 
-    page_mgr = new SettingsPageManager(screen, mutex);
-
     // initScreen();
 }
 
@@ -76,6 +74,17 @@ void SettingsApp::updateStateFromSystem(AppState state)
     // needed to next reload of App
     // motor_config.position_nonce = current_volume_position;
     // motor_config.position = current_volume_position;
+}
+
+void SettingsApp::handleNavigation(NavigationEvent event)
+{
+    page_mgr->getCurrentPage()->handleNavigation(event);
+}
+
+void SettingsApp::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    os_config_notifier_ = os_config_notifier;
+    page_mgr = new SettingsPageManager(screen, mutex_, os_config_notifier_); // Should be created in the constructor moved here for fix of os_config_notifier_ being nullptr, UGLY
 }
 
 // void SettingsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)

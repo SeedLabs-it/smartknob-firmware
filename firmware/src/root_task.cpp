@@ -159,21 +159,38 @@ void RootTask::run()
 
     os_config_notifier_.setCallback([this](OSMode os_mode)
                                     {
+                                        this->configuration_->loadOSConfiguration();
                                         OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+
+                                        if (os_config->mode == HASS && os_mode == ONBOARDING)
+                                        { //Going from DEMO mode to HASS mode
+                                            os_mode = HASS;
+                                        }
+
                                         os_config->mode = os_mode;
-                                        this->configuration_->saveOSConfiguration(*os_config);
+
                                         this->configuration_->saveOSConfigurationInMemory(*os_config); 
+
+                                        
 
                                         switch (os_config->mode)
                                         {
                                         case ONBOARDING:
+                                            // this->configuration_->loadOSConfiguration();
+                                            // if (this->configuration_->getOSConfiguration()->mode == HASS)
+                                            // {
+                                                
+                                            // }
                                             display_task_->enableOnboarding();
+                                            this->configuration_->saveOSConfiguration(*os_config);
+
                                             break;
                                         case DEMO:
                                             display_task_->enableDemo();
                                             break;
                                         case HASS:
                                             display_task_->enableHass();
+                                            this->configuration_->saveOSConfiguration(*os_config);
                                             break;
                                         default:
                                             break;
@@ -213,6 +230,7 @@ void RootTask::run()
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
+    display_task_->getHassApps()->setOSConfigNotifier(&os_config_notifier_);
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);

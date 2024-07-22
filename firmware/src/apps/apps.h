@@ -5,6 +5,7 @@
 #include "../app_config.h"
 #include "../notify/motor_notifier/motor_notifier.h"
 #include "../navigation/navigation.h"
+#include "./notify/os_config_notifier/os_config_notifier.h"
 
 #include "apps/light_dimmer/light_dimmer.h"
 #include "apps/light_switch/light_switch.h"
@@ -32,6 +33,7 @@ public:
     void updateMenu();
 
     void setMotorNotifier(MotorNotifier *motor_notifier);
+    void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void triggerMotorConfigUpdate();
     void handleNavigationEvent(NavigationEvent event);
 
@@ -68,4 +70,6 @@ protected:
     PB_SmartKnobConfig root_level_motor_config;
 
     MotorNotifier *motor_notifier;
+
+    OSConfigNotifier *os_config_notifier_;
 };
