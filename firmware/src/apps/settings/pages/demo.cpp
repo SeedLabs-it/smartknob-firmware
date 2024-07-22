@@ -44,6 +44,7 @@ DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
 
 void DemoSettingsPage::updateFromSystem(AppState state)
 {
+    state_ = state;
     if (state.os_mode_state == DEMO)
     {
         lv_label_set_text(prompt_label, "DISABLED");
@@ -64,9 +65,20 @@ void DemoSettingsPage::handleNavigation(NavigationEvent event)
     {
     case NavigationEvent::SHORT:
         if (os_config_notifier_ != nullptr)
-            os_config_notifier_->setOSMode(OSMode::DEMO);
+        {
+            if (state_.os_mode_state != DEMO)
+            {
+                os_config_notifier_->setOSMode(OSMode::DEMO);
+            }
+            else
+            {
+                LOGV(PB_LogLevel_INFO, "Entering Demo Mode from Demo Mode is disabled.");
+            }
+        }
         else
-            LOGE("os_config_notifier_ is nullptr");
+        {
+            LOGE("os_config_notifier_ isnt set.");
+        }
         break;
     default:
         break;

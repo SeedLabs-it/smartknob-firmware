@@ -13,6 +13,7 @@ public:
 
 private:
     lv_obj_t *prompt_label;
+    AppState state_;
 
     OSConfigNotifier *os_config_notifier_;
 };
