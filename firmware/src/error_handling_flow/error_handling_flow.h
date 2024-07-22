@@ -17,6 +17,7 @@ struct CurrentErrorState
 {
     unsigned long start_ms;
 
+    lv_obj_t *error_label;
     lv_obj_t *error_msg_label;
 
     lv_obj_t *parent;

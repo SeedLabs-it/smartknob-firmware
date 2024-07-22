@@ -4,6 +4,7 @@
 #include "./display/page_manager.h"
 #include "pages/wifi.h"
 #include "pages/demo.h"
+#include "pages/motor_calib.h"
 #include "./notify/os_config_notifier/os_config_notifier.h"
 
 enum SettingsPages
@@ -15,39 +16,6 @@ enum SettingsPages
     // STRAIN_CALIBRATION_SETTINGS,
     SETTINGS_PAGE_COUNT
 };
-
-// class HASSSettingsPage : public BasePage
-// {
-// public:
-//     HASSSettingsPage(lv_obj_t *parent) : BasePage(parent)
-//     {
-//         lv_obj_t *label = lv_label_create(page);
-//         lv_label_set_text(label, "Home Assistant Settings");
-//         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-//     }
-// };
-
-class MotorCalibrationSettingsPage : public BasePage
-{
-public:
-    MotorCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
-    {
-        lv_obj_t *label = lv_label_create(page);
-        lv_label_set_text(label, "Motor Calibration");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-    }
-};
-
-// class StrainCalibrationSettingsPage : public BasePage
-// {
-// public:
-//     StrainCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
-//     {
-//         lv_obj_t *label = lv_label_create(page);
-//         lv_label_set_text(label, "Strain Gauge Calibration");
-//         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-//     }
-// };
 
 class SettingsPageManager : public PageManager<SettingsPages>
 {
