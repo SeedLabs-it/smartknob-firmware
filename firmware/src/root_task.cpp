@@ -451,8 +451,8 @@ void RootTask::run()
             isCurrentSubPositionSet = true;
             currentSubPosition = roundedNewPosition;
             app_state.motor_state = latest_state_;
-
-            switch (configuration_->getOSConfiguration()->mode)
+            app_state.os_mode_state = configuration_->getOSConfiguration()->mode;
+            switch (app_state.os_mode_state)
             {
             case OSMode::ONBOARDING:
                 if (strcmp(latest_state_.config.id, "ONBOARDING") == 0)
