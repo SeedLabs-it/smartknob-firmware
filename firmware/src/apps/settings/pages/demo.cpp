@@ -46,7 +46,7 @@ void DemoSettingsPage::updateFromSystem(AppState state)
 {
     if (state.os_mode_state == DEMO)
     {
-        lv_label_set_text(prompt_label, "DISABLED,\n ALREADY IN DEMO MODE");
+        lv_label_set_text(prompt_label, "DISABLED");
         // this->hide();
         // in_demo_mode_page->updateFromSystem(state);
     }
@@ -76,29 +76,4 @@ void DemoSettingsPage::handleNavigation(NavigationEvent event)
 void DemoSettingsPage::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
 {
     os_config_notifier_ = os_config_notifier;
-    in_demo_mode_page = new InDemoModeSettingsPage(page, this, os_config_notifier); // Ugly............
-}
-
-InDemoModeSettingsPage::InDemoModeSettingsPage(lv_obj_t *parent, BasePage *demo_page, OSConfigNotifier *os_config_notifier) : BasePage(parent)
-{
-    demo_page_ = demo_page;
-    os_config_notifier_ = os_config_notifier;
-
-    demo_mode_label = lv_label_create(page);
-    lv_label_set_text(demo_mode_label, "DISABLED");
-    lv_obj_align(demo_mode_label, LV_ALIGN_CENTER, 0, 0);
-}
-
-void InDemoModeSettingsPage::updateFromSystem(AppState state)
-{
-    if (state.os_mode_state == DEMO)
-    {
-        lv_label_set_text(demo_mode_label, "DISABLED");
-        this->show();
-    }
-    else
-    {
-        os_config_notifier_->setOSMode(OSMode::HASS);
-        this->hide();
-    }
 }

@@ -54,11 +54,18 @@ public:
     uint8_t get_menu_page_count();
     void set_menu_page_count(uint8_t count);
 
+    void setMenuName(const char *name)
+    {
+        lv_label_set_text(menu_name_label, name);
+    }
+
 protected:
     lv_obj_t *left_image_icon;
     lv_obj_t *right_image_icon;
     lv_img_dsc_t left_icon;
     lv_img_dsc_t right_icon;
+
+    lv_obj_t *menu_name_label;
 
     uint8_t menu_page_count = 0;
     uint8_t current_menu_position = 0;

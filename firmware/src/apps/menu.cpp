@@ -16,9 +16,9 @@ void Menu::initScreen()
     lv_obj_remove_style_all(overlay);
     lv_obj_set_size(overlay, LV_HOR_RES, LV_VER_RES);
 
-    lv_obj_t *label = lv_label_create(overlay);
-    lv_label_set_text(label, "Menu");
-    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 32);
+    menu_name_label = lv_label_create(overlay);
+    lv_label_set_text(menu_name_label, "Menu");
+    lv_obj_align(menu_name_label, LV_ALIGN_TOP_MID, 0, 32);
 
     left_image_icon = lv_img_create(overlay);
     lv_obj_add_style(left_image_icon, &style, 0);
