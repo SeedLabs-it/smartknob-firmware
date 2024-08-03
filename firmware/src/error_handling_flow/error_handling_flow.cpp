@@ -2,14 +2,21 @@
 
 ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 {
-    error_page = new ErrorPage(lv_obj_create(NULL));
-    reset_page = new ResetPage(lv_obj_create(NULL));
+    page_manager = new ErrorHandlingPageManager(lv_obj_create(NULL), mutex_);
+    // error_page = new ErrorPage(lv_obj_create(NULL));
+    // reset_page = new ResetPage(lv_obj_create(NULL));
 }
 
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
     WiFiEvent send_event;
     motor_notifier->requestUpdate(blocked_motor_config);
+
+    ErrorPage *error_page = (ErrorPage *)page_manager->getPage(ErrorPages::ERROR_PAGE);
+    ResetPage *reset_page = (ResetPage *)page_manager->getPage(ErrorPages::RESET_PAGE);
+
+    ErrorType error_type = NO_ERROR;
+    error_state.event_at = event.sent_at;
 
     switch (event.type)
     {
@@ -26,14 +33,8 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         // setQRCode(ip_data);
     case SK_MQTT_CONNECTION_FAILED:
         error_type = MQTT_ERROR;
-        latest_event = event;
-
         send_event.type = SK_MQTT_ERROR;
         publishEvent(send_event);
-
-        error_page->setErrorTypeLabel("MQTT");
-        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
-        error_page->render();
         break;
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         if (!WiFi.isConnected())
@@ -48,21 +49,17 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         // setQRCode(ip_data);
     case SK_WIFI_STA_CONNECTION_FAILED:
         error_type = WIFI_ERROR;
-        latest_event = event;
-
         send_event.type = SK_WIFI_ERROR;
         publishEvent(send_event);
-        error_page->setErrorTypeLabel("WiFi");
-        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
-        error_page->render();
         break;
     case SK_RESET_BUTTON_PRESSED:
-        error_type = RESET;
-        latest_event = event;
-        reset_page->render();
+        error_type = ErrorType::RESET;
+        ((ResetPage *)page_manager->getPage(ErrorPages::RESET_PAGE))->show();
+        page_manager->render(ErrorPages::RESET_PAGE);
         break;
     case SK_RESET_BUTTON_RELEASED:
-        lv_timer_del(timer);
+        // lv_timer_del(timer);
+        //! DELETE TIMER ON RESET PAGE IN PAGE MANAGER??
     case SK_DISMISS_ERROR:
     case SK_RESET_ERROR:
         error_type = NO_ERROR;
@@ -71,6 +68,9 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         break;
     }
 
+    error_state.latest_error_type = error_type;
+    error_state.latest_event = event;
+
     switch (error_type)
     {
     case NO_ERROR:
@@ -78,9 +78,18 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         break;
     case MQTT_ERROR:
         LOGE("MQTT ERROR");
+
+        error_page->setErrorTypeLabel("MQTT");
+        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
+        page_manager->render(ErrorPages::ERROR_PAGE);
+
         break;
     case WIFI_ERROR:
         LOGE("WIFI ERROR");
+
+        error_page->setErrorTypeLabel("WiFi");
+        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
+        page_manager->render(ErrorPages::ERROR_PAGE);
         break;
     default:
         LOGE("UNKNOWN ERROR");
@@ -97,22 +106,22 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
     {
     case NavigationEvent::SHORT:
         send_event.type = SK_RESET_ERROR;
-        if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
+        if (error_type == MQTT_ERROR && error_state.latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
             publishEvent(send_event);
         }
-        else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
+        else if (error_type == WIFI_ERROR && error_state.latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
             publishEvent(send_event);
         }
         break;
     case NavigationEvent::LONG:
         send_event.type = SK_DISMISS_ERROR;
-        if (error_type == MQTT_ERROR && latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
+        if (error_type == MQTT_ERROR && error_state.latest_event.type == SK_MQTT_RETRY_LIMIT_REACHED)
         {
             publishEvent(send_event);
         }
-        else if (error_type == WIFI_ERROR && latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
+        else if (error_type == WIFI_ERROR && error_state.latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
         {
             publishEvent(send_event);
         }

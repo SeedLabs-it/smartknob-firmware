@@ -6,9 +6,9 @@ class ResetPage : public BasePage
 public:
     ResetPage(lv_obj_t *parent);
 
-    void render();
+    void show();
 
-    lv_obj_t *getParent();
+    lv_obj_t *getPage();
 
     lv_obj_t *getResetMsgLabel();
     lv_timer_t *getTimer();

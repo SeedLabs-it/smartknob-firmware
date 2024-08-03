@@ -28,6 +28,37 @@
 //     lv_obj_t *page;
 // };
 
+struct ErrorState
+{
+    ErrorType latest_error_type;
+    WiFiEvent latest_event;
+
+    unsigned long event_at;
+};
+
+enum ErrorPages
+{
+    ERROR_PAGE,
+    RESET_PAGE,
+    COUNT
+};
+
+class ErrorHandlingPageManager : public PageManager<ErrorPages>
+{
+public:
+    ErrorHandlingPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex) : PageManager<ErrorPages>(parent, mutex)
+    {
+        add(ErrorPages::ERROR_PAGE, new ErrorPage(parent));
+        add(ErrorPages::RESET_PAGE, new ResetPage(parent));
+    }
+
+    void render(ErrorPages page_enum)
+    {
+        PageManager::show(page_enum);
+        lv_scr_load(parent_);
+    }
+};
+
 class ErrorHandlingFlow
 {
 public:
@@ -39,9 +70,6 @@ public:
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
 
-    // void setErrorTypeLabel(const char *label);
-    // void setErrorEventLabel(const char *label);
-
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
@@ -50,17 +78,18 @@ public:
 private:
     SemaphoreHandle_t mutex_;
 
-    ErrorPage *error_page;
-    ResetPage *reset_page;
+    ErrorHandlingPageManager *page_manager = nullptr;
 
     lv_timer_t *timer;
-    // CurrentErrorState current_error_state;
 
     char buf_[64];
 
     int32_t current_position = 0;
-    WiFiEvent latest_event;
     ErrorType error_type = NO_ERROR;
+
+    ErrorState error_state = {
+        NO_ERROR,
+        SK_NO_EVENT};
 
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
