@@ -155,6 +155,22 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     default:
         break;
     }
+
+    switch (error_type)
+    {
+    case NO_ERROR:
+    case RESET:
+        break;
+    case MQTT_ERROR:
+        LOGE("MQTT ERROR");
+        break;
+    case WIFI_ERROR:
+        LOGE("WIFI ERROR");
+        break;
+    default:
+        LOGE("UNKNOWN ERROR");
+        break;
+    }
 }
 
 void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
