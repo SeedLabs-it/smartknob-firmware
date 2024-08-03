@@ -473,9 +473,27 @@ void SensorsTask::weightMeasurementCallback()
     }
 }
 
+bool SensorsTask::powerDownAllowed()
+{
+    // If strain sensor isnt calibrated and dont allow power down.
+    if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f)
+    {
+        return false;
+    }
+
+    // If calibration or weight measurement is in progress, dont allow power down.
+    if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
+    {
+        return false;
+    }
+
+    // Allow power down.
+    return true;
+}
+
 void SensorsTask::strainPowerDown()
 {
-    if ((calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0) || (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0))
+    if (!powerDownAllowed())
     {
         return;
     }
