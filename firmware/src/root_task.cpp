@@ -266,6 +266,7 @@ void RootTask::run()
     WiFiEvent wifi_event;
 
     AppState app_state = {};
+
     while (1)
     {
 

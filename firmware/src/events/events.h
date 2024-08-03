@@ -75,7 +75,8 @@ enum ErrorType
     NO_ERROR,
     WIFI_ERROR,
     MQTT_ERROR,
-    RESET
+    RESET,
+    ERROR_TYPE_COUNT
 };
 
 union ErrorBody
@@ -160,4 +161,11 @@ struct WiFiEvent
     EventType type;
     WiFiEventBody body;
     SentAt sent_at;
+};
+
+struct ErrorState
+{
+    ErrorType latest_error_type;
+    WiFiEvent latest_event;
+    uint8_t retry_count;
 };

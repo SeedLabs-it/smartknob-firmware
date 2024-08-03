@@ -15,8 +15,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     ErrorPage *error_page = (ErrorPage *)page_manager->getPage(ErrorPages::ERROR_PAGE);
     ResetPage *reset_page = (ResetPage *)page_manager->getPage(ErrorPages::RESET_PAGE);
 
-    ErrorType error_type = NO_ERROR;
-    error_state.event_at = event.sent_at;
+    error_type = NO_ERROR;
 
     switch (event.type)
     {
@@ -54,8 +53,6 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         break;
     case SK_RESET_BUTTON_PRESSED:
         error_type = ErrorType::RESET;
-        ((ResetPage *)page_manager->getPage(ErrorPages::RESET_PAGE))->show();
-        page_manager->render(ErrorPages::RESET_PAGE);
         break;
     case SK_RESET_BUTTON_RELEASED:
         // lv_timer_del(timer);
@@ -71,25 +68,35 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     error_state.latest_error_type = error_type;
     error_state.latest_event = event;
 
+    // if (event.body.error.type > ErrorType::NO_ERROR && event.body.error.type < ErrorType::ERROR_TYPE_COUNT) // Work around. Not all events that are forwarded here are ment to be shown as errors.
+    // {
+    //     return;
+    // }
+
     switch (error_type)
     {
-    case NO_ERROR:
     case RESET:
+        reset_page->show();
+        page_manager->render(ErrorPages::RESET_PAGE);
         break;
     case MQTT_ERROR:
-        LOGE("MQTT ERROR");
-
-        error_page->setErrorTypeLabel("MQTT");
-        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
-        page_manager->render(ErrorPages::ERROR_PAGE);
-
-        break;
     case WIFI_ERROR:
-        LOGE("WIFI ERROR");
+        if (error_type == MQTT_ERROR)
+        {
+            LOGE("MQTT ERROR");
+            error_state.retry_count = event.body.error.body.mqtt_error.retry_count;
+        }
+        else if (error_type == WIFI_ERROR)
+        {
+            LOGE("WIFI ERROR");
+            error_state.retry_count = event.body.error.body.wifi_error.retry_count;
+        }
 
-        error_page->setErrorTypeLabel("WiFi");
-        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
+        error_page->error_state = error_state;
+        error_page->show();
         page_manager->render(ErrorPages::ERROR_PAGE);
+        break;
+    case NO_ERROR: // DO NOTHING
         break;
     default:
         LOGE("UNKNOWN ERROR");

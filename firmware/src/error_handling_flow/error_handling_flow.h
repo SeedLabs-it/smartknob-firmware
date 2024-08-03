@@ -28,14 +28,6 @@
 //     lv_obj_t *page;
 // };
 
-struct ErrorState
-{
-    ErrorType latest_error_type;
-    WiFiEvent latest_event;
-
-    unsigned long event_at;
-};
-
 enum ErrorPages
 {
     ERROR_PAGE,
