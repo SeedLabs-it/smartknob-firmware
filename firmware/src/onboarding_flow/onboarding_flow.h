@@ -199,7 +199,7 @@ public:
                 lv_obj_t *dot = dots[i];
                 if (i == current_page_)
                 {
-                    lv_obj_set_size(dot, dot_dia * 1.3, dot_dia * 1.3);
+                    lv_obj_set_size(dot, dot_dia * 1.2, dot_dia * 1.2);
                     lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
                     lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0xD9, 0xD9, 0xD9), 0);
                 }

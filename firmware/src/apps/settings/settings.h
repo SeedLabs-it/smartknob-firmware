@@ -47,9 +47,12 @@ public:
 
             for (uint16_t i = 0; i < SETTINGS_PAGE_COUNT; i++)
             {
+                lv_obj_t *dot = dots[i];
                 if (i == current_page_)
                 {
-                    lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0xD9, 0xD9, 0xD9), 0);
+                    // lv_obj_set_size(dot, dot_dia * 1.2, dot_dia * 1.2);
+                    // lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
+                    lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0xD9, 0xD9, 0xD9), 0);
 
                     switch (current_page_)
                     {
@@ -75,7 +78,8 @@ public:
                 }
                 else
                 {
-                    lv_obj_set_style_bg_color(dots[i], LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
+                    // lv_obj_set_size(dot, dot_dia, dot_dia);
+                    lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
                 }
             }
         }
@@ -87,15 +91,9 @@ public:
         lv_obj_remove_style_all(overlay_);
         lv_obj_set_size(overlay_, LV_HOR_RES, LV_VER_RES);
 
-        const uint8_t dot_dia = 12;
-        const uint8_t position_circle_radius = LV_HOR_RES / 2 - dot_dia; // the radius of the circle where you want the dots to lay.
-        float degree_per_dot = 9 * PI / 180;                             // the degree (angle) between two points in radian
-        float center_point_degree = 270 * PI / 180;                      //
-        float dot_starting_angle = center_point_degree - (((SETTINGS_PAGE_COUNT - 1) * degree_per_dot) / 2);
-
         for (uint16_t i = 0; i < SETTINGS_PAGE_COUNT; i++)
         {
-            lv_obj_t *dot = lvDrawCircle(12, overlay_);
+            lv_obj_t *dot = lvDrawCircle(dot_dia, overlay_);
             lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
             lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
             dots[i] = dot;
@@ -105,6 +103,12 @@ public:
 private:
     lv_obj_t *dots[SETTINGS_PAGE_COUNT];
     lv_obj_t *page_name;
+
+    const uint8_t dot_dia = 6;
+    const uint8_t position_circle_radius = LV_HOR_RES / 2 - dot_dia; // the radius of the circle where you want the dots to lay.
+    float degree_per_dot = dot_dia * PI / 180;                       // the degree (angle) between two points in radian
+    float center_point_degree = (270 - 90) * PI / 180;               //
+    float dot_starting_angle = center_point_degree - (((SETTINGS_PAGE_COUNT - 1) * degree_per_dot) / 2);
 };
 
 class SettingsApp : public App
