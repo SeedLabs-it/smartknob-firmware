@@ -330,7 +330,7 @@ bool MqttTask::init()
 
     cJSON_AddStringToObject(data, "model", MODEL);
 #ifdef RELEASE_VERSION
-    cJSON_AddStringToObject(data, "version", RELEASE_VERSION);
+    cJSON_AddStringToObject(data, "firmware_version", RELEASE_VERSION);
 #else
     cJSON_AddStringToObject(data, "firmware_version", "DEV");
 #endif
