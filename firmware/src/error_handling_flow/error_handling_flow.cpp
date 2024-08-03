@@ -29,7 +29,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
         }
-        // setQRCode(ip_data);
+        error_page->setQr(ip_data);
     case SK_MQTT_CONNECTION_FAILED:
         error_type = MQTT_ERROR;
         send_event.type = SK_MQTT_ERROR;
@@ -45,7 +45,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             // TODO: look into how to store and retrieve ip in a better way.
             sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
         }
-        // setQRCode(ip_data);
+        error_page->setQr(ip_data);
     case SK_WIFI_STA_CONNECTION_FAILED:
         error_type = WIFI_ERROR;
         send_event.type = SK_WIFI_ERROR;
@@ -60,8 +60,14 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     case SK_DISMISS_ERROR:
     case SK_RESET_ERROR:
         error_type = NO_ERROR;
+        error_state = {
+            NO_ERROR,
+            SK_NO_EVENT,
+            1,
+        };
         break;
     default:
+        LOGE("UNKNOWN EVENT");
         break;
     }
 
@@ -91,6 +97,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             LOGE("WIFI ERROR");
             error_state.retry_count = event.body.error.body.wifi_error.retry_count;
         }
+        // error_state.retry_count = error_state.retry_count + 1;
 
         error_page->error_state = error_state;
         error_page->show();

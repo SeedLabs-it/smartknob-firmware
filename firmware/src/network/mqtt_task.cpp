@@ -88,7 +88,7 @@ void MqttTask::run()
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
                 disconnected_at = millis();
-                if (!has_been_connected || retry_count > 0)
+                if (has_been_connected || retry_count > 0)
                 {
                     WiFiEvent event;
                     WiFiEventBody wifi_event_body;
@@ -304,10 +304,17 @@ bool MqttTask::connect()
     else
     {
         WiFiEvent event;
+        WiFiEventBody wifi_event_body;
+        wifi_event_body.error.type = MQTT_ERROR;
+        wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
+
         event.type = SK_MQTT_CONNECTION_FAILED;
-        publishEvent(event);
+        event.body = wifi_event_body;
+        event.sent_at = millis();
+
         LOGE("MQTT connection failed");
     }
+
     return false;
 }
 

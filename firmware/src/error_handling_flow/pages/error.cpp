@@ -35,6 +35,18 @@ ErrorPage::ErrorPage(lv_obj_t *parent) : BasePage(parent)
     retry_label = lv_label_create(page);
     lv_label_set_text(retry_label, "Retry 1");
     lv_obj_align_to(retry_label, countdown_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+
+    qr_code = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+    lv_qrcode_update(qr_code, "placeholder", strlen("placeholder"));
+    lv_obj_align_to(qr_code, error_event_label, LV_ALIGN_OUT_TOP_MID, 0, -10);
+
+    press_to_retry_label = lv_label_create(page);
+    lv_label_set_text(press_to_retry_label, "Press to retry\nor hold to dismiss");
+    lv_obj_set_style_text_align(press_to_retry_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align_to(press_to_retry_label, qr_code, LV_ALIGN_OUT_TOP_MID, 0, -10);
+
+    lv_obj_add_flag(qr_code, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(press_to_retry_label, LV_OBJ_FLAG_HIDDEN);
 }
 
 void ErrorPage::show()
@@ -58,6 +70,9 @@ void ErrorPage::show()
     {
     case EventType::SK_MQTT_CONNECTION_FAILED:
     case EventType::SK_WIFI_STA_CONNECTION_FAILED:
+        lv_obj_add_flag(qr_code, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(press_to_retry_label, LV_OBJ_FLAG_HIDDEN);
+
         lv_label_set_text(error_event_label, "Connection failed");
         if (timer == nullptr)
         {
@@ -70,6 +85,9 @@ void ErrorPage::show()
         timer = nullptr;
         lv_label_set_text(countdown_label, "");
         lv_label_set_text(retry_label, "");
+
+        lv_obj_clear_flag(qr_code, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(press_to_retry_label, LV_OBJ_FLAG_HIDDEN);
         lv_label_set_text(error_event_label, "Retry limit reached");
         break;
 
@@ -81,6 +99,11 @@ void ErrorPage::show()
     lv_obj_align_to(error_event_label, error_type_label, LV_ALIGN_OUT_TOP_MID, 0, -10);
 
     BasePage::show();
+}
+
+void ErrorPage::setQr(const char *qr_data)
+{
+    lv_qrcode_update(qr_code, qr_data, strlen(qr_data));
 }
 
 lv_obj_t *ErrorPage::getPage()
