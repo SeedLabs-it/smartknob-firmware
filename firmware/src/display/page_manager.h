@@ -31,6 +31,12 @@ public:
         lv_obj_add_flag(page, LV_OBJ_FLAG_HIDDEN);
     }
 
+    void render()
+    {
+        show();
+        lv_scr_load(parent);
+    }
+
     virtual void updateFromSystem(AppState state)
     {
         // Do nothing by default

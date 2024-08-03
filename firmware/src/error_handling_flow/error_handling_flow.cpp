@@ -1,95 +1,15 @@
 #include "error_handling_flow.h"
 
-void reset_timer(lv_timer_t *timer)
+ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 {
-    // LOGE("reset_timer");
-    /*Use the user_data*/
-    CurrentErrorState *user_data = (CurrentErrorState *)timer->user_data;
-    // unsigned long now = millis();
-    // unsigned long diff_ms = now - user_data->start_ms;
-    // unsigned long stopwatch_ms = 0;
-    // unsigned long stopwatch_sec = 0;
-    // unsigned long stopwatch_min = 0;
-
-    // stopwatch_ms = diff_ms % 100;
-    // stopwatch_sec = floor((diff_ms / 1000) % 60);
-    // stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
-
-    // lv_label_set_text_fmt(user_data->time_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
-    // lv_label_set_text_fmt(user_data->ms_label, "%02d", stopwatch_ms);
-    uint8_t held_for = (int)((millis() - user_data->start_ms) / 1000);
-    if (held_for > SOFT_RESET_SECONDS)
-    {
-        lv_obj_set_style_bg_color(user_data->parent, LV_COLOR_MAKE(0xFF, 0x00, 0x00), LV_PART_MAIN);
-        lv_label_set_text_fmt(user_data->error_msg_label, "FOR FACTORY RESET\nRELEASE IN %ds \nRELEASE FOR SOFT_RESET", max(0, HARD_RESET_SECONDS - held_for));
-    }
-    else
-    {
-        lv_label_set_text_fmt(user_data->error_msg_label, "FOR SOFT RESET\nRELEASE IN %ds \nRELEASE TO CANCEL", max(0, SOFT_RESET_SECONDS - held_for));
-    }
+    error_page = new ErrorPage(lv_obj_create(NULL));
+    reset_page = new ResetPage(lv_obj_create(NULL));
 }
-
-ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex), BasePage(lv_obj_create(NULL))
-{
-    current_error_state.parent = parent;
-    current_error_state.page = page;
-    current_error_state.error_label = lv_label_create(page);
-    current_error_state.error_msg_label = lv_label_create(page);
-
-    lv_obj_t *error_label = current_error_state.error_label;
-    // lv_obj_set_style_text_color(error_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    lv_obj_set_style_text_font(error_label, &nds12_20px, LV_PART_MAIN);
-    lv_label_set_text(error_label, "ERROR");
-    lv_obj_set_style_text_align(error_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_align(error_label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
-
-    lv_obj_t *error_msg_label = current_error_state.error_msg_label;
-
-    // lv_label_set_text(error_msg_label, current_error_state.);
-    // lv_obj_set_style_text_color(error_msg_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    // lv_obj_set_style_text_font(error_msg_label, &nds12_20px, LV_PART_MAIN);
-    // lv_obj_align_to(error_msg_label, error_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
-
-    show();
-}
-
-// ErrorHandlingFlow::ErrorHandlingFlow()
-// {
-// }
-
-// void ErrorHandlingFlow::setQRCode(char *qr_data)
-// {
-//     QRCode qrcode;
-//     uint8_t qrcodeVersion = 6;
-//     int moduleSize = 2;
-
-//     uint8_t qrcodeData[qrcode_getBufferSize(qrcodeVersion)];
-//     qrcode_initText(&qrcode, qrcodeData, qrcodeVersion, 0, qr_data);
-
-//     int qrCodeWidthHeight = qrcode.size * moduleSize;
-//     qrcode_spr_.createSprite(qrCodeWidthHeight, qrCodeWidthHeight);
-//     qrcode_spr_.fillSprite(TFT_BLACK);
-
-//     for (uint8_t y = 0; y < qrcode.size; y++)
-//     {
-//         for (uint8_t x = 0; x < qrcode.size; x++)
-//         {
-//             if (qrcode_getModule(&qrcode, x, y))
-//             {
-//                 qrcode_spr_.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize, TFT_WHITE);
-//             }
-//         }
-//     }
-// }
 
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
     WiFiEvent send_event;
     motor_notifier->requestUpdate(blocked_motor_config);
-    lv_scr_load(parent);
-
-    lv_obj_t *error_label = current_error_state.error_label;
-    lv_obj_t *error_msg_label = current_error_state.error_msg_label;
 
     switch (event.type)
     {
@@ -110,8 +30,10 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 
         send_event.type = SK_MQTT_ERROR;
         publishEvent(send_event);
-        lv_label_set_text(error_msg_label, "MQTT ERROR");
-        lv_obj_align_to(error_msg_label, error_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+
+        error_page->setErrorTypeLabel("MQTT");
+        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
+        error_page->render();
         break;
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         if (!WiFi.isConnected())
@@ -130,21 +52,14 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 
         send_event.type = SK_WIFI_ERROR;
         publishEvent(send_event);
-        lv_label_set_text(error_msg_label, "WIFI ERROR");
-        lv_obj_align_to(error_msg_label, error_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+        error_page->setErrorTypeLabel("WiFi");
+        error_page->setErrorEventLabel("Connection failed"); // Called after setErrorTypeLabel to get correct alignment.
+        error_page->render();
         break;
     case SK_RESET_BUTTON_PRESSED:
         error_type = RESET;
         latest_event = event;
-
-        lv_obj_set_style_bg_color(parent, LV_COLOR_MAKE(0xFF, 0x6E, 0x00), LV_PART_MAIN);
-        lv_label_set_text(error_msg_label, "FOR SOFT RESET\nRELEASE IN 5s \nRELEASE TO CANCEL");
-        lv_obj_align(error_msg_label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
-
-        current_error_state.start_ms = millis();
-
-        timer = lv_timer_create(reset_timer, 25, &current_error_state);
-
+        reset_page->render();
         break;
     case SK_RESET_BUTTON_RELEASED:
         lv_timer_del(timer);

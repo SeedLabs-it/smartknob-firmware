@@ -10,21 +10,25 @@
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
 
+#include "./pages/error.h"
+#include "./pages/reset.h"
+
 #include "font/NDS1210pt7b.h"
 #include "font/NDS125_small.h"
 
-struct CurrentErrorState
-{
-    unsigned long start_ms;
+// struct CurrentErrorState
+// {
+//     unsigned long start_ms;
 
-    lv_obj_t *error_label;
-    lv_obj_t *error_msg_label;
+//     lv_obj_t *error_label;
+//     lv_obj_t *error_event_label;
+//     lv_obj_t *error_type_label;
 
-    lv_obj_t *parent;
-    lv_obj_t *page;
-};
+//     lv_obj_t *parent;
+//     lv_obj_t *page;
+// };
 
-class ErrorHandlingFlow : public BasePage
+class ErrorHandlingFlow
 {
 public:
     ErrorHandlingFlow(SemaphoreHandle_t mutex);
@@ -35,6 +39,9 @@ public:
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
 
+    // void setErrorTypeLabel(const char *label);
+    // void setErrorEventLabel(const char *label);
+
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
@@ -43,8 +50,11 @@ public:
 private:
     SemaphoreHandle_t mutex_;
 
+    ErrorPage *error_page;
+    ResetPage *reset_page;
+
     lv_timer_t *timer;
-    CurrentErrorState current_error_state;
+    // CurrentErrorState current_error_state;
 
     char buf_[64];
 
