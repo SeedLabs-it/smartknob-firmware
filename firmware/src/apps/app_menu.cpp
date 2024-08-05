@@ -22,7 +22,6 @@ MenuApp::MenuApp(SemaphoreHandle_t mutex) : Menu(mutex)
     };
 }
 
-// TFT_eSprite *render();
 EntityStateUpdate MenuApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     // TODO: cache menu size

@@ -38,23 +38,16 @@ private:
     void updateTemperatureArc();
     void updateModeIcon();
 
-    // void updateTargetTemperature(uint8_t temperature);
-
     float adjusted_sub_position = 0;
     bool first_run = false;
 
     ClimateAppMode mode = ClimateAppMode::CLIMATE_AUTO;
     ClimateAppMode last_mode = ClimateAppMode::CLIMATE_AUTO;
 
-    // app state
     int8_t current_temperature = CLIMATE_APP_MIN_TEMP;
     int8_t target_temperature = CLIMATE_APP_MIN_TEMP;
     int8_t last_target_temperature = CLIMATE_APP_MIN_TEMP;
-    // uint8_t current_mode = 0;
-    // uint8_t current_fan_mode = 0;
-    // bool is_on = false;
 
-    // lv_obj_t *mode_off_icon;
     lv_obj_t *state_label;
     lv_obj_t *target_temp_label;
     lv_obj_t *current_temp_label;
@@ -64,9 +57,7 @@ private:
     lv_obj_t *mode_heat_icon;
     lv_obj_t *mode_air_icon;
 
-    // lv_obj_t *temperature_meter;
     lv_obj_t *temperature_arc;
-
     lv_obj_t **temperature_dots;
 
     const lv_color_t inactive_color = LV_COLOR_MAKE(0x47, 0x47, 0x47);

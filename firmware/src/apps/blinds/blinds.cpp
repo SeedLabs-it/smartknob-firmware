@@ -27,10 +27,8 @@ BlindsApp::BlindsApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name
 
     LV_IMG_DECLARE(x80_blind);
     LV_IMG_DECLARE(x40_blind);
-    // LV_IMG_DECLARE(x80_lightbulb_filled);
 
     big_icon = x80_blind;
-    // big_icon_active = x80_lightbulb_filled;
     small_icon = x40_blind;
 
     initScreen();

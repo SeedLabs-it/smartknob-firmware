@@ -20,7 +20,6 @@ class Apps
 {
 
 public:
-    // Apps() ;
     Apps(SemaphoreHandle_t mutex);
 
     void add(uint8_t id, App *app);

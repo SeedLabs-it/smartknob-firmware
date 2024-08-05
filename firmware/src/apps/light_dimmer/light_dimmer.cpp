@@ -55,13 +55,11 @@ void LightDimmerApp::initDimmerScreen()
     dimmer_screen = lv_obj_create(screen);
     lv_obj_remove_style_all(dimmer_screen);
     lv_obj_set_size(dimmer_screen, LV_HOR_RES, LV_VER_RES);
-    // lv_obj_add_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
 
     arc_ = lv_arc_create(dimmer_screen);
     lv_obj_set_size(arc_, 220, 220);
     lv_arc_set_rotation(arc_, 150);
     lv_arc_set_bg_angles(arc_, 0, 240);
-    // lv_arc_set_knob_offset(arc_, 0);
     lv_arc_set_value(arc_, 0);
     lv_obj_center(arc_);
 
@@ -107,11 +105,6 @@ static lv_obj_t *selector_lines[3];
 
 static lv_obj_t *meter;
 static lv_meter_indicator_t *indic_hue;
-
-// static void set_value(void *indic, int32_t v)
-// {
-//     lv_meter_set_indicator_end_value(meter, (lv_meter_indicator_t *)indic, v);
-// }
 
 static void meter_draw_event_cb(lv_event_t *e)
 {
@@ -278,12 +271,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             }
             SemaphoreGuard lock(mutex_);
             lv_meter_set_indicator_value(meter, indic_hue, app_hue_position);
-            // lv_meter_set_indicator_value(hue_wheel, 0, 0, app_hue_position);
-
-            // LOGE("current_position: %d", current_position);
-            // LOGE("current_hsv: h%d s%d v%d", lv_colorwheel_get_hsv(hue_wheel).h, lv_colorwheel_get_hsv(hue_wheel).s, lv_colorwheel_get_hsv(hue_wheel).v);
-            // lv_color_hsv_t hsv = {current_position, 100, 100};
-            // lv_colorwheel_set_hsv(hue_wheel, hsv);
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
@@ -302,7 +289,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
             if (color_set)
             {
-                // RGBColor_Custom rgb = uint32ToRGB(ToRGBA(app_hue_position));
                 lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees, 100, 100), LV_PART_INDICATOR);
             }
 
@@ -407,11 +393,6 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
-    // if (color_temp != NULL && cJSON_IsNull(color_temp) == 0
-    // {
-    //     app_hue_position = color_temp->valueint / 2.55;
-    // }
-
     if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
     {
         color_set = true;
@@ -458,6 +439,5 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         state_sent_from_hass = true;
     }
 
-    // cJSON_free(new_state);
     cJSON_Delete(new_state);
 }
