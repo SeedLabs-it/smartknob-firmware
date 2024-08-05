@@ -117,7 +117,7 @@ static void meter_draw_event_cb(lv_event_t *e)
 {
     lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
     uint16_t *user_data = (uint16_t *)lv_event_get_user_data(e);
-    uint16_t val = *user_data >= 0 ? *user_data % lines_count : lines_count + *user_data % lines_count;
+    uint16_t val = *user_data;
     if (dsc->type == LV_METER_DRAW_PART_NEEDLE_LINE)
     {
         dsc->line_dsc->color = lv_color_hsv_to_rgb(val * skip_degrees, 100, 100);
@@ -148,7 +148,7 @@ void LightDimmerApp::initHueScreen()
 
     indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
 
-    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &current_position);
+    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &app_hue_position);
 }
 
 void LightDimmerApp::updateHueWheel()
@@ -196,9 +196,9 @@ int8_t LightDimmerApp::navigationNext()
     case LIGHT_DIMMER_APP_MODE_HUE:
         // todo, check that current temp is more than wanted
         motor_config = PB_SmartKnobConfig{
-            app_hue_position / 2,
+            app_hue_position,
             0,
-            app_hue_position / 2,
+            app_hue_position,
             0,
             -1,
             skip_degrees * PI / 180,
@@ -263,23 +263,22 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
         if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
         {
-            app_hue_position = calculateAppHuePosition(current_position);
-
-            if (!color_set && calculateAppHuePosition(last_position) != app_hue_position)
+            if (!color_set && last_position != app_hue_position)
             {
                 color_set = true;
             }
 
-            // if (app_hue_position % 2 == 0)
-            // {
-            // SemaphoreGuard lock(mutex_);
-            // updateHueWheel();
-            // }
-
-            uint16_t val = current_position >= 0 ? current_position % lines_count : lines_count + current_position % lines_count;
+            if (current_position >= 0)
+            {
+                app_hue_position = current_position % lines_count;
+            }
+            else
+            {
+                app_hue_position = lines_count + (current_position % lines_count);
+            }
             SemaphoreGuard lock(mutex_);
-            lv_meter_set_indicator_end_value(meter, indic_hue, val);
-            // lv_meter_set_indicator_value(hue_wheel, 0, 0, app_hue_position / 2);
+            lv_meter_set_indicator_value(meter, indic_hue, app_hue_position);
+            // lv_meter_set_indicator_value(hue_wheel, 0, 0, app_hue_position);
 
             // LOGE("current_position: %d", current_position);
             // LOGE("current_hsv: h%d s%d v%d", lv_colorwheel_get_hsv(hue_wheel).h, lv_colorwheel_get_hsv(hue_wheel).s, lv_colorwheel_get_hsv(hue_wheel).v);
@@ -363,7 +362,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
-uint16_t LightDimmerApp::calculateAppHuePosition(uint16_t position)
+int8_t LightDimmerApp::calculateAppHuePosition(int8_t position)
 {
     if (position < 0)
     {
