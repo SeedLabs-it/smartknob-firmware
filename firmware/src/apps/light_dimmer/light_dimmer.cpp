@@ -58,19 +58,20 @@ void LightDimmerApp::initDimmerScreen()
     // lv_obj_add_flag(dimmer_screen, LV_OBJ_FLAG_HIDDEN);
 
     arc_ = lv_arc_create(dimmer_screen);
-    lv_obj_set_size(arc_, 236, 236);
+    lv_obj_set_size(arc_, 220, 220);
     lv_arc_set_rotation(arc_, 150);
     lv_arc_set_bg_angles(arc_, 0, 240);
     // lv_arc_set_knob_offset(arc_, 0);
     lv_arc_set_value(arc_, 0);
     lv_obj_center(arc_);
 
-    lv_obj_set_style_bg_opa(arc_, LV_OPA_0, LV_PART_KNOB);
+    lv_obj_set_style_bg_color(arc_, dark_arc_bg, LV_PART_KNOB);
     lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
     lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(0xF5, 0xA4, 0x42), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(arc_, 18, LV_PART_MAIN);
     lv_obj_set_style_arc_width(arc_, 18, LV_PART_INDICATOR);
+    lv_obj_set_style_pad_all(arc_, -6, LV_PART_KNOB);
 
     percentage_label_ = lv_label_create(dimmer_screen);
     char buf_[16];
@@ -153,6 +154,7 @@ void LightDimmerApp::initHueScreen()
 void LightDimmerApp::updateHueWheel()
 {
 }
+
 int8_t LightDimmerApp::navigationNext()
 {
     if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
@@ -288,6 +290,23 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         {
             current_brightness = current_position;
             SemaphoreGuard lock(mutex_);
+            if (current_brightness == 0)
+            {
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+                lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+            }
+            else
+            {
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x47, 0x27, 0x01), LV_PART_MAIN);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x47, 0x27, 0x01), 128), LV_PART_MAIN);
+            }
+
+            if (color_set)
+            {
+                // RGBColor_Custom rgb = uint32ToRGB(ToRGBA(app_hue_position));
+                lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees, 100, 100), LV_PART_INDICATOR);
+            }
+
             lv_arc_set_value(arc_, current_brightness);
             char buf_[16];
             sprintf(buf_, "%d%%", current_brightness);

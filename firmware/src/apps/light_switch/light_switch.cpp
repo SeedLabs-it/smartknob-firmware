@@ -83,11 +83,13 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
             {
                 lv_img_set_src(light_bulb, &big_icon);
                 lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
             }
             else
             {
                 lv_img_set_src(light_bulb, &big_icon_active);
                 lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
             }
         }
         sprintf(new_state.app_id, "%s", app_id);
