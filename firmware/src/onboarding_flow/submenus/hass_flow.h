@@ -36,8 +36,6 @@ public:
     ConnectQRCodePage(lv_obj_t *parent) : BasePage(parent)
     {
         qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
-        // char data[128];
-        // sprintf(data, "WIFI:T:WPA;S:%s;P:%s;H:;;", "Fam Wall", "TEST_PASSWORD");
 
         lv_qrcode_update(qr, "", strlen(""));
         lv_obj_center(qr);
@@ -58,14 +56,12 @@ public:
         lv_label_set_recolor(ssid_label, true);
         lv_label_set_text(ssid_label, "SSID: SKDK_000000"); // TODO PLACEHOLDER FOR ALIGNMENT / Improve
         lv_obj_set_style_text_color(ssid_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
-        // lv_obj_set_style_text_align(ssid_label, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_align_to(ssid_label, or_connect_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
 
         lv_obj_t *pswd_label = lv_label_create(page);
         lv_label_set_recolor(pswd_label, true);
         lv_label_set_text(pswd_label, "PSWD: #FFFFFF 12345678#");
         lv_obj_set_style_text_color(pswd_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
-        // lv_obj_set_style_text_align(pswd_label, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_align_to(pswd_label, ssid_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 1);
     }
 
@@ -193,7 +189,6 @@ public:
 
     void handleEvent(WiFiEvent event);
 
-    // void setWiFiNotifier(WiFiNotifier *wifi_notifier);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void triggerMotorConfigUpdate();
@@ -205,7 +200,6 @@ private:
 
     PB_SmartKnobConfig root_level_motor_config;
 
-    // WiFiNotifier *wifi_notifier;
     OSConfigNotifier *os_config_notifier;
     MotorNotifier *motor_notifier;
 

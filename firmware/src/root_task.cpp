@@ -61,9 +61,6 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
-    // log_queue_ = xQueueCreate(10, sizeof(std::string *));
-    // assert(log_queue_ != NULL);
-
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
 
@@ -81,11 +78,6 @@ RootTask::~RootTask()
 {
     vSemaphoreDelete(mutex_);
 }
-
-// void RootTask::setHassApps(HassApps *apps)
-// {
-//     this->hass_apps = apps;
-// }
 
 void RootTask::run()
 {
@@ -176,11 +168,6 @@ void RootTask::run()
                                         switch (os_config->mode)
                                         {
                                         case ONBOARDING:
-                                            // this->configuration_->loadOSConfiguration();
-                                            // if (this->configuration_->getOSConfiguration()->mode == HASS)
-                                            // {
-                                                
-                                            // }
                                             display_task_->enableOnboarding();
                                             this->configuration_->saveOSConfiguration(*os_config);
 
