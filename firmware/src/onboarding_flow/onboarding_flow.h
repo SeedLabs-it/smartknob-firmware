@@ -1,21 +1,10 @@
 #pragma once
-// #include "apps/app.h"
 #include <map>
 #include "semaphore_guard.h"
 #include "./display/page_manager.h"
 #include "app_config.h"
 #include "../navigation/navigation.h"
 
-// #include "util.h"
-// #include "qrcode.h"
-// #include "navigation/navigation.h"
-// #include "events/events.h"
-
-// // Fonts
-// #include "font/roboto_thin_bold_24.h"
-// #include "font/roboto_thin_20.h"
-// #include "font/NDS125_small.h"
-// #include "font/Pixel62mr11pt7b.h"
 #include "lvgl.h"
 #include "util.h"
 #include "logging.h"
@@ -24,7 +13,6 @@
 #include "notify/os_config_notifier/os_config_notifier.h"
 
 #include "onboarding_flow/submenus/hass_flow.h"
-// #include "./assets/images/skdk/logo"
 
 enum OnboardingFlowPages
 {
@@ -70,8 +58,6 @@ public:
         lv_obj_t *img = lv_img_create(page);
         LV_IMG_DECLARE(hass_logo_color);
         lv_img_set_src(img, &hass_logo_color);
-        // lv_img_set_scale(img, 200);
-        // lv_img_set_size_mod
         lv_obj_set_width(img, hass_logo_color.header.w);
         lv_obj_set_height(img, hass_logo_color.header.h);
         lv_obj_align(img, LV_ALIGN_CENTER, 0, -54);
@@ -89,17 +75,6 @@ public:
         lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
     }
 };
-
-// class WiFiPage : public BasePage
-// {
-// public:
-//     WiFiPage(lv_obj_t *parent) : BasePage(parent)
-//     {
-//         lv_obj_t *label = lv_label_create(page);
-//         lv_label_set_text(label, "WiFi Configuration");
-//         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-//     }
-// };
 
 class DemoPage : public BasePage
 {
@@ -169,7 +144,6 @@ public:
 
         lv_obj_t *firmware_version_label = lv_label_create(page);
         lv_label_set_text_fmt(firmware_version_label, "FIRMWARE %s", RELEASE_VERSION);
-        // lv_obj_center(firmware_version_label);
         lv_obj_align_to(firmware_version_label, hardware_version_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
     }
 };
@@ -280,8 +254,6 @@ private:
     WiFiNotifier *wifi_notifier;
     OSConfigNotifier *os_config_notifier;
     MotorNotifier *motor_notifier;
-
-    void indicatorDots();
 
     lv_obj_t *overlay;
     lv_obj_t *main_screen = lv_obj_create(NULL);

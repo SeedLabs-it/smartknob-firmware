@@ -79,9 +79,6 @@ void setup()
     // Connect display to motor_task's knob state feed
     root_task.addListener(display_task.getKnobStateQueue());
 
-    // link apps from display task
-    // root_task.setHassApps(display_task.getHassApps());
-
 #endif
 
 #if SK_LEDS

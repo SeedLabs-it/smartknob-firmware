@@ -16,18 +16,6 @@
 #include "font/NDS1210pt7b.h"
 #include "font/NDS125_small.h"
 
-// struct CurrentErrorState
-// {
-//     unsigned long start_ms;
-
-//     lv_obj_t *error_label;
-//     lv_obj_t *error_event_label;
-//     lv_obj_t *error_type_label;
-
-//     lv_obj_t *parent;
-//     lv_obj_t *page;
-// };
-
 enum ErrorPages
 {
     ERROR_PAGE,
@@ -56,7 +44,6 @@ class ErrorHandlingFlow
 public:
     ErrorHandlingFlow(SemaphoreHandle_t mutex);
 
-    // void setQRCode(char *qr_data);
     void handleNavigationEvent(NavigationEvent event);
     void handleEvent(WiFiEvent event);
     void setMotorNotifier(MotorNotifier *motor_notifier);
