@@ -270,6 +270,8 @@ void RootTask::run()
             {
             case ONBOARDING:
                 display_task_->getOnboardingFlow()->handleEvent(wifi_event);
+                app_state.screen_state.awake_until = millis() + 10000; // If in onboarding mode always stay awake.
+                app_state.screen_state.has_been_engaged = true;
                 break;
             case DEMO:
                 // display_task_->getDemoApps()->handleEvent(wifi_event);

@@ -319,12 +319,13 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         if (color_set)
         {
 
-            RGBColor_Custom rgb = uint32ToRGB(ToRGBA(app_hue_position));
+            // RGBColor_Custom rgb = uint32ToRGB(ToRGBA(app_hue_position));
+            lv_color_t rgb_color = lv_color_hsv_to_rgb(app_hue_position * skip_degrees, 100, 100);
 
             cJSON *rgb_array = cJSON_CreateArray();
-            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.r));
-            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.g));
-            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb.b));
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb_color.ch.red));
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb_color.ch.green));
+            cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb_color.ch.blue));
             cJSON_AddItemToObject(json, "rgb_color", rgb_array);
         }
         else
