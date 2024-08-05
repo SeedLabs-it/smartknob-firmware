@@ -2,7 +2,6 @@
 
 #include "app.h"
 #include "./display/page_manager.h"
-// #include "font/NDS1210pt7b.h"
 
 #include <map>
 #include <memory>
