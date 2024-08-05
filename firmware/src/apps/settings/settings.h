@@ -50,8 +50,6 @@ public:
                 lv_obj_t *dot = dots[i];
                 if (i == current_page_)
                 {
-                    // lv_obj_set_size(dot, dot_dia * 1.2, dot_dia * 1.2);
-                    // lv_obj_align(dot, LV_ALIGN_CENTER, -position_circle_radius * cosf(dot_starting_angle + degree_per_dot * i), -position_circle_radius * sinf(dot_starting_angle + degree_per_dot * i));
                     lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0xD9, 0xD9, 0xD9), 0);
 
                     switch (current_page_)
@@ -78,7 +76,6 @@ public:
                 }
                 else
                 {
-                    // lv_obj_set_size(dot, dot_dia, dot_dia);
                     lv_obj_set_style_bg_color(dot, LV_COLOR_MAKE(0x72, 0x72, 0x72), 0);
                 }
             }
@@ -120,49 +117,7 @@ public:
     void handleNavigation(NavigationEvent event);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
 
-protected:
-    void initScreen()
-    {
-        SemaphoreGuard lock(mutex_);
-
-        lv_obj_t *label = lv_label_create(screen);
-        lv_label_set_text(label, "Settings");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 50);
-
-        // arc_ = lv_arc_create(screen);
-        // lv_obj_set_size(arc_, 210, 210);
-        // lv_arc_set_rotation(arc_, 225);
-        // lv_arc_set_bg_angles(arc_, 0, 90);
-        // // lv_arc_set_knob_offset(arc_, 0);
-        // lv_arc_set_value(arc_, 0);
-        // lv_obj_center(arc_);
-
-        // lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_MAIN);
-        // lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_INDICATOR);
-        // lv_obj_set_style_bg_color(arc_, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_KNOB);
-
-        // lv_obj_set_style_arc_width(arc_, 1, LV_PART_INDICATOR);
-
-        // light_bulb = lv_img_create(screen);
-        // lv_img_set_src(light_bulb, &big_icon);
-        // // lv_obj_set_style_image_recolor_opa(light_bulb, LV_OPA_COVER, 0);
-        // lv_obj_set_style_img_recolor_opa(light_bulb, LV_OPA_COVER, 0);
-        // // lv_obj_set_style_image_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
-        // lv_obj_set_style_img_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
-
-        // lv_obj_center(light_bulb);
-
-        // lv_obj_t *label = lv_label_create(screen);
-        // lv_label_set_text(label, friendly_name);
-        // lv_obj_align_to(label, light_bulb, LV_ALIGN_OUT_BOTTOM_MID, 0, 12);
-    };
-
 private:
-    // lv_img_dsc_t big_icon_active;
-
-    // lv_obj_t *;
-    // lv_obj_t *light_bulb;
-
     ConnectivityState connectivity_state;
     char ip_address[20];
     char ssid[128];

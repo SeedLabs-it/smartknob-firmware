@@ -2,11 +2,6 @@
 
 DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
 {
-
-    // demo_mode_label = lv_label_create(page);
-    // lv_label_set_text(demo_mode_label, "Demo Mode");
-    // lv_obj_align(demo_mode_label, LV_ALIGN_CENTER, 0, 0);
-
     uint8_t dot_dia = 24;
     uint8_t distance_between = dot_dia / 2 + 4;
     uint8_t y_offset = 34;
@@ -48,12 +43,9 @@ void DemoSettingsPage::updateFromSystem(AppState state)
     if (state.os_mode_state == DEMO)
     {
         lv_label_set_text(prompt_label, "DISABLED");
-        // this->hide();
-        // in_demo_mode_page->updateFromSystem(state);
     }
     else
     {
-        // this->show();
         lv_label_set_text(prompt_label, "PRESS TO START");
     }
 }

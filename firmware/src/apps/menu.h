@@ -14,9 +14,7 @@ public:
     {
         lv_obj_t *img = lv_img_create(page);
         lv_img_set_src(img, &icon_);
-        // lv_obj_set_style_image_recolor_opa(img, LV_OPA_COVER, 0);
         lv_obj_set_style_img_recolor_opa(img, LV_OPA_COVER, 0);
-        // lv_obj_set_style_image_recolor(img, LV_COLOR_MAKE(0x00, 0xFF, 0xFF), 0);
         lv_obj_set_style_img_recolor(img, LV_COLOR_MAKE(0x00, 0xFF, 0xFF), 0);
         lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
 

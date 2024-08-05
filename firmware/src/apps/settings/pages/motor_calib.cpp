@@ -34,17 +34,6 @@ void motor_calib_timer(lv_timer_t *timer)
     }
 
     state->timer_running = true;
-    // unsigned long diff_ms = now - user_data->start_ms;
-    // unsigned long stopwatch_ms = 0;
-    // unsigned long stopwatch_sec = 0;
-    // unsigned long stopwatch_min = 0;
-
-    // stopwatch_ms = diff_ms % 100;
-    // stopwatch_sec = floor((diff_ms / 1000) % 60);
-    // stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
-
-    // lv_label_set_text_fmt(user_data->time_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
-    // lv_label_set_text_fmt(user_data->ms_label, "%02d", stopwatch_ms);
 }
 
 MotorCalibrationSettingsPage::MotorCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
