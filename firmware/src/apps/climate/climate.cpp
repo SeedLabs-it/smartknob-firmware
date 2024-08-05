@@ -190,32 +190,6 @@ void ClimateApp::initTemperatureArc()
                 lv_obj_update_layout(max_temp_label);
                 lv_obj_set_pos(max_temp_label, x_ - lv_obj_get_width(max_temp_label) / 2, y_ - lv_obj_get_height(max_temp_label) / 2);
             }
-
-            // if (i == 0)
-            // {
-            //     lv_obj_t *min_temp_label = lv_label_create(screen);
-            //     lv_obj_set_width(min_temp_label, 20);
-            //     lv_obj_set_height(min_temp_label, 20);
-            //     lv_label_set_text_fmt(min_temp_label, "%d", CLIMATE_APP_MIN_TEMP);
-
-            //     int x_ = center_x + (220 - arc_width) / 2.0 * cos(angle - ONE_STEP_ANGLE * M_PI / 180.0);
-            //     int y_ = center_y + (220 - arc_width) / 2.0 * sin(angle - ONE_STEP_ANGLE * M_PI / 180.0);
-
-            //     lv_obj_set_style_text_color(min_temp_label, cool_active_color, LV_PART_MAIN);
-            //     lv_obj_set_pos(min_temp_label, x_ - 20 / 2, y_ - 20 / 2);
-            // }
-            // else if (i == dot_amount - 1)
-            // {
-            //     lv_obj_t *max_temp_label = lv_label_create(screen);
-            //     lv_obj_set_width(max_temp_label, 20);
-            //     lv_label_set_text_fmt(max_temp_label, "%d", CLIMATE_APP_MAX_TEMP);
-
-            //     int x_ = center_x + (220 - arc_width) / 2.0 * cos(angle + ONE_STEP_ANGLE * M_PI / 180.0);
-            //     int y_ = center_y + (220 - arc_width) / 2.0 * sin(angle + ONE_STEP_ANGLE * M_PI / 180.0);
-
-            //     lv_obj_set_style_text_color(max_temp_label, heat_active_color, LV_PART_MAIN);
-            //     lv_obj_set_pos(max_temp_label, x_ - 20 / 2, y_ - 20 / 2);
-            // }
         }
     }
 }
@@ -237,7 +211,7 @@ void ClimateApp::updateTemperatureArc()
 
         if (angle_target_temp == angle_current_temp)
         {
-            lv_obj_set_style_arc_color(temperature_arc, air_active_color, LV_PART_INDICATOR);
+            lv_obj_set_style_arc_color(temperature_arc, LV_COLOR_MAKE(0x00, 0xFF, 0x00), LV_PART_INDICATOR);
             lv_arc_set_angles(temperature_arc, angle_current_temp, angle_target_temp + 1);
         }
         else if (angle_target_temp > angle_current_temp)
@@ -399,18 +373,34 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    // cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
-    // cJSON *on = cJSON_GetObjectItem(new_state, "on");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *mode = cJSON_GetObjectItem(new_state, "mode");
+    cJSON *target_temp = cJSON_GetObjectItem(new_state, "target_temp");
+    cJSON *current_temp = cJSON_GetObjectItem(new_state, "current_temp");
 
-    // if (on != NULL)
-    // {
-    //     current_position = on->valueint;
-    //     motor_config.position = current_position;
-    //     motor_config.position_nonce = current_position + 1; // TODO: LOOK INTO THIS WEIRD WORK AROUND (NEEDED FOR LIGHT SWITCH NOT TO TOGGLE STATE OF LIGHT TO OFF IF SET TO ON IN HASS, KINDA)
-    //     state_sent_from_hass = true;
-    // }
+    if (mode != NULL)
+    {
+        this->mode = mode->valueint;
+    }
 
-    // cJSON_Delete(new_state);
+    if (target_temp != NULL)
+    {
+        target_temperature = target_temp->valueint;
+        motor_config.position = target_temperature;
+        motor_config.position_nonce = target_temperature;
+    }
+
+    if (current_temp != NULL)
+    {
+        this->current_temperature = current_temp->valueint;
+    }
+
+    if (mode != NULL || target_temp != NULL || current_temp != NULL)
+    {
+        state_sent_from_hass = true;
+    }
+
+    cJSON_Delete(new_state);
 }
 
 int8_t ClimateApp::navigationNext()
