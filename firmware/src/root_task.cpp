@@ -361,6 +361,8 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
+                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after error
+                app_state.screen_state.has_been_engaged = true;
                 if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
                     display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
@@ -385,6 +387,8 @@ void RootTask::run()
                 }
                 break;
             case SK_STRAIN_CALIBRATION:
+                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after calibration event.
+                app_state.screen_state.has_been_engaged = true;
                 if (current_protocol_ == &proto_protocol_)
                 {
                     LOGD("Sending strain calib state.");
