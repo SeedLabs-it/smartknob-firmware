@@ -2,9 +2,6 @@
 #include "../app.h"
 #include "../../util.h"
 
-// #include "../../font/NDS1210pt7b.h"
-// #include "../../font/Pixel62mr11pt7b.h"
-
 const uint8_t LIGHT_DIMMER_APP_MODE_DIMMER = 0;
 const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
 
