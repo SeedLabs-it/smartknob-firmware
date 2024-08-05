@@ -108,15 +108,15 @@ void ClimateApp::initTemperatureArc()
         lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_MAIN);
         lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_INDICATOR);
         lv_obj_set_style_arc_color(temperature_arc, air_active_color, LV_PART_INDICATOR);
-        lv_arc_set_rotation(temperature_arc, 156);
+        lv_arc_set_rotation(temperature_arc, ROTATION_ANGLE);
         lv_arc_set_bg_angles(temperature_arc, 0, MAX_ANGLE);
 
         // Rotation starts at 3o clock to align with LVGL
         uint8_t dot_amount = (CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP) + 1;
         uint8_t diameter = 6;
-        uint8_t rotation = 156;
-        uint16_t start_angle = 0;
-        uint16_t end_angle = 228;
+        uint8_t rotation = ROTATION_ANGLE;
+        uint16_t start_angle = MIN_ANGLE;
+        uint16_t end_angle = MAX_ANGLE;
 
         temperature_dots = (lv_obj_t **)malloc(dot_amount * sizeof(lv_obj_t *));
         assert(temperature_dots != NULL);
@@ -135,6 +135,7 @@ void ClimateApp::initTemperatureArc()
 
         for (int i = 0; i < dot_amount; i++)
         {
+
             float angle = (start_angle + i * angle_step) * M_PI / 180.0;
 
             int x = center_x + radius * cos(angle);
@@ -164,6 +165,57 @@ void ClimateApp::initTemperatureArc()
             }
 
             temperature_dots[i] = circle;
+
+            if (i == 0)
+            {
+                // Get x & y one step before the first dot
+                int x_ = center_x + radius * cos(angle - ONE_STEP_ANGLE * DEG_TO_RAD);
+                int y_ = center_y + radius * sin(angle - ONE_STEP_ANGLE * DEG_TO_RAD);
+
+                lv_obj_t *min_temp_label = lv_label_create(screen);
+                lv_label_set_text_fmt(min_temp_label, "%d", CLIMATE_APP_MIN_TEMP);
+                lv_obj_set_style_text_color(min_temp_label, cool_active_color, LV_PART_MAIN);
+                lv_obj_update_layout(min_temp_label);
+                lv_obj_set_pos(min_temp_label, x_ - lv_obj_get_width(min_temp_label) / 2, y_ - lv_obj_get_height(min_temp_label) / 2);
+            }
+            else if (i == dot_amount - 1)
+            {
+                // Get x & y one step after the last dot
+                int x_ = center_x + radius * cos(angle + ONE_STEP_ANGLE * DEG_TO_RAD);
+                int y_ = center_y + radius * sin(angle + ONE_STEP_ANGLE * DEG_TO_RAD);
+
+                lv_obj_t *max_temp_label = lv_label_create(screen);
+                lv_label_set_text_fmt(max_temp_label, "%d", CLIMATE_APP_MAX_TEMP);
+                lv_obj_set_style_text_color(max_temp_label, heat_active_color, LV_PART_MAIN);
+                lv_obj_update_layout(max_temp_label);
+                lv_obj_set_pos(max_temp_label, x_ - lv_obj_get_width(max_temp_label) / 2, y_ - lv_obj_get_height(max_temp_label) / 2);
+            }
+
+            // if (i == 0)
+            // {
+            //     lv_obj_t *min_temp_label = lv_label_create(screen);
+            //     lv_obj_set_width(min_temp_label, 20);
+            //     lv_obj_set_height(min_temp_label, 20);
+            //     lv_label_set_text_fmt(min_temp_label, "%d", CLIMATE_APP_MIN_TEMP);
+
+            //     int x_ = center_x + (220 - arc_width) / 2.0 * cos(angle - ONE_STEP_ANGLE * M_PI / 180.0);
+            //     int y_ = center_y + (220 - arc_width) / 2.0 * sin(angle - ONE_STEP_ANGLE * M_PI / 180.0);
+
+            //     lv_obj_set_style_text_color(min_temp_label, cool_active_color, LV_PART_MAIN);
+            //     lv_obj_set_pos(min_temp_label, x_ - 20 / 2, y_ - 20 / 2);
+            // }
+            // else if (i == dot_amount - 1)
+            // {
+            //     lv_obj_t *max_temp_label = lv_label_create(screen);
+            //     lv_obj_set_width(max_temp_label, 20);
+            //     lv_label_set_text_fmt(max_temp_label, "%d", CLIMATE_APP_MAX_TEMP);
+
+            //     int x_ = center_x + (220 - arc_width) / 2.0 * cos(angle + ONE_STEP_ANGLE * M_PI / 180.0);
+            //     int y_ = center_y + (220 - arc_width) / 2.0 * sin(angle + ONE_STEP_ANGLE * M_PI / 180.0);
+
+            //     lv_obj_set_style_text_color(max_temp_label, heat_active_color, LV_PART_MAIN);
+            //     lv_obj_set_pos(max_temp_label, x_ - 20 / 2, y_ - 20 / 2);
+            // }
         }
     }
 }
@@ -178,7 +230,7 @@ void ClimateApp::updateTemperatureArc()
         lv_label_set_text_fmt(current_temp_label, "%dC", current_temperature);
 
         // Update ARC
-        uint16_t one_step_angle = MAX_ANGLE / (CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP) + 1;
+        uint16_t one_step_angle = ONE_STEP_ANGLE;
 
         uint16_t angle_current_temp = lerp(current_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
         uint16_t angle_target_temp = lerp(target_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);

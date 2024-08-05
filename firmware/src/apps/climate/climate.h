@@ -17,8 +17,10 @@ const uint8_t CLIMATE_APP_MIN_TEMP = 16;
 const uint8_t CLIMATE_APP_MAX_TEMP = 35;
 
 const uint16_t MIN_ANGLE = 0;
-const uint16_t MAX_ANGLE = 228;
+const uint16_t MAX_ANGLE = 240;
+const uint16_t ROTATION_ANGLE = (180 - MAX_ANGLE + 360) / 2;
 const uint8_t ARC_WIDTH = 16;
+const uint16_t ONE_STEP_ANGLE = MAX_ANGLE / (CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP) + 1;
 
 class ClimateApp : public App
 {

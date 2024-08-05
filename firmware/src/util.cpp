@@ -1,6 +1,7 @@
 #include "util.h"
 
-lv_obj_t *lvDrawCircle(const uint8_t dia, lv_obj_t *parent)
+lv_obj_t *
+lvDrawCircle(const uint8_t dia, lv_obj_t *parent)
 {
     static lv_style_t style;
     lv_style_set_radius(&style, LV_RADIUS_CIRCLE);
