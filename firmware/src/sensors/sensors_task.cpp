@@ -475,7 +475,7 @@ void SensorsTask::weightMeasurementCallback()
 
 bool SensorsTask::powerDownAllowed()
 {
-    // If strain sensor isnt calibrated and dont allow power down.
+    // If strain sensor isnt calibrated dont allow power down.
     if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f)
     {
         return false;
