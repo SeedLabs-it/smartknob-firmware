@@ -102,6 +102,7 @@ void ClimateApp::initTemperatureArc()
         lv_obj_center(temperature_arc);
         lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_MAIN);
         lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_color(temperature_arc, dark_arc_bg, LV_PART_MAIN);
         lv_obj_set_style_arc_color(temperature_arc, air_active_color, LV_PART_INDICATOR);
         lv_arc_set_rotation(temperature_arc, ROTATION_ANGLE);
         lv_arc_set_bg_angles(temperature_arc, 0, MAX_ANGLE);

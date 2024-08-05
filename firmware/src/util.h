@@ -5,6 +5,9 @@
 #include "lvgl.h"
 
 // ? MOVE STYLE STUFF TO SEPERATE FILE
+
+const lv_color_t dark_arc_bg = LV_COLOR_MAKE(0x24, 0x21, 0x24);
+
 // WRONG ORDER OF INITIALIZERS IN ORIGINAL MACRO PROVIDED BY LVGL
 #define LV_STYLE_CONST_INIT(var_name, prop_array)                   \
     const lv_style_t var_name = {                                   \

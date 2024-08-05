@@ -22,11 +22,13 @@ protected:
         lv_arc_set_value(arc_, 0);
         lv_obj_center(arc_);
 
-        lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_MAIN);
         lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(arc_, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_KNOB);
 
-        lv_obj_set_style_arc_width(arc_, 1, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_width(arc_, 24, LV_PART_MAIN);
+        lv_obj_set_style_arc_width(arc_, 24, LV_PART_INDICATOR);
+        lv_obj_set_style_pad_all(arc_, -5, LV_PART_KNOB);
 
         light_bulb = lv_img_create(screen);
         lv_img_set_src(light_bulb, &big_icon);
