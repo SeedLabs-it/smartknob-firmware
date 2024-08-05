@@ -71,7 +71,6 @@ public:
 protected:
     virtual void initScreen() {};
 
-    /** Full-size sprite used as a framebuffer */
     SemaphoreHandle_t mutex_;
     int8_t next_ = DONT_NAVIGATE;
     int8_t back_ = MENU;
@@ -84,6 +83,5 @@ protected:
 
     MotorNotifier *motor_notifier;
 
-    // LVGL
     lv_obj_t *screen = lv_obj_create(NULL);
 };
