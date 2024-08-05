@@ -1,5 +1,19 @@
 #include "util.h"
 
+lv_obj_t *
+lvDrawCircle(const uint8_t dia, lv_obj_t *parent)
+{
+    static lv_style_t style;
+    lv_style_set_radius(&style, LV_RADIUS_CIRCLE);
+    lv_style_set_bg_opa(&style, LV_OPA_COVER);
+
+    lv_obj_t *circle = lv_obj_create(parent);
+    lv_obj_remove_style_all(circle);
+    lv_obj_set_size(circle, dia, dia);
+    lv_obj_add_style(circle, &style, 0);
+    return circle;
+}
+
 float lerp(const float value, const float inMin, const float inMax, const float min, const float max)
 {
     // Map the input value from the input range to the output range
@@ -70,7 +84,7 @@ uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b)
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
 
-RGBColor uint32ToRGB(uint32_t color)
+RGBColor_Custom uint32ToRGB(uint32_t color)
 {
     return {(color >> 8) & 0xF8, (color >> 3) & 0xFC, (color << 3) & 0xF8};
 }
@@ -155,7 +169,7 @@ HEXColor hToHEX(float h)
     return result;
 }
 
-HSVColor ToHSV(RGBColor color)
+HSVColor ToHSV(RGBColor_Custom color)
 {
     double cmax = std::max({color.r, color.g, color.b});
     double cmin = std::min({color.r, color.g, color.b});

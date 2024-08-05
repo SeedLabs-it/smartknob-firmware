@@ -2,50 +2,39 @@
 
 #include <map>
 
-#include "app.h"
-#include "menu.h"
 #include "../app_config.h"
 #include "../notify/motor_notifier/motor_notifier.h"
 #include "../navigation/navigation.h"
+#include "./notify/os_config_notifier/os_config_notifier.h"
 
-// include all apps
-#include "apps/3d_printing_chamber/3d_printer_chamber.h"
-#include "apps/blinds/blinds.h"
-#include "apps/climate/climate.h"
 #include "apps/light_dimmer/light_dimmer.h"
 #include "apps/light_switch/light_switch.h"
-#include "apps/music/music.h"
 #include "apps/settings/settings.h"
 #include "apps/stopwatch/stopwatch.h"
-#include "apps/pomodoro/pomodoro.h"
+#include "apps/blinds/blinds.h"
+#include "apps/climate/climate.h"
 
-// include all "menu" apps
 #include "app_menu.h"
-
-// TODO: generate menu based on items in the map
 
 class Apps
 {
 
 public:
-    Apps();
-    Apps(TFT_eSprite *spr_);
+    Apps(SemaphoreHandle_t mutex);
+
     void add(uint8_t id, App *app);
     void clear();
+
     EntityStateUpdate update(AppState state);
-    TFT_eSprite *renderActive();
+    void render();
     void setActive(int8_t id);
 
-    void setSprite(TFT_eSprite *spr_);
     App *loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id);
     void updateMenu();
 
-    void reload(cJSON *apps_);
-    void createOnboarding();
-
     void setMotorNotifier(MotorNotifier *motor_notifier);
+    void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
     void triggerMotorConfigUpdate();
-
     void handleNavigationEvent(NavigationEvent event);
 
     PB_SmartKnobConfig blocked_motor_config = PB_SmartKnobConfig{
@@ -66,23 +55,21 @@ public:
     };
 
 protected:
-    QueueHandle_t mutex;
+    SemaphoreHandle_t screen_mutex_;
+    SemaphoreHandle_t app_mutex_;
     std::map<uint8_t, std::shared_ptr<App>> apps;
     std::shared_ptr<Menu> menu = nullptr;
 
     int8_t active_id = 0;
 
-    TFT_eSprite *spr_ = nullptr;
     std::shared_ptr<App> active_app = nullptr;
 
-    TFT_eSprite *rendered_spr_;
-
     std::shared_ptr<App> find(uint8_t id);
-    std::shared_ptr<App> find(char *app_slug);
-    void lock();
-    void unlock();
+    std::shared_ptr<App> find(char *app_id);
 
     PB_SmartKnobConfig root_level_motor_config;
 
     MotorNotifier *motor_notifier;
+
+    OSConfigNotifier *os_config_notifier_;
 };

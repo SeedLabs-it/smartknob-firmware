@@ -206,6 +206,13 @@ void WifiTask::webHandlerWiFiForm()
 
 void WifiTask::webHandlerMQTTForm()
 {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        server_->sendHeader("Location", "/");
+        server_->send(302, "text/plain", "Not connected to WiFi redirecting to WiFi setup!");
+        return;
+    }
+
     WiFiEvent event;
     event.type = SK_WEB_CLIENT_MQTT;
     publishWiFiEvent(event);
@@ -221,6 +228,13 @@ void WifiTask::webHandlerWiFiCredentials()
 
     String ssid = server_->arg("ssid");
     String passphrase = server_->arg("password");
+
+    if (ssid.length() == 0 || passphrase.length() == 0)
+    {
+        server_->sendHeader("Location", "/");
+        server_->send(302, "text/plain", "Invalid WiFi credentials!");
+        return;
+    }
 
     // TODO send event connecting to wifi
 
@@ -250,6 +264,12 @@ void WifiTask::webHandlerWiFiCredentials()
 
 void WifiTask::webHandlerMQTTCredentials()
 {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        server_->sendHeader("Location", "/mqtt");
+        server_->send(302, "text/plain", "Connect to WiFi first!");
+        return;
+    }
     retry_mqtt = false;
     String mqtt_server = server_->arg("mqtt_server");
     uint32_t mqtt_port = server_->arg("mqtt_port").toInt();

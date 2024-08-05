@@ -88,6 +88,7 @@ struct ScreenState
 
 struct AppState
 {
+    OSMode os_mode_state;
     PB_SmartKnobState motor_state;
     ConnectivityState connectivity_state;
     MqttState mqtt_state;

@@ -2,12 +2,21 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
+#include "esp_spiram.h"
+#include "esp_heap_caps.h"
+
+#include "apps/light_switch/light_switch.h"
+#include "apps/light_dimmer/light_dimmer.h"
 
 #include "cJSON.h"
 
-static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
+#define TFT_HOR_RES 240
+#define TFT_VER_RES 240
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 12, 1, task_core}
+#define LVGL_TASK_MAX_DELAY_MS (500)
+#define LVGL_TASK_MIN_DELAY_MS (1)
+
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 24, 2, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);
@@ -18,117 +27,75 @@ DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 12, 1
 
 DisplayTask::~DisplayTask()
 {
+
     vQueueDelete(app_state_queue_);
     vSemaphoreDelete(mutex_);
 }
 
 OnboardingFlow *DisplayTask::getOnboardingFlow()
 {
-    return &onboarding_flow;
+    while (onboarding_flow == nullptr)
+    {
+        delay(50);
+    }
+    return onboarding_flow;
 }
 
 DemoApps *DisplayTask::getDemoApps()
 {
-    return &demo_apps;
+    while (demo_apps == nullptr)
+    {
+        delay(50);
+    }
+    return demo_apps;
 }
 
 HassApps *DisplayTask::getHassApps()
 {
-    return &hass_apps;
+    while (hass_apps == nullptr)
+    {
+        delay(50);
+    }
+    return hass_apps;
 }
 
 ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 {
-    return &error_handling_flow;
+    while (error_handling_flow == nullptr)
+    {
+        delay(50);
+    }
+    return error_handling_flow;
 }
 
 void DisplayTask::run()
 {
-    tft_.begin();
-    tft_.invertDisplay(1);
-    tft_.setRotation(SK_DISPLAY_ROTATION);
-    tft_.fillScreen(TFT_BLACK);
-
+    delay(1000);
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
-    LOGD("Push menu sprite: ok");
+    lv_init();
+    lv_skdk_create();
+    lv_disp_drv_t *disp_drv = lv_skdk_get_disp_drv();
 
-    spr_.setColorDepth(16);
-
-    if (spr_.createSprite(TFT_WIDTH, TFT_HEIGHT) == nullptr)
+    onboarding_flow = new OnboardingFlow(mutex_);
+    demo_apps = new DemoApps(mutex_);
+    hass_apps = new HassApps(mutex_);
+    error_handling_flow = new ErrorHandlingFlow(mutex_);
+    while (display_os_mode == UNSET)
     {
-        LOGE("Sprite allocation failed!");
-        tft_.fillScreen(TFT_RED);
+        delay(50);
     }
-    else
-    {
-        LOGD("Sprite created!");
-        tft_.fillScreen(TFT_BLACK);
-    }
-    spr_.setTextColor(0xFFFF, TFT_BLACK);
 
-    demo_apps = DemoApps(&spr_);
-
-    hass_apps = HassApps(&spr_);
-
-    AppState app_state;
-
-    spr_.setTextDatum(CC_DATUM);
-    spr_.setTextColor(TFT_WHITE);
-
-    unsigned long last_rendering_ms = millis();
-    unsigned long last_fps_check = millis();
-
-    const uint16_t wanted_fps = 60;
-    uint16_t fps_counter = 0;
+    delay(1000);
 
     while (1)
     {
-        if (millis() - last_rendering_ms > 1000 / wanted_fps)
         {
-            spr_.fillSprite(TFT_BLACK);
-            spr_.setTextSize(1);
-
-            if (error_handling_flow.getErrorType() == NO_ERROR)
-            {
-                switch (os_mode)
-                {
-                case Onboarding:
-                    onboarding_flow.render()->pushSprite(0, 0);
-                    break;
-                case Demo:
-                    demo_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                case Hass:
-                    hass_apps.renderActive()->pushSprite(0, 0);
-                    break;
-                default:
-                    spr_.pushSprite(0, 0);
-                    break;
-                }
-            }
-            else
-            {
-                error_handling_flow.render()->pushSprite(0, 0);
-            }
-
-            {
-                SemaphoreGuard lock(mutex_);
-                ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
-            }
-            last_rendering_ms = millis();
-
-            fps_counter++;
-            if (last_fps_check + 1000 < millis())
-            {
-                fps_counter = 0;
-                last_fps_check = millis();
-            }
+            lv_task_handler();
         }
-
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
@@ -140,24 +107,28 @@ QueueHandle_t DisplayTask::getKnobStateQueue()
 void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
-    brightness_ = brightness >> (16 - SK_BACKLIGHT_BIT_DEPTH);
+    lv_skdk_get_lcd()->setBrightness((((float)brightness / UINT16_MAX) * 255)); // Quickly implemented brightness for lvgl with old (current) impl.
 }
 
 void DisplayTask::enableOnboarding()
 {
-    os_mode = Onboarding;
-    onboarding_flow.triggerMotorConfigUpdate();
+    display_os_mode = ONBOARDING;
+    onboarding_flow->render();
+    onboarding_flow->triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableDemo()
 {
-    os_mode = Demo;
-    demo_apps.triggerMotorConfigUpdate();
+    display_os_mode = DEMO;
+    demo_apps->render();
+    demo_apps->triggerMotorConfigUpdate();
 }
 
 void DisplayTask::enableHass()
 {
-    os_mode = Hass;
-    hass_apps.triggerMotorConfigUpdate();
+    LOGE("enableHass");
+    display_os_mode = HASS;
+    hass_apps->render();
+    hass_apps->triggerMotorConfigUpdate();
 }
 #endif

@@ -116,7 +116,7 @@ typedef struct _PB_SmartKnobConfig {
  embedded config field so the host can use this value to determine the mode that was
  in effect at the time of the State snapshot instead of having to infer it from the
  other config fields. */
-    char text[51];
+    char id[65];
     /* *
  For a "magnetic" detent mode - where not all positions should have detents - this
  specifies which positions (up to 5) have detents enabled. The knob will feel like it
@@ -323,7 +323,7 @@ extern "C" {
 #define PB_SmartKnobConfig_detent_strength_unit_tag 7
 #define PB_SmartKnobConfig_endstop_strength_unit_tag 8
 #define PB_SmartKnobConfig_snap_point_tag        9
-#define PB_SmartKnobConfig_text_tag              10
+#define PB_SmartKnobConfig_id_tag                10
 #define PB_SmartKnobConfig_detent_positions_tag  11
 #define PB_SmartKnobConfig_snap_point_bias_tag   12
 #define PB_SmartKnobConfig_led_hue_tag           13
@@ -440,7 +440,7 @@ X(a, STATIC,   SINGULAR, FLOAT,    position_width_radians,   6) \
 X(a, STATIC,   SINGULAR, FLOAT,    detent_strength_unit,   7) \
 X(a, STATIC,   SINGULAR, FLOAT,    endstop_strength_unit,   8) \
 X(a, STATIC,   SINGULAR, FLOAT,    snap_point,        9) \
-X(a, STATIC,   SINGULAR, STRING,   text,             10) \
+X(a, STATIC,   SINGULAR, STRING,   id,               10) \
 X(a, STATIC,   REPEATED, INT32,    detent_positions,  11) \
 X(a, STATIC,   SINGULAR, FLOAT,    snap_point_bias,  12) \
 X(a, STATIC,   SINGULAR, INT32,    led_hue,          13)
@@ -520,12 +520,12 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 #define PB_PersistentConfiguration_size          28
 #define PB_RequestState_size                     0
 #define PB_SMARTKNOB_PB_H_MAX_SIZE               PB_FromSmartKnob_size
-#define PB_SmartKnobConfig_size                  184
-#define PB_SmartKnobState_size                   206
+#define PB_SmartKnobConfig_size                  198
+#define PB_SmartKnobState_size                   220
 #define PB_StrainCalibState_size                 11
 #define PB_StrainCalibration_size                5
 #define PB_StrainState_size                      16
-#define PB_ToSmartknob_size                      196
+#define PB_ToSmartknob_size                      210
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,10 +1,6 @@
 #pragma once
 #include "../app.h"
 
-#include "../../font/roboto_thin_bold_24.h"
-#include "../../font/roboto_thin_20.h"
-#include "../../font/roboto_light_60.h"
-
 struct LapTime
 {
     uint8_t m = 0;
@@ -15,19 +11,33 @@ struct LapTime
     int32_t improvement = 0; // diff with previus lap
 };
 
+struct CurrentStopwatchState
+{
+    unsigned long start_ms;
+
+    lv_obj_t *relative_time_label;
+    lv_obj_t *time_label;
+    lv_obj_t *ms_label;
+
+    lv_obj_t *lap_time_label;
+
+    lv_obj_t *start_stop_indicator;
+    lv_obj_t *start_stop_label;
+};
+
 class StopwatchApp : public App
 {
 public:
-    StopwatchApp(TFT_eSprite *spr_, char *entitiy_id);
-    TFT_eSprite *render();
+    StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromSystem(AppState state);
-
-protected:
     int8_t navigationNext();
 
 private:
-    unsigned long start_ms;
+    void initScreen();
+
+    CurrentStopwatchState current_stopwatch_state;
+
     bool started = false;
 
     uint16_t current_position = 0;
@@ -37,9 +47,10 @@ private:
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
     // TODO: move to a shared const
-    const uint8_t laps_max = 20;
+    const uint8_t laps_max = 100;
     uint8_t last_lap_added = 0;
-    LapTime laps[20];
+    LapTime laps[100];
 
+    void timer_task(lv_timer_t *timer);
     void clear();
 };

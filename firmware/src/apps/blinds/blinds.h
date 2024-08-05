@@ -1,20 +1,21 @@
 #pragma once
 #include "../app.h"
 
-#include "../../font/roboto_thin_20.h"
-#include "../../font/roboto_light_60.h"
-
 class BlindsApp : public App
 {
 public:
-    BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id);
-    TFT_eSprite *render();
-    int8_t navigationNext();
+    BlindsApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
-    void updateStateFromSystem(AppState state);
+
+    int8_t navigationNext() override;
 
 private:
+    void initScreen();
+
+    lv_obj_t *blinds_bar;
+    lv_obj_t *percentage_label;
+
     uint8_t current_closed_position = 0;
     uint8_t last_closed_position = 0;
     char buf_[24];

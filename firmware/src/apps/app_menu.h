@@ -1,6 +1,5 @@
 #pragma once
 #include "menu.h"
-#include "font/roboto_thin_bold_24.h"
 
 #include <map>
 
@@ -10,18 +9,19 @@ const uint8_t MEX_MENU_ITEMS = 12;
 class MenuApp : public Menu
 {
 public:
-    MenuApp(TFT_eSprite *spr_);
-    TFT_eSprite *render();
-    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
-    void updateStateFromSystem(AppState state);
+    MenuApp(SemaphoreHandle_t mutex);
 
-    void add_item(int8_t id, std::shared_ptr<MenuItem> item);
+    EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
+    void updateStateFromSystem(AppState state) {};
+
     void update();
+
+    void render();
 
 private:
     char room[12];
 
-    std::shared_ptr<MenuItem> current_item;
-    std::shared_ptr<MenuItem> prev_item;
-    std::shared_ptr<MenuItem> next_item;
+    std::shared_ptr<MenuPage> current_page;
+    std::shared_ptr<MenuPage> prev_page;
+    std::shared_ptr<MenuPage> next_page;
 };

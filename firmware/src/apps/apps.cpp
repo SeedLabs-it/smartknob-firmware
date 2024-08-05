@@ -1,96 +1,54 @@
-#pragma once
 #include "apps.h"
-#include "menu.h"
-#include "app_menu.h"
-#include "settings.h"
 
-#include <typeinfo>
-#include <iterator>
-
-Apps::Apps()
+Apps::Apps(SemaphoreHandle_t mutex) : screen_mutex_(mutex)
 {
-    mutex = xSemaphoreCreateMutex();
-}
-
-Apps::Apps(TFT_eSprite *spr_)
-{
-    mutex = xSemaphoreCreateMutex();
-    this->spr_ = spr_;
-}
-
-void Apps::setSprite(TFT_eSprite *spr_)
-{
-    this->spr_ = spr_;
+    app_mutex_ = xSemaphoreCreateMutex();
 }
 
 void Apps::add(uint8_t id, App *app)
 {
-    lock();
+    SemaphoreGuard lock(app_mutex_);
     apps.insert(std::make_pair(id, app));
-    unlock();
 }
 
 void Apps::clear()
 {
-    lock();
+    SemaphoreGuard lock(app_mutex_);
     apps.clear();
-    unlock();
 }
 
 EntityStateUpdate Apps::update(AppState state)
 {
     // TODO: update with AppState
+    SemaphoreGuard lock(app_mutex_);
     EntityStateUpdate new_state_update;
-    lock();
-    if (active_app == nullptr)
+
+    if (active_app != nullptr)
     {
-        unlock();
-        return new_state_update;
+        // Only send state updates to app using config with same identifier.
+        if (strcmp(state.motor_state.config.id, active_app->app_id) == 0)
+        {
+            new_state_update = active_app->updateStateFromKnob(state.motor_state);
+            active_app->updateStateFromSystem(state);
+        }
     }
 
-    new_state_update = active_app->updateStateFromKnob(state.motor_state);
-    active_app->updateStateFromSystem(state);
-
-    unlock();
     return new_state_update;
 }
 
-TFT_eSprite *Apps::renderActive()
+void Apps::render()
 {
-    // TODO: update with AppState
-    lock();
-    if (active_app != nullptr)
-    {
-        rendered_spr_ = active_app->render();
-        unlock();
-        return rendered_spr_;
-    }
-
-    //! MIGHT BE WRONG
-    if (apps[active_id] == nullptr)
-    {
-        rendered_spr_ = spr_;
-        LOGW("Null pointer instead of app");
-        unlock();
-        return rendered_spr_;
-    }
-
-    active_app = apps[active_id];
-
-    rendered_spr_ = active_app->render();
-
-    unlock();
-    return rendered_spr_;
-}
+    active_app->render();
+};
 
 void Apps::setActive(int8_t id)
 {
-    lock();
+    SemaphoreGuard lock(app_mutex_);
     if (id == MENU)
     {
         active_app = menu;
         active_id = MENU;
-        unlock();
+        render();
         return;
     }
     LOGD("Set active %d", id);
@@ -103,91 +61,57 @@ void Apps::setActive(int8_t id)
     else
     {
         active_app = apps[active_id];
+        render();
     }
-    unlock();
 }
 
-void Apps::updateMenu() // BROKEN FOR NOW
-{
-    lock();
-    menu = std::make_shared<MenuApp>(spr_);
-
-    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
-
-    uint16_t position = 0;
-
-    uint16_t active_color = spr_->color565(0, 255, 200);
-    uint16_t inactive_color = spr_->color565(150, 150, 150);
-
-    for (it = apps.begin(); it != apps.end(); it++)
-    {
-        menu->add_item(
-            position,
-            std::make_shared<MenuItem>(
-                (int8_t)it->first,
-                TextItem{it->second->friendly_name, inactive_color},
-                TextItem{},
-                TextItem{},
-                IconItem{it->second->big_icon, active_color},
-                IconItem{it->second->small_icon, inactive_color}));
-
-        position++;
-    }
-
-    unlock();
-    setActive(MENU);
-}
-
-// settings and menu apps kept aside for a reason. We will add them manually later
-// TODO: create struct for data passed to each app.
 App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
 {
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
-        ClimateApp *app = new ClimateApp(this->spr_, app_id, friendly_name, entity_id);
+        ClimateApp *app = new ClimateApp(screen_mutex_, app_id, friendly_name, entity_id);
         add(position, app);
         return app;
     }
-    else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
-    {
-        PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
-        // app->friendly_name = friendly_name;
-        sprintf(app->friendly_name, "%s", friendly_name);
-        add(position, app);
-        return app;
-    }
+    // else if (app_slug.compare(APP_SLUG_3D_PRINTER) == 0)
+    // {
+    //     PrinterChamberApp *app = new PrinterChamberApp(this->spr_, app_id);
+    //     // app->friendly_name = friendly_name;
+    //     sprintf(app->friendly_name, "%s", friendly_name);
+    //     add(position, app);
+    //     return app;
+    // }
     else if (app_slug.compare(APP_SLUG_BLINDS) == 0)
     {
-        BlindsApp *app = new BlindsApp(this->spr_, app_id, friendly_name, entity_id);
+        BlindsApp *app = new BlindsApp(screen_mutex_, app_id, friendly_name, entity_id);
         add(position, app);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(this->spr_, app_id, friendly_name, entity_id);
+        LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_id, friendly_name, entity_id);
         add(position, app);
         return app;
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(this->spr_, app_id, friendly_name, entity_id);
+        LightSwitchApp *app = new LightSwitchApp(screen_mutex_, app_id, friendly_name, entity_id);
 
         add(position, app);
         return app;
     }
-    else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
-    {
-        MusicApp *app = new MusicApp(this->spr_, app_id);
-        // app->friendly_name = friendly_name;
-        sprintf(app->friendly_name, "%s", friendly_name);
-        add(position, app);
-        return app;
-    }
+    // else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
+    // {
+    //     MusicApp *app = new MusicApp(this->spr_, app_id);
+    //     // app->friendly_name = friendly_name;
+    //     sprintf(app->friendly_name, "%s", friendly_name);
+    //     add(position, app);
+    //     return app;
+    // }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
-        StopwatchApp *app = new StopwatchApp(this->spr_, app_id);
-        // app->friendly_name = friendly_name;
-        sprintf(app->friendly_name, "%s", friendly_name);
+        StopwatchApp *app = new StopwatchApp(screen_mutex_, entity_id);
+        // sprintf(app->friendly_name, "%s", friendly_name);
         add(position, app);
         return app;
     }
@@ -197,59 +121,30 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     return nullptr;
 }
-
-void Apps::handleNavigationEvent(NavigationEvent event)
+void Apps::updateMenu()
 {
-    if (event.press == NAVIGATION_EVENT_PRESS_SHORT)
     {
-        switch (active_app->navigationNext())
-        {
-        case DONT_NAVIGATE:
-            return;
-            break;
-        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
-            break;
-        default:
-            setActive(active_app->navigationNext());
-            break;
-        }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
-    }
+        SemaphoreGuard lock(app_mutex_);
+        menu = std::make_shared<MenuApp>(screen_mutex_);
 
-    if (event.press == NAVIGATION_EVENT_PRESS_LONG)
-    {
-        switch (active_app->navigationBack())
-        {
-        case DONT_NAVIGATE:
-            return;
-            break;
-        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
-            break;
-        default:
-            setActive(active_app->navigationBack());
-            break;
-        }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
-    }
-}
+        std::map<uint8_t, std::shared_ptr<App>>::iterator it;
 
-std::shared_ptr<App> Apps::find(uint8_t id)
-{
-    // TODO: add protection with array size
-    return apps[id];
-}
+        uint16_t position = 0;
 
-std::shared_ptr<App> Apps::find(char *app_id)
-{
-    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
-    for (it = apps.begin(); it != apps.end(); it++)
-    {
-        if (strcmp(it->second->app_id, app_id) == 0)
+        for (it = apps.begin(); it != apps.end(); it++)
         {
-            return it->second;
+            menu->add_page(
+                position,
+                (int8_t)it->first,
+                it->second->friendly_name,
+                it->second->big_icon,
+                it->second->small_icon);
+
+            position++;
         }
     }
-    return nullptr;
+
+    setActive(MENU);
 }
 
 void Apps::setMotorNotifier(MotorNotifier *motor_notifier)
@@ -262,7 +157,6 @@ void Apps::setMotorNotifier(MotorNotifier *motor_notifier)
         it->second->setMotorNotifier(motor_notifier);
     }
 }
-
 void Apps::triggerMotorConfigUpdate()
 {
     if (this->motor_notifier != nullptr)
@@ -283,11 +177,63 @@ void Apps::triggerMotorConfigUpdate()
     }
 }
 
-void Apps::lock()
+void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
+    switch (event)
+    {
+    case NavigationEvent::SHORT:
+        switch (active_app->navigationNext())
+        {
+        case DONT_NAVIGATE:
+            return;
+            break;
+        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
+            break;
+        default:
+            setActive(active_app->navigationNext());
+            break;
+        }
+        motor_notifier->requestUpdate(active_app->getMotorConfig());
+        break;
+    case NavigationEvent::LONG:
+        switch (active_app->navigationBack())
+        {
+        case DONT_NAVIGATE:
+            return;
+            break;
+        case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
+            break;
+        default:
+            setActive(active_app->navigationBack());
+            break;
+        }
+        motor_notifier->requestUpdate(active_app->getMotorConfig());
+        break;
+    default:
+        break;
+    }
 }
-void Apps::unlock()
+
+std::shared_ptr<App> Apps::find(uint8_t id)
 {
-    xSemaphoreGive(mutex);
+    // TODO: add protection with array size
+    return apps[id];
+}
+std::shared_ptr<App> Apps::find(char *app_id)
+{
+    std::map<uint8_t, std::shared_ptr<App>>::iterator it;
+    for (it = apps.begin(); it != apps.end(); it++)
+    {
+        if (strcmp(it->second->app_id, app_id) == 0)
+        {
+            return it->second;
+        }
+    }
+    return nullptr;
+}
+
+void Apps::setOSConfigNotifier(OSConfigNotifier *os_config_notifier)
+{
+    os_config_notifier_ = os_config_notifier;
 }

@@ -21,7 +21,7 @@ static DisplayTask *display_task_p = nullptr;
 #endif
 
 #if SK_LEDS
-static LedRingTask led_ring_task(0);
+static LedRingTask led_ring_task(1);
 static LedRingTask *led_ring_task_p = &led_ring_task;
 #else
 static LedRingTask *led_ring_task_p = nullptr;
@@ -63,6 +63,7 @@ void initTempSensor()
 
 void setup()
 {
+
     initTempSensor();
 
     // TODO: move from eeprom to ffatfs
@@ -72,13 +73,11 @@ void setup()
     }
 
 #if SK_DISPLAY
+    // Create the task pinned to the specified core
     display_task.begin();
 
     // Connect display to motor_task's knob state feed
     root_task.addListener(display_task.getKnobStateQueue());
-
-    // link apps from display task
-    root_task.setHassApps(display_task.getHassApps());
 
 #endif
 

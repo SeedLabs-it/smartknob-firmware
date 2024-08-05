@@ -1,8 +1,6 @@
 #pragma once
 
-#include <AceButton.h>
 #include <Arduino.h>
-
 #include "configuration.h"
 #include "display_task.h"
 #include "logger.h"
@@ -36,8 +34,6 @@ public:
     virtual ~RootTask();
     void loadConfiguration();
 
-    void setHassApps(HassApps *apps);
-
     void addListener(QueueHandle_t queue);
 
     QueueHandle_t getConnectivityStateQueue();
@@ -58,7 +54,6 @@ private:
     DisplayTask *display_task_;
     WifiTask *wifi_task_;
     MqttTask *mqtt_task_;
-    HassApps *hass_apps;
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
@@ -81,6 +76,8 @@ private:
     int current_config_ = 0;
     uint8_t press_count_ = 1;
 
+    uint16_t brightness = UINT16_MAX;
+
     uint8_t last_strain_pressed_played_ = VIRTUAL_BUTTON_IDLE;
 
     PB_SmartKnobState latest_state_ = {};
@@ -92,7 +89,6 @@ private:
 
     cJSON *apps_ = NULL;
 
-    // QueueHandle_t log_queue_;
     QueueHandle_t knob_state_queue_;
 
     QueueHandle_t connectivity_status_queue_;
@@ -108,7 +104,6 @@ private:
 
     uint32_t last_calib_state_sent_ = 0;
 
-    // void changeConfig(int8_t id);
     void updateHardware(AppState *app_state);
     void publishState();
     void applyConfig(PB_SmartKnobConfig config, bool from_remote);

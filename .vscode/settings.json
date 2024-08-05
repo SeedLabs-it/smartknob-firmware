@@ -75,11 +75,23 @@
         "locale": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "cstdbool": "cpp"
+        "cstdbool": "cpp",
+        "list": "cpp",
+        "thread": "cpp",
+        "events.h": "c",
+        "app_config.h": "c",
+        "logging.h": "c",
+        "x40_light_filled.c": "cpp",
+        "x40_light_outline.c": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "lvgl.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
+        
     },
+    "C_Cpp.clang_format_style": "file",
     "editor.indentSize": "tabSize",
     "editor.tabSize": 4
 }

@@ -295,7 +295,7 @@ void LedRingTask::run()
 
         //
 
-        delay(1);
+        delay(10);
     }
 }
 
