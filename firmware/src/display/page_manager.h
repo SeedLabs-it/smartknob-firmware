@@ -59,8 +59,6 @@ public:
         }
     }
 
-    // virtual void createOverlay() = 0;
-
     void add(T page_enum, BasePage *page)
     {
         pages_[page_enum] = page;

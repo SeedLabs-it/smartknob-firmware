@@ -14,8 +14,6 @@
 #include "task.h"
 #include "app_config.h"
 
-// #include "apps/apps.h"
-// #include "apps/hass/hass_apps.h"
 #include "./apps/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
@@ -36,7 +34,6 @@ public:
     QueueHandle_t getKnobStateQueue();
 
     void setBrightness(uint16_t brightness);
-    // void setApps(Apps apps);
     OnboardingFlow *getOnboardingFlow();
     DemoApps *getDemoApps();
     HassApps *getHassApps();
@@ -53,11 +50,6 @@ protected:
     void run();
 
 private:
-    TFT_eSPI tft_ = TFT_eSPI();
-
-    /** Full-size sprite used as a framebuffer */
-    TFT_eSprite spr_ = TFT_eSprite(&tft_);
-
     OnboardingFlow *onboarding_flow = nullptr;
     DemoApps *demo_apps = nullptr;
     HassApps *hass_apps = nullptr;

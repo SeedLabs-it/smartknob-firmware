@@ -3,8 +3,6 @@
  *
  */
 
-// #ifndef LV_TFT_ESPI_H
-// #define LV_TFT_ESPI_H
 #include "LGFX_SKDK.hpp"
 
 #include <LovyanGFX.hpp>
@@ -20,8 +18,6 @@ extern "C"
 #pragma once
 #include "lvgl.h"
 #include "logging.h"
-
-    // #if LV_USE_TFT_ESPI
 
     /*********************
      *      DEFINES
@@ -43,10 +39,6 @@ extern "C"
      *      MACROS
      **********************/
 
-    // #endif /* LV_USE_TFT_ESPI */
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-// #endif /* LV_TFT_ESPI_H */

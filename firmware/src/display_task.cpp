@@ -10,8 +10,6 @@
 
 #include "cJSON.h"
 
-// static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
-
 #define TFT_HOR_RES 240
 #define TFT_VER_RES 240
 
@@ -70,70 +68,6 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
     return error_handling_flow;
 }
 
-// /* Define the points of the line */
-// static lv_point_t line_points[] = {{10, 30}, {50, 60}};
-
-// /* Function to move the line */
-// void move_line(lv_obj_t *line, lv_point_t *points, int num_points, int dx, int dy)
-// {
-//     for (int i = 0; i < num_points; i++)
-//     {
-//         points[i].x += dx * 2;
-//         points[i].y += dy * 2;
-//     }
-//     lv_line_set_points(line, points, num_points); /* Update the points */
-// }
-
-// static int current = 0;
-
-// /* Task to move the line around */
-// void move_line_task(lv_timer_t *timer)
-// {
-//     static int dx = 1;
-//     static int dy = 1;
-//     static lv_obj_t *line1 = (lv_obj_t *)timer->user_data;
-
-//     lv_color_t color = lv_color_hsv_to_rgb(current % 360, 100, 100);
-//     // lv_obj_set_style_bg_color(line1, color, LV_PART_MAIN);
-//     lv_obj_set_style_line_color(line1, color, LV_PART_MAIN);
-//     move_line(line1, line_points, 2, dx, dy);
-
-//     current += 5;
-
-//     /* Change direction if the line reaches the screen edge */
-//     for (int i = 0; i < 2; i++)
-//     {
-//         if (line_points[i].x < 0 || line_points[i].x > lv_disp_get_hor_res(NULL) ||
-//             line_points[i].y < 0 || line_points[i].y > lv_disp_get_ver_res(NULL))
-//         {
-//             dx = -dx;
-//             dy = -dy;
-//             break;
-//         }
-//     }
-// }
-
-// /* Create the line and start the task */
-// void create_line_and_move(void)
-// {
-//     /* Create a line style */
-//     static lv_style_t style_line;
-//     lv_style_init(&style_line);
-//     lv_style_set_line_width(&style_line, 4);
-//     // lv_style_set_line_color(&style_line, lv_color_black());
-//     lv_style_set_line_rounded(&style_line, true);
-
-//     /* Create a line object */
-//     lv_obj_t *line1 = lv_line_create(lv_scr_act());
-//     lv_line_set_points(line1, line_points, 2); /* Set the points */
-//     lv_obj_add_style(line1, &style_line, 0);   /* Add the style */
-//     // lv_obj_center(line1);                      /* Center the line */
-
-//     /* Create a task to move the line */
-//     // lv_task_create(move_line_task, 50, LV_TASK_PRIO_LOW, line1);
-//     lv_timer_create(move_line_task, 1, line1);
-// }
-
 void DisplayTask::run()
 {
     delay(1000);
@@ -145,33 +79,20 @@ void DisplayTask::run()
     lv_skdk_create();
     lv_disp_drv_t *disp_drv = lv_skdk_get_disp_drv();
 
-    // lv_theme_t *th = lv_theme_default_init(lv_disp_get_default(),
-    //                                        LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0x00, 0x00, 0x00),
-    //                                        false, &NDS12_10px);
-
-    // lv_disp_set_theme(lv_disp_get_default(), th);
-
     onboarding_flow = new OnboardingFlow(mutex_);
     demo_apps = new DemoApps(mutex_);
     hass_apps = new HassApps(mutex_);
     error_handling_flow = new ErrorHandlingFlow(mutex_);
-
-    // lv_obj_t *screen = lv_obj_create(NULL);
-
     while (display_os_mode == UNSET)
     {
         delay(50);
     }
 
     delay(1000);
-    // lv_scr_load(screen);
-
-    // create_line_and_move();
 
     while (1)
     {
         {
-            // SemaphoreGuard lock(mutex_);
             lv_task_handler();
         }
         vTaskDelay(pdMS_TO_TICKS(5));
@@ -201,7 +122,6 @@ void DisplayTask::enableDemo()
     display_os_mode = DEMO;
     demo_apps->render();
     demo_apps->triggerMotorConfigUpdate();
-    // lv_scr_load(demoScreen);
 }
 
 void DisplayTask::enableHass()
