@@ -4,7 +4,7 @@ DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
 {
     uint8_t dot_dia = 24;
     uint8_t distance_between = dot_dia / 2 + 4;
-    uint8_t y_offset = 34;
+    uint8_t y_offset = 24;
 
     lv_obj_t *blue_colored_dot = lvDrawCircle(dot_dia, page);
     lv_obj_align(blue_colored_dot, LV_ALIGN_CENTER, 0, -(distance_between * 2) - y_offset);
