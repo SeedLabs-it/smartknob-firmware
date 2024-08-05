@@ -6,10 +6,11 @@
 #include "semaphore_guard.h"
 #include "../proto_gen/smartknob.pb.h"
 #include "../app_config.h"
-#include "icons.h"
+#include "assets/images/icons.h"
 #include "../events/events.h"
 #include "../notify/motor_notifier/motor_notifier.h"
 #include "navigation/navigation.h"
+#include "../util.h"
 
 const char APP_SLUG_CLIMATE[48] = "climate";
 const char APP_SLUG_BLINDS[48] = "blinds";

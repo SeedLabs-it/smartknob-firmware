@@ -12,6 +12,7 @@
 #include "apps/settings/settings.h"
 #include "apps/stopwatch/stopwatch.h"
 #include "apps/blinds/blinds.h"
+#include "apps/climate/climate.h"
 
 #include "app_menu.h"
 
