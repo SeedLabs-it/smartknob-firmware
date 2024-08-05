@@ -1,9 +1,5 @@
 #include "climate.h"
 
-lv_obj_t **drawCirclesInArc(lv_obj_t *screen, int diameter, int x_amount, int y_width, int a, int b, int rotation)
-{
-}
-
 ClimateApp::ClimateApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
     sprintf(app_id, "%s", app_id_);
@@ -13,12 +9,13 @@ ClimateApp::ClimateApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
     // TODO update this via some API
     current_temperature = 20;
     target_temperature = 25;
+    uint8_t position_nonce = target_temperature;
 
     // TODO, sync motor config with wanted temp on retrival
     motor_config = PB_SmartKnobConfig{
         target_temperature,
         0,
-        target_temperature,
+        position_nonce,
         CLIMATE_APP_MIN_TEMP,
         CLIMATE_APP_MAX_TEMP,
         8.225806452 * PI / 120,
@@ -33,13 +30,11 @@ ClimateApp::ClimateApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
     };
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    // LV_IMG_DECLARE(x80_lightbulb_outline);
-    // LV_IMG_DECLARE(x40_lightbulb_outline);
-    // LV_IMG_DECLARE(x80_lightbulb_filled);
+    LV_IMG_DECLARE(x80_thermostat);
+    LV_IMG_DECLARE(x40_thermostat);
 
-    // big_icon = x80_lightbulb_outline;
-    // big_icon_active = x80_lightbulb_filled;
-    // small_icon = x40_lightbulb_outline;
+    big_icon = x80_thermostat;
+    small_icon = x40_thermostat;
 
     initScreen();
     updateTemperatureArc();
@@ -211,7 +206,7 @@ void ClimateApp::updateTemperatureArc()
 
         if (angle_target_temp == angle_current_temp)
         {
-            lv_obj_set_style_arc_color(temperature_arc, LV_COLOR_MAKE(0x00, 0xFF, 0x00), LV_PART_INDICATOR);
+            lv_obj_set_style_arc_color(temperature_arc, LV_COLOR_MAKE(0x00, 0xCC, 0x00), LV_PART_INDICATOR);
             lv_arc_set_angles(temperature_arc, angle_current_temp, angle_target_temp + 1);
         }
         else if (angle_target_temp > angle_current_temp)
@@ -380,7 +375,15 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (mode != NULL)
     {
-        this->mode = mode->valueint;
+        if (mode->valueint >= 0 && mode->valueint < ClimateAppMode::CLIMATE_MODE_COUNT)
+        {
+            this->mode = static_cast<ClimateAppMode>(mode->valueint);
+        }
+        else
+        {
+            LOGE("Invalid mode value: %d", mode->valueint);
+            return;
+        }
     }
 
     if (target_temp != NULL)
@@ -406,6 +409,7 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 int8_t ClimateApp::navigationNext()
 {
     last_mode = mode;
+    uint8_t position_nonce = target_temperature;
     switch (mode)
     {
     case ClimateAppMode::CLIMATE_AUTO:
@@ -413,7 +417,7 @@ int8_t ClimateApp::navigationNext()
         motor_config = PB_SmartKnobConfig{
             target_temperature,
             0,
-            target_temperature,
+            position_nonce,
             CLIMATE_APP_MIN_TEMP,
             current_temperature,
             8.225806452 * PI / 120,
@@ -433,7 +437,7 @@ int8_t ClimateApp::navigationNext()
         motor_config = PB_SmartKnobConfig{
             target_temperature,
             0,
-            target_temperature,
+            position_nonce,
             current_temperature,
             CLIMATE_APP_MAX_TEMP,
             8.225806452 * PI / 120,
@@ -453,7 +457,7 @@ int8_t ClimateApp::navigationNext()
         motor_config = PB_SmartKnobConfig{
             target_temperature,
             0,
-            target_temperature,
+            position_nonce,
             current_temperature,
             current_temperature,
             8.225806452 * PI / 120,
@@ -472,7 +476,7 @@ int8_t ClimateApp::navigationNext()
         motor_config = PB_SmartKnobConfig{
             target_temperature,
             0,
-            target_temperature,
+            position_nonce,
             CLIMATE_APP_MIN_TEMP,
             CLIMATE_APP_MAX_TEMP,
             8.225806452 * PI / 120,

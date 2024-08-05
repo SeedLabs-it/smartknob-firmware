@@ -1,7 +1,7 @@
 #pragma once
 #include "../app.h"
 
-enum ClimateAppMode
+enum ClimateAppMode : uint8_t
 {
     CLIMATE_OFF = 0,
     CLIMATE_HEAT,
