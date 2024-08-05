@@ -259,7 +259,7 @@ void RootTask::run()
 
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
-            app_state.screen_state.awake_until = millis() + 45000;
+            app_state.screen_state.awake_until = millis() + 60000;
             app_state.screen_state.has_been_engaged = true;
             motor_task_.runCalibration();
         }
