@@ -381,6 +381,7 @@
 LV_FONT_DECLARE(aktivgrotesk_regular_8pt)        \
 LV_FONT_DECLARE(aktivgrotesk_regular_12pt_4bpp)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_12pt_8bpp)       \
+LV_FONT_DECLARE(aktivgrotesk_regular_12pt_8bpp_subpixel)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_24pt)       \
 LV_FONT_DECLARE(aktivgrotesk_bold_14pt)       \
 LV_FONT_DECLARE(roboto_thin_mono_24pt)       \
@@ -397,17 +398,8 @@ LV_FONT_DECLARE(roboto_light_mono_16pt)       \
 LV_FONT_DECLARE(roboto_light_mono_24pt)       \
 LV_FONT_DECLARE(roboto_light_mono_48pt)       \
 
-/*
-LV_FONT_DECLARE(nds12_10px)         \
-LV_FONT_DECLARE(nds12_14px)         \
-LV_FONT_DECLARE(nds12_20px)         \
-LV_FONT_DECLARE(EIGHTTWOXC_48px)    \
-LV_FONT_DECLARE(kode_mono_40)       \
-*/
-
-
 /*Always set a default font*/
-#define LV_FONT_DEFAULT &aktivgrotesk_regular_12pt_8bpp
+#define LV_FONT_DEFAULT &aktivgrotesk_regular_12pt_8bpp_subpixel
 
 /*Enable handling large font and/or fonts with a lot of characters.
  *The limit depends on the font size, font face and bpp.
@@ -418,7 +410,7 @@ LV_FONT_DECLARE(kode_mono_40)       \
 #define LV_USE_FONT_COMPRESSED 0
 
 /*Enable subpixel rendering*/
-#define LV_USE_FONT_SUBPX 0
+#define LV_USE_FONT_SUBPX 1
 #if LV_USE_FONT_SUBPX
     /*Set the pixel order of the display. Physical order of RGB channels. Doesn't matter with "normal" fonts.*/
     #define LV_FONT_SUBPX_BGR 0  /*0: RGB; 1:BGR order*/
