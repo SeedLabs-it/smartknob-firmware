@@ -75,7 +75,7 @@ void LightDimmerApp::initDimmerScreen()
     char buf_[16];
     sprintf(buf_, "%d%%", current_brightness);
     lv_label_set_text(percentage_label_, buf_);
-    lv_obj_set_style_text_font(percentage_label_, &roboto_thin_mono_40pt, 0);
+    lv_obj_set_style_text_font(percentage_label_, &roboto_light_mono_48pt, 0);
     lv_obj_align(percentage_label_, LV_ALIGN_CENTER, 0, -12);
 
     lv_obj_t *friendly_name_label = lv_label_create(dimmer_screen);

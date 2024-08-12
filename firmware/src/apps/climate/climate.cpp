@@ -46,9 +46,14 @@ void ClimateApp::initScreen()
         SemaphoreGuard lock(mutex_);
 
         target_temp_label = lv_label_create(screen);
-        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, -8);
-        lv_label_set_text_fmt(target_temp_label, "%d°", target_temperature);
-        lv_obj_center(target_temp_label);
+        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, LV_PART_MAIN);
+        lv_label_set_text_fmt(target_temp_label, "%d", target_temperature);
+        lv_obj_align(target_temp_label, LV_ALIGN_CENTER, 0, -8);
+
+        lv_obj_t *target_temp_degree_symbol_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(target_temp_degree_symbol_label, &roboto_light_mono_48pt, 0);
+        lv_label_set_text(target_temp_degree_symbol_label, "°");
+        lv_obj_align_to(target_temp_degree_symbol_label, target_temp_label, LV_ALIGN_OUT_RIGHT_MID, -6, 0);
 
         // state_label = lv_label_create(screen);
         // lv_label_set_text(state_label, "Climate");
@@ -56,8 +61,13 @@ void ClimateApp::initScreen()
 
         current_temp_label = lv_label_create(screen);
         lv_obj_set_style_text_font(current_temp_label, &roboto_light_mono_24pt, 0);
-        lv_label_set_text_fmt(current_temp_label, "%d°", current_temperature);
+        lv_label_set_text_fmt(current_temp_label, "%d", current_temperature);
         lv_obj_align_to(current_temp_label, target_temp_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -4);
+
+        lv_obj_t *current_temp_degree_symbol_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(current_temp_degree_symbol_label, &roboto_light_mono_24pt, 0);
+        lv_label_set_text(current_temp_degree_symbol_label, "°");
+        lv_obj_align_to(current_temp_degree_symbol_label, current_temp_label, LV_ALIGN_OUT_RIGHT_MID, -2, 0);
 
         LV_IMG_DECLARE(x20_mode_auto);
         LV_IMG_DECLARE(x20_mode_cool);
@@ -199,8 +209,8 @@ void ClimateApp::updateTemperatureArc()
         SemaphoreGuard lock(mutex_);
 
         // Update temperature labels
-        lv_label_set_text_fmt(target_temp_label, "%d°", target_temperature);
-        lv_label_set_text_fmt(current_temp_label, "%d°", current_temperature);
+        lv_label_set_text_fmt(target_temp_label, "%d", target_temperature);
+        lv_label_set_text_fmt(current_temp_label, "%d", current_temperature);
 
         // Update ARC
         uint16_t one_step_angle = ONE_STEP_ANGLE;

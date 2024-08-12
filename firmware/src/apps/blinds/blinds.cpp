@@ -57,7 +57,7 @@ void BlindsApp::initScreen()
     lv_obj_align(friendly_name_label, LV_ALIGN_CENTER, 0, -30);
 
     percentage_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(percentage_label, &roboto_thin_mono_64pt, 0);
+    lv_obj_set_style_text_font(percentage_label, &roboto_light_mono_24pt, 0);
     lv_label_set_text(percentage_label, "Open");
     lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
 }
