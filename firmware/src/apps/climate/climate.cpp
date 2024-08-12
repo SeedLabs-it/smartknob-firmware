@@ -286,7 +286,7 @@ void ClimateApp::updateModeIcon()
             lv_obj_set_style_img_recolor(mode_auto_icon, inactive_color, LV_PART_MAIN);
 
             lv_obj_set_style_img_recolor(mode_cool_icon, cool_active_color, LV_PART_MAIN);
-            lv_label_set_text(state_label, "Cooling");
+            // lv_label_set_text(state_label, "Cooling");
             break;
         case ClimateAppMode::CLIMATE_HEAT:
             lv_obj_set_style_img_recolor(mode_air_icon, inactive_color, LV_PART_MAIN);
@@ -294,7 +294,7 @@ void ClimateApp::updateModeIcon()
             lv_obj_set_style_img_recolor(mode_cool_icon, inactive_color, LV_PART_MAIN);
 
             lv_obj_set_style_img_recolor(mode_heat_icon, heat_active_color, LV_PART_MAIN);
-            lv_label_set_text(state_label, "Heating");
+            // lv_label_set_text(state_label, "Heating");
             break;
         case ClimateAppMode::CLIMATE_FAN_ONLY:
             lv_obj_set_style_img_recolor(mode_auto_icon, inactive_color, LV_PART_MAIN);
@@ -302,11 +302,11 @@ void ClimateApp::updateModeIcon()
             lv_obj_set_style_img_recolor(mode_heat_icon, inactive_color, LV_PART_MAIN);
 
             lv_obj_set_style_img_recolor(mode_air_icon, air_active_color, LV_PART_MAIN);
-            lv_label_set_text(state_label, "idle");
+            // lv_label_set_text(state_label, "idle");
             break;
         }
 
-        lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
+        // lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
         lv_obj_align_to(current_temp_label, target_temp_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -4);
     }
 }
