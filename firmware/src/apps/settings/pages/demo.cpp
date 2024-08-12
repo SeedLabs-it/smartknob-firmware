@@ -33,7 +33,7 @@ DemoSettingsPage::DemoSettingsPage(lv_obj_t *parent) : BasePage(parent)
     prompt_label = lv_label_create(page);
     lv_label_set_text(prompt_label, "PRESS TO START");
     lv_obj_align(prompt_label, LV_ALIGN_CENTER, 0, 52);
-    lv_obj_set_style_text_font(prompt_label, &nds12_14px, 0);
+    lv_obj_set_style_text_font(prompt_label, &aktivgrotesk_regular_12pt, 0);
     lv_obj_set_style_text_color(prompt_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
 }
 

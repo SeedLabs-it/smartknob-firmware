@@ -46,8 +46,8 @@ void ClimateApp::initScreen()
         SemaphoreGuard lock(mutex_);
 
         target_temp_label = lv_label_create(screen);
-        lv_obj_set_style_text_font(target_temp_label, &EIGHTTWOXC_48px, 0);
-        lv_label_set_text_fmt(target_temp_label, "%dC", target_temperature);
+        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, 0);
+        lv_label_set_text_fmt(target_temp_label, "%d°", target_temperature);
         lv_obj_center(target_temp_label);
 
         state_label = lv_label_create(screen);
@@ -55,7 +55,8 @@ void ClimateApp::initScreen()
         lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
 
         current_temp_label = lv_label_create(screen);
-        lv_label_set_text_fmt(current_temp_label, "%dC", current_temperature);
+        lv_obj_set_style_text_font(current_temp_label, &roboto_light_mono_24pt, 0);
+        lv_label_set_text_fmt(current_temp_label, "%d°", current_temperature);
         lv_obj_align_to(current_temp_label, target_temp_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -4);
 
         LV_IMG_DECLARE(x20_mode_auto);
@@ -169,6 +170,7 @@ void ClimateApp::initTemperatureArc()
                 int y_ = center_y + radius * sin(angle - ONE_STEP_ANGLE * DEG_TO_RAD);
 
                 lv_obj_t *min_temp_label = lv_label_create(screen);
+                lv_obj_set_style_text_font(min_temp_label, &roboto_semi_bold_mono_12pt, 0);
                 lv_label_set_text_fmt(min_temp_label, "%d", CLIMATE_APP_MIN_TEMP);
                 lv_obj_set_style_text_color(min_temp_label, cool_active_color, LV_PART_MAIN);
                 lv_obj_update_layout(min_temp_label);
@@ -181,6 +183,7 @@ void ClimateApp::initTemperatureArc()
                 int y_ = center_y + radius * sin(angle + ONE_STEP_ANGLE * DEG_TO_RAD);
 
                 lv_obj_t *max_temp_label = lv_label_create(screen);
+                lv_obj_set_style_text_font(max_temp_label, &roboto_semi_bold_mono_12pt, 0);
                 lv_label_set_text_fmt(max_temp_label, "%d", CLIMATE_APP_MAX_TEMP);
                 lv_obj_set_style_text_color(max_temp_label, heat_active_color, LV_PART_MAIN);
                 lv_obj_update_layout(max_temp_label);
@@ -196,8 +199,8 @@ void ClimateApp::updateTemperatureArc()
         SemaphoreGuard lock(mutex_);
 
         // Update temperature labels
-        lv_label_set_text_fmt(target_temp_label, "%dC", target_temperature);
-        lv_label_set_text_fmt(current_temp_label, "%dC", current_temperature);
+        lv_label_set_text_fmt(target_temp_label, "%d°", target_temperature);
+        lv_label_set_text_fmt(current_temp_label, "%d°", current_temperature);
 
         // Update ARC
         uint16_t one_step_angle = ONE_STEP_ANGLE;

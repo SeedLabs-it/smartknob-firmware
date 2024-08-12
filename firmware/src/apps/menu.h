@@ -20,7 +20,7 @@ public:
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, friendly_name_);
         lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
-        lv_obj_set_style_text_font(label, &nds12_20px, 0);
+        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, 0);
 
         return;
     }

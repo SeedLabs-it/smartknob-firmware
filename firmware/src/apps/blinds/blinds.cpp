@@ -52,12 +52,12 @@ void BlindsApp::initScreen()
     lv_obj_set_style_border_color(blinds_bar, LV_COLOR_MAKE(0xF8, 0xCA, 0x05), LV_PART_INDICATOR);
 
     lv_obj_t *friendly_name_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(friendly_name_label, &nds12_14px, 0);
+    lv_obj_set_style_text_font(friendly_name_label, &aktivgrotesk_regular_12pt, 0);
     lv_label_set_text(friendly_name_label, friendly_name);
     lv_obj_align(friendly_name_label, LV_ALIGN_CENTER, 0, -30);
 
     percentage_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(percentage_label, &nds12_20px, 0);
+    lv_obj_set_style_text_font(percentage_label, &roboto_thin_mono_64pt, 0);
     lv_label_set_text(percentage_label, "Open");
     lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
 }

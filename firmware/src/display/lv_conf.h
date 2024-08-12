@@ -377,10 +377,36 @@
 /*Optionally declare custom fonts here.
  *You can use these fonts as default font too and they will be available globally.
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
-#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(nds12_10px) LV_FONT_DECLARE(nds12_14px) LV_FONT_DECLARE(nds12_20px) LV_FONT_DECLARE(EIGHTTWOXC_48px) LV_FONT_DECLARE(kode_mono_40) LV_FONT_DECLARE(kode_mono_20) LV_FONT_DECLARE(kode_mono_16)
+#define LV_FONT_CUSTOM_DECLARE      \
+LV_FONT_DECLARE(aktivgrotesk_regular_8pt)        \
+LV_FONT_DECLARE(aktivgrotesk_regular_12pt)       \
+LV_FONT_DECLARE(aktivgrotesk_regular_24pt)       \
+LV_FONT_DECLARE(aktivgrotesk_bold_14pt)       \
+LV_FONT_DECLARE(roboto_thin_mono_24pt)       \
+LV_FONT_DECLARE(roboto_thin_mono_40pt)       \
+LV_FONT_DECLARE(roboto_thin_mono_64pt)       \
+LV_FONT_DECLARE(roboto_semi_bold_mono_12pt)       \
+LV_FONT_DECLARE(roboto_semi_bold_mono_16pt)       \
+LV_FONT_DECLARE(roboto_semi_bold_mono_24pt)       \
+LV_FONT_DECLARE(roboto_regular_mono_24pt)       \
+LV_FONT_DECLARE(roboto_regular_mono_40pt)       \
+LV_FONT_DECLARE(roboto_regular_mono_48pt)       \
+LV_FONT_DECLARE(roboto_light_mono_12pt)       \
+LV_FONT_DECLARE(roboto_light_mono_16pt)       \
+LV_FONT_DECLARE(roboto_light_mono_24pt)       \
+LV_FONT_DECLARE(roboto_light_mono_48pt)       \
+
+/*
+LV_FONT_DECLARE(nds12_10px)         \
+LV_FONT_DECLARE(nds12_14px)         \
+LV_FONT_DECLARE(nds12_20px)         \
+LV_FONT_DECLARE(EIGHTTWOXC_48px)    \
+LV_FONT_DECLARE(kode_mono_40)       \
+*/
+
 
 /*Always set a default font*/
-#define LV_FONT_DEFAULT &nds12_10px
+#define LV_FONT_DEFAULT &aktivgrotesk_regular_12pt
 
 /*Enable handling large font and/or fonts with a lot of characters.
  *The limit depends on the font size, font face and bpp.

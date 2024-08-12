@@ -39,13 +39,13 @@ public:
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "SMART KNOB\nDEV KIT v0.1");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 32);
-        lv_obj_set_style_text_font(label, &nds12_20px, 0);
+        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
 
         label = lv_label_create(page);
         lv_label_set_text(label, "ROTATE TO START");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 74);
-        lv_obj_set_style_text_font(label, &nds12_14px, 0);
+        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
     }
 };
@@ -65,13 +65,13 @@ public:
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "HOME ASSISTANT\nINTEGRATION");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 32);
-        lv_obj_set_style_text_font(label, &nds12_20px, 0);
+        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
 
         label = lv_label_create(page);
         lv_label_set_text(label, "PRESS TO CONFIGURE");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 74);
-        lv_obj_set_style_text_font(label, &nds12_14px, 0);
+        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
     }
 };
@@ -112,13 +112,13 @@ public:
         lv_obj_t *page_label = lv_label_create(page);
         lv_label_set_text(page_label, "DEMO");
         lv_obj_align(page_label, LV_ALIGN_CENTER, 0, 32);
-        lv_obj_set_style_text_font(page_label, &nds12_20px, 0);
+        lv_obj_set_style_text_font(page_label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_align(page_label, LV_TEXT_ALIGN_CENTER, 0);
 
         lv_obj_t *prompt_label = lv_label_create(page);
         lv_label_set_text(prompt_label, "PRESS TO START");
         lv_obj_align(prompt_label, LV_ALIGN_CENTER, 0, 74);
-        lv_obj_set_style_text_font(prompt_label, &nds12_14px, 0);
+        lv_obj_set_style_text_font(prompt_label, &aktivgrotesk_regular_12pt, 0);
         lv_obj_set_style_text_color(prompt_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
     }
 };

@@ -65,21 +65,21 @@ void StopwatchApp::initScreen()
     lv_obj_t *relative_time_label = current_stopwatch_state.relative_time_label;
     lv_obj_align(relative_time_label, LV_ALIGN_TOP_MID, 0, 50);
     lv_label_set_text(relative_time_label, "");
-    lv_obj_set_style_text_font(relative_time_label, &kode_mono_16, 0);
+    lv_obj_set_style_text_font(relative_time_label, &roboto_regular_mono_24pt, 0);
 
     lv_label_set_text(time_label, "00:00.");
-    lv_obj_set_style_text_font(time_label, &kode_mono_40, 0);
+    lv_obj_set_style_text_font(time_label, &roboto_thin_mono_40pt, 0);
     lv_obj_align(time_label, LV_ALIGN_CENTER, -10, -10);
 
     lv_label_set_text(ms_label, "00");
-    lv_obj_set_style_text_font(ms_label, &kode_mono_20, 0);
+    lv_obj_set_style_text_font(ms_label, &roboto_regular_mono_24pt, 0);
     lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -4);
 
     current_stopwatch_state.lap_time_label = lv_label_create(screen);
     lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
     lv_obj_align_to(lap_time_label, time_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 4);
     lv_label_set_text(lap_time_label, "");
-    lv_obj_set_style_text_font(lap_time_label, &kode_mono_16, 0);
+    lv_obj_set_style_text_font(lap_time_label, &roboto_semi_bold_mono_12pt, 0);
 
     current_stopwatch_state.start_stop_indicator = lv_bar_create(screen);
     lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;

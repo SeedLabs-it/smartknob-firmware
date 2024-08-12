@@ -40,7 +40,7 @@ MotorCalibrationSettingsPage::MotorCalibrationSettingsPage(lv_obj_t *parent) : B
 {
     lv_obj_t *label = lv_label_create(page);
     lv_label_set_text(label, "Motor Calibration");
-    lv_obj_set_style_text_font(label, &nds12_20px, LV_PART_MAIN);
+    lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, LV_PART_MAIN);
     lv_obj_align(label, LV_ALIGN_CENTER, 0, -16);
 
     state_.prompt_label = lv_label_create(page);
@@ -52,7 +52,7 @@ MotorCalibrationSettingsPage::MotorCalibrationSettingsPage(lv_obj_t *parent) : B
     state_.time_label = lv_label_create(page);
     lv_obj_t *time_label = state_.time_label;
     lv_label_set_text(time_label, "");
-    lv_obj_set_style_text_font(time_label, &kode_mono_20, LV_PART_MAIN);
+    lv_obj_set_style_text_font(time_label, &roboto_thin_mono_64pt, LV_PART_MAIN);
     lv_obj_align_to(time_label, prompt_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 12);
     lv_obj_set_style_text_color(time_label, LV_COLOR_MAKE(0xFF, 0xB4, 0x50), LV_PART_MAIN);
 }
