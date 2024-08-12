@@ -4,7 +4,6 @@ WiFiSettingsPage::WiFiSettingsPage(lv_obj_t *parent) : BasePage(parent)
 {
     static lv_style_t *text_style = new lv_style_t;
     lv_style_init(text_style);
-    lv_style_set_text_font(text_style, &aktivgrotesk_regular_12pt);
 
     lv_obj_t *container = lv_obj_create(page);
     lv_obj_set_style_bg_opa(container, LV_OPA_0, 0);

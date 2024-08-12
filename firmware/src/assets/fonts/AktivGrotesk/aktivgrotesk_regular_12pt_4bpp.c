@@ -1750,9 +1750,9 @@ static lv_font_fmt_txt_dsc_t font_dsc = {
 
 /*Initialize a public general font descriptor*/
 #if LVGL_VERSION_MAJOR >= 8
-const lv_font_t aktivgrotesk_regular_12pt = {
+const lv_font_t aktivgrotesk_regular_12pt_4bpp = {
 #else
-lv_font_t aktivgrotesk_regular_12pt = {
+lv_font_t aktivgrotesk_regular_12pt_4bpp = {
 #endif
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/

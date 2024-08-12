@@ -22,7 +22,6 @@ ErrorPage::ErrorPage(lv_obj_t *parent) : BasePage(parent)
 
     error_type_label = lv_label_create(page);
     lv_obj_align(error_type_label, LV_ALIGN_BOTTOM_MID, 0, -20);
-    lv_obj_set_style_text_font(error_type_label, &aktivgrotesk_regular_12pt, 0);
 
     error_event_label = lv_label_create(page);
     lv_obj_set_style_text_color(error_event_label, LV_COLOR_MAKE(0xED, 0x43, 0x37), LV_PART_MAIN);

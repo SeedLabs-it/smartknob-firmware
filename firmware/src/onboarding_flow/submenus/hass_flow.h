@@ -106,7 +106,6 @@ public:
     {
         lv_obj_t *label = lv_label_create(page);
         lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
-        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, LV_PART_MAIN);
         lv_label_set_text(label, "CONTINUE IN\nBROWSER");
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);
@@ -135,7 +134,6 @@ public:
     {
         lv_obj_t *label = lv_label_create(page);
         lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
-        lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, LV_PART_MAIN);
         lv_label_set_text(label, "CONTINUE IN\nBROWSER");
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
         lv_obj_align(label, LV_ALIGN_CENTER, 0, LV_PART_MAIN);

@@ -379,7 +379,8 @@
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
 #define LV_FONT_CUSTOM_DECLARE      \
 LV_FONT_DECLARE(aktivgrotesk_regular_8pt)        \
-LV_FONT_DECLARE(aktivgrotesk_regular_12pt)       \
+LV_FONT_DECLARE(aktivgrotesk_regular_12pt_4bpp)       \
+LV_FONT_DECLARE(aktivgrotesk_regular_12pt_8bpp)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_24pt)       \
 LV_FONT_DECLARE(aktivgrotesk_bold_14pt)       \
 LV_FONT_DECLARE(roboto_thin_mono_24pt)       \
@@ -406,7 +407,7 @@ LV_FONT_DECLARE(kode_mono_40)       \
 
 
 /*Always set a default font*/
-#define LV_FONT_DEFAULT &aktivgrotesk_regular_12pt
+#define LV_FONT_DEFAULT &aktivgrotesk_regular_12pt_8bpp
 
 /*Enable handling large font and/or fonts with a lot of characters.
  *The limit depends on the font size, font face and bpp.

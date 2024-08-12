@@ -40,7 +40,6 @@ MotorCalibrationSettingsPage::MotorCalibrationSettingsPage(lv_obj_t *parent) : B
 {
     lv_obj_t *label = lv_label_create(page);
     lv_label_set_text(label, "Motor Calibration");
-    lv_obj_set_style_text_font(label, &aktivgrotesk_regular_12pt, LV_PART_MAIN);
     lv_obj_align(label, LV_ALIGN_CENTER, 0, -16);
 
     state_.prompt_label = lv_label_create(page);
