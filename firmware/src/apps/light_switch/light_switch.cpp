@@ -63,7 +63,7 @@ void LightSwitchApp::initScreen()
 
     lv_obj_t *label = lv_label_create(screen);
     lv_label_set_text(label, friendly_name);
-    lv_obj_align_to(label, light_bulb, LV_ALIGN_OUT_BOTTOM_MID, 0, 12);
+    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
 }
 
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
