@@ -46,13 +46,13 @@ void ClimateApp::initScreen()
         SemaphoreGuard lock(mutex_);
 
         target_temp_label = lv_label_create(screen);
-        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, 0);
+        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, -8);
         lv_label_set_text_fmt(target_temp_label, "%d°", target_temperature);
         lv_obj_center(target_temp_label);
 
-        state_label = lv_label_create(screen);
-        lv_label_set_text(state_label, "Climate");
-        lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
+        // state_label = lv_label_create(screen);
+        // lv_label_set_text(state_label, "Climate");
+        // lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
 
         current_temp_label = lv_label_create(screen);
         lv_obj_set_style_text_font(current_temp_label, &roboto_light_mono_24pt, 0);
@@ -265,17 +265,17 @@ void ClimateApp::updateModeIcon()
             if (current_temperature < target_temperature)
             {
                 lv_obj_set_style_img_recolor(mode_heat_icon, heat_active_color, LV_PART_MAIN);
-                lv_label_set_text(state_label, "Heating");
+                // lv_label_set_text(state_label, "Heating");
             }
             else if (current_temperature > target_temperature)
             {
                 lv_obj_set_style_img_recolor(mode_cool_icon, cool_active_color, LV_PART_MAIN);
-                lv_label_set_text(state_label, "Cooling");
+                // lv_label_set_text(state_label, "Cooling");
             }
             else if (current_temperature == target_temperature)
             {
                 lv_obj_set_style_img_recolor(mode_air_icon, air_active_color, LV_PART_MAIN);
-                lv_label_set_text(state_label, "idle");
+                // lv_label_set_text(state_label, "idle");
             }
 
             lv_obj_set_style_img_recolor(mode_auto_icon, auto_active_color, LV_PART_MAIN);
