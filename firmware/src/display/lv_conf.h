@@ -379,6 +379,7 @@
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
 #define LV_FONT_CUSTOM_DECLARE      \
 LV_FONT_DECLARE(aktivgrotesk_regular_8pt)        \
+LV_FONT_DECLARE(aktivgrotesk_regular_8pt_8bpp_subpixel)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_12pt_4bpp)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_12pt_8bpp)       \
 LV_FONT_DECLARE(aktivgrotesk_regular_12pt_8bpp_subpixel)       \

@@ -5,6 +5,7 @@
 #include "pages/wifi.h"
 #include "pages/demo.h"
 #include "pages/motor_calib.h"
+#include "pages/update.h"
 #include "./notify/os_config_notifier/os_config_notifier.h"
 
 enum SettingsPages
@@ -14,6 +15,7 @@ enum SettingsPages
     DEMO_PAGE_SETTINGS,
     MOTOR_CALIBRATION_SETTINGS,
     // STRAIN_CALIBRATION_SETTINGS,
+    UPDATE_PAGE_SETTINGS,
     SETTINGS_PAGE_COUNT
 };
 
@@ -29,6 +31,7 @@ public:
         demo_page->setOSConfigNotifier(os_config_notifier);
         add(DEMO_PAGE_SETTINGS, demo_page);
         add(MOTOR_CALIBRATION_SETTINGS, new MotorCalibrationSettingsPage(parent));
+        add(UPDATE_PAGE_SETTINGS, new UpdateSettingsPage(parent));
         // add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
 
         dotIndicatorInit();
@@ -69,6 +72,9 @@ public:
                     // case STRAIN_CALIBRATION_SETTINGS:
                     //     lv_label_set_text(page_name, "STRAIN");
                     //     break;
+                    case UPDATE_PAGE_SETTINGS:
+                        lv_label_set_text(page_name, "UPDATE");
+                        break;
                     default:
                         lv_label_set_text(page_name, "Unknown");
                         break;
