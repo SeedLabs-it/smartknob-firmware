@@ -51,6 +51,7 @@ void MqttTask::handleEvent(WiFiEvent event)
         break;
     case SK_RESET_ERROR:
         retry_count = 0;
+        LOGE("Resetting retry count");
         break;
     case SK_DISMISS_ERROR:
         break;
@@ -78,19 +79,23 @@ void MqttTask::run()
 
     static bool has_been_connected = false;
 
+    int disconnected_at;
+
     while (1)
     {
         if (is_config_set && retry_count < 3)
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
-
-                if (!has_been_connected || retry_count > 0)
+                disconnected_at = millis();
+                if (has_been_connected || retry_count > 0)
                 {
                     WiFiEvent event;
                     WiFiEventBody wifi_event_body;
                     wifi_event_body.error.type = MQTT_ERROR;
                     wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
+                    LOGE("MQTT connection failed, retrying...");
+                    LOGE("Retry count: %d", retry_count + 1);
 
                     event.type = SK_MQTT_CONNECTION_FAILED;
                     event.body = wifi_event_body;
@@ -102,6 +107,7 @@ void MqttTask::run()
 
                 if (!connect())
                 {
+                    delay(max(0, (int)(10000 - (millis() - disconnected_at)))); // REMOVE THIS DELAY?
                     retry_count++;
                     if (retry_count > 2)
                     {
@@ -298,10 +304,17 @@ bool MqttTask::connect()
     else
     {
         WiFiEvent event;
+        WiFiEventBody wifi_event_body;
+        wifi_event_body.error.type = MQTT_ERROR;
+        wifi_event_body.error.body.mqtt_error.retry_count = retry_count + 1;
+
         event.type = SK_MQTT_CONNECTION_FAILED;
-        publishEvent(event);
+        event.body = wifi_event_body;
+        event.sent_at = millis();
+
         LOGE("MQTT connection failed");
     }
+
     return false;
 }
 

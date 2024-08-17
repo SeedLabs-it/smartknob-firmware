@@ -1,13 +1,13 @@
 #include "blinds.h"
 
-BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
+BlindsApp::BlindsApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
-    sprintf(this->app_id, "%s", app_id);
-    sprintf(this->friendly_name, "%s", friendly_name);
-    sprintf(this->entity_id, "%s", entity_id);
+    sprintf(app_id, "%s", app_id_);
+    sprintf(friendly_name, "%s", friendly_name_);
+    sprintf(entity_id, "%s", entity_id_);
 
     motor_config = PB_SmartKnobConfig{
-        15,
+        current_closed_position,
         0,
         15,
         0,
@@ -16,50 +16,49 @@ BlindsApp::BlindsApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char 
         2,
         1,
         1.1,
-        "SKDEMO_Shades",
+        "",
         0,
         {},
         0,
         27,
     };
 
-    big_icon = shades_80;
-    small_icon = shades_40;
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+
+    LV_IMG_DECLARE(x80_blind);
+    LV_IMG_DECLARE(x40_blind);
+
+    big_icon = x80_blind;
+    small_icon = x40_blind;
+
+    initScreen();
 }
 
-int8_t BlindsApp::navigationNext()
+void BlindsApp::initScreen()
 {
-    motor_config.position_nonce = motor_config.position;
-    motor_notifier->requestUpdate(motor_config);
+    SemaphoreGuard lock(mutex_);
 
-    if (motor_config.position == 0)
-    {
-        motor_config.position = 20;
-    }
-    else if (motor_config.position > 0)
-    {
-        motor_config.position = 0;
-    }
+    blinds_bar = lv_bar_create(screen);
+    lv_obj_set_size(blinds_bar, 240, 242); //-Border width
+    lv_obj_set_style_bg_opa(blinds_bar, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(blinds_bar, LV_COLOR_MAKE(0xCC, 0xCC, 0xCC), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(blinds_bar, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(blinds_bar, 0, LV_PART_INDICATOR);
+    lv_obj_center(blinds_bar);
+    lv_bar_set_value(blinds_bar, 100, LV_ANIM_OFF);
 
-    motor_config.position_nonce = motor_config.position;
+    lv_obj_set_style_border_side(blinds_bar, LV_BORDER_SIDE_TOP, LV_PART_INDICATOR);
+    lv_obj_set_style_border_width(blinds_bar, 8, LV_PART_INDICATOR);
+    lv_obj_set_style_border_color(blinds_bar, LV_COLOR_MAKE(0xF8, 0xCA, 0x05), LV_PART_INDICATOR);
 
-    return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
-}
+    lv_obj_t *friendly_name_label = lv_label_create(screen);
+    lv_label_set_text(friendly_name_label, friendly_name);
+    lv_obj_align(friendly_name_label, LV_ALIGN_CENTER, 0, -30);
 
-void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
-{
-    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
-    cJSON *position = cJSON_GetObjectItem(new_state, "position");
-
-    if (position != NULL)
-    {
-        current_closed_position = (20 - position->valueint / 5);
-        motor_config.position = current_closed_position;
-        motor_config.position_nonce = current_closed_position;
-        state_sent_from_hass = true;
-    }
-
-    cJSON_Delete(new_state);
+    percentage_label = lv_label_create(screen);
+    lv_obj_set_style_text_font(percentage_label, &roboto_light_mono_24pt, 0);
+    lv_label_set_text(percentage_label, "Open");
+    lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
 }
 
 EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -78,6 +77,26 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_closed_position != current_closed_position && !state_sent_from_hass)
     {
+        {
+            SemaphoreGuard lock(mutex_);
+            uint8_t percentage = (20 - current_closed_position) * 5;
+            lv_bar_set_value(blinds_bar, (20 - current_closed_position) * 5, LV_ANIM_OFF);
+
+            if (current_closed_position == 0)
+            {
+                lv_label_set_text(percentage_label, "Open");
+            }
+            else if (current_closed_position == 20)
+            {
+                lv_label_set_text(percentage_label, "Closed");
+            }
+            else if (current_closed_position > 0 && current_closed_position < 20)
+            {
+                lv_label_set_text_fmt(percentage_label, "%d%%", percentage);
+            }
+            lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
+        }
+
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
 
@@ -99,54 +118,37 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
-void BlindsApp::updateStateFromSystem(AppState state) {}
-
-TFT_eSprite *BlindsApp::render()
+void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *position = cJSON_GetObjectItem(new_state, "position");
 
-    uint32_t light_background = spr_->color565(150, 150, 150);
-
-    uint32_t shade_bar_color = TFT_OLIVE;
-    uint32_t shade_color = spr_->color565(50, 50, 50);
-
-    spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, light_background);
-    int32_t height = (current_closed_position - motor_config.min_position) * TFT_HEIGHT / (motor_config.max_position - motor_config.min_position);
-    spr_->fillRect(0, 0, TFT_WIDTH, height, shade_color);
-    spr_->fillRect(0, height - 10, TFT_WIDTH, 10, shade_bar_color);
-
-    spr_->setFreeFont(&Roboto_Light_60);
-
-    uint16_t center = TFT_WIDTH / 2;
-
-    uint8_t arrow_size = 50;
-
-    if (current_closed_position == 0)
+    if (position != NULL)
     {
-        sprintf(buf_, "%s", "Opened");
-        spr_->drawBitmap(center - arrow_size / 2, TFT_HEIGHT - 20 - arrow_size, arrow_down_50, arrow_size, arrow_size, shade_bar_color, light_background);
-    }
-    else if (current_closed_position == 10)
-    {
-        sprintf(buf_, "%s", "Half");
-    }
-    else if (current_closed_position == 20)
-    {
-        sprintf(buf_, "%s", "Closed");
-        spr_->drawBitmap(center - arrow_size / 2, TFT_HEIGHT - 20 - arrow_size, arrow_up_50, arrow_size, arrow_size, shade_bar_color, shade_color);
-    }
-    else
-    {
-        sprintf(buf_, "%d%%", current_closed_position * 5);
-        // spr_->drawBitmap(center - arrow_size / 2, TFT_HEIGHT - 20 - arrow_size, arrow_up_50, arrow_size, arrow_size, TFT_OLIVE, TFT_TRANSPARENT);
+        current_closed_position = (20 - position->valueint / 5);
+        motor_config.position = current_closed_position;
+        motor_config.position_nonce = current_closed_position;
+        state_sent_from_hass = true;
     }
 
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
+    cJSON_Delete(new_state);
+}
 
-    // spr_->drawNumber(current_closed_position, TFT_WIDTH / 2, TFT_HEIGHT / 2, 1);
-    spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Thin_24);
-    spr_->drawString("Bedroom shade", TFT_WIDTH / 2, TFT_HEIGHT / 2 - 20 - 30, 1);
+int8_t BlindsApp::navigationNext()
+{
+    motor_config.position_nonce = motor_config.position;
+    motor_notifier->requestUpdate(motor_config);
 
-    return this->spr_;
-};
+    if (motor_config.position == 0)
+    {
+        motor_config.position = 20;
+    }
+    else if (motor_config.position > 0)
+    {
+        motor_config.position = 0;
+    }
+
+    motor_config.position_nonce = motor_config.position;
+
+    return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
+}

@@ -1,10 +1,10 @@
 #include "light_switch.h"
 
-LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
+LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
-    sprintf(this->app_id, "%s", app_id);
-    sprintf(this->friendly_name, "%s", friendly_name);
-    sprintf(this->entity_id, "%s", entity_id);
+    sprintf(app_id, "%s", app_id_);
+    sprintf(friendly_name, "%s", friendly_name_);
+    sprintf(entity_id, "%s", entity_id_);
 
     motor_config = PB_SmartKnobConfig{
         current_position,
@@ -16,15 +16,54 @@ LightSwitchApp::LightSwitchApp(TFT_eSprite *spr_, char *app_id, char *friendly_n
         1,
         1,
         0.55, // Note the snap point is slightly past the midpoint (0.5); compare to normal detents which use a snap point *past* the next value (i.e. > 1)
-        "",   // Change the type of app_id from char to char*
+        "",
         0,
         {},
         0,
         27,
     };
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    big_icon = light_switch_80;
-    small_icon = light_switch_40;
+    LV_IMG_DECLARE(x80_lightbulb_outline);
+    LV_IMG_DECLARE(x40_lightbulb_outline);
+    LV_IMG_DECLARE(x80_lightbulb_filled);
+
+    big_icon = x80_lightbulb_outline;
+    big_icon_active = x80_lightbulb_filled;
+    small_icon = x40_lightbulb_outline;
+
+    initScreen();
+}
+
+void LightSwitchApp::initScreen()
+{
+    SemaphoreGuard lock(mutex_);
+
+    arc_ = lv_arc_create(screen);
+    lv_obj_set_size(arc_, 210, 210);
+    lv_arc_set_rotation(arc_, 225);
+    lv_arc_set_bg_angles(arc_, 0, 90);
+    lv_arc_set_value(arc_, 0);
+    lv_obj_center(arc_);
+
+    lv_obj_set_style_arc_opa(arc_, LV_OPA_0, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(arc_, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_KNOB);
+
+    lv_obj_set_style_arc_width(arc_, 24, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(arc_, 24, LV_PART_INDICATOR);
+    lv_obj_set_style_pad_all(arc_, -5, LV_PART_KNOB);
+
+    light_bulb = lv_img_create(screen);
+    lv_img_set_src(light_bulb, &big_icon);
+    lv_obj_set_style_img_recolor_opa(light_bulb, LV_OPA_COVER, 0);
+    lv_obj_set_style_img_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
+
+    lv_obj_center(light_bulb);
+
+    lv_obj_t *label = lv_label_create(screen);
+    lv_label_set_text(label, friendly_name);
+    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
 }
 
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -44,17 +83,45 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
 
-    if (state.current_position == motor_config.min_position && sub_position_unit < 0)
+    if (current_position == 0 && adjusted_sub_position < 0)
     {
-        adjusted_sub_position = -logf(1 - sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        adjusted_sub_position = 0;
     }
-    else if (state.current_position == motor_config.max_position && sub_position_unit > 0)
+    else if (current_position == 1 && adjusted_sub_position > 0)
     {
-        adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
+        adjusted_sub_position = 0;
+    }
+
+    if (abs(adjusted_sub_position) * 100 - abs(old_adjusted_sub_position) * 100 > 1)
+    {
+        SemaphoreGuard lock(mutex_);
+        if (current_position == 0)
+        {
+            lv_arc_set_value(arc_, abs(adjusted_sub_position) * 100);
+        }
+        else
+        {
+            lv_arc_set_value(arc_, 100 - abs(adjusted_sub_position) * 100);
+        }
     }
 
     if (last_position != current_position && first_run)
     {
+        {
+            SemaphoreGuard lock(mutex_);
+            if (current_position == 0)
+            {
+                lv_img_set_src(light_bulb, &big_icon);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+            }
+            else
+            {
+                lv_img_set_src(light_bulb, &big_icon_active);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+            }
+        }
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
@@ -92,90 +159,3 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 }
 
 void LightSwitchApp::updateStateFromSystem(AppState state) {}
-
-TFT_eSprite *LightSwitchApp::render()
-{
-    uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
-
-    uint32_t off_background = spr_->color565(0, 0, 0);
-    uint32_t off_lamp_color = spr_->color565(150, 150, 150);
-
-    uint32_t on_background = spr_->color565(71, 39, 1);
-    uint32_t on_lamp_color = spr_->color565(245, 164, 66);
-
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
-
-    uint8_t icon_size = 80;
-
-    uint16_t offset_vertical = 20;
-    uint16_t screen_radius = TFT_WIDTH / 2;
-
-    float left_bound = PI / 2;
-    float right_bound = 0;
-    float range_radians = (motor_config.max_position - motor_config.min_position) * motor_config.position_width_radians;
-
-    left_bound = PI / 2 + range_radians / 2;
-    right_bound = PI / 2 - range_radians / 2;
-
-    float raw_angle = left_bound - (current_position - motor_config.min_position) * motor_config.position_width_radians;
-    float adjusted_angle = raw_angle - adjusted_sub_position;
-
-    if (current_position == 0)
-    {
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, off_background);
-        spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_regular, icon_size, icon_size, off_lamp_color, off_background);
-        spr_->setTextColor(off_lamp_color);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name, center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
-    }
-    else
-    {
-        spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, on_background);
-        spr_->drawBitmap(center_h - icon_size / 2, center_v - icon_size / 2 - offset_vertical, lamp_solid, icon_size, icon_size, on_lamp_color, on_background);
-        spr_->setTextColor(on_lamp_color);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(friendly_name, center_h, center_v + icon_size / 2 + 30 - offset_vertical, 1);
-    }
-
-    // set the moving dot color
-    uint32_t dot_color = TFT_WHITE;
-
-    if (current_position < 1)
-    {
-        dot_color = off_lamp_color;
-    }
-    else
-    {
-        dot_color = on_lamp_color;
-    }
-
-    // draw moving dot
-    if (num_positions > 0 && ((current_position == motor_config.min_position && sub_position_unit < 0) || (current_position == motor_config.max_position && sub_position_unit > 0)))
-    {
-
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(raw_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(raw_angle), 5, dot_color);
-        if (raw_angle < adjusted_angle)
-        {
-            for (float r = raw_angle; r <= adjusted_angle; r += 2 * PI / 180)
-            {
-                spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 2, dot_color);
-            }
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 2, dot_color);
-        }
-        else
-        {
-            for (float r = raw_angle; r >= adjusted_angle; r -= 2 * PI / 180)
-            {
-                spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 2, dot_color);
-            }
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 2, dot_color);
-        }
-    }
-    else
-    {
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(adjusted_angle), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(adjusted_angle), 5, dot_color);
-    }
-
-    return this->spr_;
-};

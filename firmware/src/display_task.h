@@ -2,6 +2,10 @@
 
 #if SK_DISPLAY
 
+#include "./display/lv_conf.h"
+#include "./display/driver/lv_skdk.h"
+#include "lvgl.h"
+
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <HTTPClient.h>
@@ -10,9 +14,7 @@
 #include "task.h"
 #include "app_config.h"
 
-#include "apps/apps.h"
-#include "apps/hass/hass_apps.h"
-#include "apps/demo/demo_apps.h"
+#include "./apps/demo_apps.h"
 
 #include "onboarding_flow/onboarding_flow.h"
 #include "error_handling_flow/error_handling_flow.h"
@@ -32,7 +34,6 @@ public:
     QueueHandle_t getKnobStateQueue();
 
     void setBrightness(uint16_t brightness);
-    void setApps(Apps apps);
     OnboardingFlow *getOnboardingFlow();
     DemoApps *getDemoApps();
     HassApps *getHassApps();
@@ -49,24 +50,19 @@ protected:
     void run();
 
 private:
-    TFT_eSPI tft_ = TFT_eSPI();
-
-    /** Full-size sprite used as a framebuffer */
-    TFT_eSprite spr_ = TFT_eSprite(&tft_);
-
-    OnboardingFlow onboarding_flow = OnboardingFlow(&spr_, TFT_eSprite(&tft_));
-    DemoApps demo_apps;
-    HassApps hass_apps;
-    ErrorHandlingFlow error_handling_flow = ErrorHandlingFlow(&spr_, TFT_eSprite(&tft_));
+    OnboardingFlow *onboarding_flow = nullptr;
+    DemoApps *demo_apps = nullptr;
+    HassApps *hass_apps = nullptr;
+    ErrorHandlingFlow *error_handling_flow = nullptr;
 
     QueueHandle_t app_state_queue_;
 
     AppState app_state_;
     SemaphoreHandle_t mutex_;
-    uint16_t brightness_;
+    uint16_t brightness_ = UINT16_MAX;
     char buf_[128];
 
-    OSMode os_mode;
+    OSMode display_os_mode = UNSET;
     ErrorType error_type;
 };
 

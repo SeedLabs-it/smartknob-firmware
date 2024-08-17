@@ -1,41 +1,324 @@
 #include "climate.h"
 
-ClimateApp::ClimateApp(TFT_eSprite *spr_, char *app_id, char *friendly_name, char *entity_id) : App(spr_)
+ClimateApp::ClimateApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
-    // this->app_id = app_id;
-    // this->friendly_name = friendly_name;
-    // this->entity_id = entity_id;
-    sprintf(this->app_id, "%s", app_id);
-    sprintf(this->friendly_name, "%s", friendly_name);
-    sprintf(this->entity_id, "%s", entity_id);
+    sprintf(app_id, "%s", app_id_);
+    sprintf(friendly_name, "%s", friendly_name_);
+    sprintf(entity_id, "%s", entity_id_);
 
     // TODO update this via some API
     current_temperature = 20;
-    // default wanted temp
-    wanted_temperature = 25;
+    target_temperature = 25;
+    uint8_t position_nonce = target_temperature;
 
     // TODO, sync motor config with wanted temp on retrival
     motor_config = PB_SmartKnobConfig{
-        wanted_temperature,
+        target_temperature,
         0,
-        wanted_temperature,
+        position_nonce,
         CLIMATE_APP_MIN_TEMP,
         CLIMATE_APP_MAX_TEMP,
         8.225806452 * PI / 120,
         2,
         1,
         1.1,
-        "SKDEMO_HVAC",
+        "",
         0,
         {},
         0,
         27,
     };
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    num_positions = CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP;
+    LV_IMG_DECLARE(x80_thermostat);
+    LV_IMG_DECLARE(x40_thermostat);
 
-    big_icon = hvac_80;
-    small_icon = hvac_40;
+    big_icon = x80_thermostat;
+    small_icon = x40_thermostat;
+
+    initScreen();
+    updateTemperatureArc();
+}
+
+void ClimateApp::initScreen()
+{
+    {
+        SemaphoreGuard lock(mutex_);
+
+        target_temp_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(target_temp_label, &roboto_light_mono_48pt, LV_PART_MAIN);
+        lv_label_set_text_fmt(target_temp_label, "%d", target_temperature);
+        lv_obj_align(target_temp_label, LV_ALIGN_CENTER, 0, -8);
+
+        lv_obj_t *target_temp_degree_symbol_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(target_temp_degree_symbol_label, &roboto_light_mono_48pt, 0);
+        lv_label_set_text(target_temp_degree_symbol_label, "°");
+        lv_obj_align_to(target_temp_degree_symbol_label, target_temp_label, LV_ALIGN_OUT_RIGHT_MID, -6, 0);
+
+        // state_label = lv_label_create(screen);
+        // lv_label_set_text(state_label, "Climate");
+        // lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
+
+        current_temp_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(current_temp_label, &roboto_light_mono_24pt, 0);
+        lv_label_set_text_fmt(current_temp_label, "%d", current_temperature);
+        lv_obj_align_to(current_temp_label, target_temp_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -4);
+
+        lv_obj_t *current_temp_degree_symbol_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(current_temp_degree_symbol_label, &roboto_light_mono_24pt, 0);
+        lv_label_set_text(current_temp_degree_symbol_label, "°");
+        lv_obj_align_to(current_temp_degree_symbol_label, current_temp_label, LV_ALIGN_OUT_RIGHT_MID, -2, 0);
+
+        LV_IMG_DECLARE(x20_mode_auto);
+        LV_IMG_DECLARE(x20_mode_cool);
+        LV_IMG_DECLARE(x20_mode_heat);
+        LV_IMG_DECLARE(x20_mode_air);
+
+        mode_auto_icon = lv_img_create(screen);
+        lv_img_set_src(mode_auto_icon, &x20_mode_auto);
+        lv_obj_add_style(mode_auto_icon, (lv_style_t *)&SK_X20_ICON_STYLE, LV_PART_MAIN);
+        lv_obj_align(mode_auto_icon, LV_ALIGN_BOTTOM_MID, -30, -10);
+        lv_obj_set_style_img_recolor(mode_auto_icon, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
+
+        mode_cool_icon = lv_img_create(screen);
+        lv_img_set_src(mode_cool_icon, &x20_mode_cool);
+        lv_obj_add_style(mode_cool_icon, (lv_style_t *)&SK_X20_ICON_STYLE, LV_PART_MAIN);
+        lv_obj_align_to(mode_cool_icon, mode_auto_icon, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+        mode_heat_icon = lv_img_create(screen);
+        lv_img_set_src(mode_heat_icon, &x20_mode_heat);
+        lv_obj_add_style(mode_heat_icon, (lv_style_t *)&SK_X20_ICON_STYLE, LV_PART_MAIN);
+        lv_obj_align_to(mode_heat_icon, mode_cool_icon, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+        mode_air_icon = lv_img_create(screen);
+        lv_img_set_src(mode_air_icon, &x20_mode_air);
+        lv_obj_add_style(mode_air_icon, (lv_style_t *)&SK_X20_ICON_STYLE, LV_PART_MAIN);
+        lv_obj_align_to(mode_air_icon, mode_heat_icon, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+    }
+    initTemperatureArc();
+}
+
+void ClimateApp::initTemperatureArc()
+{
+    {
+        SemaphoreGuard lock(mutex_);
+
+        temperature_arc = lv_arc_create(screen);
+
+        uint16_t width = 220;
+        uint8_t arc_width = ARC_WIDTH;
+
+        lv_obj_remove_style(temperature_arc, NULL, LV_PART_KNOB); // REMOVE KNOB
+        lv_obj_set_size(temperature_arc, width, width);
+        lv_obj_center(temperature_arc);
+        lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_MAIN);
+        lv_obj_set_style_arc_width(temperature_arc, arc_width, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_color(temperature_arc, dark_arc_bg, LV_PART_MAIN);
+        lv_obj_set_style_arc_color(temperature_arc, air_active_color, LV_PART_INDICATOR);
+        lv_arc_set_rotation(temperature_arc, ROTATION_ANGLE);
+        lv_arc_set_bg_angles(temperature_arc, 0, MAX_ANGLE);
+
+        // Rotation starts at 3o clock to align with LVGL
+        uint8_t dot_amount = (CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP) + 1;
+        uint8_t diameter = 6;
+        uint8_t rotation = ROTATION_ANGLE;
+        uint16_t start_angle = MIN_ANGLE;
+        uint16_t end_angle = MAX_ANGLE;
+
+        temperature_dots = (lv_obj_t **)malloc(dot_amount * sizeof(lv_obj_t *));
+        assert(temperature_dots != NULL);
+
+        start_angle += rotation;
+        end_angle += rotation;
+
+        float angle_step = (float)(end_angle - start_angle) / (dot_amount - 1);
+
+        lv_coord_t screen_width = lv_obj_get_width(screen);
+        lv_coord_t screen_height = lv_obj_get_height(screen);
+        lv_coord_t center_x = screen_width / 2;
+        lv_coord_t center_y = screen_height / 2;
+
+        float radius = (width - arc_width) / 2.0; // Remove arcs width to center dots in the arc
+
+        for (int i = 0; i < dot_amount; i++)
+        {
+
+            float angle = (start_angle + i * angle_step) * M_PI / 180.0;
+
+            int x = center_x + radius * cos(angle);
+            int y = center_y + radius * sin(angle);
+
+            lv_obj_t *circle = lvDrawCircle(diameter, screen);
+            lv_obj_set_pos(circle, x - diameter / 2, y - diameter / 2); // Adjust position to account for the circle's diameter
+
+            uint8_t temp = i + CLIMATE_APP_MIN_TEMP;
+            if (temp == current_temperature)
+            {
+                lv_obj_set_style_bg_color(circle, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
+            }
+            else if (temp < current_temperature)
+            {
+                if (target_temperature <= temp && temp < current_temperature)
+                    lv_obj_set_style_bg_color(circle, dark_cool_active_color, LV_PART_MAIN);
+                else
+                    lv_obj_set_style_bg_color(circle, cool_active_color, LV_PART_MAIN);
+            }
+            else
+            {
+                if (current_temperature < temp && temp < target_temperature)
+                    lv_obj_set_style_bg_color(circle, dark_heat_active_color, LV_PART_MAIN);
+                else
+                    lv_obj_set_style_bg_color(circle, heat_active_color, LV_PART_MAIN);
+            }
+
+            temperature_dots[i] = circle;
+
+            if (i == 0)
+            {
+                // Get x & y one step before the first dot
+                int x_ = center_x + radius * cos(angle - ONE_STEP_ANGLE * DEG_TO_RAD);
+                int y_ = center_y + radius * sin(angle - ONE_STEP_ANGLE * DEG_TO_RAD);
+
+                lv_obj_t *min_temp_label = lv_label_create(screen);
+                lv_obj_set_style_text_font(min_temp_label, &roboto_semi_bold_mono_12pt, 0);
+                lv_label_set_text_fmt(min_temp_label, "%d", CLIMATE_APP_MIN_TEMP);
+                lv_obj_set_style_text_color(min_temp_label, cool_active_color, LV_PART_MAIN);
+                lv_obj_update_layout(min_temp_label);
+                lv_obj_set_pos(min_temp_label, x_ - lv_obj_get_width(min_temp_label) / 2, y_ - lv_obj_get_height(min_temp_label) / 2);
+            }
+            else if (i == dot_amount - 1)
+            {
+                // Get x & y one step after the last dot
+                int x_ = center_x + radius * cos(angle + ONE_STEP_ANGLE * DEG_TO_RAD);
+                int y_ = center_y + radius * sin(angle + ONE_STEP_ANGLE * DEG_TO_RAD);
+
+                lv_obj_t *max_temp_label = lv_label_create(screen);
+                lv_obj_set_style_text_font(max_temp_label, &roboto_semi_bold_mono_12pt, 0);
+                lv_label_set_text_fmt(max_temp_label, "%d", CLIMATE_APP_MAX_TEMP);
+                lv_obj_set_style_text_color(max_temp_label, heat_active_color, LV_PART_MAIN);
+                lv_obj_update_layout(max_temp_label);
+                lv_obj_set_pos(max_temp_label, x_ - lv_obj_get_width(max_temp_label) / 2, y_ - lv_obj_get_height(max_temp_label) / 2);
+            }
+        }
+    }
+}
+
+void ClimateApp::updateTemperatureArc()
+{
+    {
+        SemaphoreGuard lock(mutex_);
+
+        // Update temperature labels
+        lv_label_set_text_fmt(target_temp_label, "%d", target_temperature);
+        lv_label_set_text_fmt(current_temp_label, "%d", current_temperature);
+
+        // Update ARC
+        uint16_t one_step_angle = ONE_STEP_ANGLE;
+
+        uint16_t angle_current_temp = lerp(current_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
+        uint16_t angle_target_temp = lerp(target_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
+
+        if (angle_target_temp == angle_current_temp)
+        {
+            lv_obj_set_style_arc_color(temperature_arc, LV_COLOR_MAKE(0x00, 0xCC, 0x00), LV_PART_INDICATOR);
+            lv_arc_set_angles(temperature_arc, angle_current_temp, angle_target_temp + 1);
+        }
+        else if (angle_target_temp > angle_current_temp)
+        {
+            lv_obj_set_style_arc_color(temperature_arc, heat_active_color, LV_PART_INDICATOR);
+            lv_arc_set_angles(temperature_arc, angle_current_temp, angle_target_temp + 1);
+        }
+        else
+        {
+            lv_obj_set_style_arc_color(temperature_arc, cool_active_color, LV_PART_INDICATOR);
+            lv_arc_set_angles(temperature_arc, angle_target_temp, angle_current_temp + 1);
+        }
+
+        // Update DOTS
+        for (int i = 0; i < (CLIMATE_APP_MAX_TEMP - CLIMATE_APP_MIN_TEMP + 1); i++)
+        {
+            uint8_t temp = i + CLIMATE_APP_MIN_TEMP;
+            if (temp == current_temperature)
+            {
+                lv_obj_set_style_bg_color(temperature_dots[i], LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
+            }
+            else if (temp < current_temperature)
+            {
+                if (target_temperature <= temp)
+                    lv_obj_set_style_bg_color(temperature_dots[i], dark_cool_active_color, LV_PART_MAIN);
+                else
+                    lv_obj_set_style_bg_color(temperature_dots[i], cool_active_color, LV_PART_MAIN);
+            }
+            else
+            {
+                if (temp <= target_temperature)
+                    lv_obj_set_style_bg_color(temperature_dots[i], dark_heat_active_color, LV_PART_MAIN);
+                else
+                    lv_obj_set_style_bg_color(temperature_dots[i], heat_active_color, LV_PART_MAIN);
+            }
+        }
+    }
+}
+
+void ClimateApp::updateModeIcon()
+{
+    {
+        SemaphoreGuard lock(mutex_);
+
+        switch (mode)
+        {
+        case ClimateAppMode::CLIMATE_AUTO:
+            lv_obj_set_style_img_recolor(mode_cool_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_heat_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_air_icon, inactive_color, LV_PART_MAIN);
+
+            if (current_temperature < target_temperature)
+            {
+                lv_obj_set_style_img_recolor(mode_heat_icon, heat_active_color, LV_PART_MAIN);
+                // lv_label_set_text(state_label, "Heating");
+            }
+            else if (current_temperature > target_temperature)
+            {
+                lv_obj_set_style_img_recolor(mode_cool_icon, cool_active_color, LV_PART_MAIN);
+                // lv_label_set_text(state_label, "Cooling");
+            }
+            else if (current_temperature == target_temperature)
+            {
+                lv_obj_set_style_img_recolor(mode_air_icon, air_active_color, LV_PART_MAIN);
+                // lv_label_set_text(state_label, "idle");
+            }
+
+            lv_obj_set_style_img_recolor(mode_auto_icon, auto_active_color, LV_PART_MAIN);
+            break;
+        case ClimateAppMode::CLIMATE_COOL:
+            lv_obj_set_style_img_recolor(mode_heat_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_air_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_auto_icon, inactive_color, LV_PART_MAIN);
+
+            lv_obj_set_style_img_recolor(mode_cool_icon, cool_active_color, LV_PART_MAIN);
+            // lv_label_set_text(state_label, "Cooling");
+            break;
+        case ClimateAppMode::CLIMATE_HEAT:
+            lv_obj_set_style_img_recolor(mode_air_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_auto_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_cool_icon, inactive_color, LV_PART_MAIN);
+
+            lv_obj_set_style_img_recolor(mode_heat_icon, heat_active_color, LV_PART_MAIN);
+            // lv_label_set_text(state_label, "Heating");
+            break;
+        case ClimateAppMode::CLIMATE_FAN_ONLY:
+            lv_obj_set_style_img_recolor(mode_auto_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_cool_icon, inactive_color, LV_PART_MAIN);
+            lv_obj_set_style_img_recolor(mode_heat_icon, inactive_color, LV_PART_MAIN);
+
+            lv_obj_set_style_img_recolor(mode_air_icon, air_active_color, LV_PART_MAIN);
+            // lv_label_set_text(state_label, "idle");
+            break;
+        }
+
+        // lv_obj_align_to(state_label, target_temp_label, LV_ALIGN_OUT_TOP_MID, 0, -2);
+        lv_obj_align_to(current_temp_label, target_temp_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -4);
+    }
 }
 
 EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
@@ -46,11 +329,11 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
         state_sent_from_hass = false;
         return new_state;
     }
-    wanted_temperature = state.current_position;
+    target_temperature = state.current_position;
 
     // needed to next reload of App
-    motor_config.position_nonce = wanted_temperature;
-    motor_config.position = wanted_temperature;
+    motor_config.position_nonce = target_temperature;
+    motor_config.position = target_temperature;
 
     adjusted_sub_position = state.sub_position_unit * state.config.position_width_radians;
 
@@ -63,14 +346,20 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = logf(1 + state.sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
 
-    if (last_wanted_temperature != state.current_position || last_mode != mode)
+    if (last_target_temperature != state.current_position || last_mode != mode)
     {
+        updateTemperatureArc();
+
+        if (mode == ClimateAppMode::CLIMATE_AUTO)
+        {
+            updateModeIcon();
+        }
 
         sprintf(new_state.app_id, "%s", app_id);
         // sprintf(new_state.entity_id, "%s", entity_id);
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "mode", mode);
-        cJSON_AddNumberToObject(json, "target_temp", wanted_temperature);
+        cJSON_AddNumberToObject(json, "target_temp", target_temperature);
         cJSON_AddNumberToObject(json, "current_temp", current_temperature);
 
         char *json_string = cJSON_PrintUnformatted(json);
@@ -80,7 +369,7 @@ EntityStateUpdate ClimateApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_Delete(json);
 
         last_mode = mode;
-        last_wanted_temperature = wanted_temperature;
+        last_target_temperature = target_temperature;
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_CLIMATE);
     }
@@ -100,14 +389,22 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (mode != NULL)
     {
-        this->mode = mode->valueint;
+        if (mode->valueint >= 0 && mode->valueint < ClimateAppMode::CLIMATE_MODE_COUNT)
+        {
+            this->mode = static_cast<ClimateAppMode>(mode->valueint);
+        }
+        else
+        {
+            LOGE("Invalid mode value: %d", mode->valueint);
+            return;
+        }
     }
 
     if (target_temp != NULL)
     {
-        wanted_temperature = target_temp->valueint;
-        motor_config.position = wanted_temperature;
-        motor_config.position_nonce = wanted_temperature;
+        target_temperature = target_temp->valueint;
+        motor_config.position = target_temperature;
+        motor_config.position_nonce = target_temperature;
     }
 
     if (current_temp != NULL)
@@ -123,19 +420,18 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     cJSON_Delete(new_state);
 }
 
-void ClimateApp::updateStateFromSystem(AppState state) {}
-
 int8_t ClimateApp::navigationNext()
 {
     last_mode = mode;
+    uint8_t position_nonce = target_temperature;
     switch (mode)
     {
-    case CLIMATE_APP_MODE_AUTO:
-        mode = CLIMATE_APP_MODE_COOL;
+    case ClimateAppMode::CLIMATE_AUTO:
+        mode = ClimateAppMode::CLIMATE_COOL;
         motor_config = PB_SmartKnobConfig{
-            wanted_temperature,
+            target_temperature,
             0,
-            wanted_temperature,
+            position_nonce,
             CLIMATE_APP_MIN_TEMP,
             current_temperature,
             8.225806452 * PI / 120,
@@ -149,13 +445,13 @@ int8_t ClimateApp::navigationNext()
             27,
         };
         break;
-    case CLIMATE_APP_MODE_COOL:
+    case ClimateAppMode::CLIMATE_COOL:
         // todo, check that current temp is more than wanted
-        mode = CLIMATE_APP_MODE_HEAT;
+        mode = ClimateAppMode::CLIMATE_HEAT;
         motor_config = PB_SmartKnobConfig{
-            wanted_temperature,
+            target_temperature,
             0,
-            wanted_temperature,
+            position_nonce,
             current_temperature,
             CLIMATE_APP_MAX_TEMP,
             8.225806452 * PI / 120,
@@ -169,13 +465,13 @@ int8_t ClimateApp::navigationNext()
             27,
         };
         break;
-    case CLIMATE_APP_MODE_HEAT:
+    case ClimateAppMode::CLIMATE_HEAT:
         // todo, check that current temp is less than wanted
-        mode = CLIMATE_APP_MODE_FAN_ONLY;
+        mode = ClimateAppMode::CLIMATE_FAN_ONLY;
         motor_config = PB_SmartKnobConfig{
-            wanted_temperature,
+            target_temperature,
             0,
-            wanted_temperature,
+            position_nonce,
             current_temperature,
             current_temperature,
             8.225806452 * PI / 120,
@@ -189,12 +485,12 @@ int8_t ClimateApp::navigationNext()
             27,
         };
         break;
-    case CLIMATE_APP_MODE_FAN_ONLY:
-        mode = CLIMATE_APP_MODE_AUTO;
+    case ClimateAppMode::CLIMATE_FAN_ONLY:
+        mode = ClimateAppMode::CLIMATE_AUTO;
         motor_config = PB_SmartKnobConfig{
-            wanted_temperature,
+            target_temperature,
             0,
-            wanted_temperature,
+            position_nonce,
             CLIMATE_APP_MIN_TEMP,
             CLIMATE_APP_MAX_TEMP,
             8.225806452 * PI / 120,
@@ -211,267 +507,9 @@ int8_t ClimateApp::navigationNext()
     default:
         break;
     }
+
+    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+    updateModeIcon();
 
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
-
-void ClimateApp::drawDots()
-{
-    // colors
-    uint16_t inactive_color = spr_->color565(71, 71, 71);
-    uint32_t cooling_color = spr_->color565(80, 100, 200);
-    uint32_t cooling_color_dark = spr_->color565(62, 78, 156);
-    uint32_t heating_color = spr_->color565(255, 128, 0);
-    uint32_t heating_color_dark = spr_->color565(199, 109, 18);
-
-    // screen center
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
-    uint16_t screen_radius = TFT_WIDTH / 2;
-
-    // end stops and radians per tick
-    float range_radians = (num_positions + 1) * motor_config.position_width_radians;
-    float left_bound = PI / 2 + range_radians / 2;
-    float right_bound = PI / 2 - range_radians / 2;
-
-    uint32_t dot_color = inactive_color;
-    uint8_t dot_radius = 2;
-
-    // draw left tick
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
-    {
-        dot_color = cooling_color_dark;
-    }
-
-    float dot_position = left_bound;
-    spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
-
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
-    {
-        dot_color = cooling_color_dark;
-    }
-
-    dot_position = right_bound;
-    spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
-
-    for (int i = 1; i < num_positions + 1; i++)
-    {
-        if (min_temp + i < current_temperature)
-        {
-            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
-            {
-                dot_color = cooling_color_dark;
-            }
-            else
-            {
-                dot_color = inactive_color;
-            }
-        }
-        else if (min_temp + i == current_temperature)
-        {
-            dot_color = TFT_WHITE;
-        }
-        else
-        {
-            if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
-            {
-                dot_color = heating_color_dark;
-            }
-            else
-            {
-                dot_color = inactive_color;
-            }
-        }
-
-        float dot_position = left_bound - (range_radians / (num_positions)) * i;
-        spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(dot_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(dot_position), dot_radius, dot_color);
-    }
-}
-
-// TODO: make this real temp, when sensor is connected
-TFT_eSprite *ClimateApp::render()
-{
-
-    uint16_t inactive_color = spr_->color565(71, 71, 71);
-    uint32_t cooling_color = spr_->color565(80, 100, 200);
-    uint32_t cooling_color_dark = spr_->color565(62, 78, 156);
-    uint32_t heating_color = spr_->color565(255, 128, 0);
-
-    // draw division lines
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
-    uint16_t screen_radius = TFT_WIDTH / 2;
-
-    float range_radians = (num_positions + 1) * motor_config.position_width_radians;
-
-    float left_bound = PI / 2 + range_radians / 2;
-    float right_bound = PI / 2 - range_radians / 2;
-    char buf_[64];
-
-    uint32_t text_color;
-
-    // Draw min/max numbers
-    float min_number_position = left_bound + (range_radians / num_positions) * 1.5;
-    sprintf(buf_, "%d", min_temp);
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
-    {
-        text_color = cooling_color;
-    }
-    else
-    {
-        text_color = inactive_color;
-    }
-    spr_->setTextColor(text_color);
-    spr_->setFreeFont(&NDS125_small);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(min_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(min_number_position), 1);
-
-    float max_number_position = right_bound - (range_radians / num_positions) * 1.5;
-    sprintf(buf_, "%d", max_temp);
-    if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
-    {
-        text_color = heating_color;
-    }
-    else
-    {
-        text_color = inactive_color;
-    }
-    spr_->setTextColor(text_color);
-    spr_->setFreeFont(&NDS125_small);
-    spr_->drawString(buf_, TFT_WIDTH / 2 + (screen_radius - 10) * cosf(max_number_position), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(max_number_position), 1);
-
-    uint32_t auto_color = inactive_color;
-    uint32_t snowflake_color = inactive_color;
-    uint32_t arc_color = inactive_color;
-    uint32_t fire_color = inactive_color;
-    uint32_t wind_color = inactive_color;
-
-    // set arc
-    if (wanted_temperature < current_temperature)
-    {
-        arc_color = cooling_color;
-    }
-    else if (wanted_temperature > current_temperature)
-    {
-        arc_color = heating_color;
-    }
-
-    // TODO check for positions
-
-    switch (mode)
-    {
-    case CLIMATE_APP_MODE_AUTO:
-        auto_color = TFT_WHITE;
-        break;
-    case CLIMATE_APP_MODE_COOL:
-        snowflake_color = TFT_WHITE;
-        break;
-
-    case CLIMATE_APP_MODE_HEAT:
-        fire_color = TFT_WHITE;
-        break;
-
-    case CLIMATE_APP_MODE_FAN_ONLY:
-        wind_color = TFT_WHITE;
-        break;
-
-    default:
-        break;
-    }
-
-    // draw current mode with text and color
-    std::string status = "";
-
-    if (wanted_temperature > current_temperature)
-    {
-        spr_->setTextColor(heating_color);
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_HEAT)
-        {
-            fire_color = heating_color;
-        }
-
-        status = "Heating";
-
-        // draw arc of action
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
-
-        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
-        }
-    }
-    else if (wanted_temperature == current_temperature)
-    {
-        spr_->setTextColor(TFT_WHITE);
-        status = "idle";
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_FAN_ONLY)
-        {
-            wind_color = TFT_GREENYELLOW;
-            arc_color = TFT_GREENYELLOW;
-        }
-
-        // draw arc of action
-
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
-
-        if (adjusted_sub_position < 0)
-        {
-            start_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
-            wanted_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
-        }
-
-        for (float r = start_angle; r >= wanted_angle; r -= 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
-        }
-    }
-    else
-    {
-        spr_->setTextColor(cooling_color);
-        if (mode == CLIMATE_APP_MODE_AUTO || mode == CLIMATE_APP_MODE_COOL)
-        {
-            snowflake_color = cooling_color;
-        }
-        status = "Cooling";
-
-        // draw arc of action
-        // draw arc of action
-        float start_angle = left_bound - (range_radians / num_positions) * (current_temperature - min_temp);
-        float wanted_angle = left_bound - (range_radians / num_positions) * (wanted_temperature - min_temp) - adjusted_sub_position;
-
-        for (float r = start_angle; r <= wanted_angle; r += 2 * PI / 180)
-        {
-            spr_->fillCircle(TFT_WIDTH / 2 + (screen_radius - 10) * cosf(r), TFT_HEIGHT / 2 - (screen_radius - 10) * sinf(r), 10, arc_color);
-        }
-    }
-
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->drawString(status.c_str(), TFT_WIDTH / 2, TFT_HEIGHT / 2 - 45, 1);
-
-    // draw wanted temperature
-    spr_->setFreeFont(&Pixel62mr11pt7b);
-    sprintf(buf_, "%d°C", wanted_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 - 15, 1);
-
-    // draw current temperature
-    spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&NDS1210pt7b);
-    sprintf(buf_, "%d°C", current_temperature);
-    spr_->drawString(buf_, TFT_WIDTH / 2, TFT_HEIGHT / 2 + 30, 1);
-
-    uint16_t center = TFT_WIDTH / 2;
-
-    // draw bottom icons
-
-    drawDots();
-
-    uint16_t icon_size = 20;
-    uint16_t icon_margin = 3;
-
-    spr_->drawBitmap(center - icon_size * 2 - icon_margin * 3, TFT_HEIGHT - 30, letter_A, icon_size, icon_size, auto_color, TFT_BLACK);
-    spr_->drawBitmap(center - icon_size - icon_margin, TFT_HEIGHT - 30, snowflake, icon_size, icon_size, snowflake_color, TFT_BLACK);
-    spr_->drawBitmap(center + icon_margin, TFT_HEIGHT - 30, fire, icon_size, icon_size, fire_color, TFT_BLACK);
-    spr_->drawBitmap(center + icon_size + icon_margin * 3, TFT_HEIGHT - 30, wind, icon_size, icon_size, wind_color, TFT_BLACK);
-    return this->spr_;
-};

@@ -1,21 +1,21 @@
 #pragma once
-#include "../apps.h"
-#include "../../events/events.h"
+#include "apps.h"
+#include "../util.h"
+#include "../events/events.h"
 
 class HassApps : public Apps
 {
 public:
-    HassApps(){};
-    HassApps(TFT_eSprite *spr) : Apps(spr){};
-    void sync(cJSON *apps_);
+    HassApps(SemaphoreHandle_t mutex);
+
+    void sync(cJSON *json_apps);
     void handleEvent(WiFiEvent event);
     void handleNavigationEvent(NavigationEvent event);
-
-    TFT_eSprite *renderActive();
+    void render();
 
 private:
+    lv_obj_t *waiting_for_hass = lv_obj_create(NULL);
+
     uint16_t default_text_color = rgbToUint32(150, 150, 150);
     uint16_t accent_text_color = rgbToUint32(128, 255, 80);
-
-    TFT_eSprite *renderWaitingForHass();
 };

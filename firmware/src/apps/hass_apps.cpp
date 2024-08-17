@@ -1,5 +1,11 @@
 #include "hass_apps.h"
 
+HassApps::HassApps(SemaphoreHandle_t mutex) : Apps(mutex)
+{
+    lv_obj_t *label = lv_label_create(waiting_for_hass);
+    lv_label_set_text(label, "Waiting for Home Assistant");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+};
 void HassApps::sync(cJSON *json_apps)
 {
     clear();
@@ -25,26 +31,17 @@ void HassApps::sync(cJSON *json_apps)
         app_position++;
     }
 
-    SettingsApp *settings_app = new SettingsApp(this->spr_);
+    SettingsApp *settings_app = new SettingsApp(screen_mutex_);
+    settings_app->setOSConfigNotifier(os_config_notifier_);
     add(app_position, settings_app);
 
     updateMenu();
     setMotorNotifier(motor_notifier);
     // cJSON_Delete(json_apps); //DELETING DELETES POINTERS NEEDED TO DISPLAY FRIENDLY NAME ON APPS HMMMM
 }
-
-void HassApps::handleNavigationEvent(NavigationEvent event)
-{
-    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
-    {
-        return;
-    }
-    return Apps::handleNavigationEvent(event);
-}
-
 void HassApps::handleEvent(WiFiEvent event)
 {
-    lock();
+    SemaphoreGuard lock(app_mutex_);
     std::shared_ptr<App> app;
 
     switch (event.type)
@@ -60,7 +57,6 @@ void HassApps::handleEvent(WiFiEvent event)
                     app.second->updateStateFromHASS(event.body.mqtt_state_update);
                 }
             }
-            // motor_notifier->requestUpdate(active_app->getMotorConfig());
         }
         else
         {
@@ -75,38 +71,25 @@ void HassApps::handleEvent(WiFiEvent event)
                 LOGW("App not found");
             }
         }
-
-        // cJSON_Delete(event.body.mqtt_state_update.state);
         break;
     default:
         break;
     }
-    unlock();
 }
-
-TFT_eSprite *HassApps::renderActive()
+void HassApps::handleNavigationEvent(NavigationEvent event)
 {
     if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
     {
-        return renderWaitingForHass();
+        return;
     }
-    return Apps::renderActive();
+    return Apps::handleNavigationEvent(event);
 }
 
-TFT_eSprite *HassApps::renderWaitingForHass()
+void HassApps::render()
 {
-    uint16_t center_vertical = TFT_HEIGHT / 2;
-    uint16_t center_horizontal = TFT_WIDTH / 2;
-
-    spr_->setTextDatum(CC_DATUM);
-    spr_->setTextSize(1);
-    spr_->setFreeFont(&NDS1210pt7b);
-    spr_->setTextColor(default_text_color);
-
-    int8_t screen_name_label_h = spr_->fontHeight(1);
-
-    spr_->drawString("Waiting for", center_horizontal, center_vertical - screen_name_label_h, 1);
-    spr_->drawString("Home Assistant sync.", center_horizontal, center_vertical, 1);
-
-    return this->spr_;
+    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
+    {
+        return lv_scr_load(waiting_for_hass);
+    }
+    return Apps::render();
 }

@@ -1,41 +1,23 @@
 #include "app.h"
 
-TFT_eSprite *App::render()
+App::App(SemaphoreHandle_t mutex) : mutex_(mutex)
 {
-    return spr_;
+    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+    lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_scrollbar_mode(screen, LV_SCROLLBAR_MODE_OFF);
 }
 
-EntityStateUpdate App::updateStateFromKnob(PB_SmartKnobState state)
+App::App(SemaphoreHandle_t mutex, int8_t next, int8_t back) : mutex_(mutex), next_(next), back_(back)
 {
-    return EntityStateUpdate();
+    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+    lv_obj_set_size(screen, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_scrollbar_mode(screen, LV_SCROLLBAR_MODE_OFF);
 }
 
-void App::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+void App::render()
 {
-}
-
-void App::updateStateFromSystem(AppState state)
-{
-}
-
-int8_t App::navigationNext()
-{
-    return next;
-}
-
-void App::setNext(int8_t next)
-{
-    this->next = next;
-}
-
-int8_t App::navigationBack()
-{
-    return back;
-}
-
-void App::setBack(int8_t back)
-{
-    this->back = back;
+    SemaphoreGuard lock(mutex_);
+    lv_scr_load(screen);
 }
 
 void App::setMotorNotifier(MotorNotifier *motor_notifier)
@@ -53,4 +35,23 @@ void App::triggerMotorConfigUpdate()
     {
         LOGW("motor_notifier is not set");
     }
+}
+
+void App::setNext(int8_t next)
+{
+    next_ = next;
+}
+void App::setBack(int8_t back)
+{
+    back_ = back;
+}
+
+PB_SmartKnobConfig App::getMotorConfig()
+{
+    return motor_config;
+}
+
+std::string App::getClassName()
+{
+    return "App";
 }

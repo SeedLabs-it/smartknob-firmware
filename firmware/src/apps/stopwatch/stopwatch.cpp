@@ -1,10 +1,25 @@
 #include "stopwatch.h"
 
-#include <cstring>
-
-StopwatchApp::StopwatchApp(TFT_eSprite *spr_, char *entitiy_id) : App(spr_)
+void stopwatch_timer(lv_timer_t *timer)
 {
+    /*Use the user_data*/
+    CurrentStopwatchState *user_data = (CurrentStopwatchState *)timer->user_data;
+    unsigned long now = millis();
+    unsigned long diff_ms = now - user_data->start_ms;
+    unsigned long stopwatch_ms = 0;
+    unsigned long stopwatch_sec = 0;
+    unsigned long stopwatch_min = 0;
 
+    stopwatch_ms = diff_ms % 100;
+    stopwatch_sec = floor((diff_ms / 1000) % 60);
+    stopwatch_min = floor((diff_ms / (1000 * 60)) % 60);
+
+    lv_label_set_text_fmt(user_data->time_label, "%02d:%02d.", stopwatch_min, stopwatch_sec);
+    lv_label_set_text_fmt(user_data->ms_label, "%02d", stopwatch_ms);
+}
+
+StopwatchApp::StopwatchApp(SemaphoreHandle_t mutex, char *entitiy_id) : App(mutex)
+{
     sprintf(app_id, "%s", "stopwatch");
     sprintf(entitiy_id, "%s", entitiy_id);
     sprintf(friendly_name, "%s", "Stopwatch");
@@ -19,16 +34,68 @@ StopwatchApp::StopwatchApp(TFT_eSprite *spr_, char *entitiy_id) : App(spr_)
         0.01,
         0.6,
         1.1,
-        "Return-to-center",
+        "",
         0,
         {},
         0,
         45,
     };
+    strncpy(motor_config.id, "stopwatch", sizeof(motor_config.id) - 1);
 
-    big_icon = stopwatch_80;
-    small_icon = stopwatch_40;
-    // friendly_name = "Stopwatch";
+    LV_IMG_DECLARE(x80_timer);
+    LV_IMG_DECLARE(x40_timer);
+
+    big_icon = x80_timer;
+    small_icon = x40_timer;
+
+    initScreen();
+}
+
+void StopwatchApp::initScreen()
+{
+    SemaphoreGuard lock(mutex_);
+
+    current_stopwatch_state.time_label = lv_label_create(screen);
+    current_stopwatch_state.ms_label = lv_label_create(screen);
+
+    lv_obj_t *time_label = current_stopwatch_state.time_label;
+    lv_obj_t *ms_label = current_stopwatch_state.ms_label;
+
+    current_stopwatch_state.relative_time_label = lv_label_create(screen);
+    lv_obj_t *relative_time_label = current_stopwatch_state.relative_time_label;
+    lv_obj_align(relative_time_label, LV_ALIGN_TOP_MID, 0, 50);
+    lv_label_set_text(relative_time_label, "");
+    lv_obj_set_style_text_font(relative_time_label, &roboto_light_mono_16pt, 0);
+
+    lv_label_set_text(time_label, "00:00.");
+    lv_obj_set_style_text_font(time_label, &roboto_light_mono_48pt, 0);
+    lv_obj_align(time_label, LV_ALIGN_CENTER, -10, -10);
+
+    lv_label_set_text(ms_label, "00");
+    lv_obj_set_style_text_font(ms_label, &roboto_light_mono_24pt, 0);
+    lv_obj_align_to(ms_label, time_label, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -4);
+
+    current_stopwatch_state.lap_time_label = lv_label_create(screen);
+    lv_obj_t *lap_time_label = current_stopwatch_state.lap_time_label;
+    lv_obj_align_to(lap_time_label, time_label, LV_ALIGN_OUT_BOTTOM_MID, -32, 4);
+    lv_label_set_text(lap_time_label, "");
+    lv_obj_set_style_text_font(lap_time_label, &roboto_semi_bold_mono_12pt, 0);
+
+    current_stopwatch_state.start_stop_indicator = lv_bar_create(screen);
+    lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
+    lv_obj_set_size(start_stop_indicator, 240, 260);
+    lv_obj_set_style_bg_opa(start_stop_indicator, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(start_stop_indicator, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(start_stop_indicator, 0, LV_PART_INDICATOR);
+    lv_obj_center(start_stop_indicator);
+    lv_bar_set_value(start_stop_indicator, 0, LV_ANIM_OFF);
+
+    current_stopwatch_state.start_stop_label = lv_label_create(screen);
+    lv_obj_t *start_stop_label = current_stopwatch_state.start_stop_label;
+    lv_label_set_text(start_stop_label, "START");
+    lv_obj_set_style_text_color(start_stop_label, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_align_to(start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
 }
 
 void StopwatchApp::clear()
@@ -38,13 +105,16 @@ void StopwatchApp::clear()
         laps[i] = LapTime{};
     }
     last_lap_added = 0;
+
+    lv_label_set_text(current_stopwatch_state.lap_time_label, "");
+    lv_label_set_text(current_stopwatch_state.relative_time_label, "");
 }
 
 EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
+    static lv_timer_t *timer;
     current_position = state.current_position;
     sub_position_unit = state.sub_position_unit;
-    // current_volume = current_volume_position * 5;
 
     // needed to next reload of App
     motor_config.position_nonce = state.current_position;
@@ -52,29 +122,70 @@ EntityStateUpdate StopwatchApp::updateStateFromKnob(PB_SmartKnobState state)
 
     EntityStateUpdate new_state;
 
-    if (started && sub_position_unit < -3)
+    if (sub_position_unit < 0.1 && sub_position_unit > -0.1)
     {
-        new_state.play_haptic = true;
+        if (lv_bar_get_value(current_stopwatch_state.start_stop_indicator) != 0)
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_bar_set_value(current_stopwatch_state.start_stop_indicator, 0, LV_ANIM_OFF);
+        }
+        return new_state;
+    }
+
+    lv_obj_t *start_stop_indicator = current_stopwatch_state.start_stop_indicator;
+    {
+
+        if (sub_position_unit > 0.1)
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0x00, 0xFF, 0x00), LV_PART_INDICATOR);
+            if (!started && lv_label_get_text(current_stopwatch_state.start_stop_label) != "START")
+            {
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
+                lv_label_set_text(current_stopwatch_state.start_stop_label, "START");
+            }
+            else if (lv_label_get_text(current_stopwatch_state.start_stop_label) != "STARTED")
+            {
+                lv_label_set_text(current_stopwatch_state.start_stop_label, "STARTED");
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
+            }
+        }
+        else if (sub_position_unit < -0.1)
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_obj_set_style_bg_color(start_stop_indicator, LV_COLOR_MAKE(0xFF, 0x00, 0x00), LV_PART_INDICATOR);
+            if (lv_label_get_text(current_stopwatch_state.start_stop_label) != "RESET")
+            {
+                lv_obj_align_to(current_stopwatch_state.start_stop_label, start_stop_indicator, LV_ALIGN_BOTTOM_MID, 0, -30);
+                lv_label_set_text(current_stopwatch_state.start_stop_label, "RESET");
+            }
+        }
+
+        if (sub_position_unit <= 1.5 && sub_position_unit >= -1.5)
+        {
+            SemaphoreGuard lock(mutex_);
+            lv_bar_set_value(start_stop_indicator, abs(sub_position_unit) / 1.5 * 25, LV_ANIM_OFF);
+        }
+    }
+
+    if (started && sub_position_unit < -1.5)
+    {
         started = false;
-    }
+        lv_timer_del(timer);
 
-    if (!started && sub_position_unit > 3)
-    {
-        started = true;
-        start_ms = millis();
-        clear();
         new_state.play_haptic = true;
     }
 
-    // new_state.entity_name = entity_name;
-    // new_state.new_value = current_volume * 1.0;
+    if (!started && sub_position_unit > 1.5)
+    {
 
-    // if (last_volume != current_volume)
-    // {
-    //     last_volume = current_volume;
-    //     new_state.changed = true;
-    //     sprintf(new_state.app_slug, "%s", APP_SLUG_MUSIC);
-    // }
+        started = true;
+        current_stopwatch_state.start_ms = millis();
+        clear();
+        timer = lv_timer_create(stopwatch_timer, 25, &current_stopwatch_state);
+
+        new_state.play_haptic = true;
+    }
 
     return new_state;
 }
@@ -91,7 +202,7 @@ int8_t StopwatchApp::navigationNext()
     if (started)
     {
         unsigned long now = millis();
-        uint32_t diff_ms = now - start_ms; // diff will not be that big ever
+        uint32_t diff_ms = now - current_stopwatch_state.start_ms; // diff will not be that big ever
 
         uint32_t lap_ms = diff_ms;
 
@@ -120,201 +231,41 @@ int8_t StopwatchApp::navigationNext()
         }
 
         last_lap_added++;
+
+        {
+            SemaphoreGuard lock(mutex_);
+            char lap_times[256] = "";
+            for (int i = max(0, last_lap_added - 6); i < last_lap_added; i++)
+            {
+                char lap_buffer[64];
+                snprintf(lap_buffer, sizeof(lap_buffer), "Lap %02d - %02d:%02d.%02d\n",
+                         i + 1, laps[i].m, laps[i].s, laps[i].ms);
+                char temp_buffer[256];
+                snprintf(temp_buffer, sizeof(temp_buffer), "%s%s", lap_buffer, lap_times);
+                strncpy(lap_times, temp_buffer, sizeof(lap_times) - 1);
+                lap_times[sizeof(lap_times) - 1] = '\0';
+            }
+
+            lv_label_set_text(current_stopwatch_state.lap_time_label, lap_times);
+
+            if (last_lap_added > 1)
+            {
+                int32_t lap_improvement_ms = abs(laps[last_lap_added - 1].improvement % 100);
+                int32_t lap_improvementh_sec = abs(floor((laps[last_lap_added - 1].improvement / 1000) % 60));
+                int32_t lap_improvement_min = abs(floor((laps[last_lap_added - 1].improvement / (1000 * 60)) % 60));
+
+                char sign = '+';
+                lv_obj_set_style_text_color(current_stopwatch_state.relative_time_label, LV_COLOR_MAKE(0xFF, 0x00, 0x00), 0);
+                if (laps[last_lap_added - 1].improvement < 0)
+                {
+                    lv_obj_set_style_text_color(current_stopwatch_state.relative_time_label, LV_COLOR_MAKE(0x00, 0xFF, 0x00), 0);
+                    sign = '-';
+                }
+
+                lv_label_set_text_fmt(current_stopwatch_state.relative_time_label, "%c%02d:%02d.%02d", sign, lap_improvement_min, lap_improvementh_sec, lap_improvement_ms);
+            }
+        }
     }
 
     return DONT_NAVIGATE;
 }
-
-TFT_eSprite *StopwatchApp::render()
-{
-
-    uint16_t center_h = TFT_WIDTH / 2;
-    uint16_t center_v = TFT_WIDTH / 2;
-    uint16_t screen_radius = TFT_WIDTH / 2;
-
-    unsigned long now = millis();
-
-    uint16_t DISABLED_COLOR = spr_->color565(71, 71, 71);
-
-    uint32_t background = spr_->color565(0, 0, 0);
-    spr_->fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, background);
-
-    uint8_t rendering_lap = 0;
-    // render laps
-
-    int32_t lap_impeovement = -INT32_MAX;
-
-    for (int i = laps_max - 1; i >= 0; i--)
-    {
-        if (laps[i].m != 0 || laps[i].s != 0 || laps[i].ms != 0)
-        {
-            spr_->setTextColor(TFT_WHITE);
-            sprintf(buf_, "lap %d - %02d:%02d.%02d", i + 1,
-                    laps[i].m,
-                    laps[i].s,
-                    laps[i].ms);
-
-            spr_->setTextDatum(CL_DATUM);
-            spr_->setFreeFont(&Roboto_Thin_24);
-            spr_->drawString(buf_, 42, center_v + 34 + rendering_lap * 26, 1);
-
-            if (lap_impeovement == -INT32_MAX)
-            {
-                lap_impeovement = laps[i].improvement;
-
-                int32_t lap_improvement_ms = abs(laps[i].improvement % 100);
-                int32_t lap_improvementh_sec = abs(floor((laps[i].improvement / 1000) % 60));
-                int32_t lap_improvement_min = abs(floor((laps[i].improvement / (1000 * 60)) % 60));
-
-                char sign = '+';
-                spr_->setTextColor(TFT_RED);
-                if (laps[i].improvement < 0)
-                {
-                    spr_->setTextColor(TFT_GREEN);
-                    sign = '-';
-                }
-
-                sprintf(buf_, "%c%02d:%02d.%02d", sign, lap_improvement_min, lap_improvementh_sec, lap_improvement_ms);
-
-                spr_->setTextDatum(CC_DATUM);
-                spr_->setFreeFont(&Roboto_Thin_24);
-                spr_->drawString(buf_, center_h, center_v - 65, 1);
-            }
-
-            rendering_lap++;
-        }
-    }
-    spr_->setTextColor(TFT_WHITE);
-
-    if (sub_position_unit < 0)
-    {
-        float percent = -(sub_position_unit) / 3.0;
-
-        uint8_t color_channel = percent > 1 ? 255 : percent * 255;
-
-        uint32_t notify_background = spr_->color565(color_channel, 0, 0);
-
-        if (sub_position_unit < -0.2 && sub_position_unit > -3)
-        {
-            spr_->fillRect(0, center_v + 70 + (50 - percent * 50), TFT_WIDTH, TFT_HEIGHT, notify_background);
-        }
-        else if (sub_position_unit < -3)
-        {
-            spr_->fillRect(0, center_v + 70 + (50 - 1 * 50), TFT_WIDTH, TFT_HEIGHT, notify_background);
-        }
-    }
-    else if (sub_position_unit > 0)
-    {
-        float percent = (sub_position_unit) / 3.0;
-
-        uint8_t color_channel = percent > 1 ? 255 : percent * 255;
-
-        uint32_t notify_background = spr_->color565(0, color_channel, 0);
-        if (sub_position_unit > 0.2 && sub_position_unit < 3)
-        {
-            spr_->fillRect(0, center_v + 70 + (50 - percent * 50), TFT_WIDTH, TFT_HEIGHT, notify_background);
-        }
-        else if (sub_position_unit > 3)
-        {
-            spr_->fillRect(0, center_v + 70 + (50 - 1 * 50), TFT_WIDTH, TFT_HEIGHT, notify_background);
-        }
-    }
-
-    // if (started)
-    // {
-    //     uint16_t percent = uint16_t((-sub_position_unit) / 3.0 * 50);
-
-    //     uint32_t notify_background = spr_->color565(100, 0, 0);
-
-    //     if (sub_position_unit < -0.2 && sub_position_unit > -3)
-    //     {
-    //         spr_->fillRect(0, center_v + 70 + (50 - percent), TFT_WIDTH, TFT_HEIGHT, notify_background);
-    //     }
-    //     else if (sub_position_unit < -3)
-    //     {
-    //         notify_background = spr_->color565(255, 0, 0);
-    //         spr_->fillRect(0, center_v + 70 + (50 - percent), TFT_WIDTH, TFT_HEIGHT, notify_background);
-    //     }
-    // }
-    // else
-    // {
-    //     uint16_t percent = uint16_t((sub_position_unit) / 3.0 * 50);
-
-    //     uint32_t notify_background = spr_->color565(0, 100, 0);
-    //     if (sub_position_unit > 0.2 && sub_position_unit < 3)
-    //     {
-    //         spr_->fillRect(0, center_v + 70 + (50 - percent), TFT_WIDTH, TFT_HEIGHT, notify_background);
-    //     }
-    //     else if (sub_position_unit > 3)
-    //     {
-    //         notify_background = spr_->color565(0, 255, 0);
-    //         spr_->fillRect(0, center_v + 70 + (50 - percent), TFT_WIDTH, TFT_HEIGHT, notify_background);
-    //     }
-    // }
-
-    unsigned long diff_ms = now - start_ms;
-    unsigned long stopwatch_ms = 0;
-    unsigned long stopwatch_sec = 0;
-    unsigned long stopwatch_hour = 0;
-
-    if (started)
-    {
-        stopwatch_ms = diff_ms % 100;
-        stopwatch_sec = floor((diff_ms / 1000) % 60);
-        stopwatch_hour = floor((diff_ms / (1000 * 60)) % 60);
-    }
-
-    spr_->setTextColor(TFT_WHITE);
-    spr_->setFreeFont(&Roboto_Light_60);
-
-    spr_->setTextDatum(TR_DATUM);
-    sprintf(buf_, "%02d:%02d.", stopwatch_hour, stopwatch_sec);
-    spr_->drawString(buf_, center_h + 80, center_v - 30, 1);
-
-    spr_->setFreeFont(&Roboto_Thin_24);
-
-    spr_->setTextDatum(TL_DATUM);
-    sprintf(buf_, "%02d", stopwatch_ms);
-    spr_->drawString(buf_, center_h + 80 + 5, center_v, 1);
-
-    if (started && sub_position_unit < -2.2)
-    {
-        sprintf(buf_, "reset?");
-
-        spr_->setTextDatum(CC_DATUM);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(buf_, center_h, center_v + 90, 1);
-    }
-
-    if (sub_position_unit < -3 && !started)
-    {
-        sprintf(buf_, "reset");
-
-        spr_->setTextDatum(CC_DATUM);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(buf_, center_h, center_v + 90, 1);
-    }
-
-    if (sub_position_unit > 3 && started)
-    {
-        spr_->setTextColor(TFT_BLACK);
-
-        sprintf(buf_, "started");
-
-        spr_->setTextDatum(CC_DATUM);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(buf_, center_h, center_v + 90, 1);
-    }
-    else if (!started && sub_position_unit > 2.2)
-    {
-        spr_->setTextColor(TFT_BLACK);
-
-        sprintf(buf_, "start?");
-
-        spr_->setTextDatum(CC_DATUM);
-        spr_->setFreeFont(&Roboto_Thin_24);
-        spr_->drawString(buf_, center_h, center_v + 90, 1);
-    }
-
-    return this->spr_;
-};
