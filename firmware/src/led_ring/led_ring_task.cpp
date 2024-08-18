@@ -97,12 +97,18 @@ void LedRingTask::renderTrailEffect()
 
 void LedRingTask::renderEffectLightHouse()
 {
-    const uint32_t frame_ms = 100;
+    const uint32_t frame_ms = 1000;
 
     bool exitCriteriaMet = false;
     while (exitCriteriaMet == false)
     {
         exitCriteriaMet = true;
+
+        if (ledsBrightness[0] == FULL_BRIGHTNESS && ledsBrightness[NUM_LEDS - 1] == 0)
+        {
+            continue;
+        }
+
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             if (i == 0)
@@ -118,7 +124,6 @@ void LedRingTask::renderEffectLightHouse()
             {
                 if (ledsBrightness[i] > 0)
                 {
-
                     ledsBrightness[i]--;
                     leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
                     exitCriteriaMet = false;
@@ -127,6 +132,7 @@ void LedRingTask::renderEffectLightHouse()
         }
 
         FastLED.show();
+        effect_statuses[2].last_updated_ms = millis();
     }
 }
 
