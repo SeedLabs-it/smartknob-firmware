@@ -755,7 +755,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = 0xFF0000;
+            effect_settings.effect_main_color = app_state->led_ring_state.beacon_color;
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);

@@ -109,10 +109,10 @@ void LedRingTask::renderEffectLightHouse()
             {
                 if (ledsBrightness[0] < FULL_BRIGHTNESS)
                 {
-                    leds[0].setRGB(0, ledsBrightness[0], ledsBrightness[0]);
                     ledsBrightness[0]++;
                     exitCriteriaMet = false;
                 }
+                leds[i].setColorCode(effect_settings.effect_main_color);
             }
             else
             {
@@ -120,8 +120,7 @@ void LedRingTask::renderEffectLightHouse()
                 {
 
                     ledsBrightness[i]--;
-                    // leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
-                    leds[i].setColorCode(effect_settings.effect_main_color);
+                    leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
                     exitCriteriaMet = false;
                 }
             }
@@ -169,11 +168,14 @@ void LedRingTask::renderFadeInEffect()
             if (ledsBrightness[i] < FULL_BRIGHTNESS)
             {
                 exitCriteriaMet = false;
-                leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
+                // leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                //                (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                //                (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
                 ledsBrightness[i]++;
             }
+            leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                           (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                           (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
         }
 
         // Show the LEDs with the updated brightness level
