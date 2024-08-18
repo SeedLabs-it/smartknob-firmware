@@ -454,6 +454,11 @@ void RootTask::run()
             app_state.screen_state.dim_screen = cJSON_GetObjectItem(settings, "dim_screen")->valueint;
             app_state.screen_state.MIN_LCD_BRIGHTNESS = cJSON_GetObjectItem(settings, "screen_min_brightness")->valueint;
             app_state.screen_state.screen_timeout = cJSON_GetObjectItem(settings, "screen_timeout")->valueint;
+
+            app_state.led_ring_state.led_ring_color = cJSON_GetObjectItem(settings, "led_color")->valueint;
+
+            app_state.led_ring_state.beacon_enabled = cJSON_GetObjectItem(settings, "beacon_enabled")->valueint;
+            app_state.led_ring_state.beacon_color = cJSON_GetObjectItem(settings, "beacon_color")->valueint;
             mqtt_task_->unlock();
 #endif
         }
@@ -736,6 +741,7 @@ void RootTask::updateHardware(AppState *app_state)
             // TODO: add conversion from HUE to RGB
             // latest_config_.led_hue;
             effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
+            effect_settings.effect_accent_color = app_state->led_ring_state.beacon_color;
             led_ring_task_->setEffect(effect_settings);
         }
         else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
@@ -746,6 +752,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
             effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
+            effect_settings.effect_accent_color = app_state->led_ring_state.beacon_color;
             led_ring_task_->setEffect(effect_settings);
         }
         else
@@ -756,6 +763,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
             effect_settings.effect_main_color = app_state->led_ring_state.beacon_color;
+            effect_settings.effect_accent_color = app_state->led_ring_state.led_ring_color;
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);

@@ -99,6 +99,12 @@ void LedRingTask::renderEffectLightHouse()
 {
     const uint32_t frame_ms = 1000;
 
+    uint32_t color_code = effect_settings.effect_accent_color;
+    // Extract RGB components from colorCode
+    uint8_t r = (color_code >> 16) & 0xFF;
+    uint8_t g = (color_code >> 8) & 0xFF;
+    uint8_t b = color_code & 0xFF;
+
     bool exitCriteriaMet = false;
     while (exitCriteriaMet == false)
     {
@@ -106,6 +112,12 @@ void LedRingTask::renderEffectLightHouse()
 
         if (ledsBrightness[0] == FULL_BRIGHTNESS && ledsBrightness[NUM_LEDS - 1] == 0)
         {
+            if (millis() - effect_statuses[2].last_updated_ms > frame_ms)
+            {
+                effect_statuses[2].last_updated_ms = millis();
+                FastLED.show();
+                continue;
+            }
             continue;
         }
 
@@ -125,7 +137,9 @@ void LedRingTask::renderEffectLightHouse()
                 if (ledsBrightness[i] > 0)
                 {
                     ledsBrightness[i]--;
-                    leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
+                    leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                                   (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
+                                   (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
                     exitCriteriaMet = false;
                 }
             }
@@ -192,7 +206,6 @@ void LedRingTask::renderFadeInEffect()
 }
 void LedRingTask::renderFadeOutEffect()
 {
-
     uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
     // Extract RGB components from colorCode
     uint8_t r = (colorCode >> 16) & 0xFF;
