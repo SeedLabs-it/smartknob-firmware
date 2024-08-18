@@ -88,6 +88,15 @@ struct ScreenState
     float luminosityAdjustment = 1;
 };
 
+struct LedRingState
+{
+    bool led_ring_enabled;
+    uint32_t led_ring_color = 0x008080;
+
+    bool beacon_enabled = true;
+    uint32_t beacon_color = 0xFFFFFF;
+};
+
 struct AppState
 {
     OSMode os_mode_state;
@@ -96,6 +105,7 @@ struct AppState
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
+    LedRingState led_ring_state;
     cJSON *apps;
 };
 

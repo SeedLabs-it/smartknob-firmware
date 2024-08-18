@@ -735,7 +735,7 @@ void RootTask::updateHardware(AppState *app_state)
 
             // TODO: add conversion from HUE to RGB
             // latest_config_.led_hue;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
             led_ring_task_->setEffect(effect_settings);
         }
         else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
@@ -745,7 +745,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
             led_ring_task_->setEffect(effect_settings);
         }
         else
@@ -755,7 +755,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
+            effect_settings.effect_main_color = 0xFF0000;
             led_ring_task_->setEffect(effect_settings);
         }
         led_ring_task_->setEffect(effect_settings);

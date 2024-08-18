@@ -120,7 +120,8 @@ void LedRingTask::renderEffectLightHouse()
                 {
 
                     ledsBrightness[i]--;
-                    leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
+                    // leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
+                    leds[i].setColorCode(effect_settings.effect_main_color);
                     exitCriteriaMet = false;
                 }
             }
