@@ -31,8 +31,10 @@ public:
 
     void enqueueEntityStateToSend(EntityStateUpdate);
     void addAppSyncListener(QueueHandle_t queue);
+    void addSettingsSyncListener(QueueHandle_t queue);
     void unlock();
     cJSON *getApps();
+    cJSON *getSettings();
     void handleEvent(WiFiEvent event);
     void handleCommand(MqttCommand command);
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
@@ -69,17 +71,21 @@ private:
     QueueHandle_t entity_state_to_send_queue_;
     QueueHandle_t shared_events_queue;
     std::vector<QueueHandle_t> app_sync_listeners_;
+    std::vector<QueueHandle_t> settings_sync_listeners_;
 
     SemaphoreHandle_t mutex_app_sync_;
     WiFiClient wifi_client;
     PubSubClient mqtt_client;
     cJSON *apps;
+    cJSON *settings;
 
     MqttNotifier mqtt_notifier;
 
     void callback(char *topic, byte *payload, unsigned int length);
 
     void publishAppSync(const cJSON *state);
+
+    void publishSettingsSync(const cJSON *settings);
 
     void publishEvent(WiFiEvent event);
 

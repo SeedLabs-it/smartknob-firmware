@@ -393,6 +393,11 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
             LOGW("Invalid message received");
             return;
         }
+        settings = cJSON_GetObjectItem(json_root_, "settings");
+        if (settings != NULL)
+        {
+            publishSettingsSync(settings);
+        }
         unlock();
 
         // DELAY TO MAKE SURE APPS ARE INITIALIZED?
@@ -496,6 +501,12 @@ cJSON *MqttTask::getApps()
     return apps;
 }
 
+cJSON *MqttTask::getSettings()
+{
+    lock();
+    return settings;
+}
+
 void MqttTask::enqueueEntityStateToSend(EntityStateUpdate state)
 {
     xQueueSendToBack(entity_state_to_send_queue_, &state, 0);
@@ -514,6 +525,19 @@ void MqttTask::addAppSyncListener(QueueHandle_t queue)
 void MqttTask::publishAppSync(const cJSON *state)
 {
     for (auto listener : app_sync_listeners_)
+    {
+        xQueueSend(listener, state, portMAX_DELAY);
+    }
+}
+
+void MqttTask::addSettingsSyncListener(QueueHandle_t queue)
+{
+    settings_sync_listeners_.push_back(queue);
+}
+
+void MqttTask::publishSettingsSync(const cJSON *state)
+{
+    for (auto listener : settings_sync_listeners_)
     {
         xQueueSend(listener, state, portMAX_DELAY);
     }

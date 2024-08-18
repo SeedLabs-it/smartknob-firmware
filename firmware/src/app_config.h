@@ -77,8 +77,10 @@ struct SensorsState
 
 struct ScreenState
 {
+    bool dim_screen = true;
     bool has_been_engaged;
     unsigned long awake_until;
+    unsigned long screen_timeout = 15000;
     // where 255 is max and 0 is no light.
     uint16_t MIN_LCD_BRIGHTNESS = UINT16_MAX / 8;
     uint16_t MAX_LCD_BRIGHTNESS = UINT16_MAX;

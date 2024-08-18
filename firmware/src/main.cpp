@@ -106,6 +106,7 @@ void setup()
 #if SK_MQTT
     // IF WIFI CONNECTED CONNECT MQTT
     mqtt_task.addAppSyncListener(root_task.getAppSyncQueue());
+    mqtt_task.addSettingsSyncListener(root_task.getSettingsSyncQueue());
     mqtt_task.begin();
 #endif
 

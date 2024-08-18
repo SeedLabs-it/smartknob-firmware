@@ -61,6 +61,9 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
+    settings_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
+    assert(settings_sync_queue_ != NULL);
+
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
 
@@ -259,7 +262,7 @@ void RootTask::run()
 
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
-            app_state.screen_state.awake_until = millis() + 60000;
+            app_state.screen_state.awake_until = millis() + app_state.screen_state.awake_until;
             app_state.screen_state.has_been_engaged = true;
             motor_task_.runCalibration();
         }
@@ -336,7 +339,7 @@ void RootTask::run()
                 }
                 break;
             case SK_RESET_BUTTON_PRESSED:
-                app_state.screen_state.awake_until = millis() + 15000;
+                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout;
                 app_state.screen_state.has_been_engaged = true;
                 display_task_->getErrorHandlingFlow()
                     ->handleEvent(wifi_event);
@@ -365,7 +368,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after error
+                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout; // Wake up for 15 seconds after error
                 app_state.screen_state.has_been_engaged = true;
                 if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
@@ -391,7 +394,7 @@ void RootTask::run()
                 }
                 break;
             case SK_STRAIN_CALIBRATION:
-                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after calibration event.
+                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
                 if (current_protocol_ == &proto_protocol_)
                 {
@@ -443,6 +446,18 @@ void RootTask::run()
 #endif
         }
 
+        if (xQueueReceive(settings_sync_queue_, &settings_, 0) == pdTRUE)
+        {
+            LOGD("Settings sync requested!");
+#if SK_MQTT // Should this be here??
+            cJSON *settings = mqtt_task_->getSettings();
+            app_state.screen_state.dim_screen = cJSON_GetObjectItem(settings, "dim_screen")->valueint;
+            app_state.screen_state.MIN_LCD_BRIGHTNESS = cJSON_GetObjectItem(settings, "screen_min_brightness")->valueint;
+            app_state.screen_state.screen_timeout = cJSON_GetObjectItem(settings, "screen_timeout")->valueint;
+            mqtt_task_->unlock();
+#endif
+        }
+
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
@@ -456,9 +471,9 @@ void RootTask::run()
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
-                    if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                    if (app_state.screen_state.awake_until < millis() + max((unsigned long)(KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), app_state.screen_state.screen_timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                     {
-                        app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                        app_state.screen_state.awake_until = millis() + max((unsigned long)(KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), app_state.screen_state.screen_timeout); // stay awake for 4 seconds after last interaction
                     }
                 }
             }
@@ -485,31 +500,39 @@ void RootTask::run()
             }
 
 #if SK_ALS
-            // We are multiplying the current luminosity of the enviroment (0,1 range)
-            // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-            // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-            // [0, MIN_LCD_BRIGHTNESS]
-            uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
-
-            if (app_state.screen_state.has_been_engaged == false &&
-                abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-                millis() > app_state.screen_state.awake_until)
+            if (app_state.screen_state.dim_screen)
             {
-                if ((app_state.screen_state.brightness < targetLuminosity))
+                // We are multiplying the current luminosity of the enviroment (0,1 range)
+                // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+                // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+                // [0, MIN_LCD_BRIGHTNESS]
+                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+
+                if (app_state.screen_state.has_been_engaged == false &&
+                    abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                    millis() > app_state.screen_state.awake_until)
                 {
+                    if ((app_state.screen_state.brightness < targetLuminosity))
+                    {
+                        app_state.screen_state.brightness = (targetLuminosity);
+                    }
+                    else
+                    {
+                        // TODO: I don't like this decay function. It's too slow for delta too small
+                        app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                    }
+                }
+                else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+                {
+                    // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
                     app_state.screen_state.brightness = (targetLuminosity);
                 }
-                else
-                {
-                    // TODO: I don't like this decay function. It's too slow for delta too small
-                    app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-                }
             }
-            else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+            else
             {
-                // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-                app_state.screen_state.brightness = (targetLuminosity);
+                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
             }
+
 #endif
 #if !SK_ALS
             if (app_state.screen_state.has_been_engaged == false)
@@ -684,6 +707,7 @@ void RootTask::updateHardware(AppState *app_state)
 #if SK_ALS
         brightness = app_state->screen_state.brightness;
 #endif
+
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     }
 
@@ -805,6 +829,11 @@ QueueHandle_t RootTask::getSensorsStateQueue()
 QueueHandle_t RootTask::getAppSyncQueue()
 {
     return app_sync_queue_;
+}
+
+QueueHandle_t RootTask::getSettingsSyncQueue()
+{
+    return settings_sync_queue_;
 }
 
 void RootTask::addListener(QueueHandle_t queue)
