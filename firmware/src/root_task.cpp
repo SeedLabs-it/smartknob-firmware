@@ -508,7 +508,7 @@ void RootTask::run()
             }
 
 #if SK_ALS
-            if (app_state.screen_state.dim_screen)
+            if (settings_.screen.dim)
             {
                 // We are multiplying the current luminosity of the enviroment (0,1 range)
                 // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
