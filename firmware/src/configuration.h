@@ -102,6 +102,8 @@ private:
     bool loaded_ = false;
     PB_PersistentConfiguration pb_buffer_ = {};
 
+    SETTINGS_Settings settings_buffer_ = {};
+
     WiFiConfiguration wifi_config;
     bool is_wifi_set = false;
     MQTTConfiguration mqtt_config;

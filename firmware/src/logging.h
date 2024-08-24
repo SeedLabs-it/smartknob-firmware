@@ -66,8 +66,8 @@ public:
     }
 
 private:
-    Logging(){};
-    ~Logging(){};
+    Logging() {};
+    ~Logging() {};
 
     Logging *instance_ = nullptr;
     Logger *logger_ = nullptr;

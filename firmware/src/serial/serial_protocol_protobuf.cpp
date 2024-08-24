@@ -192,6 +192,14 @@ void SerialProtocolProtobuf::handlePacket(const uint8_t *buffer, size_t size)
         strain_calibration_callback_(pb_rx_buffer_.payload.strain_calibration.calibration_weight);
         break;
     }
+    case PB_ToSmartknob_settings_tag:
+    {
+        LOGD("Settings received");
+        // LOGE("%s", pb_rx_buffer_.payload.settings);
+        LOGE("timeout: %d", pb_rx_buffer_.payload.settings.screen.timeout);
+        LOGE("max_bright: %d", pb_rx_buffer_.payload.settings.screen.max_bright);
+        break;
+    }
     case PB_ToSmartknob_smartknob_command_tag:
     {
         // Handle command

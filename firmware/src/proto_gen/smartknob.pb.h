@@ -4,6 +4,7 @@
 #ifndef PB_PB_SMARTKNOB_PB_H_INCLUDED
 #define PB_PB_SMARTKNOB_PB_H_INCLUDED
 #include <pb.h>
+#include "settings.pb.h"
 
 #if PB_PROTO_HEADER_VERSION != 40
 #error Regenerate this file with the current version of nanopb generator.
@@ -241,6 +242,7 @@ typedef struct _PB_ToSmartknob {
         PB_SmartKnobConfig smartknob_config;
         PB_SmartKnobCommand smartknob_command;
         PB_StrainCalibration strain_calibration;
+        SETTINGS_Settings settings;
     } payload;
 } PB_ToSmartknob;
 
@@ -357,6 +359,7 @@ extern "C" {
 #define PB_ToSmartknob_smartknob_config_tag      4
 #define PB_ToSmartknob_smartknob_command_tag     5
 #define PB_ToSmartknob_strain_calibration_tag    6
+#define PB_ToSmartknob_settings_tag              7
 
 /* Struct field encoding specification for nanopb */
 #define PB_FromSmartKnob_FIELDLIST(X, a) \
@@ -382,12 +385,14 @@ X(a, STATIC,   SINGULAR, UINT32,   nonce,             2) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload,request_state,payload.request_state),   3) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload,smartknob_config,payload.smartknob_config),   4) \
 X(a, STATIC,   ONEOF,    UENUM,    (payload,smartknob_command,payload.smartknob_command),   5) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (payload,strain_calibration,payload.strain_calibration),   6)
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,strain_calibration,payload.strain_calibration),   6) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,settings,payload.settings),   7)
 #define PB_ToSmartknob_CALLBACK NULL
 #define PB_ToSmartknob_DEFAULT NULL
 #define PB_ToSmartknob_payload_request_state_MSGTYPE PB_RequestState
 #define PB_ToSmartknob_payload_smartknob_config_MSGTYPE PB_SmartKnobConfig
 #define PB_ToSmartknob_payload_strain_calibration_MSGTYPE PB_StrainCalibration
+#define PB_ToSmartknob_payload_settings_MSGTYPE SETTINGS_Settings
 
 #define PB_Knob_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, STRING,   mac_address,       1) \
