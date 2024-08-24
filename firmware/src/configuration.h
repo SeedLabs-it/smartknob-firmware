@@ -79,6 +79,7 @@ static const SETTINGS_Settings default_settings =
         },
         .has_led_ring = true,
         .led_ring = {
+            .enabled = true,
             .dim = false,
             .max_bright = 65535,
             .min_bright = 6554,

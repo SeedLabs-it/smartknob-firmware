@@ -339,7 +339,7 @@ void RootTask::run()
                 }
                 break;
             case SK_RESET_BUTTON_PRESSED:
-                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout;
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout;
                 app_state.screen_state.has_been_engaged = true;
                 display_task_->getErrorHandlingFlow()
                     ->handleEvent(wifi_event);
@@ -368,7 +368,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout; // Wake up for 15 seconds after error
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after error
                 app_state.screen_state.has_been_engaged = true;
                 if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
@@ -397,7 +397,7 @@ void RootTask::run()
                 settings_ = configuration_->getSettings();
                 break;
             case SK_STRAIN_CALIBRATION:
-                app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout; // Wake up for 15 seconds after calibration event.
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
                 if (current_protocol_ == &proto_protocol_)
                 {
@@ -479,9 +479,9 @@ void RootTask::run()
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
-                    if (app_state.screen_state.awake_until < millis() + max((unsigned long)(KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), app_state.screen_state.screen_timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                    if (app_state.screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                     {
-                        app_state.screen_state.awake_until = millis() + max((unsigned long)(KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), app_state.screen_state.screen_timeout); // stay awake for 4 seconds after last interaction
+                        app_state.screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                     }
                 }
             }
@@ -602,9 +602,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                if (app_state->screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling short press");
@@ -617,9 +617,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                if (app_state->screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling long press");
@@ -732,8 +732,11 @@ void RootTask::updateHardware(AppState *app_state)
         // if 1: led ring is fully on
         // if 2: led ring is fully off.
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
-
-        if (brightness > settings_.screen.min_bright)
+        if (settings_.led_ring.enabled == false)
+        {
+            effect_settings.effect_id = 6;
+        }
+        else if (brightness > settings_.screen.min_bright)
         {
             // case 1. FADE-IN led
             effect_settings.effect_id = 4; // FADE-IN

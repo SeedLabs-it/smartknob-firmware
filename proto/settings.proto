@@ -25,12 +25,13 @@ message Beacon {
 }
 
 message LedRing {
-    bool dim = 1;
-    int32 max_bright = 2;
-    int32 min_bright = 3;
-    int32 timeout = 4;
-    int32 color = 5;
-    Beacon beacon = 6;
+    bool enabled = 1;
+    bool dim = 2;
+    int32 max_bright = 3;
+    int32 min_bright = 4;
+    int32 timeout = 5;
+    int32 color = 6;
+    Beacon beacon = 7;
 }
 
 
