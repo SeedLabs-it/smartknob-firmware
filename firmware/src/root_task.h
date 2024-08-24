@@ -66,6 +66,7 @@ private:
     Configuration *configuration_ = nullptr; // protected by mutex_
 
     PB_PersistentConfiguration configuration_value_;
+    SETTINGS_Settings settings_;
     bool configuration_loaded_ = false;
 
     uint8_t factory_strain_calibration_step_ = 0;
@@ -89,7 +90,7 @@ private:
     SensorsState latest_sensors_state_ = {};
 
     cJSON *apps_ = NULL;
-    cJSON *settings_ = NULL;
+    // cJSON *settings_ = NULL;
 
     QueueHandle_t knob_state_queue_;
 
@@ -98,7 +99,7 @@ private:
     QueueHandle_t sensors_status_queue_;
 
     QueueHandle_t app_sync_queue_;
-    QueueHandle_t settings_sync_queue_;
+    // QueueHandle_t settings_sync_queue_;
 
     OSConfigNotifier os_config_notifier_;
 

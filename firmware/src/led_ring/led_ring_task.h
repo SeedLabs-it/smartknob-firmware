@@ -54,6 +54,8 @@ private:
     void renderTrailEffect();
     void renderFadeInEffect();
     void renderFadeOutEffect();
+
+    void ledsOff();
 };
 
 #else

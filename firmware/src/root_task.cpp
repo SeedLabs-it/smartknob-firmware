@@ -61,8 +61,8 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
-    settings_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
-    assert(settings_sync_queue_ != NULL);
+    // settings_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
+    // assert(settings_sync_queue_ != NULL);
 
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
@@ -393,6 +393,9 @@ void RootTask::run()
                     proto_protocol_.sendInitialInfo();
                 }
                 break;
+            case SK_SETTINGS_CHANGED:
+                settings_ = configuration_->getSettings();
+                break;
             case SK_STRAIN_CALIBRATION:
                 app_state.screen_state.awake_until = millis() + app_state.screen_state.screen_timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
@@ -446,22 +449,22 @@ void RootTask::run()
 #endif
         }
 
-        if (xQueueReceive(settings_sync_queue_, &settings_, 0) == pdTRUE)
-        {
-            LOGD("Settings sync requested!");
-#if SK_MQTT // Should this be here??
-            cJSON *settings = mqtt_task_->getSettings();
-            app_state.screen_state.dim_screen = cJSON_GetObjectItem(settings, "dim_screen")->valueint;
-            app_state.screen_state.MIN_LCD_BRIGHTNESS = cJSON_GetObjectItem(settings, "screen_min_brightness")->valueint;
-            app_state.screen_state.screen_timeout = cJSON_GetObjectItem(settings, "screen_timeout")->valueint;
+        //         if (xQueueReceive(settings_sync_queue_, &settings_, 0) == pdTRUE)
+        //         {
+        //             LOGD("Settings sync requested!");
+        // #if SK_MQTT // Should this be here??
+        //             cJSON *settings = mqtt_task_->getSettings();
+        //             app_state.screen_state.dim_screen = cJSON_GetObjectItem(settings, "dim_screen")->valueint;
+        //             app_state.screen_state.MIN_LCD_BRIGHTNESS = cJSON_GetObjectItem(settings, "screen_min_brightness")->valueint;
+        //             app_state.screen_state.screen_timeout = cJSON_GetObjectItem(settings, "screen_timeout")->valueint;
 
-            app_state.led_ring_state.led_ring_color = cJSON_GetObjectItem(settings, "led_color")->valueint;
+        //             app_state.led_ring_state.led_ring_color = cJSON_GetObjectItem(settings, "led_color")->valueint;
 
-            app_state.led_ring_state.beacon_enabled = cJSON_GetObjectItem(settings, "beacon_enabled")->valueint;
-            app_state.led_ring_state.beacon_color = cJSON_GetObjectItem(settings, "beacon_color")->valueint;
-            mqtt_task_->unlock();
-#endif
-        }
+        //             app_state.led_ring_state.beacon_enabled = cJSON_GetObjectItem(settings, "beacon_enabled")->valueint;
+        //             app_state.led_ring_state.beacon_color = cJSON_GetObjectItem(settings, "beacon_color")->valueint;
+        //             mqtt_task_->unlock();
+        // #endif
+        //         }
 
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
@@ -511,7 +514,7 @@ void RootTask::run()
                 // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
                 // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
                 // [0, MIN_LCD_BRIGHTNESS]
-                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
+                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * settings_.screen.min_bright));
 
                 if (app_state.screen_state.has_been_engaged == false &&
                     abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
@@ -535,14 +538,14 @@ void RootTask::run()
             }
             else
             {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                app_state.screen_state.brightness = settings_.screen.max_bright;
             }
 
 #endif
 #if !SK_ALS
             if (app_state.screen_state.has_been_engaged == false)
             {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                app_state.screen_state.brightness = settings_.screen.max_bright;
             }
 #endif
 
@@ -568,9 +571,9 @@ void RootTask::run()
 
         if (app_state.screen_state.has_been_engaged == true)
         {
-            if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
+            if (app_state.screen_state.brightness != settings_.screen.max_bright)
             {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                app_state.screen_state.brightness = settings_.screen.max_bright;
                 sensors_task_->strainPowerUp();
             }
 
@@ -730,7 +733,7 @@ void RootTask::updateHardware(AppState *app_state)
         // if 2: led ring is fully off.
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
 
-        if (brightness > app_state->screen_state.MIN_LCD_BRIGHTNESS)
+        if (brightness > settings_.screen.min_bright)
         {
             // case 1. FADE-IN led
             effect_settings.effect_id = 4; // FADE-IN
@@ -740,31 +743,39 @@ void RootTask::updateHardware(AppState *app_state)
 
             // TODO: add conversion from HUE to RGB
             // latest_config_.led_hue;
-            effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
-            effect_settings.effect_accent_color = app_state->led_ring_state.beacon_color;
-            led_ring_task_->setEffect(effect_settings);
+            effect_settings.effect_main_color = settings_.led_ring.color;
+            effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            // led_ring_task_->setEffect(effect_settings);
         }
-        else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
+        else if (brightness == settings_.screen.min_bright)
         {
             // case 2. FADE-OUT led
             effect_settings.effect_id = 5;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = app_state->led_ring_state.led_ring_color;
-            effect_settings.effect_accent_color = app_state->led_ring_state.beacon_color;
-            led_ring_task_->setEffect(effect_settings);
+            effect_settings.effect_main_color = settings_.led_ring.color;
+            effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            // led_ring_task_->setEffect(effect_settings);
         }
         else
         {
-            // case 3 - Beacon
-            effect_settings.effect_id = 2;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = app_state->led_ring_state.beacon_color;
-            effect_settings.effect_accent_color = app_state->led_ring_state.led_ring_color;
-            led_ring_task_->setEffect(effect_settings);
+            if (settings_.led_ring.beacon.enabled)
+            {
+                // case 3 - Beacon
+                effect_settings.effect_id = 2;
+                effect_settings.effect_start_pixel = 0;
+                effect_settings.effect_end_pixel = NUM_LEDS;
+                effect_settings.effect_accent_pixel = 0;
+                effect_settings.effect_main_color = settings_.led_ring.beacon.color;
+                effect_settings.effect_accent_color = settings_.led_ring.color;
+                // led_ring_task_->setEffect(effect_settings);
+            }
+            else
+            {
+                effect_settings.effect_id = 6;
+                // led_ring_task_->setEffect(effect_settings);
+            }
         }
         led_ring_task_->setEffect(effect_settings);
 
@@ -796,7 +807,8 @@ void RootTask::loadConfiguration()
         if (configuration_ != nullptr)
         {
             configuration_value_ = configuration_->get();
-            configuration_loaded_ = true;
+
+            settings_ = configuration_->getSettings();
 
             configuration_->loadOSConfiguration();
 
@@ -820,6 +832,7 @@ void RootTask::loadConfiguration()
                 // mqtt_task_->getNotifier()->requestConnect(mqtt_config); // ! DONT CONNECT MQTT HERE WAIT FOR WIFI TO CONNECT
             }
 #endif
+            configuration_loaded_ = true;
         }
     }
 }
@@ -839,10 +852,10 @@ QueueHandle_t RootTask::getAppSyncQueue()
     return app_sync_queue_;
 }
 
-QueueHandle_t RootTask::getSettingsSyncQueue()
-{
-    return settings_sync_queue_;
-}
+// QueueHandle_t RootTask::getSettingsSyncQueue()
+// {
+//     return settings_sync_queue_;
+// }
 
 void RootTask::addListener(QueueHandle_t queue)
 {

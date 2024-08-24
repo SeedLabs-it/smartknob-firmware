@@ -237,6 +237,12 @@ void LedRingTask::renderFadeOutEffect()
     }
 }
 
+void LedRingTask::ledsOff()
+{
+    FastLED.clear();
+    FastLED.show();
+}
+
 void LedRingTask::run()
 {
 
@@ -310,6 +316,8 @@ void LedRingTask::run()
         case 5:
             renderFadeOutEffect();
             break;
+        case 6:
+            ledsOff();
 
         default:
             break;

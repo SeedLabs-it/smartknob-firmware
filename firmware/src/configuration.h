@@ -46,6 +46,7 @@ static const uint16_t MQTT_SET_EEPROM_POS = MQTT_PASS_EEPROM_POS + MQTT_PASS_LEN
 static const uint16_t EEPROM_SIZE = 512;
 
 const uint32_t PERSISTENT_CONFIGURATION_VERSION = 2;
+const uint32_t SETTINGS_VERSION = 1;
 
 struct WiFiConfiguration
 {
@@ -67,6 +68,30 @@ struct OSConfiguration
     OSMode mode = ONBOARDING;
 };
 
+static const SETTINGS_Settings default_settings =
+    {
+        .has_screen = true,
+        .screen = {
+            .dim = true,
+            .max_bright = 65535,
+            .min_bright = 6554,
+            .timeout = 30,
+        },
+        .has_led_ring = true,
+        .led_ring = {
+            .dim = false,
+            .max_bright = 65535,
+            .min_bright = 6554,
+            .color = 32896,
+            .has_beacon = true,
+            .beacon = {
+                .enabled = true,
+                .brightness = 6554,
+                .color = 32896,
+            },
+        },
+};
+
 class Configuration
 {
 public:
@@ -77,6 +102,13 @@ public:
     bool saveToDisk();
     bool resetToDefaults();
     PB_PersistentConfiguration get();
+
+    bool loadSettingsFromDisk();
+    bool saveSettingsToDisk();
+    bool setSettings(SETTINGS_Settings &settings);
+    // bool resetSettingsToDefaults();
+    SETTINGS_Settings getSettings();
+
     bool setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibration);
     bool saveWiFiConfiguration(WiFiConfiguration wifi_config);
     WiFiConfiguration getWiFiConfiguration();
@@ -102,7 +134,8 @@ private:
     bool loaded_ = false;
     PB_PersistentConfiguration pb_buffer_ = {};
 
-    SETTINGS_Settings settings_buffer_ = {};
+    bool settings_loaded_ = false;
+    SETTINGS_Settings settings_buffer_ = default_settings;
 
     WiFiConfiguration wifi_config;
     bool is_wifi_set = false;
@@ -110,7 +143,8 @@ private:
     bool is_mqtt_set = false;
     OSConfiguration os_config;
 
-    uint8_t buffer_[PB_PersistentConfiguration_size];
+    uint8_t pb_stream_buffer_[PB_PersistentConfiguration_size];
+    uint8_t settings_stream_buffer_[SETTINGS_Settings_size];
 
     std::string knob_id;
 };
