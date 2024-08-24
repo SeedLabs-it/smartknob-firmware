@@ -515,7 +515,6 @@ void RootTask::run()
                 // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
                 // [0, MIN_LCD_BRIGHTNESS]
                 uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * settings_.screen.min_bright));
-
                 if (app_state.screen_state.has_been_engaged == false &&
                     abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
                     millis() > app_state.screen_state.awake_until)
@@ -736,7 +735,7 @@ void RootTask::updateHardware(AppState *app_state)
         {
             effect_settings.effect_id = 6;
         }
-        else if (brightness > settings_.screen.min_bright)
+        else if (brightness > settings_.screen.min_bright || !settings_.led_ring.dim)
         {
             // case 1. FADE-IN led
             effect_settings.effect_id = 4; // FADE-IN
