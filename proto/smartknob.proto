@@ -17,7 +17,6 @@ message FromSmartKnob {
         SmartKnobState smartknob_state = 6;
         MotorCalibState motor_calib_state = 7;
         StrainCalibState strain_calib_state = 8;
-        SETTINGS.Settings settings = 9;
     }
 }
 
@@ -42,6 +41,7 @@ message Knob {
     string mac_address = 1 [(nanopb).max_length = 50];
     string ip_address = 2 [(nanopb).max_length = 50];
     PersistentConfiguration persistent_config = 3;
+    SETTINGS.Settings settings = 4;
 }
 
 
