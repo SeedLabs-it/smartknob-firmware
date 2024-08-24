@@ -17,6 +17,7 @@ message FromSmartKnob {
         SmartKnobState smartknob_state = 6;
         MotorCalibState motor_calib_state = 7;
         StrainCalibState strain_calib_state = 8;
+        SETTINGS.Settings settings = 9;
     }
 }
 
