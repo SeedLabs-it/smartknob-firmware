@@ -80,6 +80,7 @@ void SerialProtocolProtobuf::log(const PB_LogLevel log_level, bool isVerbose_, c
 
 void SerialProtocolProtobuf::sendInitialInfo()
 {
+    // Send initial info knob info
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_knob_tag;
     strlcpy(pb_tx_buffer_.payload.knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(pb_tx_buffer_.payload.knob.ip_address));
@@ -94,6 +95,10 @@ void SerialProtocolProtobuf::sendInitialInfo()
     {
         pb_tx_buffer_.payload.knob.has_persistent_config = false;
     }
+
+    const SETTINGS_Settings settings = configuration_->getSettings();
+    pb_tx_buffer_.payload.knob.has_settings = true;
+    pb_tx_buffer_.payload.knob.settings = settings;
 
     sendPbTxBuffer();
 }
@@ -117,23 +122,23 @@ void SerialProtocolProtobuf::loop()
         packet_serial_.update();
     } while (stream_.available());
 
-    // Rate limit state change transmissions
-    bool state_changed = !state_eq(latest_state_, last_sent_state_) && millis() - last_sent_state_millis_ >= MIN_STATE_INTERVAL_MILLIS;
+    // // Rate limit state change transmissions
+    // bool state_changed = !state_eq(latest_state_, last_sent_state_) && millis() - last_sent_state_millis_ >= MIN_STATE_INTERVAL_MILLIS;
 
-    // Send state periodically or when forced, regardless of rate limit for state changes
-    bool force_send_state = state_requested_ || millis() - last_sent_state_millis_ > PERIODIC_STATE_INTERVAL_MILLIS;
-    if (state_changed || force_send_state)
-    {
-        state_requested_ = false;
-        pb_tx_buffer_ = {};
-        pb_tx_buffer_.which_payload = PB_FromSmartKnob_smartknob_state_tag;
-        pb_tx_buffer_.payload.smartknob_state = latest_state_;
+    // // Send state periodically or when forced, regardless of rate limit for state changes
+    // bool force_send_state = state_requested_ || millis() - last_sent_state_millis_ > PERIODIC_STATE_INTERVAL_MILLIS;
+    // if (state_changed || force_send_state)
+    // {
+    //     state_requested_ = false;
+    //     pb_tx_buffer_ = {};
+    //     pb_tx_buffer_.which_payload = PB_FromSmartKnob_smartknob_state_tag;
+    //     pb_tx_buffer_.payload.smartknob_state = latest_state_;
 
-        sendPbTxBuffer();
+    //     sendPbTxBuffer();
 
-        last_sent_state_ = latest_state_;
-        last_sent_state_millis_ = millis();
-    }
+    //     last_sent_state_ = latest_state_;
+    //     last_sent_state_millis_ = millis();
+    // }
     delay(1);
 }
 
@@ -242,8 +247,8 @@ void SerialProtocolProtobuf::sendPbTxBuffer()
     {
         stream_.println(stream.errmsg);
         stream_.flush();
-        LOGV(PB_LogLevel_ERROR, "PB Encoding failed: %s", stream.errmsg);
-        LOGV(PB_LogLevel_ERROR, "PB Bytes written when failed: %d", stream.bytes_written);
+        LOGE("PB Encoding failed: %s", stream.errmsg);
+        LOGE("PB Bytes written when failed: %d", stream.bytes_written);
         return;
     }
 

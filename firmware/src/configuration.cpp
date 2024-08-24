@@ -272,15 +272,20 @@ bool Configuration::setSettings(SETTINGS_Settings &settings)
 
 SETTINGS_Settings Configuration::getSettings()
 {
-    SemaphoreGuard lock(mutex_);
-    if (!settings_loaded_)
     {
-        LOGD("Settings not loaded, loading default settings instead.");
-        settings_buffer_ = default_settings;
-        settings_loaded_ = true;
-        return settings_buffer_; // RETURN ACTUAL DEFAULTS
+        SemaphoreGuard lock(mutex_);
+        if (!settings_loaded_)
+        {
+            if (!loadSettingsFromDisk())
+            {
+                LOGD("Settings couldnt load from disk, loading default settings instead.");
+                settings_buffer_ = default_settings;
+                settings_loaded_ = true;
+                return settings_buffer_;
+            }
+        }
+        // LOGV(PB_LogLevel_DEBUG, "Get settings from memory"); //disabled cause causing initial info not being sent from protobuf protcol to configurator
     }
-    LOGV(PB_LogLevel_DEBUG, "Settings loaded.");
     return settings_buffer_;
 }
 

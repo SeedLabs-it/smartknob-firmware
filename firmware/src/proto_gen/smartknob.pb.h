@@ -207,6 +207,8 @@ typedef struct _PB_Knob {
     char ip_address[51];
     bool has_persistent_config;
     PB_PersistentConfiguration persistent_config;
+    bool has_settings;
+    SETTINGS_Settings settings;
 } PB_Knob;
 
 /* Message FROM the SmartKnob to the host */
@@ -280,7 +282,7 @@ extern "C" {
 /* Initializer values for message structs */
 #define PB_FromSmartKnob_init_default            {0, 0, {PB_Knob_init_default}}
 #define PB_ToSmartknob_init_default              {0, 0, 0, {PB_RequestState_init_default}}
-#define PB_Knob_init_default                     {"", "", false, PB_PersistentConfiguration_init_default}
+#define PB_Knob_init_default                     {"", "", false, PB_PersistentConfiguration_init_default, false, SETTINGS_Settings_init_default}
 #define PB_MotorCalibState_init_default          {0}
 #define PB_StrainCalibState_init_default         {0, 0}
 #define PB_Ack_init_default                      {0}
@@ -294,7 +296,7 @@ extern "C" {
 #define PB_StrainCalibration_init_default        {0}
 #define PB_FromSmartKnob_init_zero               {0, 0, {PB_Knob_init_zero}}
 #define PB_ToSmartknob_init_zero                 {0, 0, 0, {PB_RequestState_init_zero}}
-#define PB_Knob_init_zero                        {"", "", false, PB_PersistentConfiguration_init_zero}
+#define PB_Knob_init_zero                        {"", "", false, PB_PersistentConfiguration_init_zero, false, SETTINGS_Settings_init_zero}
 #define PB_MotorCalibState_init_zero             {0}
 #define PB_StrainCalibState_init_zero            {0, 0}
 #define PB_Ack_init_zero                         {0}
@@ -343,6 +345,7 @@ extern "C" {
 #define PB_Knob_mac_address_tag                  1
 #define PB_Knob_ip_address_tag                   2
 #define PB_Knob_persistent_config_tag            3
+#define PB_Knob_settings_tag                     4
 #define PB_FromSmartKnob_protocol_version_tag    1
 #define PB_FromSmartKnob_knob_tag                3
 #define PB_FromSmartKnob_ack_tag                 4
@@ -397,10 +400,12 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (payload,settings,payload.settings),   7)
 #define PB_Knob_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, STRING,   mac_address,       1) \
 X(a, STATIC,   SINGULAR, STRING,   ip_address,        2) \
-X(a, STATIC,   OPTIONAL, MESSAGE,  persistent_config,   3)
+X(a, STATIC,   OPTIONAL, MESSAGE,  persistent_config,   3) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  settings,          4)
 #define PB_Knob_CALLBACK NULL
 #define PB_Knob_DEFAULT NULL
 #define PB_Knob_persistent_config_MSGTYPE PB_PersistentConfiguration
+#define PB_Knob_settings_MSGTYPE SETTINGS_Settings
 
 #define PB_MotorCalibState_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, BOOL,     calibrated,        1)
@@ -518,7 +523,7 @@ extern const pb_msgdesc_t PB_StrainCalibration_msg;
 /* Maximum encoded size of messages (where known) */
 #define PB_Ack_size                              6
 #define PB_FromSmartKnob_size                    399
-#define PB_Knob_size                             134
+#define PB_Knob_size                             252
 #define PB_Log_size                              393
 #define PB_MotorCalibState_size                  2
 #define PB_MotorCalibration_size                 15
