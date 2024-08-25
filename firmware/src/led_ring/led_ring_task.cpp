@@ -148,26 +148,7 @@ void LedRingTask::renderEffectLightHouse()
                 leds[i].g = scale8(accentColor.g, scaledBright);
                 leds[i].b = scale8(accentColor.b, scaledBright);
             }
-            // if (i == 0)
-            // {
-            //     leds[i].setColorCode(effect_settings.effect_main_color);
-            // }
-            // else
-            // {
-            //     uint8_t scaledBright = scale8(ledsBrightness[i], maxCBrightness);
-
-            //     leds[i].r = scale8(targetColor.r, scaledBright);
-            //     leds[i].g = scale8(targetColor.g, scaledBright);
-            //     leds[i].b = scale8(targetColor.b, scaledBright);
-            // }
-
-            // }
         }
-
-        uint8_t scaledBright = scale8(ledsBrightness[1], maxABright);
-
-        LOGE("scaledBright: %d", scaledBright);
-        LOGE("Color: %d", leds[1].getAverageLight());
 
         FastLED.show();
         delay(10);
@@ -302,11 +283,6 @@ void LedRingTask::renderToBrightness()
             leds[i].g = scale8(targetColor.g, scaledBright);
             leds[i].b = scale8(targetColor.b, scaledBright);
         }
-
-        uint8_t scaledBright = scale8(ledsBrightness[0], maxCBrightness);
-
-        LOGE("scaledBright: %d", scaledBright);
-        LOGE("Color: %d", leds[0].getAverageLight());
 
         FastLED.show();
         delay(10);
