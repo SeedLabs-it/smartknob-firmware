@@ -720,8 +720,8 @@ void RootTask::updateHardware(AppState *app_state)
         }
         else if (brightness > settings_.screen.min_bright || !settings_.led_ring.dim)
         {
-            // case 1. FADE-IN led
-            effect_settings.effect_id = 4; // FADE-IN
+            // case 1. Fade to brightness
+            effect_settings.effect_id = 7; // FADE-IN
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
@@ -735,8 +735,9 @@ void RootTask::updateHardware(AppState *app_state)
         }
         else if (brightness == settings_.screen.min_bright)
         {
-            // case 2. FADE-OUT led
-            effect_settings.effect_id = 5;
+
+            // case 2. Fade to brightness
+            effect_settings.effect_id = 7;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
@@ -757,6 +758,8 @@ void RootTask::updateHardware(AppState *app_state)
                 effect_settings.effect_main_color = settings_.led_ring.beacon.color;
                 effect_settings.effect_accent_color = settings_.led_ring.color;
                 effect_settings.effect_brightness = settings_.led_ring.beacon.brightness;
+
+                effect_settings.led_ring_settings = settings_.led_ring;
                 // led_ring_task_->setEffect(effect_settings);
             }
             else
@@ -765,6 +768,7 @@ void RootTask::updateHardware(AppState *app_state)
                 // led_ring_task_->setEffect(effect_settings);
             }
         }
+        // LOGE("Effect ID: %d", effect_settings.effect_id);
         led_ring_task_->setEffect(effect_settings);
 
         // latest_config_.led_hue

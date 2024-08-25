@@ -23,6 +23,7 @@ struct EffectSettings
     uint32_t effect_main_color;
     uint32_t effect_accent_color;
     uint8_t effect_brightness;
+    SETTINGS_LedRing led_ring_settings;
 };
 
 class LedRingTask : public Task<LedRingTask>
@@ -47,7 +48,7 @@ private:
     unsigned long effect_expiration_ms;
     EffectSettings effect_settings;
 
-    uint8_t old_effect_id = UINT8_MAX;
+    EffectSettings old_effect_settings;
 
     EffectStatus effect_statuses[total_effects];
 
@@ -58,6 +59,7 @@ private:
     void renderFadeInEffect();
     void renderFadeOutEffect();
 
+    void renderToBrightness();
     void ledsOff();
 };
 
