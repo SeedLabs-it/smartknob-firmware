@@ -26,5 +26,6 @@ private:
     float sub_position_unit = 0;
     float adjusted_sub_position = 0;
     float old_adjusted_sub_position = 0;
+    long last_updated_ms = 0;
     bool first_run = false;
 };
