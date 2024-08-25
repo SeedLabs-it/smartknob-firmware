@@ -747,6 +747,7 @@ void RootTask::updateHardware(AppState *app_state)
             // latest_config_.led_hue;
             effect_settings.effect_main_color = settings_.led_ring.color;
             effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            effect_settings.effect_brightness = settings_.led_ring.max_bright;
             // led_ring_task_->setEffect(effect_settings);
         }
         else if (brightness == settings_.screen.min_bright)
@@ -758,6 +759,7 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_accent_pixel = 0;
             effect_settings.effect_main_color = settings_.led_ring.color;
             effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            effect_settings.effect_brightness = settings_.led_ring.min_bright;
             // led_ring_task_->setEffect(effect_settings);
         }
         else
@@ -771,6 +773,7 @@ void RootTask::updateHardware(AppState *app_state)
                 effect_settings.effect_accent_pixel = 0;
                 effect_settings.effect_main_color = settings_.led_ring.beacon.color;
                 effect_settings.effect_accent_color = settings_.led_ring.color;
+                effect_settings.effect_brightness = settings_.led_ring.beacon.brightness;
                 // led_ring_task_->setEffect(effect_settings);
             }
             else

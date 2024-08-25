@@ -22,6 +22,7 @@ struct EffectSettings
     uint8_t effect_accent_pixel;
     uint32_t effect_main_color;
     uint32_t effect_accent_color;
+    uint8_t effect_brightness;
 };
 
 class LedRingTask : public Task<LedRingTask>
@@ -45,6 +46,8 @@ private:
     uint32_t effect_timeout_ms;
     unsigned long effect_expiration_ms;
     EffectSettings effect_settings;
+
+    uint8_t old_effect_id = UINT8_MAX;
 
     EffectStatus effect_statuses[total_effects];
 
