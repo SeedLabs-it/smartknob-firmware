@@ -65,8 +65,7 @@ void SensorsTask::run()
     Adafruit_VEML7700 veml = Adafruit_VEML7700();
     float luminosity_adjustment = 1.00;
     const float LUX_ALPHA = 0.005;
-    std::vector<float> lux_samples(10, 0.0);
-    uint8_t lux_sample_index = 0;
+
     float sum = 0.0;
     float lux_avg;
     float lux = 0.0;
@@ -79,6 +78,14 @@ void SensorsTask::run()
     else
     {
         LOGE("Failed to boot VEML7700");
+    }
+
+    delay(1000); // Wait for VEML7700 to boot 500ms seems to not be enough...
+    lux = veml.readLux();
+    MovingAverage lux_filter(10);
+    for (uint8_t i = 0; i < 10; i++)
+    {
+        lux_filter.addSample(lux);
     }
 
 #endif
@@ -304,14 +311,8 @@ void SensorsTask::run()
         {
 
             lux = veml.readLux();
-            // lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
-            sum -= lux_samples[lux_sample_index];
-            sum += lux;
 
-            lux_samples[lux_sample_index] = lux;
-            lux_sample_index = (lux_sample_index + 1) % 10;
-
-            lux_avg = sum / std::min(10, static_cast<int>(lux_samples.size()));
+            lux_avg = lux_filter.addSample(lux);
 
             luminosity_adjustment = min(1.0f, lux_avg);
 

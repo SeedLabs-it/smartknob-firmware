@@ -86,7 +86,9 @@
         "condition_variable": "cpp",
         "mutex": "cpp",
         "lvgl.h": "c",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "set": "cpp",
+        "iostream": "cpp"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

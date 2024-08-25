@@ -312,49 +312,41 @@ void LedRingTask::run()
             }
 
             old_effect_id = effect_settings.effect_id;
-            LOGE("NEW EFFECT");
 
             switch (effect_settings.effect_id)
             {
             case 0:
                 // TODO: disabled for a Demo
                 renderEffectSnake();
-                LOGE("Snake");
+                LOGV(PB_LogLevel_DEBUG, "Snake");
                 break;
             case 1:
                 renderEffectStaticColor();
-                LOGE("Static Color");
+                LOGV(PB_LogLevel_DEBUG, "Static Color");
                 break;
             case 2:
                 renderEffectLightHouse();
-                LOGE("Light House");
+                LOGV(PB_LogLevel_DEBUG, "Light House");
                 break;
             case 3:
                 renderTrailEffect();
-                LOGE("Trail Effect");
+                LOGV(PB_LogLevel_DEBUG, "Trail Effect");
                 break;
             case 4:
                 renderFadeInEffect();
-                LOGE("Fade In Effect");
+                LOGV(PB_LogLevel_DEBUG, "Fade In Effect");
                 break;
             case 5:
                 renderFadeOutEffect();
-                LOGE("Fade Out Effect");
+                LOGV(PB_LogLevel_DEBUG, "Fade Out Effect");
                 break;
             case 6:
                 ledsOff();
-                LOGE("LEDs Off");
+                LOGV(PB_LogLevel_DEBUG, "LEDs Off");
             default:
                 break;
             }
         }
-
-        // At this point, effect_settings is always the last object received through the queue.
-        // Todo : turn this on, when verbose.
-
-        //
-
-        // FastLED.show();
 
         delay(10);
     }
