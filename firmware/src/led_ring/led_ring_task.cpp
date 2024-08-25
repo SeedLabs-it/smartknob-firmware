@@ -198,9 +198,6 @@ void LedRingTask::renderFadeInEffect()
                 ledsBrightness[i]++;
             }
             leds[i].setColorCode(effect_settings.effect_main_color);
-            // leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
-            //                (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
-            //                (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
         }
 
         // Show the LEDs with the updated brightness level
@@ -211,6 +208,7 @@ void LedRingTask::renderFadeInEffect()
         // Increase brightness for the next frame, until it reaches 255 (full brightness)
     }
 }
+
 void LedRingTask::renderFadeOutEffect()
 {
     uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
@@ -231,9 +229,6 @@ void LedRingTask::renderFadeOutEffect()
             {
                 exitCriteriaMet = false;
                 ledsBrightness[i]--;
-                // leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                //                (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                //                (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
                 leds[i].setColorCode(effect_settings.effect_main_color);
             }
         }

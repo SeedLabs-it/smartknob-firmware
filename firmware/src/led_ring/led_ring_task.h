@@ -6,7 +6,7 @@
 #include "../task.h"
 #include "../app_config.h"
 
-const uint8_t total_effects = 6;
+const uint8_t total_effects = 8;
 
 struct EffectStatus
 {

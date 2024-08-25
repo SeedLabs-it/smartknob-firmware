@@ -232,13 +232,6 @@ bool Configuration::saveSettingsToDisk()
         }
     }
 
-    // if (shared_events_queue != NULL)
-    // {
-    //     WiFiEvent event;
-    //     event.type = SK_CONFIGURATION_SAVED;
-    //     publishEvent(event);
-    // }
-
     return true;
 }
 
@@ -256,19 +249,7 @@ bool Configuration::setSettings(SETTINGS_Settings &settings)
         }
     }
     return saveSettingsToDisk();
-    // return true;
 }
-
-// bool Configuration::resetSettingsToDefaults()
-// {
-//     {
-//         SemaphoreGuard lock(mutex_);
-//         settings_buffer_ = default_settings;
-//         // settings_loaded_ = true;
-//     }
-//     return true;
-//     // return saveSettingsToDisk();
-// }
 
 SETTINGS_Settings Configuration::getSettings()
 {
@@ -284,7 +265,6 @@ SETTINGS_Settings Configuration::getSettings()
                 return settings_buffer_;
             }
         }
-        // LOGV(PB_LogLevel_DEBUG, "Get settings from memory"); //disabled cause causing initial info not being sent from protobuf protcol to configurator
     }
     return settings_buffer_;
 }

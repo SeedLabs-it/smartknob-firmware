@@ -77,24 +77,11 @@ struct SensorsState
 
 struct ScreenState
 {
-    bool dim_screen = true;
     bool has_been_engaged;
     unsigned long awake_until;
-    unsigned long screen_timeout = 15000;
     // where 255 is max and 0 is no light.
-    uint16_t MIN_LCD_BRIGHTNESS = UINT16_MAX / 8;
-    uint16_t MAX_LCD_BRIGHTNESS = UINT16_MAX;
-    uint16_t brightness = MAX_LCD_BRIGHTNESS;
+    uint16_t brightness = UINT16_MAX;
     float luminosityAdjustment = 1;
-};
-
-struct LedRingState
-{
-    bool led_ring_enabled;
-    uint32_t led_ring_color = 0x008080;
-
-    bool beacon_enabled = true;
-    uint32_t beacon_color = 0xFFFFFF;
 };
 
 struct AppState
@@ -105,7 +92,6 @@ struct AppState
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
-    LedRingState led_ring_state;
     cJSON *apps;
 };
 

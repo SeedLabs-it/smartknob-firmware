@@ -122,23 +122,6 @@ void SerialProtocolProtobuf::loop()
         packet_serial_.update();
     } while (stream_.available());
 
-    // // Rate limit state change transmissions
-    // bool state_changed = !state_eq(latest_state_, last_sent_state_) && millis() - last_sent_state_millis_ >= MIN_STATE_INTERVAL_MILLIS;
-
-    // // Send state periodically or when forced, regardless of rate limit for state changes
-    // bool force_send_state = state_requested_ || millis() - last_sent_state_millis_ > PERIODIC_STATE_INTERVAL_MILLIS;
-    // if (state_changed || force_send_state)
-    // {
-    //     state_requested_ = false;
-    //     pb_tx_buffer_ = {};
-    //     pb_tx_buffer_.which_payload = PB_FromSmartKnob_smartknob_state_tag;
-    //     pb_tx_buffer_.payload.smartknob_state = latest_state_;
-
-    //     sendPbTxBuffer();
-
-    //     last_sent_state_ = latest_state_;
-    //     last_sent_state_millis_ = millis();
-    // }
     delay(1);
 }
 

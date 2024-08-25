@@ -90,7 +90,6 @@ private:
     SensorsState latest_sensors_state_ = {};
 
     cJSON *apps_ = NULL;
-    // cJSON *settings_ = NULL;
 
     QueueHandle_t knob_state_queue_;
 
@@ -99,7 +98,6 @@ private:
     QueueHandle_t sensors_status_queue_;
 
     QueueHandle_t app_sync_queue_;
-    // QueueHandle_t settings_sync_queue_;
 
     OSConfigNotifier os_config_notifier_;
 

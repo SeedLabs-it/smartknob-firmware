@@ -61,9 +61,6 @@ RootTask::RootTask(
     app_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
     assert(app_sync_queue_ != NULL);
 
-    // settings_sync_queue_ = xQueueCreate(2, sizeof(cJSON *));
-    // assert(settings_sync_queue_ != NULL);
-
     knob_state_queue_ = xQueueCreate(1, sizeof(PB_SmartKnobState));
     assert(knob_state_queue_ != NULL);
 
@@ -725,13 +722,9 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-
-            // TODO: add conversion from HUE to RGB
-            // latest_config_.led_hue;
             effect_settings.effect_main_color = settings_.led_ring.color;
             effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
             effect_settings.effect_brightness = settings_.led_ring.max_bright;
-            // led_ring_task_->setEffect(effect_settings);
         }
         else if (brightness == settings_.screen.min_bright)
         {
@@ -744,7 +737,6 @@ void RootTask::updateHardware(AppState *app_state)
             effect_settings.effect_main_color = settings_.led_ring.color;
             effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
             effect_settings.effect_brightness = settings_.led_ring.min_bright;
-            // led_ring_task_->setEffect(effect_settings);
         }
         else
         {
@@ -760,35 +752,14 @@ void RootTask::updateHardware(AppState *app_state)
                 effect_settings.effect_brightness = settings_.led_ring.beacon.brightness;
 
                 effect_settings.led_ring_settings = settings_.led_ring;
-                // led_ring_task_->setEffect(effect_settings);
             }
             else
             {
                 effect_settings.effect_id = 6;
-                // led_ring_task_->setEffect(effect_settings);
             }
         }
-        // LOGE("Effect ID: %d", effect_settings.effect_id);
         led_ring_task_->setEffect(effect_settings);
-
-        // latest_config_.led_hue
-        // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
     }
-
-    // How far button is pressed, in range [0, 1]
-    // float press_value_unit = 0;
-    // #if SK_LEDS
-    //     for (uint8_t i = 0; i < NUM_LEDS; i++)
-    //     {
-    //         leds[i].setHSV(latest_config_.led_hue, 255 - 180 * CLAMP(press_value_unit, (float)0, (float)1) - 75 * pressed, brightness >> 8);
-
-    //         // Gamma adjustment
-    //         leds[i].r = dim8_video(leds[i].r);
-    //         leds[i].g = dim8_video(leds[i].g);
-    //         leds[i].b = dim8_video(leds[i].b);
-    //     }
-    //     FastLED.show();
-    // #endif
 }
 
 void RootTask::loadConfiguration()
@@ -818,10 +789,6 @@ void RootTask::loadConfiguration()
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                 LOGD("MQTT_CONFIG: %s", mqtt_config.host);
-
-                // mqtt_task_->setupMQTT(mqtt_config);
-                // DO STUFF WITH MQTT CONFIG!!!
-                // mqtt_task_->getNotifier()->requestConnect(mqtt_config); // ! DONT CONNECT MQTT HERE WAIT FOR WIFI TO CONNECT
             }
 #endif
             configuration_loaded_ = true;
@@ -843,11 +810,6 @@ QueueHandle_t RootTask::getAppSyncQueue()
 {
     return app_sync_queue_;
 }
-
-// QueueHandle_t RootTask::getSettingsSyncQueue()
-// {
-//     return settings_sync_queue_;
-// }
 
 void RootTask::addListener(QueueHandle_t queue)
 {
