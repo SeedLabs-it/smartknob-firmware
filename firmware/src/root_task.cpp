@@ -449,23 +449,6 @@ void RootTask::run()
 #endif
         }
 
-        //         if (xQueueReceive(settings_sync_queue_, &settings_, 0) == pdTRUE)
-        //         {
-        //             LOGD("Settings sync requested!");
-        // #if SK_MQTT // Should this be here??
-        //             cJSON *settings = mqtt_task_->getSettings();
-        //             app_state.screen_state.dim_screen = cJSON_GetObjectItem(settings, "dim_screen")->valueint;
-        //             app_state.screen_state.MIN_LCD_BRIGHTNESS = cJSON_GetObjectItem(settings, "screen_min_brightness")->valueint;
-        //             app_state.screen_state.screen_timeout = cJSON_GetObjectItem(settings, "screen_timeout")->valueint;
-
-        //             app_state.led_ring_state.led_ring_color = cJSON_GetObjectItem(settings, "led_color")->valueint;
-
-        //             app_state.led_ring_state.beacon_enabled = cJSON_GetObjectItem(settings, "beacon_enabled")->valueint;
-        //             app_state.led_ring_state.beacon_color = cJSON_GetObjectItem(settings, "beacon_color")->valueint;
-        //             mqtt_task_->unlock();
-        // #endif
-        //         }
-
         if (xQueueReceive(knob_state_queue_, &latest_state_, 0) == pdTRUE)
         {
 
