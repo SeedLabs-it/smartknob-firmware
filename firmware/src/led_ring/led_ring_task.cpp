@@ -212,7 +212,7 @@ void LedRingTask::renderFadeInEffect()
         // Show the LEDs with the updated brightness level
         FastLED.setBrightness(ledsBrightness[0]);
         FastLED.show();
-        delay(25);
+        delay(50);
 
         // Increase brightness for the next frame, until it reaches 255 (full brightness)
     }
@@ -313,7 +313,6 @@ void LedRingTask::run()
 
             old_effect_id = effect_settings.effect_id;
             LOGE("NEW EFFECT");
-            delay(100);
 
             switch (effect_settings.effect_id)
             {
