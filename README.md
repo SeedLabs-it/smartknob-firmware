@@ -1,5 +1,5 @@
 # Smart Knob Firmware by @Seedlabs.it
-## Current Version: 0.1
+## Current Version: 0.4.0
 ## Supports: Smart Knob Dev Kit v0.1
 
 ### Table of Contents
