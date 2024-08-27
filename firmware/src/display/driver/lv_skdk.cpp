@@ -6,7 +6,6 @@
 /*********************
  *      INCLUDES
  *********************/
-#pragma once
 #include "display/driver/lv_skdk.h"
 #include "display_task.h"
 

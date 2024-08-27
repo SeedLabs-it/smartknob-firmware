@@ -9,6 +9,10 @@
 const lv_color_t dark_arc_bg = LV_COLOR_MAKE(0x21, 0x21, 0x21);
 
 // WRONG ORDER OF INITIALIZERS IN ORIGINAL MACRO PROVIDED BY LVGL
+#ifdef LV_STYLE_CONST_INIT
+#undef LV_STYLE_CONST_INIT
+#endif
+
 #define LV_STYLE_CONST_INIT(var_name, prop_array)                   \
     const lv_style_t var_name = {                                   \
         .v_p = {.const_props = prop_array},                         \
@@ -16,7 +20,6 @@ const lv_color_t dark_arc_bg = LV_COLOR_MAKE(0x21, 0x21, 0x21);
         .has_group = 0xFF,                                          \
         .prop_cnt = (sizeof(prop_array) / sizeof((prop_array)[0])), \
     }
-
 // static lv_style_t x20_icon_style;
 
 const lv_style_const_prop_t x20_icon_style_props[] = {
