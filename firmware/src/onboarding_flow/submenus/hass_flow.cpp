@@ -6,6 +6,7 @@ HassOnboardingPages getHassPageEnum(uint8_t screen)
     {
         return static_cast<HassOnboardingPages>(screen);
     }
+    return CONNECT_QRCODE_PAGE; // TODO handle error here instead of returning CONNECT_QRCODE_PAGE
 };
 
 HassOnboardingFlow::HassOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent)

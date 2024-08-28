@@ -2,7 +2,6 @@
 #include "display_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
-#include "esp_spiram.h"
 #include "esp_heap_caps.h"
 
 #include "apps/light_switch/light_switch.h"
