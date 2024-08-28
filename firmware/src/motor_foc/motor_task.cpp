@@ -587,7 +587,7 @@ void MotorTask::calibrate()
         .calibrated = true,
         .zero_electrical_offset = motor.zero_electric_angle,
         .direction_cw = motor.sensor_direction == Direction::CW,
-        .pole_pairs = motor.pole_pairs,
+        .pole_pairs = (uint32_t)motor.pole_pairs,
     };
     if (configuration_.setMotorCalibrationAndSave(calibration))
     {
