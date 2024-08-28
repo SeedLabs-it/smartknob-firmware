@@ -1,8 +1,5 @@
 #pragma once
 #include <WiFi.h>
-#include <TFT_eSPI.h>
-
-// #include "apps/app.h"
 
 #include "util.h"
 #include "display/page_manager.h"
@@ -12,9 +9,6 @@
 
 #include "./pages/error.h"
 #include "./pages/reset.h"
-
-#include "font/NDS1210pt7b.h"
-#include "font/NDS125_small.h"
 
 enum ErrorPages
 {
