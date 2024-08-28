@@ -79,16 +79,6 @@ void MovingAverage::initFilter()
     }
 }
 
-uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b)
-{
-    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
-
-RGBColor_Custom uint32ToRGB(uint32_t color)
-{
-    return {(color >> 8) & 0xF8, (color >> 3) & 0xFC, (color << 3) & 0xF8};
-}
-
 HEXColor hToHEX(float h)
 {
     float s = 1;

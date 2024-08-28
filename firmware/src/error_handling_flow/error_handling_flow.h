@@ -72,9 +72,6 @@ private:
         1,
     };
 
-    uint16_t default_text_color = rgbToUint32(150, 150, 150);
-    uint16_t accent_text_color = rgbToUint32(128, 255, 80);
-
     PB_SmartKnobConfig root_level_motor_config;
     PB_SmartKnobConfig blocked_motor_config = PB_SmartKnobConfig{
         0,
