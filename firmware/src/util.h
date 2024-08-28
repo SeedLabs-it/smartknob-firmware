@@ -47,27 +47,6 @@ int sgn(T val)
     return (T(0) < val) - (val < T(0));
 }
 
-struct HSVColor
-{
-    float h;
-    float s;
-    float v;
-};
-
-struct RGBColor_Custom
-{
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
-struct HEXColor
-{
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
 // source: https://github.com/careyi3/MovingAverage/blob/master/src/MovingAverage.cpp
 class MovingAverage
 {
@@ -86,9 +65,3 @@ private:
     void shiftFilter(float nextValue);
     void computeAverage();
 };
-
-HEXColor hToHEX(float h);
-HSVColor ToHSV(RGBColor_Custom color);
-uint32_t ToRGBA(float h);
-uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b);
-RGBColor_Custom uint32ToRGB(uint32_t color);
