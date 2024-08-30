@@ -79,7 +79,9 @@ void MotorTask::run()
 
     PB_PersistentConfiguration c = configuration_.get();
     motor.pole_pairs = c.motor.calibrated ? c.motor.pole_pairs : 7;
-    motor.initFOC(c.motor.zero_electrical_offset, c.motor.direction_cw ? Direction::CW : Direction::CCW);
+    motor.initFOC();
+    motor.zero_electric_angle = c.motor.zero_electrical_offset;
+    motor.sensor_direction = c.motor.direction_cw ? Direction::CW : Direction::CCW;
 
     motor.monitor_downsample = 0; // disable monitor at first - optional
 
@@ -390,7 +392,9 @@ void MotorTask::calibrate()
 
     motor.controller = MotionControlType::angle_openloop;
     motor.pole_pairs = 1;
-    motor.initFOC(0, Direction::CW);
+    motor.initFOC();
+    motor.zero_electric_angle = 0;
+    motor.sensor_direction = Direction::CW;
 
     float a = 0;
 
@@ -435,12 +439,16 @@ void MotorTask::calibrate()
     if (end_sensor > start_sensor)
     {
         LOGD("YES, Direction=CW");
-        motor.initFOC(0, Direction::CW);
+        motor.initFOC();
+        motor.zero_electric_angle = 0;
+        motor.sensor_direction = Direction::CW;
     }
     else
     {
         LOGD("NO, Direction=CCW");
-        motor.initFOC(0, Direction::CCW);
+        motor.initFOC();
+        motor.zero_electric_angle = 0;
+        motor.sensor_direction = Direction::CCW;
     }
     snprintf(buf_, sizeof(buf_), "  (start was %.1f, end was %.1f)", start_sensor, end_sensor);
     LOGD(buf_);
@@ -587,7 +595,7 @@ void MotorTask::calibrate()
         .calibrated = true,
         .zero_electrical_offset = motor.zero_electric_angle,
         .direction_cw = motor.sensor_direction == Direction::CW,
-        .pole_pairs = motor.pole_pairs,
+        .pole_pairs = (uint32_t)motor.pole_pairs,
     };
     if (configuration_.setMotorCalibrationAndSave(calibration))
     {

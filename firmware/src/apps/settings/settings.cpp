@@ -37,6 +37,7 @@ SettingsPages getSettingsPageEnum(uint8_t screen)
     {
         return static_cast<SettingsPages>(screen);
     }
+    return WIFI_PAGE_SETTINGS; // TODO handle error here instead of returning WIFI_PAGE_SETTINGS
 }
 
 EntityStateUpdate SettingsApp::updateStateFromKnob(PB_SmartKnobState state)

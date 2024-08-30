@@ -6,7 +6,6 @@
 /*********************
  *      INCLUDES
  *********************/
-#pragma once
 #include "display/driver/lv_skdk.h"
 #include "display_task.h"
 
@@ -23,10 +22,6 @@
 /**********************
  *      TYPEDEFS
  **********************/
-typedef struct
-{
-    TFT_eSPI *tft;
-} lv_tft_espi_t;
 
 /**********************
  *  STATIC PROTOTYPES

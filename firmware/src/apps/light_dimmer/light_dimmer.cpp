@@ -400,7 +400,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
         uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
 
-        HSVColor hsv = ToHSV(RGBColor_Custom{r, g, b});
+        lv_color_hsv_t hsv = lv_color_rgb_to_hsv(r, g, b);
 
         app_hue_position = hsv.h;
 

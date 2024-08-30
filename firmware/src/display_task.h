@@ -7,7 +7,6 @@
 #include "lvgl.h"
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 #include <HTTPClient.h>
 
 #include "proto_gen/smartknob.pb.h"

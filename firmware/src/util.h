@@ -9,6 +9,10 @@
 const lv_color_t dark_arc_bg = LV_COLOR_MAKE(0x21, 0x21, 0x21);
 
 // WRONG ORDER OF INITIALIZERS IN ORIGINAL MACRO PROVIDED BY LVGL
+#ifdef LV_STYLE_CONST_INIT
+#undef LV_STYLE_CONST_INIT
+#endif
+
 #define LV_STYLE_CONST_INIT(var_name, prop_array)                   \
     const lv_style_t var_name = {                                   \
         .v_p = {.const_props = prop_array},                         \
@@ -16,7 +20,6 @@ const lv_color_t dark_arc_bg = LV_COLOR_MAKE(0x21, 0x21, 0x21);
         .has_group = 0xFF,                                          \
         .prop_cnt = (sizeof(prop_array) / sizeof((prop_array)[0])), \
     }
-
 // static lv_style_t x20_icon_style;
 
 const lv_style_const_prop_t x20_icon_style_props[] = {
@@ -44,27 +47,6 @@ int sgn(T val)
     return (T(0) < val) - (val < T(0));
 }
 
-struct HSVColor
-{
-    float h;
-    float s;
-    float v;
-};
-
-struct RGBColor_Custom
-{
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
-struct HEXColor
-{
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
 // source: https://github.com/careyi3/MovingAverage/blob/master/src/MovingAverage.cpp
 class MovingAverage
 {
@@ -83,9 +65,3 @@ private:
     void shiftFilter(float nextValue);
     void computeAverage();
 };
-
-HEXColor hToHEX(float h);
-HSVColor ToHSV(RGBColor_Custom color);
-uint32_t ToRGBA(float h);
-uint32_t rgbToUint32(uint8_t r, uint8_t g, uint8_t b);
-RGBColor_Custom uint32ToRGB(uint32_t color);

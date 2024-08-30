@@ -54,6 +54,7 @@ OnboardingFlowPages getPageEnum(uint8_t screen)
     {
         return static_cast<OnboardingFlowPages>(screen);
     }
+    return WELCOME_PAGE; // TODO handle error here instead of returning WELCOME_PAGE
 }
 
 void OnboardingFlow::render()

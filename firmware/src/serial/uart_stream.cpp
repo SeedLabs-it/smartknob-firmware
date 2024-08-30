@@ -32,7 +32,7 @@ void UartStream::begin()
     conf.stop_bits = UART_STOP_BITS_1;
     conf.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     conf.rx_flow_ctrl_thresh = 0;
-    conf.use_ref_tick = false;
+    // conf.use_ref_tick = false; //deprecated
     assert(uart_param_config(uart_port_, &conf) == ESP_OK);
     assert(uart_driver_install(uart_port_, 32000, 32000, 0, NULL, 0) == ESP_OK);
 }
