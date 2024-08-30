@@ -713,12 +713,12 @@ void RootTask::updateHardware(AppState *app_state)
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
         if (settings_.led_ring.enabled == false)
         {
-            effect_settings.effect_id = 6;
+            effect_settings.effect_type = EffectType::LEDS_OFF;
         }
         else if (brightness > settings_.screen.min_bright || !settings_.led_ring.dim)
         {
             // case 1. Fade to brightness
-            effect_settings.effect_id = 7; // FADE-IN
+            effect_settings.effect_type = EffectType::TO_BRIGHTNESS;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
@@ -730,7 +730,7 @@ void RootTask::updateHardware(AppState *app_state)
         {
 
             // case 2. Fade to brightness
-            effect_settings.effect_id = 7;
+            effect_settings.effect_type = EffectType::TO_BRIGHTNESS;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
@@ -743,7 +743,7 @@ void RootTask::updateHardware(AppState *app_state)
             if (settings_.led_ring.beacon.enabled)
             {
                 // case 3 - Beacon
-                effect_settings.effect_id = 2;
+                effect_settings.effect_type = EffectType::LIGHT_HOUSE;
                 effect_settings.effect_start_pixel = 0;
                 effect_settings.effect_end_pixel = NUM_LEDS;
                 effect_settings.effect_accent_pixel = 0;
@@ -755,7 +755,7 @@ void RootTask::updateHardware(AppState *app_state)
             }
             else
             {
-                effect_settings.effect_id = 6;
+                effect_settings.effect_type = EffectType::LEDS_OFF;
             }
         }
         led_ring_task_->setEffect(effect_settings);

@@ -338,9 +338,9 @@ void LedRingTask::run()
         // This is useful for checking the queue and responding to events without delaying program execution.
         if (xQueueReceive(render_effect_queue_, &effect_settings, 0) == pdTRUE)
         {
-            if (effect_settings.effect_id == old_effect_settings.effect_id) // PREVENTS LED FLICKERING (only render new effects)
+            if (effect_settings.effect_type == old_effect_settings.effect_type) // PREVENTS LED FLICKERING (only render new effects)
             {
-                if (effect_settings.effect_id == 7 && effect_settings.effect_brightness == old_effect_settings.effect_brightness)
+                if (effect_settings.effect_type == EffectType::TO_BRIGHTNESS && effect_settings.effect_brightness == old_effect_settings.effect_brightness)
                 {
                     delay(10);
                     continue;
@@ -349,37 +349,37 @@ void LedRingTask::run()
 
             old_effect_settings = effect_settings;
 
-            switch (effect_settings.effect_id)
+            switch (effect_settings.effect_type)
             {
-            case 0:
+            case EffectType::SNAKE:
                 // TODO: disabled for a Demo
                 renderEffectSnake();
                 LOGV(PB_LogLevel_DEBUG, "Snake");
                 break;
-            case 1:
+            case EffectType::STATIC_COLOR:
                 renderEffectStaticColor();
                 LOGV(PB_LogLevel_DEBUG, "Static Color");
                 break;
-            case 2:
+            case EffectType::LIGHT_HOUSE:
                 renderEffectLightHouse();
                 LOGV(PB_LogLevel_DEBUG, "Light House");
                 break;
-            case 3:
+            case EffectType::TRAIL:
                 renderTrailEffect();
                 LOGV(PB_LogLevel_DEBUG, "Trail Effect");
                 break;
-            case 4:
+            case EffectType::FADE_IN:
                 renderFadeInEffect();
                 LOGV(PB_LogLevel_DEBUG, "Fade In Effect");
                 break;
-            case 5:
+            case EffectType::FADE_OUT:
                 renderFadeOutEffect();
                 LOGV(PB_LogLevel_DEBUG, "Fade Out Effect");
                 break;
-            case 6:
+            case EffectType::LEDS_OFF:
                 ledsOff();
                 LOGV(PB_LogLevel_DEBUG, "LEDs Off");
-            case 7:
+            case EffectType::TO_BRIGHTNESS:
                 renderToBrightness();
                 LOGV(PB_LogLevel_DEBUG, "Dim Ambient Effect");
                 break;

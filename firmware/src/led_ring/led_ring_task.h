@@ -14,9 +14,21 @@ struct EffectStatus
     unsigned long last_updated_ms;
 };
 
+enum EffectType
+{
+    SNAKE = 0,
+    STATIC_COLOR = 1,
+    LIGHT_HOUSE = 2,
+    TRAIL = 3,
+    FADE_IN = 4,
+    FADE_OUT = 5,
+    LEDS_OFF = 6,
+    TO_BRIGHTNESS = 7
+};
+
 struct EffectSettings
 {
-    uint8_t effect_id;
+    EffectType effect_type;
     uint8_t effect_start_pixel;
     uint8_t effect_end_pixel;
     uint8_t effect_accent_pixel;
