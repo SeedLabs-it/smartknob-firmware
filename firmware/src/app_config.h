@@ -32,6 +32,18 @@ struct ConnectivityState
     bool is_ap;
     IPAddress ap_ip_address;
     bool ap_has_clients;
+
+    bool operator!=(const ConnectivityState &other) const
+    {
+        return is_connected != other.is_connected ||
+               signal_strength != other.signal_strength ||
+               signal_strenth_status != other.signal_strenth_status ||
+               strcmp(ssid, other.ssid) != 0 ||
+               strcmp(ip_address, other.ip_address) != 0 ||
+               is_ap != other.is_ap ||
+               ap_ip_address != other.ap_ip_address ||
+               ap_has_clients != other.ap_has_clients;
+    }
 };
 
 struct MqttState
