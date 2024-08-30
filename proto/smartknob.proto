@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "nanopb.proto";
+import "settings.proto";
 
 package PB;
 
@@ -31,6 +32,7 @@ message FromSmartKnob {
         SmartKnobConfig smartknob_config = 4;
         SmartKnobCommand smartknob_command = 5;
         StrainCalibration strain_calibration = 6;
+        SETTINGS.Settings settings = 7;
     }
 }
 
@@ -39,7 +41,13 @@ message Knob {
     string mac_address = 1 [(nanopb).max_length = 50];
     string ip_address = 2 [(nanopb).max_length = 50];
     PersistentConfiguration persistent_config = 3;
+    SETTINGS.Settings settings = 4;
 }
+
+
+
+
+
 
 /** Motor calibration state information */
 message MotorCalibState {

@@ -40,6 +40,7 @@ public:
     QueueHandle_t getMqttStateQueue();
     QueueHandle_t getSensorsStateQueue();
     QueueHandle_t getAppSyncQueue();
+    QueueHandle_t getSettingsSyncQueue();
 
 protected:
     void run();
@@ -65,6 +66,7 @@ private:
     Configuration *configuration_ = nullptr; // protected by mutex_
 
     PB_PersistentConfiguration configuration_value_;
+    SETTINGS_Settings settings_;
     bool configuration_loaded_ = false;
 
     uint8_t factory_strain_calibration_step_ = 0;

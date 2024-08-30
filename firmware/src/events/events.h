@@ -148,9 +148,12 @@ enum EventType
 
     SK_CONFIGURATION_SAVED,
 
+    SK_SETTINGS_CHANGED,
+
     SK_STRAIN_CALIBRATION,
 
     SK_NO_EVENT
+
 };
 
 typedef unsigned long SentAt;

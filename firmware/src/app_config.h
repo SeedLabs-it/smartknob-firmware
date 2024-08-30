@@ -92,9 +92,7 @@ struct ScreenState
     bool has_been_engaged;
     unsigned long awake_until;
     // where 255 is max and 0 is no light.
-    uint16_t MIN_LCD_BRIGHTNESS = UINT16_MAX / 8;
-    uint16_t MAX_LCD_BRIGHTNESS = UINT16_MAX;
-    uint16_t brightness = MAX_LCD_BRIGHTNESS;
+    uint16_t brightness = UINT16_MAX;
     float luminosityAdjustment = 1;
 };
 

@@ -13,7 +13,7 @@ class SerialProtocolProtobuf : public SerialProtocol
 {
 public:
     SerialProtocolProtobuf(Stream &stream, Configuration *configuration, ConfigCallback config_callback, MotorCalibrationCallback motor_calibration_callback, FactoryStrainCalibrationCallback factory_strain_calibration_callback);
-    ~SerialProtocolProtobuf(){};
+    ~SerialProtocolProtobuf() {};
     void log(const char *msg) override;
     void log(const PB_LogLevel log_level, bool isVerbose_, const char *origin, const char *msg) override;
     void sendInitialInfo();

@@ -97,36 +97,65 @@ void LedRingTask::renderTrailEffect()
 
 void LedRingTask::renderEffectLightHouse()
 {
-    const uint32_t frame_ms = 100;
+    CRGB targetColor = CRGB(effect_settings.effect_main_color);
+    CRGB accentColor = CRGB(effect_settings.effect_accent_color);
+    uint8_t maxABright = accentColor.getLuma();
 
-    bool exitCriteriaMet = false;
-    while (exitCriteriaMet == false)
+    bool exitCriteriaMet = false;    // This becomes true when all the LEDs are at minimum brightness.
+    while (exitCriteriaMet == false) // Decrease brightness until it reaches zero level
     {
         exitCriteriaMet = true;
-        for (uint8_t i = 0; i < NUM_LEDS; i++)
+        if (millis() - last_updated_ms > 10)
         {
-            if (i == 0)
+            // Scale RGB values by current brightness level to achieve the fade-out effect
+            for (uint8_t i = 0; i < NUM_LEDS; i++)
             {
-                if (ledsBrightness[0] < FULL_BRIGHTNESS)
-                {
-                    leds[0].setRGB(0, ledsBrightness[0], ledsBrightness[0]);
-                    ledsBrightness[0]++;
-                    exitCriteriaMet = false;
-                }
-            }
-            else
-            {
-                if (ledsBrightness[i] > 0)
+                if (i == 0)
                 {
 
-                    ledsBrightness[i]--;
-                    leds[i].setRGB(0, ledsBrightness[i], ledsBrightness[i]);
-                    exitCriteriaMet = false;
+                    if (ledsBrightness[0] < effect_settings.effect_brightness)
+                    {
+                        ledsBrightness[0]++;
+                        exitCriteriaMet = false;
+                    }
+                    else if (ledsBrightness[0] > effect_settings.effect_brightness)
+                    {
+                        ledsBrightness[0]--;
+                        exitCriteriaMet = false;
+                    }
+                    leds[0] = blend(accentColor, targetColor, ledsBrightness[0]);
+                }
+                else
+                {
+
+                    // Decrease the color brightness of each LED in the array towards 0
+                    if (ledsBrightness[i] > 0)
+                    {
+                        exitCriteriaMet = false;
+                        ledsBrightness[i]--;
+                    }
+                    else if (ledsBrightness[i] < 0)
+                    {
+                        exitCriteriaMet = false;
+                        ledsBrightness[i]++;
+                    }
+                }
+
+                // Dim accent leds to zero brightness
+                if (i != 0)
+                {
+                    uint8_t scaledBright = scale8(ledsBrightness[i], maxABright);
+
+                    leds[i].r = scale8(accentColor.r, scaledBright);
+                    leds[i].g = scale8(accentColor.g, scaledBright);
+                    leds[i].b = scale8(accentColor.b, scaledBright);
                 }
             }
+
+            FastLED.show();
         }
 
-        FastLED.show();
+        // The loop continues until all LEDs have been dimmed to zero brightness
     }
 }
 
@@ -165,25 +194,22 @@ void LedRingTask::renderFadeInEffect()
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             // Set the color of each LED in the array with the current brightness level
-            if (ledsBrightness[i] < FULL_BRIGHTNESS)
+            if (ledsBrightness[i] < effect_settings.effect_brightness)
             {
                 exitCriteriaMet = false;
-                leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
                 ledsBrightness[i]++;
             }
+            leds[i].setColorCode(effect_settings.effect_main_color);
         }
 
         // Show the LEDs with the updated brightness level
+        FastLED.setBrightness(ledsBrightness[0]);
         FastLED.show();
-
-        // Increase brightness for the next frame, until it reaches 255 (full brightness)
     }
 }
+
 void LedRingTask::renderFadeOutEffect()
 {
-
     uint32_t colorCode = effect_settings.effect_main_color; // Use the existing color code
     // Extract RGB components from colorCode
     uint8_t r = (colorCode >> 16) & 0xFF;
@@ -198,21 +224,68 @@ void LedRingTask::renderFadeOutEffect()
         for (uint8_t i = 0; i < NUM_LEDS; i++)
         {
             // Decrease the color brightness of each LED in the array towards zero
-            if (ledsBrightness[i] > 0)
+            if (ledsBrightness[i] > effect_settings.effect_brightness)
             {
                 exitCriteriaMet = false;
                 ledsBrightness[i]--;
-                leds[i].setRGB((r * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (g * ledsBrightness[i]) / FULL_BRIGHTNESS,
-                               (b * ledsBrightness[i]) / FULL_BRIGHTNESS);
+                leds[i].setColorCode(effect_settings.effect_main_color);
             }
         }
 
         // Show the LEDs with the updated brightness level
+        FastLED.setBrightness(ledsBrightness[0]);
         FastLED.show();
-
-        // The loop continues until all LEDs have been dimmed to zero brightness
     }
+}
+
+void LedRingTask::renderToBrightness()
+{
+    CRGB targetColor = CRGB(effect_settings.effect_main_color);
+    uint8_t maxCBrightness = targetColor.getLuma();
+
+    bool exitCriteriaMet = false;    // This becomes true when all the LEDs are at minimum brightness.
+    while (exitCriteriaMet == false) // Decrease brightness until it reaches zero level
+    {
+        if (millis() - last_updated_ms > 10)
+        {
+            exitCriteriaMet = true;
+            // Scale RGB values by current brightness level to achieve the fade-out effect
+            for (uint8_t i = 0; i < NUM_LEDS; i++)
+            {
+                // Decrease the color brightness of each LED in the array towards zero
+                if (ledsBrightness[i] > effect_settings.effect_brightness)
+                {
+                    exitCriteriaMet = false;
+                    ledsBrightness[i]--;
+                }
+                else if (ledsBrightness[i] < effect_settings.effect_brightness)
+                {
+                    exitCriteriaMet = false;
+                    ledsBrightness[i]++;
+                }
+
+                CRGB currentColor = leds[i];
+                if (currentColor != targetColor)
+                {
+                    currentColor = blend(currentColor, targetColor, ledsBrightness[i]);
+                }
+
+                uint8_t scaledBright = scale8(ledsBrightness[i], maxCBrightness);
+
+                leds[i].r = scale8(targetColor.r, scaledBright);
+                leds[i].g = scale8(targetColor.g, scaledBright);
+                leds[i].b = scale8(targetColor.b, scaledBright);
+            }
+
+            FastLED.show();
+        }
+    }
+}
+
+void LedRingTask::ledsOff()
+{
+    FastLED.clear();
+    FastLED.show();
 }
 
 void LedRingTask::run()
@@ -261,39 +334,55 @@ void LedRingTask::run()
         // This is useful for checking the queue and responding to events without delaying program execution.
         if (xQueueReceive(render_effect_queue_, &effect_settings, 0) == pdTRUE)
         {
-            // Sync reaction to receiving an effect.
+            if (effect_settings.effect_type == old_effect_settings.effect_type) // PREVENTS LED FLICKERING (only render new effects)
+            {
+                if (effect_settings.effect_type == EffectType::TO_BRIGHTNESS && effect_settings.effect_brightness == old_effect_settings.effect_brightness)
+                {
+                    delay(10);
+                    continue;
+                }
+            }
+
+            old_effect_settings = effect_settings;
+
+            switch (effect_settings.effect_type)
+            {
+            case EffectType::SNAKE:
+                // TODO: disabled for a Demo
+                renderEffectSnake();
+                LOGV(PB_LogLevel_DEBUG, "Snake");
+                break;
+            case EffectType::STATIC_COLOR:
+                renderEffectStaticColor();
+                LOGV(PB_LogLevel_DEBUG, "Static Color");
+                break;
+            case EffectType::LIGHT_HOUSE:
+                renderEffectLightHouse();
+                LOGV(PB_LogLevel_DEBUG, "Light House");
+                break;
+            case EffectType::TRAIL:
+                renderTrailEffect();
+                LOGV(PB_LogLevel_DEBUG, "Trail Effect");
+                break;
+            case EffectType::FADE_IN:
+                renderFadeInEffect();
+                LOGV(PB_LogLevel_DEBUG, "Fade In Effect");
+                break;
+            case EffectType::FADE_OUT:
+                renderFadeOutEffect();
+                LOGV(PB_LogLevel_DEBUG, "Fade Out Effect");
+                break;
+            case EffectType::LEDS_OFF:
+                ledsOff();
+                LOGV(PB_LogLevel_DEBUG, "LEDs Off");
+            case EffectType::TO_BRIGHTNESS:
+                renderToBrightness();
+                LOGV(PB_LogLevel_DEBUG, "Dim Ambient Effect");
+                break;
+            default:
+                break;
+            }
         }
-
-        // At this point, effect_settings is always the last object received through the queue.
-        // Todo : turn this on, when verbose.
-
-        switch (effect_settings.effect_id)
-        {
-        case 0:
-            // TODO: disabled for a Demo
-            renderEffectSnake();
-            break;
-        case 1:
-            renderEffectStaticColor();
-            break;
-        case 2:
-            renderEffectLightHouse();
-            break;
-        case 3:
-            renderTrailEffect();
-            break;
-        case 4:
-            renderFadeInEffect();
-            break;
-        case 5:
-            renderFadeOutEffect();
-            break;
-
-        default:
-            break;
-        }
-
-        //
 
         delay(10);
     }

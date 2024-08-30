@@ -85,7 +85,10 @@
         "x40_light_outline.c": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "lvgl.h": "c"
+        "lvgl.h": "c",
+        "forward_list": "cpp",
+        "set": "cpp",
+        "iostream": "cpp"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+package SETTINGS;
+
+message Settings {
+    uint32 protocol_version = 1 [(nanopb).int_size = IS_8];
+    
+    Screen screen = 2;
+    LedRing led_ring = 3;
+}
+
+message Screen {
+    bool dim = 1;
+    int32 max_bright = 2;
+    int32 min_bright = 3;
+    int32 timeout = 4;
+}
+
+message Beacon {
+    bool enabled = 1;
+    int32 brightness = 2;
+    int32 color = 3;
+}
+
+message LedRing {
+    bool enabled = 1;
+    bool dim = 2;
+    int32 max_bright = 3;
+    int32 min_bright = 4;
+    int32 timeout = 5;
+    int32 color = 6;
+    Beacon beacon = 7;
+}
+
+
+
+// message Motor {
+// }
+
+// message Strain {
+// }
+
+

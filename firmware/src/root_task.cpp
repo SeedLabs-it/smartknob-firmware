@@ -259,7 +259,7 @@ void RootTask::run()
 
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
-            app_state.screen_state.awake_until = millis() + 60000;
+            app_state.screen_state.awake_until = millis() + app_state.screen_state.awake_until;
             app_state.screen_state.has_been_engaged = true;
             motor_task_.runCalibration();
         }
@@ -336,7 +336,7 @@ void RootTask::run()
                 }
                 break;
             case SK_RESET_BUTTON_PRESSED:
-                app_state.screen_state.awake_until = millis() + 15000;
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout;
                 app_state.screen_state.has_been_engaged = true;
                 display_task_->getErrorHandlingFlow()
                     ->handleEvent(wifi_event);
@@ -365,7 +365,7 @@ void RootTask::run()
             case SK_MQTT_RETRY_LIMIT_REACHED:
             case SK_WIFI_STA_CONNECTION_FAILED:
             case SK_WIFI_STA_RETRY_LIMIT_REACHED:
-                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after error
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after error
                 app_state.screen_state.has_been_engaged = true;
                 if (wifi_event.sent_at > task_started_at + 3000) // give stuff 3000ms to connect at start before displaying errors.
                 {
@@ -390,8 +390,11 @@ void RootTask::run()
                     proto_protocol_.sendInitialInfo();
                 }
                 break;
+            case SK_SETTINGS_CHANGED:
+                settings_ = configuration_->getSettings();
+                break;
             case SK_STRAIN_CALIBRATION:
-                app_state.screen_state.awake_until = millis() + 15000; // Wake up for 15 seconds after calibration event.
+                app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
                 if (current_protocol_ == &proto_protocol_)
                 {
@@ -456,9 +459,9 @@ void RootTask::run()
                     // We set a flag on the object Screen State.
                     //  Todo: this property should be at app state and not screen state
                     app_state.screen_state.has_been_engaged = true;
-                    if (app_state.screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                    if (app_state.screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                     {
-                        app_state.screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                        app_state.screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                     }
                 }
             }
@@ -485,36 +488,43 @@ void RootTask::run()
             }
 
 #if SK_ALS
-            // We are multiplying the current luminosity of the enviroment (0,1 range)
-            // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
-            // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
-            // [0, MIN_LCD_BRIGHTNESS]
-            uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * app_state.screen_state.MIN_LCD_BRIGHTNESS));
-
-            if (app_state.screen_state.has_been_engaged == false &&
-                abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
-                millis() > app_state.screen_state.awake_until)
+            if (settings_.screen.dim)
             {
-                if ((app_state.screen_state.brightness < targetLuminosity))
+                // We are multiplying the current luminosity of the enviroment (0,1 range)
+                // by the MIN LCD Brightness. This is for the case where we are not engaging with the knob.
+                // If it's very dark around the knob we are dimming this to 0, otherwise we dim it in a range
+                // [0, MIN_LCD_BRIGHTNESS]
+                uint16_t targetLuminosity = static_cast<uint16_t>(round(latest_sensors_state_.illumination.lux_adj * settings_.screen.min_bright));
+                if (app_state.screen_state.has_been_engaged == false &&
+                    abs(app_state.screen_state.brightness - targetLuminosity) > 500 && // is the change substantial?
+                    millis() > app_state.screen_state.awake_until)
                 {
+                    if ((app_state.screen_state.brightness < targetLuminosity))
+                    {
+                        app_state.screen_state.brightness = (targetLuminosity);
+                    }
+                    else
+                    {
+                        // TODO: I don't like this decay function. It's too slow for delta too small
+                        app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
+                    }
+                }
+                else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+                {
+                    // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
                     app_state.screen_state.brightness = (targetLuminosity);
                 }
-                else
-                {
-                    // TODO: I don't like this decay function. It's too slow for delta too small
-                    app_state.screen_state.brightness = app_state.screen_state.brightness - ((app_state.screen_state.brightness - targetLuminosity) / 8);
-                }
             }
-            else if (app_state.screen_state.has_been_engaged == false && (abs(app_state.screen_state.brightness - targetLuminosity) <= 500))
+            else
             {
-                // in case we have very little variation of light, and the screen is not engaged, make sure we stay on a stable luminosity value
-                app_state.screen_state.brightness = (targetLuminosity);
+                app_state.screen_state.brightness = settings_.screen.max_bright;
             }
+
 #endif
 #if !SK_ALS
             if (app_state.screen_state.has_been_engaged == false)
             {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                app_state.screen_state.brightness = settings_.screen.max_bright;
             }
 #endif
 
@@ -540,9 +550,9 @@ void RootTask::run()
 
         if (app_state.screen_state.has_been_engaged == true)
         {
-            if (app_state.screen_state.brightness != app_state.screen_state.MAX_LCD_BRIGHTNESS)
+            if (app_state.screen_state.brightness != settings_.screen.max_bright)
             {
-                app_state.screen_state.brightness = app_state.screen_state.MAX_LCD_BRIGHTNESS;
+                app_state.screen_state.brightness = settings_.screen.max_bright;
                 sensors_task_->strainPowerUp();
             }
 
@@ -571,9 +581,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_SHORT_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                if (app_state->screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling short press");
@@ -586,9 +596,9 @@ void RootTask::updateHardware(AppState *app_state)
             if (last_strain_pressed_played_ != VIRTUAL_BUTTON_LONG_PRESSED)
             {
                 app_state->screen_state.has_been_engaged = true;
-                if (app_state->screen_state.awake_until < millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
+                if (app_state->screen_state.awake_until < millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL / 2), settings_.screen.timeout)) // If half of the time of the last interaction has passed, reset allow for engage to be detected again.
                 {
-                    app_state->screen_state.awake_until = millis() + KNOB_ENGAGED_TIMEOUT_PHYSICAL; // stay awake for 4 seconds after last interaction
+                    app_state->screen_state.awake_until = millis() + max((KNOB_ENGAGED_TIMEOUT_PHYSICAL), settings_.screen.timeout); // stay awake for 4 seconds after last interaction
                 }
 
                 LOGD("Handling long press");
@@ -684,6 +694,7 @@ void RootTask::updateHardware(AppState *app_state)
 #if SK_ALS
         brightness = app_state->screen_state.brightness;
 #endif
+
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     }
 
@@ -700,60 +711,55 @@ void RootTask::updateHardware(AppState *app_state)
         // if 1: led ring is fully on
         // if 2: led ring is fully off.
         // if 3: we have 1 led on as beacon (also refered as lighthouse in other part of the code).
-
-        if (brightness > app_state->screen_state.MIN_LCD_BRIGHTNESS)
+        if (settings_.led_ring.enabled == false)
         {
-            // case 1. FADE-IN led
-            effect_settings.effect_id = 4; // FADE-IN
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-
-            // TODO: add conversion from HUE to RGB
-            // latest_config_.led_hue;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            effect_settings.effect_type = EffectType::LEDS_OFF;
         }
-        else if (brightness == app_state->screen_state.MIN_LCD_BRIGHTNESS)
+        else if (brightness > settings_.screen.min_bright || !settings_.led_ring.dim)
         {
-            // case 2. FADE-OUT led
-            effect_settings.effect_id = 5;
+            // case 1. Fade to brightness
+            effect_settings.effect_type = EffectType::TO_BRIGHTNESS;
             effect_settings.effect_start_pixel = 0;
             effect_settings.effect_end_pixel = NUM_LEDS;
             effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            effect_settings.effect_main_color = settings_.led_ring.color;
+            effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            effect_settings.effect_brightness = settings_.led_ring.max_bright;
+        }
+        else if (brightness == settings_.screen.min_bright)
+        {
+
+            // case 2. Fade to brightness
+            effect_settings.effect_type = EffectType::TO_BRIGHTNESS;
+            effect_settings.effect_start_pixel = 0;
+            effect_settings.effect_end_pixel = NUM_LEDS;
+            effect_settings.effect_accent_pixel = 0;
+            effect_settings.effect_main_color = settings_.led_ring.color;
+            effect_settings.effect_accent_color = settings_.led_ring.beacon.color;
+            effect_settings.effect_brightness = settings_.led_ring.min_bright;
         }
         else
         {
-            // case 3 - Beacon
-            effect_settings.effect_id = 2;
-            effect_settings.effect_start_pixel = 0;
-            effect_settings.effect_end_pixel = NUM_LEDS;
-            effect_settings.effect_accent_pixel = 0;
-            effect_settings.effect_main_color = (0 << 16) | (128 << 8) | 128;
-            led_ring_task_->setEffect(effect_settings);
+            if (settings_.led_ring.beacon.enabled)
+            {
+                // case 3 - Beacon
+                effect_settings.effect_type = EffectType::LIGHT_HOUSE;
+                effect_settings.effect_start_pixel = 0;
+                effect_settings.effect_end_pixel = NUM_LEDS;
+                effect_settings.effect_accent_pixel = 0;
+                effect_settings.effect_main_color = settings_.led_ring.beacon.color;
+                effect_settings.effect_accent_color = settings_.led_ring.color;
+                effect_settings.effect_brightness = settings_.led_ring.beacon.brightness;
+
+                effect_settings.led_ring_settings = settings_.led_ring;
+            }
+            else
+            {
+                effect_settings.effect_type = EffectType ::LEDS_OFF;
+            }
         }
         led_ring_task_->setEffect(effect_settings);
-
-        // latest_config_.led_hue
-        // led_ring_task_->setEffect(0, 0, 0, NUM_LEDS, 0, (blue << 16) | (green << 8) | red, (blue << 16) | (green << 8) | red);
     }
-
-    // How far button is pressed, in range [0, 1]
-    // float press_value_unit = 0;
-    // #if SK_LEDS
-    //     for (uint8_t i = 0; i < NUM_LEDS; i++)
-    //     {
-    //         leds[i].setHSV(latest_config_.led_hue, 255 - 180 * CLAMP(press_value_unit, (float)0, (float)1) - 75 * pressed, brightness >> 8);
-
-    //         // Gamma adjustment
-    //         leds[i].r = dim8_video(leds[i].r);
-    //         leds[i].g = dim8_video(leds[i].g);
-    //         leds[i].b = dim8_video(leds[i].b);
-    //     }
-    //     FastLED.show();
-    // #endif
 }
 
 void RootTask::loadConfiguration()
@@ -764,7 +770,8 @@ void RootTask::loadConfiguration()
         if (configuration_ != nullptr)
         {
             configuration_value_ = configuration_->get();
-            configuration_loaded_ = true;
+
+            settings_ = configuration_->getSettings();
 
             configuration_->loadOSConfiguration();
 
@@ -782,12 +789,9 @@ void RootTask::loadConfiguration()
             {
                 MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
                 LOGD("MQTT_CONFIG: %s", mqtt_config.host);
-
-                // mqtt_task_->setupMQTT(mqtt_config);
-                // DO STUFF WITH MQTT CONFIG!!!
-                // mqtt_task_->getNotifier()->requestConnect(mqtt_config); // ! DONT CONNECT MQTT HERE WAIT FOR WIFI TO CONNECT
             }
 #endif
+            configuration_loaded_ = true;
         }
     }
 }

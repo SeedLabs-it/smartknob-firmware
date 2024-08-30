@@ -94,6 +94,11 @@ void setup()
         config.saveToDisk();
     }
 
+    if (!config.loadSettingsFromDisk())
+    {
+        config.saveSettingsToDisk();
+    }
+
     root_task.loadConfiguration();
 
     motor_task.begin();
