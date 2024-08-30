@@ -73,6 +73,8 @@ private:
 
     void renderToBrightness();
     void ledsOff();
+
+    unsigned long last_updated_ms;
 };
 
 #else

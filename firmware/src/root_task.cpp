@@ -755,7 +755,7 @@ void RootTask::updateHardware(AppState *app_state)
             }
             else
             {
-                effect_settings.effect_type = EffectType::LEDS_OFF;
+                effect_settings.effect_type = EffectType ::LEDS_OFF;
             }
         }
         led_ring_task_->setEffect(effect_settings);
