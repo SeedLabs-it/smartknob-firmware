@@ -418,6 +418,9 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 
     cJSON_Delete(new_state);
+
+    updateTemperatureArc();
+    updateModeIcon();
 }
 
 int8_t ClimateApp::navigationNext()
