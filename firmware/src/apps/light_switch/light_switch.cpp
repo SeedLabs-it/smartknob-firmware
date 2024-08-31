@@ -66,6 +66,18 @@ void LightSwitchApp::initScreen()
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
 }
 
+// float rubberBandEasing(float value, float bound)
+// {
+//     if (abs(value) > bound)
+//     {
+//         return bound + (cbrt(abs(value) - bound)) * (value > 0 ? 1 : -1);
+//     }
+//     return value;
+// }
+
+// Define a global or class-level variable to track the previous sub_position_unit
+float previous_sub_position_unit = 0.0f;
+
 EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
@@ -76,32 +88,43 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     }
 
     current_position = state.current_position;
-    sub_position_unit = state.sub_position_unit;
-    // // needed to next reload of App
+    sub_position_unit = state.sub_position_unit * motor_config.position_width_radians;
+    // needed to next reload of App
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
-    adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
+    float vel = (sub_position_unit * 100 - previous_sub_position_unit * 100) / (millis() - last_updated_ms);
 
-    if (current_position == 0 && adjusted_sub_position < 0)
+    if (abs(vel) > 0.75f || current_position != last_position)
     {
-        adjusted_sub_position = 0;
-    }
-    else if (current_position == 1 && adjusted_sub_position > 0)
-    {
-        adjusted_sub_position = 0;
-    }
+        if (current_position == 0 && sub_position_unit < 0)
+        {
+            sub_position_unit = 0;
+        }
+        else if (current_position == 1 && sub_position_unit > 0)
+        {
+            sub_position_unit = 0;
+        }
 
-    if (abs(adjusted_sub_position) * 100 - abs(old_adjusted_sub_position) * 100 > 1)
-    {
         SemaphoreGuard lock(mutex_);
         if (current_position == 0)
         {
-            lv_arc_set_value(arc_, abs(adjusted_sub_position) * 100);
+            lv_arc_set_value(arc_, abs(sub_position_unit) * 100);
         }
         else
         {
-            lv_arc_set_value(arc_, 100 - abs(adjusted_sub_position) * 100);
+            lv_arc_set_value(arc_, 100 - abs(sub_position_unit) * 100);
+        }
+    }
+    else
+    {
+        if (current_position == 0)
+        {
+            lv_arc_set_value(arc_, 0);
+        }
+        else
+        {
+            lv_arc_set_value(arc_, 100);
         }
     }
 
@@ -137,6 +160,8 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
         new_state.changed = true;
         sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
     }
+
+    last_updated_ms = millis();
 
     first_run = true;
     return new_state;
