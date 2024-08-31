@@ -97,8 +97,6 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
             lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
         }
 
-        LOGE("Sending new state to HASS: %d", current_closed_position);
-
         sprintf(new_state.app_id, "%s", app_id);
         sprintf(new_state.entity_id, "%s", entity_id);
 
@@ -127,7 +125,6 @@ void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (position != NULL)
     {
-        LOGE("BlindsApp::updateStateFromHASS: %d", position->valueint);
         current_closed_position = (20 - position->valueint / 5);
         motor_config.position = current_closed_position;
         motor_config.position_nonce = current_closed_position;
