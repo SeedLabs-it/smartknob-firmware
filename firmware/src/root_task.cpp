@@ -316,7 +316,7 @@ void RootTask::run()
                 }
                 break;
             case SK_MQTT_STATE_UPDATE:
-                // display_task_->getHassApps()->handleEvent(wifi_event);
+                display_task_->getHassApps()->handleEvent(wifi_event);
                 break;
             case SK_DISMISS_ERROR:
                 display_task_->getErrorHandlingFlow()->handleEvent(wifi_event);
