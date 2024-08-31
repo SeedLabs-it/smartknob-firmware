@@ -109,11 +109,10 @@ static lv_meter_indicator_t *indic_hue;
 static void meter_draw_event_cb(lv_event_t *e)
 {
     lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-    uint16_t *user_data = (uint16_t *)lv_event_get_user_data(e);
-    uint16_t val = *user_data;
+    lv_color_hsv_t *hsv = (lv_color_hsv_t *)lv_event_get_user_data(e);
     if (dsc->type == LV_METER_DRAW_PART_NEEDLE_LINE)
     {
-        dsc->line_dsc->color = lv_color_hsv_to_rgb(val * skip_degrees, 100, 100);
+        dsc->line_dsc->color = lv_color_hsv_to_rgb(hsv->h, hsv->s, hsv->v);
     }
     else if (dsc->type == LV_METER_DRAW_PART_TICK)
     {
@@ -141,7 +140,7 @@ void LightDimmerApp::initHueScreen()
 
     indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
 
-    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &app_hue_position);
+    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &hsv);
 }
 
 void LightDimmerApp::updateHueWheel()
@@ -253,7 +252,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
-
         if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
         {
             if (!color_set && last_position != app_hue_position)
@@ -271,6 +269,10 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             }
             SemaphoreGuard lock(mutex_);
             lv_meter_set_indicator_value(meter, indic_hue, app_hue_position);
+
+            hsv.h = app_hue_position * skip_degrees;
+            hsv.s = 100;
+            hsv.v = 100;
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
@@ -396,17 +398,16 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     {
         color_set = true;
 
-        uint8_t r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
-        uint8_t g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
-        uint8_t b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
+        r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
+        g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
+        b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
 
-        lv_color_hsv_t hsv = lv_color_rgb_to_hsv(r, g, b);
+        hsv = lv_color_rgb_to_hsv(r, g, b);
 
-        app_hue_position = hsv.h;
+        app_hue_position = hsv.h / skip_degrees;
 
         if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
         {
-            app_hue_position = hsv.h / 2; // UGLY FIX?
             current_position = app_hue_position;
 
             motor_config.position_nonce = app_hue_position;
@@ -439,4 +440,40 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 
     cJSON_Delete(new_state);
+
+    last_position = current_position;
+
+    {
+        SemaphoreGuard lock(mutex_);
+
+        if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+        {
+
+            if (current_brightness == 0)
+            {
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+                lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+            }
+            else
+            {
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x47, 0x27, 0x01), LV_PART_MAIN);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x47, 0x27, 0x01), 128), LV_PART_MAIN);
+            }
+
+            if (color_set)
+            {
+                lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(r, g, b), LV_PART_INDICATOR);
+            }
+
+            lv_arc_set_value(arc_, current_brightness);
+            char buf_[16];
+            sprintf(buf_, "%d%%", current_brightness);
+            lv_label_set_text(percentage_label_, buf_);
+        }
+        else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+        {
+            LOGE("HUE: %d", hsv.h);
+            lv_meter_set_indicator_value(meter, indic_hue, hsv.h / skip_degrees);
+        }
+    }
 }

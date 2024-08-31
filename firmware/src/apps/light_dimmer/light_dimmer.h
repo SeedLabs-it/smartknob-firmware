@@ -64,4 +64,10 @@ private:
     lv_obj_t *dimmer_screen;
     lv_obj_t *hue_screen;
     lv_obj_t *hue_wheel;
+
+    uint8_t r = 0;
+    uint8_t g = 0;
+    uint8_t b = 0;
+
+    lv_color_hsv_t hsv;
 };
