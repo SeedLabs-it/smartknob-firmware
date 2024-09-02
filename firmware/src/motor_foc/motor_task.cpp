@@ -78,11 +78,13 @@ void MotorTask::run()
     delay(10);
 
     PB_PersistentConfiguration c = configuration_.get();
+#if DO_AUTOMATIC_MOTOR_CALIBRATION
     if (!c.motor.calibrated) // If the motor hasn't been calibrated, do it now
     {
         calibrate();
         c = configuration_.get();
     }
+#endif
     motor.pole_pairs = c.motor.calibrated ? c.motor.pole_pairs : 7;
     motor.initFOC();
     motor.zero_electric_angle = c.motor.zero_electrical_offset;
