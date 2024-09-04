@@ -141,7 +141,9 @@ void MotorTask::run()
             case CommandType::CALIBRATE:
                 if (!motor.enabled)
                     motor.enable();
+
                 calibrate();
+                esp_restart(); // Restart to apply new calibration
                 break;
             case CommandType::CONFIG:
             {
