@@ -78,10 +78,25 @@ void MotorTask::run()
     delay(10);
 
     PB_PersistentConfiguration c = configuration_.get();
-    motor.pole_pairs = c.motor.calibrated ? c.motor.pole_pairs : 7;
-    motor.initFOC();
-    motor.zero_electric_angle = c.motor.zero_electrical_offset;
+
+    motor.pole_pairs = c.motor.pole_pairs;
     motor.sensor_direction = c.motor.direction_cw ? Direction::CW : Direction::CCW;
+
+#if DO_AUTOMATIC_MOTOR_CALIBRATION
+    if (!c.motor.calibrated) // If the motor hasn't been calibrated, do it now
+    {
+        calibrate();
+        c = configuration_.get();
+    }
+#else
+    if (!c.motor.calibrated)
+    {
+        LOGE("Motor not calibrated! Please calibrate before using the SmartKnob.");
+    }
+#endif
+
+    motor.zero_electric_angle = c.motor.zero_electrical_offset;
+    motor.initFOC();
 
     motor.monitor_downsample = 0; // disable monitor at first - optional
 
@@ -112,10 +127,23 @@ void MotorTask::run()
         Command command;
         if (xQueueReceive(queue_, &command, 0) == pdTRUE)
         {
+            if (!c.motor.calibrated && command.command_type != CommandType::CALIBRATE)
+            {
+                LOGI("Ignoring command, motor not calibrated!");
+                if (motor.enabled)
+                    motor.disable();
+
+                delay(1);
+                continue;
+            }
             switch (command.command_type)
             {
             case CommandType::CALIBRATE:
+                if (!motor.enabled)
+                    motor.enable();
+
                 calibrate();
+                esp_restart(); // Restart to apply new calibration
                 break;
             case CommandType::CONFIG:
             {
@@ -392,9 +420,9 @@ void MotorTask::calibrate()
 
     motor.controller = MotionControlType::angle_openloop;
     motor.pole_pairs = 1;
-    motor.initFOC();
     motor.zero_electric_angle = 0;
     motor.sensor_direction = Direction::CW;
+    motor.initFOC();
 
     float a = 0;
 
@@ -439,16 +467,16 @@ void MotorTask::calibrate()
     if (end_sensor > start_sensor)
     {
         LOGD("YES, Direction=CW");
-        motor.initFOC();
         motor.zero_electric_angle = 0;
         motor.sensor_direction = Direction::CW;
+        motor.initFOC();
     }
     else
     {
         LOGD("NO, Direction=CCW");
-        motor.initFOC();
         motor.zero_electric_angle = 0;
         motor.sensor_direction = Direction::CCW;
+        motor.initFOC();
     }
     snprintf(buf_, sizeof(buf_), "  (start was %.1f, end was %.1f)", start_sensor, end_sensor);
     LOGD(buf_);
