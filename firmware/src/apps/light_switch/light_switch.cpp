@@ -181,6 +181,34 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 
     cJSON_Delete(new_state);
+
+    last_position = current_position;
+
+    {
+        SemaphoreGuard lock(mutex_);
+
+        if (current_position == 0)
+        {
+            lv_img_set_src(light_bulb, &big_icon);
+            lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+            lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+        }
+        else
+        {
+            lv_img_set_src(light_bulb, &big_icon_active);
+            lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+            lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+        }
+
+        if (current_position == 0)
+        {
+            lv_arc_set_value(arc_, abs(adjusted_sub_position) * 100);
+        }
+        else
+        {
+            lv_arc_set_value(arc_, 100 - abs(adjusted_sub_position) * 100);
+        }
+    }
 }
 
 void LightSwitchApp::updateStateFromSystem(AppState state) {}

@@ -75,7 +75,7 @@ EntityStateUpdate BlindsApp::updateStateFromKnob(PB_SmartKnobState state)
     motor_config.position_nonce = current_closed_position;
     motor_config.position = current_closed_position;
 
-    if (last_closed_position != current_closed_position && !state_sent_from_hass)
+    if (last_closed_position != current_closed_position)
     {
         {
             SemaphoreGuard lock(mutex_);
@@ -128,10 +128,33 @@ void BlindsApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         current_closed_position = (20 - position->valueint / 5);
         motor_config.position = current_closed_position;
         motor_config.position_nonce = current_closed_position;
+
+        last_closed_position = current_closed_position;
+
         state_sent_from_hass = true;
     }
 
     cJSON_Delete(new_state);
+
+    {
+        SemaphoreGuard lock(mutex_);
+        uint8_t percentage = (20 - current_closed_position) * 5;
+        lv_bar_set_value(blinds_bar, (20 - current_closed_position) * 5, LV_ANIM_OFF);
+
+        if (current_closed_position == 0)
+        {
+            lv_label_set_text(percentage_label, "Open");
+        }
+        else if (current_closed_position == 20)
+        {
+            lv_label_set_text(percentage_label, "Closed");
+        }
+        else if (current_closed_position > 0 && current_closed_position < 20)
+        {
+            lv_label_set_text_fmt(percentage_label, "%d%%", percentage);
+        }
+        lv_obj_align(percentage_label, LV_ALIGN_CENTER, 0, 0);
+    }
 }
 
 int8_t BlindsApp::navigationNext()

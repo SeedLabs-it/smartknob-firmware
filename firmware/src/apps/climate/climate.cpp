@@ -215,8 +215,8 @@ void ClimateApp::updateTemperatureArc()
         // Update ARC
         uint16_t one_step_angle = ONE_STEP_ANGLE;
 
-        uint16_t angle_current_temp = lerp(current_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
-        uint16_t angle_target_temp = lerp(target_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
+        uint16_t angle_current_temp = current_temperature <= CLIMATE_APP_MIN_TEMP ? MIN_ANGLE : lerp(current_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
+        uint16_t angle_target_temp = target_temperature >= CLIMATE_APP_MAX_TEMP ? MAX_ANGLE : lerp(target_temperature, CLIMATE_APP_MIN_TEMP, CLIMATE_APP_MAX_TEMP, MIN_ANGLE, MAX_ANGLE);
 
         if (angle_target_temp == angle_current_temp)
         {
@@ -418,6 +418,9 @@ void ClimateApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 
     cJSON_Delete(new_state);
+
+    updateTemperatureArc();
+    updateModeIcon();
 }
 
 int8_t ClimateApp::navigationNext()
