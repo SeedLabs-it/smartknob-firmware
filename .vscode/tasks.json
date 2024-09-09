@@ -4,7 +4,7 @@
         {
             "label": "FLASH RELEASE",
             "type": "shell",
-            "command": "./software/release/release_flash.sh",    // Path to your shell script
+            "command": "[ -x ./software/release/release_flash.sh ] || sudo chmod +x ./software/release/release_flash.sh && [ -x ./software/release/download_latest.sh ] || sudo chmod +x ./software/release/download_latest.sh && ./software/release/release_flash.sh",    // Path to your shell script
             "args": [],
             "group": {
                 "kind": "build",
