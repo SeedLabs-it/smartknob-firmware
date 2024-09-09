@@ -2,12 +2,33 @@
 	"version": "2.0.0",
 	"tasks": [
         {
-            "type": "PlatformIO",
-            "task": "Upload and Monitor (seedlabs_devkit_onboarding)",
-            "problemMatcher": [
-                "$platformio"
-            ],
-            "label": "PlatformIO: Upload and Monitor (seedlabs_devkit_onboarding)"
+            "label": "FLASH RELEASE",
+            "type": "shell",
+            "command": "./software/release/release_flash.sh",    // Path to your shell script
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",        // Use a dedicated terminal panel
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",   // Ensure the working directory is set correctly
+                "shell": {
+                    "executable": "/bin/bash",  // Use bash to ensure proper shell script execution
+                    "args": ["-c"]
+                },
+                "env": {
+                    "PLATFORMIO_CLI": "${env:PLATFORMIO_CLI}"  // Ensure PlatformIO environment is used
+                }
+            }
         }
     ]
 }
