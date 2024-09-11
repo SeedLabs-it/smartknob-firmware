@@ -2,7 +2,7 @@
 export PATH=$PATH:$HOME/.platformio/penv/bin
 
 #Get pio device port for esp32
-device=$(pio device list | grep -B 2 "VID:PID=303A:1001" | grep -o -P '/dev/tty\w+')
+device=$(pio device list | grep -B 2 "VID:PID=303A:1001" | grep -o -P '/dev/(tty|cu)\w+')
 
 echo "Device port: $device"
 
