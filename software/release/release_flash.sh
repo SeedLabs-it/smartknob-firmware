@@ -4,7 +4,13 @@ export PATH=$PATH:$HOME/.platformio/penv/bin
 #Get pio device port for esp32
 device=$(pio device list | grep -B 2 "VID:PID=303A:1001" | grep -o -E '/dev/(tty|cu)\S*')
 
+if [ -z "$device" ]; then
+    echo "Device not found. Please connect the device and try again."
+    exit 1
+fi
+
 echo "Device port: $device"
+
 
 latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
 dist_path="./software/release/dist/$latest_tag/"
@@ -52,7 +58,8 @@ fi
 read -p "Enter order id: " order
 
 start=$(date +%s)
-mac_address=$(python3 ./software/release/get_mac_address.py)
+# mac_address=$(python3 ./software/release/get_mac_address.py)
+mac_address=$(platformio device list | grep -B2 'VID:PID=303A:1001' | grep 'SER=' | grep -o 'SER=[^ ]*' | grep -o '[^=]*$')
 echo "[0/4] Saving mac address $mac_address"
 echo "$order - $mac_address" >> "./software/release/mac_addresses.txt"
 end=$(date +%s)
@@ -72,7 +79,7 @@ echo "[1/4] done in $(($end-$start)) seconds"
 
 start=$(date +%s)
 echo "[3/4] Uploading firmware..."
-~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port "/dev/ttyACM1" --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
+~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
 0x0000 ./software/release/dist/0.4.0-rc1/bootloader.bin \
 0x8000 ./software/release/dist/0.4.0-rc1/partitions.bin \
 0xe000 ./software/release/dist/0.4.0-rc1/boot_app0.bin \
