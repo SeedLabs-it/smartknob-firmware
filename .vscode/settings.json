@@ -96,5 +96,13 @@
     },
     "C_Cpp.clang_format_style": "file",
     "editor.indentSize": "tabSize",
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "VsCodeTaskButtons.showCounter": false,
+    "VsCodeTaskButtons.tasks": [{
+        "label": "$(notebook-move-down) FLASH RELEASE",
+        "alignment": "left",
+        "task": "FLASH RELEASE",
+        "tooltip": "FLASH RELEASE",
+        "description": "FLASH RELEASE",
+      }]
 }
