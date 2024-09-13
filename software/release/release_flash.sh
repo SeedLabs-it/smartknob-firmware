@@ -1,6 +1,8 @@
 #!/bin/bash
 export PATH=$PATH:$HOME/.platformio/penv/bin
 
+git fetch --tags
+
 latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
 dist_path="./software/release/dist/$latest_tag/"
 
@@ -57,6 +59,7 @@ fi
 
 echo "Device port: $device"
 
+echo "FW version used $latest_tag"
 read -p "Enter order id: " order
 
 echo ""
