@@ -13,6 +13,7 @@ if [ ! -d "$dist_path" ]; then
         [Yy]* ) 
             echo "Downloading latest release..."
             ./software/release/download_latest.sh
+            echo ""
             ;;
         [Nn]* ) 
             echo "Download aborted. Exiting."
