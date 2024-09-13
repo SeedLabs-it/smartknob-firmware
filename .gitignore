@@ -39,4 +39,3 @@ __pycache__
 # Release
 software/release/dist/*
 software/release/mac_addresses.txt
-
