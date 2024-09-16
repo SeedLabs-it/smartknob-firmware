@@ -80,10 +80,10 @@ echo "[1/3] done in $(($end-$start)) seconds"
 start=$(date +%s)
 echo "[2/3] Uploading firmware..."
 ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
-0x0000 ./software/release/dist/0.4.0-rc1/bootloader.bin \
-0x8000 ./software/release/dist/0.4.0-rc1/partitions.bin \
-0xe000 ./software/release/dist/0.4.0-rc1/boot_app0.bin \
-0x10000 ./software/release/dist/0.4.0-rc1/firmware.bin > /dev/null
+0x0000 $dist_path/bootloader.bin \
+0x8000 $dist_path/partitions.bin \
+0xe000 $dist_path/boot_app0.bin \
+0x10000 $dist_path/firmware.bin > /dev/null
 end=$(date +%s)
 echo "[2/4] done in $(($end-$start)) seconds"
 
