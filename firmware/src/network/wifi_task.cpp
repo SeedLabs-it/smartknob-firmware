@@ -13,9 +13,6 @@ static const char *WIFI_TAG = "WIFI";
 
 QueueHandle_t wifi_events_queue;
 
-// example article
-// https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
-
 WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 7, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
@@ -188,51 +185,22 @@ bool WifiTask::tryNewCredentialsWiFiSTA(WiFiConfiguration wifi_config)
     return false;
 }
 
-void WifiTask::webHandlerWiFiForm()
-{
-    WiFiEvent event;
-    event.type = SK_WEB_CLIENT;
-    event.body.web_client.connected = true;
-
-    publishWiFiEvent(event);
-    // TODO trigger event that user is connected
-
-    // if (WiFi.isConnected()) {
-    //     server_->sendHeader("Location", "/mqtt");
-    //     server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
-    // } else {
-    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form action='/submit' method='get'><h2>WIFI</h2><label for='ssid'>SSID</label><input type='text' id='ssid' name='ssid'><label for='password'>Password</label><input type='password' id='password' name='password'><input type='hidden' name='setup_type' value='wifi'><input type='submit' value='Submit'></form></body></html>)");
-}
-
-void WifiTask::webHandlerMQTTForm()
-{
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        server_->sendHeader("Location", "/");
-        server_->send(302, "text/plain", "Not connected to WiFi redirecting to WiFi setup!");
-        return;
-    }
-
-    WiFiEvent event;
-    event.type = SK_WEB_CLIENT_MQTT;
-    publishWiFiEvent(event);
-
-    server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form action='/submit' method='get'><h2>MQTT</h2><label for='mqtt_server'>SERVER</label><input type='text' id='mqtt_server' name='mqtt_server'><label for='mqtt_port'>PORT</label><input type='number' id='mqtt_port' name='mqtt_port'><div><label for='toggle_mqtt' style='font-weight: normal;'>Toggle Username/Password</label><input type='checkbox' id='toggle_mqtt' onclick='toggleMqttFields();'></div><div id='mqtt_fields' style='display: none;'><label for='mqtt_user'>USER</label><input type='text' id='mqtt_user' name='mqtt_user'><label for='mqtt_password'>PASSWORD</label><input type='password' id='mqtt_password' name='mqtt_password'></div><input type='hidden' name='setup_type' value='mqtt'><input type='submit' value='Submit'></form><script>function toggleMqttFields() {var mqttFields = document.getElementById('mqtt_fields');if (mqttFields.style.display === 'none') {mqttFields.style.display = 'block';} else {mqttFields.style.display = 'none';}}</script></body></html>)");
-}
-
 void WifiTask::webHandlerWiFiCredentials()
 {
     // TODO: redo wifi reconnection
 
     WiFi.disconnect();
 
-    String ssid = server_->arg("ssid");
-    String passphrase = server_->arg("password");
+    cJSON *root = cJSON_Parse(server_->arg("plain").c_str());
+    std::string ssid = std::string(cJSON_GetStringValue(cJSON_GetObjectItem(root, "ssid")));
+    std::string passphrase = std::string(cJSON_GetStringValue(cJSON_GetObjectItem(root, "password")));
+    cJSON_Delete(root);
 
     if (ssid.length() == 0 || passphrase.length() == 0)
     {
-        server_->sendHeader("Location", "/");
-        server_->send(302, "text/plain", "Invalid WiFi credentials!");
+        // TODO handle
+        //  server_->sendHeader("Location", "/");
+        //  server_->send(302, "text/plain", "Invalid WiFi credentials!");
         return;
     }
 
@@ -252,42 +220,43 @@ void WifiTask::webHandlerWiFiCredentials()
 
         publishWiFiEvent(wifi_sta_connected);
 
-        server_->sendHeader("Location", "/mqtt");
-        server_->send(302, "text/plain", "Connected to WiFi redirecting to MQTT setup!");
+        server_->send(200, "text/plain", "Connected to WiFi!");
     }
     else
     {
-        server_->sendHeader("Location", "/");
         server_->send(302, "text/plain", "Invalid WiFi credentials!");
     }
 }
 
 void WifiTask::webHandlerMQTTCredentials()
 {
+    delay(1000);
     if (WiFi.status() != WL_CONNECTED)
     {
-        server_->sendHeader("Location", "/mqtt");
-        server_->send(302, "text/plain", "Connect to WiFi first!");
+        // TODO handle
+        //  server_->sendHeader("Location", "/mqtt");
+        //  server_->send(302, "text/plain", "Connect to WiFi first!");
         return;
     }
     retry_mqtt = false;
-    String mqtt_server = server_->arg("mqtt_server");
-    uint32_t mqtt_port = server_->arg("mqtt_port").toInt();
-    String mqtt_user = server_->arg("mqtt_user");
-    String mqtt_password = server_->arg("mqtt_password");
+
+    cJSON *root = cJSON_Parse(server_->arg("plain").c_str());
+    const char *server = cJSON_GetStringValue(cJSON_GetObjectItem(root, "server"));
+    uint16_t port = (uint16_t)cJSON_GetNumberValue(cJSON_GetObjectItem(root, "portInt"));
+    const char *username = cJSON_GetStringValue(cJSON_GetObjectItem(root, "username"));
+    const char *password = cJSON_GetStringValue(cJSON_GetObjectItem(root, "password"));
+    cJSON_Delete(root);
 
     WiFiEvent event;
     event.type = SK_MQTT_NEW_CREDENTIALS_RECIEVED;
-    sprintf(event.body.mqtt_connecting.host, "%s", mqtt_server.c_str());
-    event.body.mqtt_connecting.port = mqtt_port;
-    sprintf(event.body.mqtt_connecting.user, "%s", mqtt_user.c_str());
-    sprintf(event.body.mqtt_connecting.password, "%s", mqtt_password.c_str());
+    sprintf(event.body.mqtt_connecting.host, "%s", server);
+    event.body.mqtt_connecting.port = port;
+    sprintf(event.body.mqtt_connecting.user, "%s", username);
+    sprintf(event.body.mqtt_connecting.password, "%s", password);
     LOGD("MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
     sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
 
     publishWiFiEvent(event);
-
-    // server_->send(200, "text/html", "MQTT credentials recieved!");
 
     while (!retry_mqtt)
     {
@@ -295,11 +264,12 @@ void WifiTask::webHandlerMQTTCredentials()
     }
     if (mqtt_connected)
     {
-        server_->send(200, "text/html", R"(<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body {background-color: #1f1f1f;color: #fff;font-family: Arial, sans-serif;padding: 20px;}form {background-color: #333;padding: 20px;border-radius: 10px;max-width: 400px;margin: 0 auto;display: flex;flex-direction: column;}h2,label {margin-right: 6px;margin-left: 6px;}div {display: flex;align-items: center;justify-content: space-between;padding: 6px 0;}input {width: calc(100% - 12px);margin-bottom: 10px;padding: 10px;box-sizing: border-box;margin-right: 6px;margin-left: 6px;margin-bottom: 12px;}input[type='checkbox'] {width: 24px;padding: 0;margin: 0;margin-right: 6px;}input[type='submit'] {background-color: #4CAF50;color: #fff;border: none;border-radius: 4px;cursor: pointer;font-weight: bold;margin-top: 6px;}input[type='submit']:hover {background-color: #45a049;}</style></head><body><form><h2>Setup done, continue in Home Assistant!</h2></form></body></html>)");
-        return;
+        server_->send(200, "text/plain", "Connected to MQTT!");
     }
-    server_->sendHeader("Location", "/mqtt");
-    server_->send(302, "text/plain", "Connecting to MQTT with provided credentials failed!");
+    else
+    {
+        server_->send(302, "text/plain", "Connecting to MQTT with provided credentials failed!");
+    }
 }
 
 void WifiTask::mqttConnected(bool connected)
@@ -310,6 +280,24 @@ void WifiTask::mqttConnected(bool connected)
 void WifiTask::retryMqtt(bool retry)
 {
     retry_mqtt = retry;
+}
+
+void WifiTask::downloadConfig()
+{
+    // LOGV(PB_LogLevel_INFO, "Download config");
+    LOGI("Download config");
+    if (FFat.exists(CONFIG_PATH))
+    {
+        File file = FFat.open(CONFIG_PATH, "r");
+        server_->sendHeader("Content-Disposition", "attachment; filename=" + String(file.name()));
+
+        server_->streamFile(file, "application/octet-stream");
+        file.close();
+    }
+    else
+    {
+        server_->send(404, "text/plain", "File Not Found");
+    }
 }
 
 void WifiTask::startWebServer()
@@ -328,22 +316,20 @@ void WifiTask::startWebServer()
     // TODO: do local files rendering
     // TODO: make this page work async with animations on UI
 
-    server_->on("/", HTTP_GET, [this]()
-                { this->webHandlerWiFiForm(); });
+    server_->on("/download/config", HTTP_GET, [this]()
+                { this->downloadConfig(); });
 
-    server_->on("/mqtt", HTTP_GET, [this]()
-                { this->webHandlerMQTTForm(); });
+    server_->on("/wifi", HTTP_POST, [this]()
+                { this->webHandlerWiFiCredentials(); });
 
-    server_->on("/submit", [this]()
-                {
-        if (server_->arg("setup_type") == "wifi")
-        {
-            this->webHandlerWiFiCredentials();
-        }
-        else if (server_->arg("setup_type") == "mqtt")
-        {
-            this->webHandlerMQTTCredentials();
-        } });
+    server_->on("/mqtt", HTTP_POST, [this]()
+                { this->webHandlerMQTTCredentials(); });
+
+    if (!FFat.begin(true)) // TODO check if viable to leave ffat open for duration of active webapp???
+    {
+        server_->send(404, "text/plain", "FileSystem not mounted");
+    }
+    server_->serveStatic("/", FFat, "/setup/");
 
     server_->begin();
 
