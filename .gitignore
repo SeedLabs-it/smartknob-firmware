@@ -40,4 +40,5 @@ __pycache__
 software/release/dist/*
 software/release/mac_addresses.txt
 
+# Prevent user from committing their own config.pb
 firmware/data/config.pb
