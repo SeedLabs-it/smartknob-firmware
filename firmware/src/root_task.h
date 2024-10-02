@@ -3,12 +3,12 @@
 #include <Arduino.h>
 #include "configuration.h"
 #include "display_task.h"
-#include "logger.h"
-#include "logging.h"
 #include "motor_foc/motor_task.h"
-#include "serial/serial_protocol_plaintext.h"
-#include "serial/serial_protocol_protobuf.h"
-#include "serial/uart_stream.h"
+// #include "serial/serial_protocol_plaintext.h"
+// #include "serial/serial_protocol_protobuf.h"
+// #include "serial/uart_stream.h"
+#include <logging.h>
+#include <logging/adapters/freertos/free_rtos_adapter.h>
 #include "task.h"
 #include "app_config.h"
 #include "network/wifi_task.h"
@@ -46,11 +46,6 @@ protected:
     void run();
 
 private:
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
-    HWCDC stream_;
-#else
-    UartStream stream_;
-#endif
     MotorTask &motor_task_;
     DisplayTask *display_task_;
     WifiTask *wifi_task_;
@@ -101,8 +96,8 @@ private:
 
     OSConfigNotifier os_config_notifier_;
 
-    SerialProtocolPlaintext plaintext_protocol_;
-    SerialProtocolProtobuf proto_protocol_;
+    // SerialProtocolPlaintext plaintext_protocol_;
+    // SerialProtocolProtobuf proto_protocol_;
 
     uint32_t last_calib_state_sent_ = 0;
 

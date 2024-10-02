@@ -63,7 +63,7 @@ void DemoSettingsPage::handleNavigation(NavigationEvent event)
             }
             else
             {
-                LOGV(PB_LogLevel_INFO, "Entering Demo Mode from Demo Mode is disabled.");
+                LOGV(LOG_LEVEL_INFO, "Entering Demo Mode from Demo Mode is disabled.");
             }
         }
         else

@@ -11,7 +11,7 @@ uint8_t FULL_BRIGHTNESS = 127;
 #include "../semaphore_guard.h"
 #include "../util.h"
 
-LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 2048 * 2, 1, task_core}
+LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 1024 * 6, 1, task_core}
 {
 
     render_effect_queue_ = xQueueCreate(10, sizeof(EffectSettings));
@@ -350,34 +350,34 @@ void LedRingTask::run()
             case EffectType::SNAKE:
                 // TODO: disabled for a Demo
                 renderEffectSnake();
-                LOGV(PB_LogLevel_DEBUG, "Snake");
+                LOGV(LOG_LEVEL_DEBUG, "Snake");
                 break;
             case EffectType::STATIC_COLOR:
                 renderEffectStaticColor();
-                LOGV(PB_LogLevel_DEBUG, "Static Color");
+                LOGV(LOG_LEVEL_DEBUG, "Static Color");
                 break;
             case EffectType::LIGHT_HOUSE:
                 renderEffectLightHouse();
-                LOGV(PB_LogLevel_DEBUG, "Light House");
+                LOGV(LOG_LEVEL_DEBUG, "Light House");
                 break;
             case EffectType::TRAIL:
                 renderTrailEffect();
-                LOGV(PB_LogLevel_DEBUG, "Trail Effect");
+                LOGV(LOG_LEVEL_DEBUG, "Trail Effect");
                 break;
             case EffectType::FADE_IN:
                 renderFadeInEffect();
-                LOGV(PB_LogLevel_DEBUG, "Fade In Effect");
+                LOGV(LOG_LEVEL_DEBUG, "Fade In Effect");
                 break;
             case EffectType::FADE_OUT:
                 renderFadeOutEffect();
-                LOGV(PB_LogLevel_DEBUG, "Fade Out Effect");
+                LOGV(LOG_LEVEL_DEBUG, "Fade Out Effect");
                 break;
             case EffectType::LEDS_OFF:
                 ledsOff();
-                LOGV(PB_LogLevel_DEBUG, "LEDs Off");
+                LOGV(LOG_LEVEL_DEBUG, "LEDs Off");
             case EffectType::TO_BRIGHTNESS:
                 renderToBrightness();
-                LOGV(PB_LogLevel_DEBUG, "Dim Ambient Effect");
+                LOGV(LOG_LEVEL_DEBUG, "Dim Ambient Effect");
                 break;
             default:
                 break;

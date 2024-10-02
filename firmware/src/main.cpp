@@ -11,6 +11,17 @@
 
 #include "driver/temp_sensor.h"
 
+#include <logging.h>
+#include <logging/adapters/freertos/free_rtos_adapter.h>
+#include <logging/adapters/freertos/protocols/serial/serial_protocol_plaintext.h>
+
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
+HWCDC stream_ = HWCDC();
+#else
+// Make sure it works!!
+// UartStream stream_;
+#endif
+
 Configuration config;
 
 #if SK_DISPLAY
@@ -63,6 +74,14 @@ void initTempSensor()
 
 void setup()
 {
+    stream_.begin(MONITOR_SPEED);
+
+    // delay(1000); // Give time to connect to serial monitor
+
+#if ENABLE_LOGGING
+    Logging::setAdapter(new FreeRTOSAdapter(new SerialProtocolPlaintext(stream_), "FreeRTOSAdapter", 1024 * 24, 0, 0));
+#endif
+    delay(250); // Allow time for logging to initialize
 
     initTempSensor();
 

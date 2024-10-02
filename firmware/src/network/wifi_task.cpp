@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 7, 1, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 8, 1, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);

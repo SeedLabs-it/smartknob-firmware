@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 8, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 9, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 

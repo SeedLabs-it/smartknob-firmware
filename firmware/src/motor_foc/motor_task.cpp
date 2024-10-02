@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 5, 1, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 6, 1, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);

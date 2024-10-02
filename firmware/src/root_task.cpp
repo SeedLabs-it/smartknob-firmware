@@ -22,7 +22,7 @@ RootTask::RootTask(
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
     ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
-                             stream_(),
+                             //  stream_(),
                              configuration_(configuration),
                              motor_task_(motor_task),
                              display_task_(display_task),
@@ -30,25 +30,25 @@ RootTask::RootTask(
                              mqtt_task_(mqtt_task),
                              led_ring_task_(led_ring_task),
                              sensors_task_(sensors_task),
-                             reset_task_(reset_task),
-                             plaintext_protocol_(
-                                 stream_, [this]()
-                                 { motor_task_.runCalibration(); },
-                                 [this](float calibration_weight)
-                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); },
-                                 [this]()
-                                 {
-                                     sensors_task_->weightMeasurementCallback();
-                                 }),
-                             proto_protocol_(
-                                 stream_,
-                                 configuration,
-                                 [this](PB_SmartKnobConfig &config)
-                                 { applyConfig(config, true); },
-                                 [this]()
-                                 { motor_task_.runCalibration(); },
-                                 [this](float calibration_weight)
-                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); })
+                             reset_task_(reset_task)
+//  plaintext_protocol_(
+//      stream_, [this]()
+//      { motor_task_.runCalibration(); },
+//      [this](float calibration_weight)
+//      { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); },
+//      [this]()
+//      {
+//          sensors_task_->weightMeasurementCallback();
+//      }),
+//  proto_protocol_(
+//      stream_,
+//      configuration,
+//      [this](PB_SmartKnobConfig &config)
+//      { applyConfig(config, true); },
+//      [this]()
+//      { motor_task_.runCalibration(); },
+//      [this](float calibration_weight)
+//      { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); })
 
 {
 #if SK_DISPLAY
@@ -82,69 +82,68 @@ RootTask::~RootTask()
 void RootTask::run()
 {
     uint8_t task_started_at = millis();
-    stream_.begin();
 
     motor_task_.addListener(knob_state_queue_);
 
-    plaintext_protocol_.init([this]()
-                             {
-                                 //  CHANGE MOTOR CONFIG????
-                             },
-                             [this]()
-                             {
-                                 OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+    // plaintext_protocol_.init([this]()
+    //                          {
+    //                              //  CHANGE MOTOR CONFIG????
+    //                          },
+    //                          [this]()
+    //                          {
+    //                              OSConfiguration *os_config = this->configuration_->getOSConfiguration();
 
-                                 switch (os_config->mode)
-                                 {
-                                 case ONBOARDING:
-                                     os_config->mode = DEMO;
-                                     display_task_->enableDemo();
-                                     //  CHANGE MOTOR CONFIG
-                                     break;
-                                 case DEMO:
-                                     os_config->mode = HASS;
-                                     display_task_->enableHass();
-                                     //  CHANGE MOTOR CONFIG
+    //                              switch (os_config->mode)
+    //                              {
+    //                              case ONBOARDING:
+    //                                  os_config->mode = DEMO;
+    //                                  display_task_->enableDemo();
+    //                                  //  CHANGE MOTOR CONFIG
+    //                                  break;
+    //                              case DEMO:
+    //                                  os_config->mode = HASS;
+    //                                  display_task_->enableHass();
+    //                                  //  CHANGE MOTOR CONFIG
 
-                                     break;
-                                 case HASS:
-                                     os_config->mode = ONBOARDING;
-                                     display_task_->enableOnboarding();
-                                     break;
-                                 default:
-                                     os_config->mode = HASS;
-                                     display_task_->enableHass();
-                                     //  CHANGE MOTOR CONFIG
+    //                                  break;
+    //                              case HASS:
+    //                                  os_config->mode = ONBOARDING;
+    //                                  display_task_->enableOnboarding();
+    //                                  break;
+    //                              default:
+    //                                  os_config->mode = HASS;
+    //                                  display_task_->enableHass();
+    //                                  //  CHANGE MOTOR CONFIG
 
-                                     break;
-                                 }
+    //                                  break;
+    //                              }
 
-                                 this->configuration_->saveOSConfigurationInMemory(*os_config);
-                             });
+    //                              this->configuration_->saveOSConfigurationInMemory(*os_config);
+    //                          });
 
     // Start in legacy protocol mode
-    current_protocol_ = &plaintext_protocol_;
-    Logging::getInstance().setLogger(&plaintext_protocol_);
+    // current_protocol_ = &plaintext_protocol_;
+    // Logging::getInstance().setLogger(&plaintext_protocol_);
 
-    ProtocolChangeCallback protocol_change_callback = [this](uint8_t protocol)
-    {
-        switch (protocol)
-        {
-        case SERIAL_PROTOCOL_LEGACY:
-            current_protocol_ = &plaintext_protocol_;
-            break;
-        case SERIAL_PROTOCOL_PROTO:
-            current_protocol_ = &proto_protocol_;
-            break;
-        default:
-            LOGE("Unknown protocol requested: %d", protocol);
-            break;
-        }
-        Logging::getInstance().setLogger(current_protocol_);
-    };
+    // ProtocolChangeCallback protocol_change_callback = [this](uint8_t protocol)
+    // {
+    //     switch (protocol)
+    //     {
+    //     case SERIAL_PROTOCOL_LEGACY:
+    //         current_protocol_ = &plaintext_protocol_;
+    //         break;
+    //     case SERIAL_PROTOCOL_PROTO:
+    //         current_protocol_ = &proto_protocol_;
+    //         break;
+    //     default:
+    //         LOGE("Unknown protocol requested: %d", protocol);
+    //         break;
+    //     }
+    //     Logging::getInstance().setLogger(current_protocol_);
+    // };
 
-    plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
-    proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
+    // plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
+    // proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -385,10 +384,10 @@ void RootTask::run()
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
             case SK_CONFIGURATION_SAVED:
-                if (current_protocol_ == &proto_protocol_)
-                {
-                    proto_protocol_.sendInitialInfo();
-                }
+                // if (current_protocol_ == &proto_protocol_)
+                // {
+                //     proto_protocol_.sendInitialInfo();
+                // }
                 break;
             case SK_SETTINGS_CHANGED:
                 settings_ = configuration_->getSettings();
@@ -396,11 +395,11 @@ void RootTask::run()
             case SK_STRAIN_CALIBRATION:
                 app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
-                if (current_protocol_ == &proto_protocol_)
-                {
-                    LOGD("Sending strain calib state.");
-                    proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
-                }
+                // if (current_protocol_ == &proto_protocol_)
+                // {
+                //     LOGD("Sending strain calib state.");
+                //     proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
+                // }
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
@@ -541,7 +540,7 @@ void RootTask::run()
             publishState();
         }
 
-        current_protocol_->loop();
+        // current_protocol_->loop();
 
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
@@ -828,7 +827,7 @@ void RootTask::publishState()
 {
     // Apply local state before publishing to serial
     latest_state_.press_nonce = press_count_;
-    current_protocol_->handleState(latest_state_);
+    // current_protocol_->handleState(latest_state_);
 }
 
 void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
