@@ -8,9 +8,6 @@
 
 #include "configuration.h"
 
-static const char *CONFIG_PATH = "/config.pb";
-static const char *SETTINGS_PATH = "/settings.pb";
-
 Configuration::Configuration()
 {
     mutex_ = xSemaphoreCreateMutex();

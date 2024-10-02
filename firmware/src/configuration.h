@@ -12,6 +12,9 @@
 #include "EEPROM.h"
 #include "./events/events.h"
 
+static const char *CONFIG_PATH = "/config.pb";
+static const char *SETTINGS_PATH = "/settings.pb";
+
 // TODO: should move these consts to wifi?
 static const uint16_t WIFI_SSID_LENGTH = 128;
 static const uint16_t WIFI_PASSPHRASE_LENGTH = 128;

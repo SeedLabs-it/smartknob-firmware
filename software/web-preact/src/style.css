@@ -1,0 +1,92 @@
+:root {
+  --bg-dark: #80989b;
+  --bg-light: #d4dcda;
+  --bg-gray: #a6adbb;
+
+  --text-dark: #47585c;
+  --text-light: var(--bg-dark);
+  --text-white: #ffffff;
+
+  --disabled: #9ca3af;
+
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+
+  /* font-family: ;
+   */
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+}
+
+#app {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  margin: 16px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* height: calc(
+    100vh - (32px + var(--safe-area-inset-top) + var(--safe-area-inset-bottom))
+  ); BAD WAY */
+  height: calc(100vh - 32px);
+  height: calc(100dvh - 32px);
+  /* margin-bottom: env(safe-area-inset-bottom) + 64px !important; */
+}
+
+#download-btn {
+  /* padding-bottom: calc(
+     + 64px
+  ); */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
+input {
+  background-color: var(--bg-gray);
+  color: var(--text-dark);
+  border: none;
+  padding: 6px;
+  border-radius: 0;
+}
+
+input:focus-visible {
+  outline: none;
+}
+
+button {
+  background-color: var(--bg-dark);
+  color: var(--text-white);
+  border: none;
+  padding: 6px;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: var(--disabled);
+  cursor: not-allowed;
+  opacity: 50%;
+}
+
+.active {
+  background-color: var(--text-dark);
+  color: var(--text-white);
+}

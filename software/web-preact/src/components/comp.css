@@ -1,0 +1,23 @@
+.comp {
+  border: 1px solid var(--text-dark);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 4px;
+
+  h1 {
+    color: var(--text-dark);
+    margin: 0;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+
+    label {
+      color: var(--bg-gray);
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
