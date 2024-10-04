@@ -94,7 +94,7 @@ void SensorsTask::run()
     {
         VL53L0X_RangingMeasurementData_t measure;
         lox.rangingTest(&measure, false);
-        LOGD("Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+        LOGD("Proximity range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
     }
     else
     {
