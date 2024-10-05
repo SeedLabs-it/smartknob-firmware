@@ -87,9 +87,7 @@ void SensorsTask::run()
     {
         lux_filter.addSample(lux);
     }
-
 #endif
-
     if (lox.begin())
     {
         VL53L0X_RangingMeasurementData_t measure;
@@ -108,7 +106,7 @@ void SensorsTask::run()
     unsigned long last_tare_ms = 0;
     unsigned long last_illumination_check_ms = 0;
 
-    unsigned long log_ms_calib = 0;
+    unsigned long log_ms_calib = 10000;
 
     unsigned long log_ms = 0;
     unsigned long log_ms_strain = 0;

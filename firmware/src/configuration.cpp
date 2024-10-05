@@ -328,8 +328,6 @@ bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
 {
 
     this->os_config.mode = os_config.mode;
-    LOGD("OS mode set to %d", os_config.mode);
-
     return true;
 }
 

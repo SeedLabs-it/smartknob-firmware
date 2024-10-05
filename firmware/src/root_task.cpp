@@ -86,8 +86,9 @@ void RootTask::run()
         { // Going from DEMO mode to HASS mode
             os_mode = HASS;
         }
-
+        
         os_config->mode = os_mode;
+        LOGI("OS mode set to %d", os_config->mode);
 
         this->configuration_->saveOSConfigurationInMemory(*os_config);
 
