@@ -100,17 +100,13 @@ void MotorTask::run()
 
     motor.monitor_downsample = 0; // disable monitor at first - optional
 
-    // disableCore0WDT();
-
     float current_detent_center = motor.shaft_angle;
     PB_SmartKnobConfig config = {
-        .position = 0,
-        .sub_position_unit = 0,
-        .position_nonce = 0,
-        .min_position = 0,
-        .max_position = 1,
-        .position_width_radians = 60 * _PI / 180,
-        .detent_strength_unit = 0,
+        .position_width_radians = 60 * M_PI / 180,
+        .endstop_strength_unit = 0,
+        .snap_point = 0.5,
+        .detent_positions_count = 0,
+        .detent_positions = {},
     };
     int32_t current_position = 0;
     float latest_sub_position_unit = 0;
