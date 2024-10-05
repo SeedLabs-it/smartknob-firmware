@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 9, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 11, 0, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
@@ -180,7 +180,7 @@ void MqttTask::run()
         }
 
         mqtt_notifier.loopTick();
-        delay(5);
+        delay(1);
     }
 }
 

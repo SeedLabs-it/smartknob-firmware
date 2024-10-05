@@ -18,8 +18,17 @@
 #if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
 HWCDC stream_ = HWCDC();
 #else
-// Make sure it works!!
-// UartStream stream_;
+// TODO Make uartstream works it works!!
+UartStream stream_;
+#endif
+
+#if ENABLE_LOGGING
+static SerialProtocolPlaintext serial_protocol(stream_);
+static SerialProtocolPlaintext *serial_protocol_p = &serial_protocol;
+
+static FreeRTOSAdapter adapter(&serial_protocol, "FreeRTOSAdapter", 1024 * 24, 0, 1);
+static FreeRTOSAdapter *adapter_p = &adapter;
+// // Logging::setAdapter(new FreeRTOSAdapter(new SerialProtocolPlaintext(stream_), "FreeRTOSAdapter", 1024 * 24, 1, 1));
 #endif
 
 Configuration config;
@@ -62,7 +71,7 @@ static SensorsTask *sensors_task_p = &sensors_task;
 static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
-RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p);
+RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p, serial_protocol_p);
 
 void initTempSensor()
 {
@@ -76,12 +85,11 @@ void setup()
 {
     stream_.begin(MONITOR_SPEED);
 
-    // delay(1000); // Give time to connect to serial monitor
-
 #if ENABLE_LOGGING
-    Logging::setAdapter(new FreeRTOSAdapter(new SerialProtocolPlaintext(stream_), "FreeRTOSAdapter", 1024 * 24, 0, 0));
+    Logging::setAdapter(adapter_p);
 #endif
-    delay(250); // Allow time for logging to initialize
+
+    LOGI("Starting Seedlabs Smart Knob");
 
     initTempSensor();
 
@@ -103,9 +111,6 @@ void setup()
 #if SK_LEDS
     led_ring_task_p->begin();
 #endif
-
-    // TODO: remove this. Wait for display task init finishes
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     root_task.begin();
     if (!config.loadFromDisk())

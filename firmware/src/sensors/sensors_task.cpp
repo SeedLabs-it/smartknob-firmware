@@ -10,7 +10,7 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 8, 1, task_core}, configuration_(configuration)
+SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 8, 0, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
 
@@ -108,6 +108,8 @@ void SensorsTask::run()
     unsigned long last_tare_ms = 0;
     unsigned long last_illumination_check_ms = 0;
 
+    unsigned long log_ms_calib = 0;
+
     unsigned long log_ms = 0;
     unsigned long log_ms_strain = 0;
 
@@ -168,13 +170,16 @@ void SensorsTask::run()
             {
                 if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0)
                 {
-                    LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
-                    delay(2000);
+                    if (millis() - log_ms_calib > 10000)
+                    {
+                        LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+                        log_ms_calib = millis();
+                    }
                     do_strain = false;
                 }
                 else if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
                 {
-                    delay(100);
+                    delay(1);
                     do_strain = false;
                 }
 

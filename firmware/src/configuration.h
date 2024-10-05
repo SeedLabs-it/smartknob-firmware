@@ -158,10 +158,10 @@ public:
     {
         if (!FFat.begin(true))
         {
-            LOGE("Failed to mount FFat");
+            LOGV(LOG_LEVEL_ERROR, "Failed to mount FFat");
             return;
         }
-        LOGD("Mounted FFat");
+        LOGV(LOG_LEVEL_DEBUG, "Mounted FFat");
         mounted_ = true;
     }
     ~FatGuard()
@@ -169,7 +169,7 @@ public:
         if (mounted_)
         {
             FFat.end();
-            LOGD("Unmounted FFat");
+            LOGV(LOG_LEVEL_DEBUG, "Unmounted FFat");
         }
     }
     FatGuard(FatGuard const &) = delete;

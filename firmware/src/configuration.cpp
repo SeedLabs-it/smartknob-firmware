@@ -15,9 +15,6 @@ Configuration::Configuration()
 
     wifi_config = WiFiConfiguration();
     mqtt_config = MQTTConfiguration();
-    loadOSConfiguration();
-    loadWiFiConfiguration();
-    loadMQTTConfiguration();
 
     std::string mac_address = std::string(WiFi.macAddress().c_str());
     mac_address.erase(
@@ -56,7 +53,7 @@ bool Configuration::loadFromDisk()
     File f = FFat.open(CONFIG_PATH);
     if (!f)
     {
-        LOGE("Failed to read config file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
         return false;
     }
 
@@ -121,7 +118,7 @@ bool Configuration::saveToDisk()
         File f = FFat.open(CONFIG_PATH, FILE_WRITE);
         if (!f)
         {
-            LOGE("Failed to read config file");
+            LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
             return false;
         }
 
@@ -159,7 +156,7 @@ bool Configuration::loadSettingsFromDisk()
     File f = FFat.open(SETTINGS_PATH);
     if (!f)
     {
-        LOGE("Failed to read settings file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
         return false;
     }
 
@@ -212,7 +209,7 @@ bool Configuration::saveSettingsToDisk()
     File f = FFat.open(SETTINGS_PATH, FILE_WRITE);
     if (!f)
     {
-        LOGE("Failed to read settings file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
         return false;
     }
 

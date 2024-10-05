@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 8, 1, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 9, 0, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -73,13 +73,6 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 
     switch (event)
     {
-
-    case SYSTEM_EVENT_STA_CONNECTED:
-        LOGD("Connected to WiFi Network");
-        break;
-    // case SYSTEM_EVENT_AP_START:
-    //     Serial.println("ESP32 soft AP started");
-    //     break;
     case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
         wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = true;
@@ -422,7 +415,7 @@ void WifiTask::run()
 
         wifi_notifier.loopTick();
 
-        delay(5);
+        delay(1);
     }
 }
 
