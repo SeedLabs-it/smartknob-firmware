@@ -91,7 +91,7 @@ void MotorTask::run()
 #else
     if (!c.motor.calibrated)
     {
-        LOGE("Motor not calibrated! Please calibrate before using the SmartKnob.");
+        LOGW("Motor not calibrated! Please calibrate before using the SmartKnob. Press 'c' to calibrate.");
     }
 #endif
 
@@ -179,7 +179,7 @@ void MotorTask::run()
                 bool position_updated = false;
                 if (new_config.position != config.position || new_config.sub_position_unit != config.sub_position_unit || new_config.position_nonce != config.position_nonce)
                 {
-                    LOGD("applying position change");
+                    LOGV(LOG_LEVEL_DEBUG, "Applying position change");
                     current_position = new_config.position;
                     position_updated = true;
                 }
@@ -190,18 +190,18 @@ void MotorTask::run()
                     if (current_position < new_config.min_position)
                     {
                         current_position = new_config.min_position;
-                        LOGD("adjusting position to min");
+                        LOGV(LOG_LEVEL_DEBUG, "Adjusting position to min");
                     }
                     else if (current_position > new_config.max_position)
                     {
                         current_position = new_config.max_position;
-                        LOGD("adjusting position to max");
+                        LOGV(LOG_LEVEL_DEBUG, "Adjusting position to max");
                     }
                 }
 
                 if (position_updated || new_config.position_width_radians != config.position_width_radians)
                 {
-                    LOGD("adjusting detent center");
+                    LOGV(LOG_LEVEL_DEBUG, "Adjusting detent center");
                     float new_sub_position = position_updated ? new_config.sub_position_unit : latest_sub_position_unit;
 #if SK_INVERT_ROTATION
                     float shaft_angle = -motor.shaft_angle;
@@ -211,7 +211,7 @@ void MotorTask::run()
                     current_detent_center = shaft_angle + new_sub_position * new_config.position_width_radians;
                 }
                 config = new_config;
-                LOGI("Got new config");
+                LOGV(LOG_LEVEL_DEBUG, "Got new config");
 
                 // Update derivative factor of torque controller based on detent width.
                 // If the D factor is large on coarse detents, the motor ends up making noise because the P&D factors amplify the noise from the sensor.
@@ -496,7 +496,7 @@ void MotorTask::calibrate()
         motor.move(a);
         delay(1);
     }
-    LOGI("pause..."); // Let momentum settle...
+    LOGI("Pause..."); // Let momentum settle...
     for (uint16_t i = 0; i < 1000; i++)
     {
         encoder.update();

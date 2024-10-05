@@ -340,7 +340,7 @@ void WifiTask::startWebServer()
 
     server_->begin();
 
-    LOGI("WebServer started");
+    LOGV(LOG_LEVEL_INFO, "WebServer started");
 
     is_webserver_started = true;
     // TODO: send event to
@@ -369,10 +369,10 @@ void WifiTask::run()
 
         if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
         {
-            LOGD("WiFi status: %d", WiFi.status());
-            LOGD("WiFi connected: %d", WiFi.isConnected());
-            LOGD("Retry count: %d", retry_count);
-            LOGD("last_wifi_status_new: %d", last_wifi_status_new);
+            LOGV(LOG_LEVEL_DEBUG, "WiFi status: %d", WiFi.status());
+            LOGV(LOG_LEVEL_DEBUG, "WiFi connected: %d", WiFi.isConnected());
+            LOGV(LOG_LEVEL_DEBUG, "Retry count: %d", retry_count);
+            LOGV(LOG_LEVEL_DEBUG, "Last_wifi_status_new: %d", last_wifi_status_new);
 
             WiFi.begin(config_.ssid, config_.passphrase);
             while (WiFi.status() != WL_CONNECTED)

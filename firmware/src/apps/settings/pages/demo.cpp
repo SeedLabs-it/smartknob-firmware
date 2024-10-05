@@ -68,7 +68,7 @@ void DemoSettingsPage::handleNavigation(NavigationEvent event)
         }
         else
         {
-            LOGE("os_config_notifier_ isnt set.");
+            LOGE("OS config notifier isnt set.");
         }
         break;
     default:

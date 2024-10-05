@@ -113,7 +113,7 @@ void RootTask::run()
     bool is_configuration_loaded = false;
     while (!is_configuration_loaded)
     {
-        LOGI("Waiting for configuration");
+        LOGV(LOG_LEVEL_DEBUG, "Waiting for configuration");
         xSemaphoreTake(mutex_, portMAX_DELAY);
         is_configuration_loaded = configuration_ != nullptr;
         xSemaphoreGive(mutex_);
@@ -360,11 +360,11 @@ void RootTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            LOGD("App sync requested!");
+            LOGI("App sync requested from HASS!");
 #if SK_MQTT // Should this be here??
             display_task_->getHassApps()->sync(mqtt_task_->getApps());
 
-            LOGD("Giving 0.5s for Apps to initialize");
+            LOGV(LOG_LEVEL_DEBUG, "Giving 0.5s for Apps to initialize");
             delay(500);
             display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
@@ -712,8 +712,9 @@ void RootTask::loadConfiguration()
 #if SK_MQTT
             if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadMQTTConfiguration())
             {
-                MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                LOGD("MQTT_CONFIG: %s", mqtt_config.host);
+                // UNECCESARY
+                // MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                // LOGD("MQTT_CONFIG: %s", mqtt_config.host);
             }
 #endif
             configuration_loaded_ = true;
