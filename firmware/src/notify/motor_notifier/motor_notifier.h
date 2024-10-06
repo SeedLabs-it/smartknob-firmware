@@ -2,7 +2,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
-#include "../../proto_gen/smartknob.pb.h"
+#include "../../proto/proto_gen/smartknob.pb.h"
 #include <functional>
 #include <logging.h>
 

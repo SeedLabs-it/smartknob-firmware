@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "../configuration.h"
-#include "../proto_gen/smartknob.pb.h"
+#include "../proto/proto_gen/smartknob.pb.h"
 #include "../task.h"
 
 enum class CommandType

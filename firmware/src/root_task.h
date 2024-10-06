@@ -9,6 +9,7 @@
 // #include "serial/uart_stream.h"
 #include <logging.h>
 #include <logging/adapters/freertos/free_rtos_adapter.h>
+#include "proto/serial_protocol_protobuf.h"
 #include "task.h"
 #include "app_config.h"
 #include "network/wifi_task.h"
@@ -30,7 +31,7 @@ class RootTask : public Task<RootTask>
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task, SerialProtocolPlaintext *serial_protocol_plaintext);
+    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf);
     virtual ~RootTask();
     void loadConfiguration();
 
@@ -54,7 +55,10 @@ private:
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
 
+    FreeRTOSAdapter *free_rtos_adapter_;
+
     SerialProtocolPlaintext *serial_protocol_plaintext_;
+    SerialProtocolProtobuf *serial_protocol_protobuf_;
 
     char buf_[128];
 

@@ -473,7 +473,7 @@ void SensorsTask::weightMeasurementCallback()
     if (weight_measurement_step_ == 0)
     {
         weight_measurement_step_ = 1;
-        LOGI("Weight measurement step 1: Place weight on KNOB and press 'U' again");
+        LOGI("Weight measurement step 1: Place weight on KNOB and press 'w' again");
         delay(1000);
         strain.set_offset(0);
         strain.tare();

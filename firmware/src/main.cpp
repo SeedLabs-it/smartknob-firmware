@@ -14,11 +14,12 @@
 #include <logging.h>
 #include <logging/adapters/freertos/free_rtos_adapter.h>
 #include <logging/adapters/freertos/protocols/serial/serial_protocol_plaintext.h>
+#include "proto/serial_protocol_protobuf.h"
 
 #if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
 HWCDC stream_ = HWCDC();
 #else
-// TODO Make uartstream works it works!!
+// TODO Check if uartstream works!!
 UartStream stream_;
 #endif
 
@@ -26,7 +27,10 @@ UartStream stream_;
 static SerialProtocolPlaintext serial_protocol(stream_);
 static SerialProtocolPlaintext *serial_protocol_p = &serial_protocol;
 
-static FreeRTOSAdapter adapter(&serial_protocol, "FreeRTOSAdapter", 1024 * 24, 0, 1);
+static SerialProtocolProtobuf serial_protocol_protobuf(stream_);
+static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_protobuf;
+
+static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 24, 0, 1);
 static FreeRTOSAdapter *adapter_p = &adapter;
 // // Logging::setAdapter(new FreeRTOSAdapter(new SerialProtocolPlaintext(stream_), "FreeRTOSAdapter", 1024 * 24, 1, 1));
 #endif
@@ -71,7 +75,7 @@ static SensorsTask *sensors_task_p = &sensors_task;
 static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
-RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p, serial_protocol_p);
+RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p, adapter_p, serial_protocol_p, serial_protocol_protobuf_p);
 
 void initTempSensor()
 {
@@ -83,6 +87,7 @@ void initTempSensor()
 
 void setup()
 {
+    delay(100); // Delay to allow usb to connect before starting stream
     stream_.begin(MONITOR_SPEED);
 
 #if ENABLE_LOGGING

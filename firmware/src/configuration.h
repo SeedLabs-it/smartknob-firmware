@@ -6,7 +6,7 @@
 
 #include <WiFi.h>
 
-#include "proto_gen/smartknob.pb.h"
+#include "proto/proto_gen/smartknob.pb.h"
 
 #include "EEPROM.h"
 #include "./events/events.h"

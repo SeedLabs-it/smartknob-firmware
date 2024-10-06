@@ -21,17 +21,19 @@ RootTask::RootTask(
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task, SerialProtocolPlaintext *serial_protocol_plaintext) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
-                                                                                 //  stream_(),
-                                                                                 configuration_(configuration),
-                                                                                 motor_task_(motor_task),
-                                                                                 display_task_(display_task),
-                                                                                 wifi_task_(wifi_task),
-                                                                                 mqtt_task_(mqtt_task),
-                                                                                 led_ring_task_(led_ring_task),
-                                                                                 sensors_task_(sensors_task),
-                                                                                 reset_task_(reset_task),
-                                                                                 serial_protocol_plaintext_(serial_protocol_plaintext)
+    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
+                                                                                                                                                                       //  stream_(),
+                                                                                                                                                                       configuration_(configuration),
+                                                                                                                                                                       motor_task_(motor_task),
+                                                                                                                                                                       display_task_(display_task),
+                                                                                                                                                                       wifi_task_(wifi_task),
+                                                                                                                                                                       mqtt_task_(mqtt_task),
+                                                                                                                                                                       led_ring_task_(led_ring_task),
+                                                                                                                                                                       sensors_task_(sensors_task),
+                                                                                                                                                                       reset_task_(reset_task),
+                                                                                                                                                                       free_rtos_adapter_(free_rtos_adapter),
+                                                                                                                                                                       serial_protocol_plaintext_(serial_protocol_plaintext),
+                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf)
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -67,12 +69,45 @@ void RootTask::run()
 
     motor_task_.addListener(knob_state_queue_);
 
+    serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_settings_tag, [this](PB_ToSmartknob to_smartknob)
+                                                   { configuration_->setSettings(to_smartknob.payload.settings); });
+
+    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_MOTOR_CALIBRATE, [this]()
+                                                       { motor_task_.runCalibration(); });
+
+    // serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_STRAIN_CALIBRATE, [this]()
+    //                                                    { sensors_task_->factoryStrainCalibrationCallback((float)CALIBRATION_WEIGHT); });
+
+    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_GET_KNOB_INFO, [this]()
+                                                       { 
+                                                        PB_Knob knob = {};
+                                                        strlcpy(knob.mac_address, WiFi.macAddress().c_str(), sizeof(knob.mac_address));
+                                                        strlcpy(knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(knob.ip_address));
+                                                        const PB_PersistentConfiguration config = configuration_->get();
+                                                        if (config.version != 0)
+                                                        {
+                                                            knob.has_persistent_config = true;
+                                                            knob.persistent_config = config;
+                                                        }
+                                                        else
+                                                        {
+                                                            knob.has_persistent_config = false;
+                                                        }
+                                                        knob.has_settings = true;
+                                                        knob.settings = configuration_->getSettings();
+
+                                                        serial_protocol_protobuf_->sendKnobInfo(knob); });
+
     serial_protocol_plaintext_->registerKeyHandler('c', [this]()
                                                    { motor_task_.runCalibration(); });
     serial_protocol_plaintext_->registerKeyHandler('w', [this]()
                                                    { sensors_task_->weightMeasurementCallback(); });
     serial_protocol_plaintext_->registerKeyHandler('y', [this]()
                                                    { sensors_task_->factoryStrainCalibrationCallback((float)CALIBRATION_WEIGHT); });
+    auto callback = [this]()
+    { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
+    serial_protocol_plaintext_->registerKeyHandler('q', callback);
+    serial_protocol_plaintext_->registerKeyHandler(0, callback);
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });

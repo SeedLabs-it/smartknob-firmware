@@ -3,7 +3,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 
-#include "proto_gen/smartknob.pb.h"
+#include "proto/proto_gen/smartknob.pb.h"
 #include "semaphore_guard.h"
 
 #include "configuration.h"
