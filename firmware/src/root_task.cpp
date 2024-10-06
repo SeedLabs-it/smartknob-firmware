@@ -72,11 +72,11 @@ void RootTask::run()
     serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_settings_tag, [this](PB_ToSmartknob to_smartknob)
                                                    { configuration_->setSettings(to_smartknob.payload.settings); });
 
+    serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_strain_calibration_tag, [this](PB_ToSmartknob to_smartknob)
+                                                   { sensors_task_->factoryStrainCalibrationCallback(to_smartknob.payload.strain_calibration.calibration_weight); });
+
     serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_MOTOR_CALIBRATE, [this]()
                                                        { motor_task_.runCalibration(); });
-
-    // serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_STRAIN_CALIBRATE, [this]()
-    //                                                    { sensors_task_->factoryStrainCalibrationCallback((float)CALIBRATION_WEIGHT); });
 
     serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_GET_KNOB_INFO, [this]()
                                                        { 
