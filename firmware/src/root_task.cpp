@@ -107,7 +107,7 @@ void RootTask::run()
     auto callback = [this]()
     { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
     serial_protocol_plaintext_->registerKeyHandler('q', callback);
-    serial_protocol_plaintext_->registerKeyHandler(0, callback);
+    serial_protocol_plaintext_->registerKeyHandler(0, callback); // Switches to protobuf protocol on protobuf message from configurator
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -132,7 +132,6 @@ void RootTask::run()
         case ONBOARDING:
             display_task_->enableOnboarding();
             this->configuration_->saveOSConfiguration(*os_config);
-
             break;
         case DEMO:
             display_task_->enableDemo();

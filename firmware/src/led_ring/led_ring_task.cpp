@@ -323,6 +323,8 @@ void LedRingTask::run()
     FastLED.setBrightness(155);
     FastLED.show();
 
+    unsigned long last_log_ms = millis();
+
     while (1)
     {
 
@@ -350,37 +352,36 @@ void LedRingTask::run()
             case EffectType::SNAKE:
                 // TODO: disabled for a Demo
                 renderEffectSnake();
-                LOGV(LOG_LEVEL_DEBUG, "Snake");
                 break;
             case EffectType::STATIC_COLOR:
                 renderEffectStaticColor();
-                LOGV(LOG_LEVEL_DEBUG, "Static Color");
                 break;
             case EffectType::LIGHT_HOUSE:
                 renderEffectLightHouse();
-                LOGV(LOG_LEVEL_DEBUG, "Light House");
                 break;
             case EffectType::TRAIL:
                 renderTrailEffect();
-                LOGV(LOG_LEVEL_DEBUG, "Trail Effect");
                 break;
             case EffectType::FADE_IN:
                 renderFadeInEffect();
-                LOGV(LOG_LEVEL_DEBUG, "Fade In Effect");
                 break;
             case EffectType::FADE_OUT:
                 renderFadeOutEffect();
-                LOGV(LOG_LEVEL_DEBUG, "Fade Out Effect");
                 break;
             case EffectType::LEDS_OFF:
                 ledsOff();
                 LOGV(LOG_LEVEL_DEBUG, "LEDs Off");
             case EffectType::TO_BRIGHTNESS:
                 renderToBrightness();
-                LOGV(LOG_LEVEL_DEBUG, "Dim Ambient Effect");
                 break;
             default:
                 break;
+            }
+
+            if (millis() - last_log_ms > 1000)
+            {
+                last_log_ms = millis();
+                LOGV(LOG_LEVEL_DEBUG, "Effect Type: %d", effect_settings.effect_type);
             }
         }
 
