@@ -258,10 +258,10 @@ void SensorsTask::run()
                             switch (sensors_state.strain.virtual_button_code)
                             {
                             case VIRTUAL_BUTTON_IDLE:
-                                LOGD("Strain sensor short press.");
-                                LOGD("Press value: %f", sensors_state.strain.press_value);
-                                LOGD("Raw value: %f", sensors_state.strain.raw_value);
-                                LOGD("Last press value: %f", last_press_value_);
+                                LOGV(LOG_LEVEL_DEBUG, "Strain sensor short press.");
+                                LOGV(LOG_LEVEL_DEBUG, "Press value: %f", sensors_state.strain.press_value);
+                                LOGV(LOG_LEVEL_DEBUG, "Raw value: %f", sensors_state.strain.raw_value);
+                                LOGV(LOG_LEVEL_DEBUG, "Last press value: %f", last_press_value_);
                                 sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
                                 short_pressed_triggered_at_ms = millis();
                                 break;
