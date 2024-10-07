@@ -32,7 +32,6 @@ static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_pro
 
 static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 24, 0, 1);
 static FreeRTOSAdapter *adapter_p = &adapter;
-// // Logging::setAdapter(new FreeRTOSAdapter(new SerialProtocolPlaintext(stream_), "FreeRTOSAdapter", 1024 * 24, 1, 1));
 #endif
 
 Configuration config;

@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 7, 0, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 8, 0, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);
@@ -108,6 +108,9 @@ void MotorTask::run()
         .detent_positions_count = 0,
         .detent_positions = {},
     };
+
+    PB_SmartKnobConfig last_discarded_config = config;
+
     int32_t current_position = 0;
     float latest_sub_position_unit = 0;
 
@@ -125,6 +128,10 @@ void MotorTask::run()
         {
             if (!c.motor.calibrated && command.command_type != CommandType::CALIBRATE)
             {
+                if (command.command_type == CommandType::CONFIG)
+                {
+                    last_discarded_config = command.data.config;
+                }
                 LOGI("Ignoring command, motor not calibrated!");
                 if (motor.enabled)
                     motor.disable();
@@ -138,9 +145,17 @@ void MotorTask::run()
                 if (!motor.enabled)
                     motor.enable();
 
+                motor.PID_velocity.P = FOC_PID_P;
+                motor.PID_velocity.I = FOC_PID_I;
+                motor.PID_velocity.D = FOC_PID_D;
+                motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP;
+                motor.PID_velocity.limit = FOC_PID_LIMIT;
+
                 calibrate();
-                esp_restart(); // Restart to apply new calibration
-                break;
+
+                command.data.config = last_discarded_config; // Re-apply last received config after calibration
+                encoder.update();
+                motor.initFOC();
             case CommandType::CONFIG:
             {
                 // Check new config for validity

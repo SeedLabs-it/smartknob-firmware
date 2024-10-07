@@ -78,25 +78,27 @@ void RootTask::run()
     serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_MOTOR_CALIBRATE, [this]()
                                                        { motor_task_.runCalibration(); });
 
-    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_GET_KNOB_INFO, [this]()
-                                                       { 
-                                                        PB_Knob knob = {};
-                                                        strlcpy(knob.mac_address, WiFi.macAddress().c_str(), sizeof(knob.mac_address));
-                                                        strlcpy(knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(knob.ip_address));
-                                                        const PB_PersistentConfiguration config = configuration_->get();
-                                                        if (config.version != 0)
-                                                        {
-                                                            knob.has_persistent_config = true;
-                                                            knob.persistent_config = config;
-                                                        }
-                                                        else
-                                                        {
-                                                            knob.has_persistent_config = false;
-                                                        }
-                                                        knob.has_settings = true;
-                                                        knob.settings = configuration_->getSettings();
+    auto callbackGetKnobInfo = [this]()
+    {
+        PB_Knob knob = {};
+        strlcpy(knob.mac_address, WiFi.macAddress().c_str(), sizeof(knob.mac_address));
+        strlcpy(knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(knob.ip_address));
+        const PB_PersistentConfiguration config = configuration_->get();
+        if (config.version != 0)
+        {
+            knob.has_persistent_config = true;
+            knob.persistent_config = config;
+        }
+        else
+        {
+            knob.has_persistent_config = false;
+        }
+        knob.has_settings = true;
+        knob.settings = configuration_->getSettings();
 
-                                                        serial_protocol_protobuf_->sendKnobInfo(knob); });
+        serial_protocol_protobuf_->sendKnobInfo(knob);
+    };
+    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_GET_KNOB_INFO, callbackGetKnobInfo);
 
     serial_protocol_plaintext_->registerKeyHandler('c', [this]()
                                                    { motor_task_.runCalibration(); });
@@ -104,10 +106,10 @@ void RootTask::run()
                                                    { sensors_task_->weightMeasurementCallback(); });
     serial_protocol_plaintext_->registerKeyHandler('y', [this]()
                                                    { sensors_task_->factoryStrainCalibrationCallback((float)CALIBRATION_WEIGHT); });
-    auto callback = [this]()
+    auto callbackSetProtocol = [this]()
     { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
-    serial_protocol_plaintext_->registerKeyHandler('q', callback);
-    serial_protocol_plaintext_->registerKeyHandler(0, callback); // Switches to protobuf protocol on protobuf message from configurator
+    serial_protocol_plaintext_->registerKeyHandler('q', callbackSetProtocol);
+    serial_protocol_plaintext_->registerKeyHandler(0, callbackSetProtocol); // Switches to protobuf protocol on protobuf message from configurator
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -345,10 +347,12 @@ void RootTask::run()
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
             case SK_CONFIGURATION_SAVED:
-                // if (current_protocol_ == &proto_protocol_)
-                // {
-                //     proto_protocol_.sendInitialInfo();
-                // }
+                if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
+                {
+                    LOGV(LOG_LEVEL_DEBUG, "Sending knob config state.");
+                    callbackGetKnobInfo();
+                }
+
                 break;
             case SK_SETTINGS_CHANGED:
                 settings_ = configuration_->getSettings();
@@ -356,10 +360,11 @@ void RootTask::run()
             case SK_STRAIN_CALIBRATION:
                 app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
-                // if (current_protocol_ == &proto_protocol_)
+                // if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
                 // {
-                //     LOGD("Sending strain calib state.");
-                //     proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
+                //      LOGV(LOG_LEVEL_DEBUG, "Sending strain calib state.");
+                //      serial_protocol_protobuf_->sendStrainCalibState(wifi_event.body.strain_calibration.step);
+                //      not needed?
                 // }
                 break;
             default:

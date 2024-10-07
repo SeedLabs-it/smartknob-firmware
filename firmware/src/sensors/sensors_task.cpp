@@ -170,7 +170,7 @@ void SensorsTask::run()
                 {
                     if (millis() - log_ms_calib > 10000)
                     {
-                        LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+                        LOGW("Strain sensor needs Factory Calibration, press 'Y' to begin!");
                         log_ms_calib = millis();
                     }
                     do_strain = false;

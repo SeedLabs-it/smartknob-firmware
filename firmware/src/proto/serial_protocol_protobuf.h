@@ -32,7 +32,10 @@ public:
 
     void registerTagCallback(pb_size_t tag, TagCallback callback);
     void registerCommandCallback(PB_SmartKnobCommand command, CommandCallback callback);
+
     void sendKnobInfo(PB_Knob knob);
+    void sendStrainCalibState(const uint8_t step);
+    void sendConfigState(const uint8_t step);
 
 protected:
     PB_FromSmartKnob pb_tx_buffer_;
