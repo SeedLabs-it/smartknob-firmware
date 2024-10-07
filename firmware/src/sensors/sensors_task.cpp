@@ -10,7 +10,7 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 6, 1, task_core}, configuration_(configuration)
+SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 8, 0, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
 
@@ -39,7 +39,7 @@ void SensorsTask::run()
     strain.begin(PIN_STRAIN_DO, PIN_STRAIN_SCK);
     while (!strain.is_ready())
     {
-        LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+        LOGV(LOG_LEVEL_DEBUG, "Strain sensor not ready, waiting...");
         delay(100);
     }
     if (configuration_->get().strain_scale == 0)
@@ -50,7 +50,7 @@ void SensorsTask::run()
     {
         calibration_scale_ = configuration_->get().strain_scale;
     }
-    LOGV(PB_LogLevel_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
+    LOGV(LOG_LEVEL_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
     strain.set_scale(calibration_scale_);
     delay(100);
     strain.set_offset(0);
@@ -87,14 +87,12 @@ void SensorsTask::run()
     {
         lux_filter.addSample(lux);
     }
-
 #endif
-
     if (lox.begin())
     {
         VL53L0X_RangingMeasurementData_t measure;
         lox.rangingTest(&measure, false);
-        LOGD("Proximity range %d, distance %dmm\n", measure.RangeStatus, measure.RangeMilliMeter);
+        LOGV(LOG_LEVEL_DEBUG, "Proximity range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
     }
     else
     {
@@ -107,6 +105,8 @@ void SensorsTask::run()
     unsigned long last_strain_check_ms = 0;
     unsigned long last_tare_ms = 0;
     unsigned long last_illumination_check_ms = 0;
+
+    unsigned long log_ms_calib = 10000;
 
     unsigned long log_ms = 0;
     unsigned long log_ms_strain = 0;
@@ -168,13 +168,16 @@ void SensorsTask::run()
             {
                 if (calibration_scale_ == 1.0f && strain.get_scale() == 1.0f && factory_strain_calibration_step_ == 0)
                 {
-                    LOGI("Strain sensor needs Factory Calibration, press 'Y' to begin!");
-                    delay(2000);
+                    if (millis() - log_ms_calib > 10000)
+                    {
+                        LOGW("Strain sensor needs Factory Calibration, press 'Y' to begin!");
+                        log_ms_calib = millis();
+                    }
                     do_strain = false;
                 }
                 else if (weight_measurement_step_ != 0 || factory_strain_calibration_step_ != 0)
                 {
-                    delay(100);
+                    delay(1);
                     do_strain = false;
                 }
 
@@ -188,7 +191,7 @@ void SensorsTask::run()
                         discarded_strain_reading_count++;
                         if (discarded_strain_reading_count > 20)
                         {
-                            LOGV(PB_LogLevel_WARNING, "Resetting strain sensor. 20 consecutive readings discarded.");
+                            LOGV(LOG_LEVEL_WARNING, "Resetting strain sensor. 20 consecutive readings discarded.");
                             strain.power_down();
                             delay(100);
                             strain.power_up();
@@ -200,8 +203,8 @@ void SensorsTask::run()
                         }
 
                         LOGW("Discarding strain reading, too big difference from last reading.");
-                        LOGV(PB_LogLevel_WARNING, "Current raw strain reading: %f", strain_reading_raw);
-                        LOGV(PB_LogLevel_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
+                        LOGV(LOG_LEVEL_WARNING, "Current raw strain reading: %f", strain_reading_raw);
+                        LOGV(LOG_LEVEL_WARNING, "Last raw strain reading: %f", last_strain_reading_raw_);
                     }
                     else
                     {
@@ -255,10 +258,10 @@ void SensorsTask::run()
                             switch (sensors_state.strain.virtual_button_code)
                             {
                             case VIRTUAL_BUTTON_IDLE:
-                                LOGD("Strain sensor short press.");
-                                LOGD("Press value: %f", sensors_state.strain.press_value);
-                                LOGD("Raw value: %f", sensors_state.strain.raw_value);
-                                LOGD("Last press value: %f", last_press_value_);
+                                LOGV(LOG_LEVEL_DEBUG, "Strain sensor short press.");
+                                LOGV(LOG_LEVEL_DEBUG, "Press value: %f", sensors_state.strain.press_value);
+                                LOGV(LOG_LEVEL_DEBUG, "Raw value: %f", sensors_state.strain.raw_value);
+                                LOGV(LOG_LEVEL_DEBUG, "Last press value: %f", last_press_value_);
                                 sensors_state.strain.virtual_button_code = VIRTUAL_BUTTON_SHORT_PRESSED;
                                 short_pressed_triggered_at_ms = millis();
                                 break;
@@ -277,7 +280,7 @@ void SensorsTask::run()
 
                         if (sensors_state.strain.virtual_button_code == VIRTUAL_BUTTON_IDLE && millis() - short_pressed_triggered_at_ms > 100 && press_value_unit < strain_released && 0.025 < abs(sensors_state.strain.press_value - last_press_value_) < 0.1 && millis() - last_tare_ms > 10000)
                         {
-                            LOGV(PB_LogLevel_DEBUG, "Strain sensor tare.");
+                            LOGV(LOG_LEVEL_DEBUG, "Strain sensor tare.");
                             strain.tare();
                             last_tare_ms = millis();
                         }
@@ -294,12 +297,12 @@ void SensorsTask::run()
             {
                 if (do_strain && strain_powered && millis() - log_ms_strain > 4000)
                 {
-                    LOGV(PB_LogLevel_DEBUG, "Strain sensor not ready, waiting...");
+                    LOGV(LOG_LEVEL_DEBUG, "Strain sensor not ready, waiting...");
                     log_ms_strain = millis();
                 }
                 else if (millis() - log_ms_strain > 4000)
                 {
-                    LOGV(PB_LogLevel_DEBUG, "Strain sensor is disabled. (Might be because of factory calib or its powered off because no engagement of knob)");
+                    LOGV(LOG_LEVEL_DEBUG, "Strain sensor is disabled. (Might be because of factory calib or its powered off because no engagement of knob)");
                     log_ms_strain = millis();
                 }
             }
@@ -326,13 +329,13 @@ void SensorsTask::run()
 
         if (millis() - log_ms > 1000)
         {
-            LOGV(PB_LogLevel_DEBUG, "System temp %0.2f °C", last_system_temperature);
-            LOGV(PB_LogLevel_DEBUG, "Proximity sensor:  range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
+            LOGV(LOG_LEVEL_DEBUG, "System temp %0.2f °C", last_system_temperature);
+            LOGV(LOG_LEVEL_DEBUG, "Proximity sensor:  range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
 #if SK_STRAIN
-            LOGV(PB_LogLevel_DEBUG, "Strain: reading:\n        Virtual button code: %d\n        Strain value: %f\n        Press value: %f", sensors_state.strain.virtual_button_code, sensors_state.strain.raw_value, press_value_unit);
+            LOGV(LOG_LEVEL_DEBUG, "Strain: reading:\n        Virtual button code: %d\n        Strain value: %f\n        Press value: %f", sensors_state.strain.virtual_button_code, sensors_state.strain.raw_value, press_value_unit);
 #endif
 #if SK_ALS
-            LOGV(PB_LogLevel_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
+            LOGV(LOG_LEVEL_DEBUG, "Illumination sensor: millilux: %.2f, avg %.2f, adj %.2f", lux * 1000, lux_avg * 1000, luminosity_adjustment);
 #endif
             log_ms = millis();
         }
@@ -391,7 +394,7 @@ void SensorsTask::factoryStrainCalibrationCallback(float calibration_weight)
         {
             calibration_scale_ = configuration_->get().strain_scale;
         }
-        LOGV(PB_LogLevel_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
+        LOGV(LOG_LEVEL_DEBUG, "Strain scale set at boot, %f", calibration_scale_);
         strain.set_scale(calibration_scale_);
         delay(100);
         strain.set_offset(0);
@@ -470,7 +473,7 @@ void SensorsTask::weightMeasurementCallback()
     if (weight_measurement_step_ == 0)
     {
         weight_measurement_step_ = 1;
-        LOGI("Weight measurement step 1: Place weight on KNOB and press 'U' again");
+        LOGI("Weight measurement step 1: Place weight on KNOB and press 'w' again");
         delay(1000);
         strain.set_offset(0);
         strain.tare();
@@ -509,7 +512,7 @@ void SensorsTask::strainPowerDown()
 
     if (strain.wait_ready_timeout(10)) // Make sure sensor is on before powering down.
     {
-        LOGV(PB_LogLevel_DEBUG, "Strain sensor power down.");
+        LOGV(LOG_LEVEL_DEBUG, "Strain sensor power down.");
 
         strain_powered = false;
         strain.power_down();
@@ -520,7 +523,7 @@ void SensorsTask::strainPowerUp() // Delays caused a perceived delay in the acti
 {
     if (!strain.wait_ready_timeout(10)) // Make sure sensor is off before powering up.
     {
-        LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
+        LOGV(LOG_LEVEL_DEBUG, "Strain sensor power up.");
 
         strain.power_up();
         if (strain.wait_ready_timeout(100))

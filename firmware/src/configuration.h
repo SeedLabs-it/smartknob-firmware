@@ -1,16 +1,18 @@
 #pragma once
 
+#include <logging.h>
 #include <FFat.h>
 #include <PacketSerial.h>
 
-#include "logging.h"
-
 #include <WiFi.h>
 
-#include "proto_gen/smartknob.pb.h"
+#include "proto/proto_gen/smartknob.pb.h"
 
 #include "EEPROM.h"
 #include "./events/events.h"
+
+static const char *CONFIG_PATH = "/config.pb";
+static const char *SETTINGS_PATH = "/settings.pb";
 
 // TODO: should move these consts to wifi?
 static const uint16_t WIFI_SSID_LENGTH = 128;
@@ -156,10 +158,10 @@ public:
     {
         if (!FFat.begin(true))
         {
-            LOGE("Failed to mount FFat");
+            LOGV(LOG_LEVEL_ERROR, "Failed to mount FFat");
             return;
         }
-        LOGD("Mounted FFat");
+        LOGV(LOG_LEVEL_DEBUG, "Mounted FFat");
         mounted_ = true;
     }
     ~FatGuard()
@@ -167,7 +169,7 @@ public:
         if (mounted_)
         {
             FFat.end();
-            LOGD("Unmounted FFat");
+            LOGV(LOG_LEVEL_DEBUG, "Unmounted FFat");
         }
     }
     FatGuard(FatGuard const &) = delete;

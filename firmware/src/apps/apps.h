@@ -37,21 +37,12 @@ public:
     void triggerMotorConfigUpdate();
     void handleNavigationEvent(NavigationEvent event);
 
-    PB_SmartKnobConfig blocked_motor_config = PB_SmartKnobConfig{
-        0,
-        0,
-        0,
-        0,
-        0,
-        PI,
-        0,
-        1,
-        0.5,
-        "",
-        0,
-        {},
-        0,
-        0,
+    PB_SmartKnobConfig blocked_motor_config = {
+        .position_width_radians = 60 * M_PI / 180,
+        .endstop_strength_unit = 0,
+        .snap_point = 0.5,
+        .detent_positions_count = 0,
+        .detent_positions = {},
     };
 
 protected:

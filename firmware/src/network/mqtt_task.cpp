@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 8, 1, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 11, 0, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
@@ -51,7 +51,7 @@ void MqttTask::handleEvent(WiFiEvent event)
         break;
     case SK_RESET_ERROR:
         retry_count = 0;
-        LOGE("Resetting retry count");
+        LOGV(LOG_LEVEL_WARNING, "Resetting retry count");
         break;
     case SK_DISMISS_ERROR:
         break;
@@ -119,10 +119,13 @@ void MqttTask::run()
                     continue;
                 }
                 has_been_connected = true;
+                if (retry_count > 0)
+                {
+                    WiFiEvent reset_error;
+                    reset_error.type = SK_RESET_ERROR;
+                    publishEvent(reset_error);
+                }
                 retry_count = 0;
-                WiFiEvent reset_error;
-                reset_error.type = SK_RESET_ERROR;
-                publishEvent(reset_error);
             }
 
             if (millis() - mqtt_pull > mqtt_pull_interval_ms)
@@ -180,7 +183,7 @@ void MqttTask::run()
         }
 
         mqtt_notifier.loopTick();
-        delay(5);
+        delay(1);
     }
 }
 
@@ -384,7 +387,6 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
     if (strcmp(type->valuestring, "sync") == 0)
     {
         cJSON *json_root_ = cJSON_Parse((char *)payload);
-        LOGD("sync");
 
         lock();
         apps = cJSON_GetObjectItem(json_root_, "apps"); //! THIS APPS OBJECT NEEDS TO BE FIXED!!! WAS CAUSING MEMORY LEAK BEFORE WHEN USING json_root instead of json_root_
@@ -413,7 +415,7 @@ void MqttTask::callback(char *topic, byte *payload, unsigned int length)
 
     if (strcmp(type->valuestring, "state_update") == 0)
     {
-        LOGD("state_update received");
+        LOGV(LOG_LEVEL_DEBUG, "State_update received");
 
         cJSON *app_id = cJSON_GetObjectItem(json_root, "app_id");
         cJSON *entity_id = cJSON_GetObjectItem(json_root, "entity_id");

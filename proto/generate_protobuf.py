@@ -29,7 +29,7 @@ def run():
         exit(1)
 
     nanopb_generator_path = nanopb_path / "generator" / "nanopb_generator.py"
-    c_generated_output_path = REPO_ROOT / "firmware" / "src" / "proto_gen"
+    c_generated_output_path = REPO_ROOT / "firmware" / "src" / "proto" / "proto_gen" 
 
     proto_files = [f for f in os.listdir(proto_path) if f.endswith(".proto")]
     assert len(proto_files) > 0, "No proto files found!"
@@ -42,7 +42,7 @@ def run():
 
     # Use nanopb's packaged protoc to generate python bindings
     protoc_path = nanopb_path / "generator" / "protoc"
-    python_generated_output_path = REPO_ROOT / "software" / "python" / "proto_gen"
+    python_generated_output_path = REPO_ROOT / "software" / "python" / "proto" / "proto_gen"
     python_generated_output_path.mkdir(parents=True, exist_ok=True)
     subprocess.check_call([protoc_path, "--version"])
     subprocess.check_call(

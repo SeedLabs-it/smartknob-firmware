@@ -21,35 +21,19 @@ RootTask::RootTask(
     MqttTask *mqtt_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task) : Task("RootTask", 1024 * 16, ESP_TASK_MAIN_PRIO, task_core),
-                             stream_(),
-                             configuration_(configuration),
-                             motor_task_(motor_task),
-                             display_task_(display_task),
-                             wifi_task_(wifi_task),
-                             mqtt_task_(mqtt_task),
-                             led_ring_task_(led_ring_task),
-                             sensors_task_(sensors_task),
-                             reset_task_(reset_task),
-                             plaintext_protocol_(
-                                 stream_, [this]()
-                                 { motor_task_.runCalibration(); },
-                                 [this](float calibration_weight)
-                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); },
-                                 [this]()
-                                 {
-                                     sensors_task_->weightMeasurementCallback();
-                                 }),
-                             proto_protocol_(
-                                 stream_,
-                                 configuration,
-                                 [this](PB_SmartKnobConfig &config)
-                                 { applyConfig(config, true); },
-                                 [this]()
-                                 { motor_task_.runCalibration(); },
-                                 [this](float calibration_weight)
-                                 { sensors_task_->factoryStrainCalibrationCallback(calibration_weight); })
-
+    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
+                                                                                                                                                                       //  stream_(),
+                                                                                                                                                                       configuration_(configuration),
+                                                                                                                                                                       motor_task_(motor_task),
+                                                                                                                                                                       display_task_(display_task),
+                                                                                                                                                                       wifi_task_(wifi_task),
+                                                                                                                                                                       mqtt_task_(mqtt_task),
+                                                                                                                                                                       led_ring_task_(led_ring_task),
+                                                                                                                                                                       sensors_task_(sensors_task),
+                                                                                                                                                                       reset_task_(reset_task),
+                                                                                                                                                                       free_rtos_adapter_(free_rtos_adapter),
+                                                                                                                                                                       serial_protocol_plaintext_(serial_protocol_plaintext),
+                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf)
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -82,112 +66,91 @@ RootTask::~RootTask()
 void RootTask::run()
 {
     uint8_t task_started_at = millis();
-    stream_.begin();
 
     motor_task_.addListener(knob_state_queue_);
 
-    plaintext_protocol_.init([this]()
-                             {
-                                 //  CHANGE MOTOR CONFIG????
-                             },
-                             [this]()
-                             {
-                                 OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+    serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_settings_tag, [this](PB_ToSmartknob to_smartknob)
+                                                   { configuration_->setSettings(to_smartknob.payload.settings); });
 
-                                 switch (os_config->mode)
-                                 {
-                                 case ONBOARDING:
-                                     os_config->mode = DEMO;
-                                     display_task_->enableDemo();
-                                     //  CHANGE MOTOR CONFIG
-                                     break;
-                                 case DEMO:
-                                     os_config->mode = HASS;
-                                     display_task_->enableHass();
-                                     //  CHANGE MOTOR CONFIG
+    serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_strain_calibration_tag, [this](PB_ToSmartknob to_smartknob)
+                                                   { sensors_task_->factoryStrainCalibrationCallback(to_smartknob.payload.strain_calibration.calibration_weight); });
 
-                                     break;
-                                 case HASS:
-                                     os_config->mode = ONBOARDING;
-                                     display_task_->enableOnboarding();
-                                     break;
-                                 default:
-                                     os_config->mode = HASS;
-                                     display_task_->enableHass();
-                                     //  CHANGE MOTOR CONFIG
+    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_MOTOR_CALIBRATE, [this]()
+                                                       { motor_task_.runCalibration(); });
 
-                                     break;
-                                 }
-
-                                 this->configuration_->saveOSConfigurationInMemory(*os_config);
-                             });
-
-    // Start in legacy protocol mode
-    current_protocol_ = &plaintext_protocol_;
-    Logging::getInstance().setLogger(&plaintext_protocol_);
-
-    ProtocolChangeCallback protocol_change_callback = [this](uint8_t protocol)
+    auto callbackGetKnobInfo = [this]()
     {
-        switch (protocol)
+        PB_Knob knob = {};
+        strlcpy(knob.mac_address, WiFi.macAddress().c_str(), sizeof(knob.mac_address));
+        strlcpy(knob.ip_address, WiFi.localIP().toString().c_str(), sizeof(knob.ip_address));
+        const PB_PersistentConfiguration config = configuration_->get();
+        if (config.version != 0)
         {
-        case SERIAL_PROTOCOL_LEGACY:
-            current_protocol_ = &plaintext_protocol_;
-            break;
-        case SERIAL_PROTOCOL_PROTO:
-            current_protocol_ = &proto_protocol_;
-            break;
-        default:
-            LOGE("Unknown protocol requested: %d", protocol);
-            break;
+            knob.has_persistent_config = true;
+            knob.persistent_config = config;
         }
-        Logging::getInstance().setLogger(current_protocol_);
-    };
+        else
+        {
+            knob.has_persistent_config = false;
+        }
+        knob.has_settings = true;
+        knob.settings = configuration_->getSettings();
 
-    plaintext_protocol_.setProtocolChangeCallback(protocol_change_callback);
-    proto_protocol_.setProtocolChangeCallback(protocol_change_callback);
+        serial_protocol_protobuf_->sendKnobInfo(knob);
+    };
+    serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_GET_KNOB_INFO, callbackGetKnobInfo);
+
+    serial_protocol_plaintext_->registerKeyHandler('c', [this]()
+                                                   { motor_task_.runCalibration(); });
+    serial_protocol_plaintext_->registerKeyHandler('w', [this]()
+                                                   { sensors_task_->weightMeasurementCallback(); });
+    serial_protocol_plaintext_->registerKeyHandler('y', [this]()
+                                                   { sensors_task_->factoryStrainCalibrationCallback((float)CALIBRATION_WEIGHT); });
+    auto callbackSetProtocol = [this]()
+    { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
+    serial_protocol_plaintext_->registerKeyHandler('q', callbackSetProtocol);
+    serial_protocol_plaintext_->registerKeyHandler(0, callbackSetProtocol); // Switches to protobuf protocol on protobuf message from configurator
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
 
     os_config_notifier_.setCallback([this](OSMode os_mode)
                                     {
-                                        this->configuration_->loadOSConfiguration();
-                                        OSConfiguration *os_config = this->configuration_->getOSConfiguration();
+        this->configuration_->loadOSConfiguration();
+        OSConfiguration *os_config = this->configuration_->getOSConfiguration();
 
-                                        if (os_config->mode == HASS && os_mode == ONBOARDING)
-                                        { //Going from DEMO mode to HASS mode
-                                            os_mode = HASS;
-                                        }
+        if (os_config->mode == HASS && os_mode == ONBOARDING)
+        { // Going from DEMO mode to HASS mode
+            os_mode = HASS;
+        }
+        
+        os_config->mode = os_mode;
+        LOGI("OS mode set to %d", os_config->mode);
 
-                                        os_config->mode = os_mode;
+        this->configuration_->saveOSConfigurationInMemory(*os_config);
 
-                                        this->configuration_->saveOSConfigurationInMemory(*os_config); 
-
-                                        
-
-                                        switch (os_config->mode)
-                                        {
-                                        case ONBOARDING:
-                                            display_task_->enableOnboarding();
-                                            this->configuration_->saveOSConfiguration(*os_config);
-
-                                            break;
-                                        case DEMO:
-                                            display_task_->enableDemo();
-                                            break;
-                                        case HASS:
-                                            display_task_->enableHass();
-                                            this->configuration_->saveOSConfiguration(*os_config);
-                                            break;
-                                        default:
-                                            break;
-                                        } });
+        switch (os_config->mode)
+        {
+        case ONBOARDING:
+            display_task_->enableOnboarding();
+            this->configuration_->saveOSConfiguration(*os_config);
+            break;
+        case DEMO:
+            display_task_->enableDemo();
+            break;
+        case HASS:
+            display_task_->enableHass();
+            this->configuration_->saveOSConfiguration(*os_config);
+            break;
+        default:
+            break;
+        } });
 
     // waiting for config to be loaded
     bool is_configuration_loaded = false;
     while (!is_configuration_loaded)
     {
-        LOGI("Waiting for configuration");
+        LOGV(LOG_LEVEL_DEBUG, "Waiting for configuration");
         xSemaphoreTake(mutex_, portMAX_DELAY);
         is_configuration_loaded = configuration_ != nullptr;
         xSemaphoreGive(mutex_);
@@ -256,7 +219,6 @@ void RootTask::run()
 
     while (1)
     {
-
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
         {
             app_state.screen_state.awake_until = millis() + app_state.screen_state.awake_until;
@@ -385,10 +347,12 @@ void RootTask::run()
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
             case SK_CONFIGURATION_SAVED:
-                if (current_protocol_ == &proto_protocol_)
+                if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
                 {
-                    proto_protocol_.sendInitialInfo();
+                    LOGV(LOG_LEVEL_DEBUG, "Sending knob config state.");
+                    callbackGetKnobInfo();
                 }
+
                 break;
             case SK_SETTINGS_CHANGED:
                 settings_ = configuration_->getSettings();
@@ -396,11 +360,12 @@ void RootTask::run()
             case SK_STRAIN_CALIBRATION:
                 app_state.screen_state.awake_until = millis() + settings_.screen.timeout; // Wake up for 15 seconds after calibration event.
                 app_state.screen_state.has_been_engaged = true;
-                if (current_protocol_ == &proto_protocol_)
-                {
-                    LOGD("Sending strain calib state.");
-                    proto_protocol_.sendStrainCalibState(wifi_event.body.calibration_step);
-                }
+                // if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
+                // {
+                //      LOGV(LOG_LEVEL_DEBUG, "Sending strain calib state.");
+                //      serial_protocol_protobuf_->sendStrainCalibState(wifi_event.body.strain_calibration.step);
+                //      not needed?
+                // }
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
@@ -435,11 +400,11 @@ void RootTask::run()
 
         if (xQueueReceive(app_sync_queue_, &apps_, 0) == pdTRUE)
         {
-            LOGD("App sync requested!");
+            LOGI("App sync requested from HASS!");
 #if SK_MQTT // Should this be here??
             display_task_->getHassApps()->sync(mqtt_task_->getApps());
 
-            LOGD("Giving 0.5s for Apps to initialize");
+            LOGV(LOG_LEVEL_DEBUG, "Giving 0.5s for Apps to initialize");
             delay(500);
             display_task_->getHassApps()->triggerMotorConfigUpdate();
             mqtt_task_->unlock();
@@ -541,7 +506,7 @@ void RootTask::run()
             publishState();
         }
 
-        current_protocol_->loop();
+        // current_protocol_->loop();
 
         motor_notifier.loopTick();
         os_config_notifier_.loopTick();
@@ -787,8 +752,9 @@ void RootTask::loadConfiguration()
 #if SK_MQTT
             if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadMQTTConfiguration())
             {
-                MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                LOGD("MQTT_CONFIG: %s", mqtt_config.host);
+                // UNECCESARY
+                // MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
+                // LOGD("MQTT_CONFIG: %s", mqtt_config.host);
             }
 #endif
             configuration_loaded_ = true;
@@ -828,7 +794,7 @@ void RootTask::publishState()
 {
     // Apply local state before publishing to serial
     latest_state_.press_nonce = press_count_;
-    current_protocol_->handleState(latest_state_);
+    // current_protocol_->handleState(latest_state_);
 }
 
 void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)

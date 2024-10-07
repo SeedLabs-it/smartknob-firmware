@@ -8,8 +8,7 @@
 #include <vector>
 #include <Preferences.h>
 
-#include "../logger.h"
-#include "../proto_gen/smartknob.pb.h"
+#include "../proto/proto_gen/smartknob.pb.h"
 #include "../task.h"
 #include "../app_config.h"
 

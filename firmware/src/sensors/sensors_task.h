@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logger.h"
 #include "task.h"
 #include "app_config.h"
 #include <vector>

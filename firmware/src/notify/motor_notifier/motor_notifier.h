@@ -2,8 +2,9 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
-#include "../../proto_gen/smartknob.pb.h"
+#include "../../proto/proto_gen/smartknob.pb.h"
 #include <functional>
+#include <logging.h>
 
 // typedef void MotorUpdaterCallback(PB_SmartKnobConfig config);
 typedef std::function<void(PB_SmartKnobConfig)> MotorUpdaterCallback;

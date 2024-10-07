@@ -7,7 +7,6 @@
 #include <vector>
 #include <map>
 
-#include "logger.h"
 #include "task.h"
 #include "cJSON.h"
 #include "../app_config.h"

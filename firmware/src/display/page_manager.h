@@ -1,6 +1,5 @@
 #pragma once
 #include <map>
-#include "logging.h"
 #include "lvgl.h"
 #include "semaphore_guard.h"
 #include "./app_config.h"

@@ -2,7 +2,6 @@
 
 #if SK_LEDS
 
-#include "../logger.h"
 #include "../task.h"
 #include "../app_config.h"
 

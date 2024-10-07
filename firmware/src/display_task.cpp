@@ -125,7 +125,6 @@ void DisplayTask::enableDemo()
 
 void DisplayTask::enableHass()
 {
-    LOGE("enableHass");
     display_os_mode = HASS;
     hass_apps->render();
     hass_apps->triggerMotorConfigUpdate();
