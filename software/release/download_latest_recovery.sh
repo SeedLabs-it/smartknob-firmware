@@ -1,14 +1,14 @@
 #!/bin/sh
 
-latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-base_url="https://github.com/SeedLabs-it/smartknob-firmware/releases/download/$latest_tag"
-download_path="./software/release/temp"
-extract_path="./software/release/dist/$latest_tag/"
+latest_tag=$(git ls-remote --tags "https://github.com/SeedLabs-it/skdk-recovery-firmware/" | awk '{print $2}' | sed 's|refs/tags/||' | sort -V | tail -n 1)
+base_url="https://github.com/SeedLabs-it/skdk-recovery-firmware/releases/download/$latest_tag"
+download_path="./software/release/temp/recovery"
+extract_path="./software/release/dist/recovery/$latest_tag/"
 
 mkdir -p "$download_path"
 mkdir -p "$extract_path"
 
-echo "Downloading latest recovery files for tag: $latest_tag"
+echo "Downloading latest release files for tag: $latest_tag"
 
 file="$latest_tag.zip"
 

@@ -38,4 +38,6 @@ __pycache__
 
 # Release
 software/release/dist/*
+software/release/temp/
+software/release/esp-idf/
 software/release/mac_addresses.txt
