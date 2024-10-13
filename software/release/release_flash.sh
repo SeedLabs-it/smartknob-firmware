@@ -57,8 +57,8 @@ echo ""
 
 # Check if esp-idf is installed
 if [ ! -f ./software/release/esp-idf/export.sh ]; then
-    echo "ESP-IDF is not installed."
-    read -p "Do you want to install ESP-IDF? (y/n): " choice
+    echo "ESP-IDF is not cloned/installed."
+    read -p "Do you want to clone ESP-IDF? (y/n): " choice
     case "$choice" in 
       y|Y )     echo "Cloning ESP-IDF..."
                 git clone --recursive https://github.com/espressif/esp-idf ./software/release/esp-idf
@@ -74,9 +74,17 @@ fi
 
 echo ""
 
-# Source the export.sh file
-. ./software/release/esp-idf/export.sh >/dev/null 2>&1
+# Check if idf.py is available
+if ! command -v idf.py &> /dev/null; then
+    echo "Initializing ESP-IDF..."
+    ./software/release/esp-idf/install.sh >/dev/null 2>&1
+    . ./software/release/esp-idf/export.sh >/dev/null 2>&1
+        
+else
+    echo "ESP-IDF is already cloned&installed, idf.py is available."
+fi
 
+echo ""
 
 #Get Platformio device port for esp32
 device=$(platformio device list | grep -B 2 "VID:PID=303A:1001" | grep -o -E '/dev/(tty|cu)\S*')
