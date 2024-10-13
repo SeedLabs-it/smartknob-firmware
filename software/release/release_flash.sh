@@ -89,6 +89,7 @@ fi
 echo "Device port: $device"
 
 echo "FW version used $latest_tag"
+echo "Recovery FW version used $latest_recovery_tag"
 read -p "Enter order id: " order
 
 echo ""
