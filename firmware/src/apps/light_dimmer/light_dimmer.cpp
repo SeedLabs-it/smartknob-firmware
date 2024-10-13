@@ -83,11 +83,15 @@ void LightDimmerApp::initDimmerScreen()
     lv_obj_align_to(friendly_name_label, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-#define skip_degrees 4                   // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
+#define skip_degrees 1                   // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
+#define skip_degrees_selectable 4        // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
 #define lines_count (360 / skip_degrees) // number of lines in a 360 circle. // [TODO] refactor, this should account of line thickness + space_between_lines.
-#define distance_from_center 70          // distance from center (pixel) from where the line starts (and goes outword towards the edge of the display)
-#define line_length 120                  // length of the ticker line (in pixel)
+#define lines_count_selectable (360 / skip_degrees_selectable)
+#define distance_from_center 70 // distance from center (pixel) from where the line starts (and goes outword towards the edge of the display)
+#define line_length 120         // length of the ticker line (in pixel)
 #define deg_1_rad (M_PI / 180.0)
+
+#define selector_radius 80 // Radius of where to place selector dot.
 
 static lv_style_t styles[lines_count];
 
@@ -104,7 +108,7 @@ static lv_point_t selector_line_points[3][2];
 static lv_obj_t *selector_lines[3];
 
 static lv_obj_t *meter;
-static lv_meter_indicator_t *indic_hue;
+// static lv_meter_indicator_t *indic_hue;
 
 static void meter_draw_event_cb(lv_event_t *e)
 {
@@ -112,7 +116,7 @@ static void meter_draw_event_cb(lv_event_t *e)
     lv_color_hsv_t *hsv = (lv_color_hsv_t *)lv_event_get_user_data(e);
     if (dsc->type == LV_METER_DRAW_PART_NEEDLE_LINE)
     {
-        dsc->line_dsc->color = lv_color_hsv_to_rgb(hsv->h, hsv->s, hsv->v);
+        // dsc->line_dsc->color = lv_color_hsv_to_rgb(hsv->h, hsv->s, hsv->v);
     }
     else if (dsc->type == LV_METER_DRAW_PART_TICK)
     {
@@ -135,12 +139,16 @@ void LightDimmerApp::initHueScreen()
     lv_obj_center(meter);
 
     lv_meter_scale_t *scale_hue = lv_meter_add_scale(meter);
-    lv_meter_set_scale_ticks(meter, scale_hue, lines_count - 1, 2, 12, lv_palette_main(LV_PALETTE_GREY));
+    lv_meter_set_scale_ticks(meter, scale_hue, lines_count - 1, 3, 12, lv_palette_main(LV_PALETTE_GREY));
     lv_meter_set_scale_range(meter, scale_hue, 0, lines_count, 360, 270);
 
-    indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
+    // indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
 
     lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &hsv);
+
+    selected_hue = lvDrawCircle(9, hue_screen);
+    lv_obj_set_style_bg_color(selected_hue, lv_color_hsv_to_rgb(app_hue_position * skip_degrees_selectable, 100, 100), LV_PART_MAIN);
+    lv_obj_align(selected_hue, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + app_hue_position)), selector_radius * sin(deg_1_rad * (270 + app_hue_position)));
 }
 
 void LightDimmerApp::updateHueWheel()
@@ -193,7 +201,7 @@ int8_t LightDimmerApp::navigationNext()
             app_hue_position,
             0,
             -1,
-            skip_degrees * PI / 180,
+            skip_degrees_selectable * PI / 180,
             1,
             1,
             0.5,
@@ -261,18 +269,27 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
             if (current_position >= 0)
             {
-                app_hue_position = current_position % lines_count;
+                app_hue_position = current_position % lines_count_selectable;
             }
             else
             {
-                app_hue_position = lines_count + (current_position % lines_count);
+                app_hue_position = lines_count_selectable + (current_position % lines_count_selectable);
             }
-            SemaphoreGuard lock(mutex_);
-            lv_meter_set_indicator_value(meter, indic_hue, app_hue_position);
+            // lv_meter_set_indicator_value(meter, indic_hue, app_hue_position);
+            float app_hue_deg = app_hue_position * skip_degrees_selectable;
 
-            hsv.h = app_hue_position * skip_degrees;
+            hsv.h = app_hue_deg;
             hsv.s = 100;
             hsv.v = 100;
+
+            float u = deg_1_rad * (270 + app_hue_deg);
+
+            uint16_t x = selector_radius * cos(u);
+            uint16_t y = selector_radius * sin(u);
+
+            SemaphoreGuard lock(mutex_);
+            lv_obj_set_style_bg_color(selected_hue, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
+            lv_obj_align(selected_hue, LV_ALIGN_CENTER, x, y);
         }
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
         {
@@ -291,7 +308,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
             if (color_set)
             {
-                lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees, 100, 100), LV_PART_INDICATOR);
+                lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees_selectable, 100, 100), LV_PART_INDICATOR);
             }
 
             lv_arc_set_value(arc_, current_brightness);
@@ -320,7 +337,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
         if (color_set)
         {
-            lv_color_t rgb_color = lv_color_hsv_to_rgb(app_hue_position * skip_degrees, 100, 100);
+            lv_color_t rgb_color = lv_color_hsv_to_rgb(app_hue_position * skip_degrees_selectable, 100, 100);
 
             cJSON *rgb_array = cJSON_CreateArray();
             cJSON_AddItemToArray(rgb_array, cJSON_CreateNumber(rgb_color.ch.red));
@@ -473,7 +490,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
         {
             LOGE("HUE: %d", hsv.h);
-            lv_meter_set_indicator_value(meter, indic_hue, hsv.h / skip_degrees);
+            lv_obj_set_style_bg_color(selected_hue, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
         }
     }
 }

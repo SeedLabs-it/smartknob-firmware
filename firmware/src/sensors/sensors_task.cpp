@@ -523,7 +523,7 @@ void SensorsTask::strainPowerUp() // Delays caused a perceived delay in the acti
         LOGV(PB_LogLevel_DEBUG, "Strain sensor power up.");
 
         strain.power_up();
-        if (strain.wait_ready_timeout(100))
+        if (strain.wait_ready_timeout(500))
         {
             strain.set_offset(0);
             strain.tare();

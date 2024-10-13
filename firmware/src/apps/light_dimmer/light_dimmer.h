@@ -60,10 +60,12 @@ private:
 
     int8_t calculateAppHuePosition(int8_t position);
 
-    lv_obj_t *mask_img;
+    // lv_obj_t *mask_img;
     lv_obj_t *dimmer_screen;
     lv_obj_t *hue_screen;
     lv_obj_t *hue_wheel;
+
+    lv_obj_t *selected_hue;
 
     uint8_t r = 0;
     uint8_t g = 0;
