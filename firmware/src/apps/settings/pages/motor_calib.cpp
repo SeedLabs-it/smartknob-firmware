@@ -7,6 +7,7 @@ void motor_calib_timer(lv_timer_t *timer)
     unsigned long now = millis();
 
     lv_label_set_text_fmt(state->prompt_label, "DONT TOUCH KNOB");
+    lv_obj_align_to(state->prompt_label, state->label, LV_ALIGN_OUT_BOTTOM_MID, 0, 12);
     lv_obj_set_style_text_color(state->prompt_label, LV_COLOR_MAKE(0xFF, 0xB4, 0x50), LV_PART_MAIN);
     lv_label_set_text_fmt(state->time_label, "%02ds", (45000 - (now - state->start_ms)) / 1000);
     if (!state->timer_running)
@@ -38,7 +39,8 @@ void motor_calib_timer(lv_timer_t *timer)
 
 MotorCalibrationSettingsPage::MotorCalibrationSettingsPage(lv_obj_t *parent) : BasePage(parent)
 {
-    lv_obj_t *label = lv_label_create(page);
+    state_.label = lv_label_create(page);
+    lv_obj_t *label = state_.label;
     lv_label_set_text(label, "Motor Calibration");
     lv_obj_align(label, LV_ALIGN_CENTER, 0, -16);
 
