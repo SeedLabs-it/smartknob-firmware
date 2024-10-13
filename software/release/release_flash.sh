@@ -1,4 +1,8 @@
 #!/bin/bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
 export PATH=$PATH:$HOME/.platformio/penv/bin
 
 git fetch --tags
@@ -96,9 +100,9 @@ fi
 
 echo "Device port: $device"
 
-echo "FW version used $latest_tag"
-echo "Recovery FW version used $latest_recovery_tag"
-read -p "Enter order id: " order
+echo -e "FW version used ${GREEN}$latest_tag${NC}"
+echo -e "Recovery FW version used ${GREEN}$latest_recovery_tag${NC}"
+read -p "$(echo -e "${RED}Enter order id: ${NC}")" order
 
 echo ""
 
