@@ -78,6 +78,8 @@ private:
     void webHandlerMQTTForm();
     void webHandlerWiFiCredentials();
     void webHandlerMQTTCredentials();
+
+    void downloadConfig();
 };
 
 #else
