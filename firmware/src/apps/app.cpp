@@ -33,7 +33,7 @@ void App::triggerMotorConfigUpdate()
     }
     else
     {
-        LOGW("motor_notifier is not set");
+        LOGW("Motor_notifier is not set");
     }
 }
 

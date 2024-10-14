@@ -3,12 +3,13 @@
 #include <Arduino.h>
 #include "configuration.h"
 #include "display_task.h"
-#include "logger.h"
-#include "logging.h"
 #include "motor_foc/motor_task.h"
-#include "serial/serial_protocol_plaintext.h"
-#include "serial/serial_protocol_protobuf.h"
-#include "serial/uart_stream.h"
+// #include "serial/serial_protocol_plaintext.h"
+// #include "serial/serial_protocol_protobuf.h"
+// #include "serial/uart_stream.h"
+#include <logging.h>
+#include <logging/adapters/freertos/free_rtos_adapter.h>
+#include "proto/serial_protocol_protobuf.h"
 #include "task.h"
 #include "app_config.h"
 #include "network/wifi_task.h"
@@ -30,7 +31,7 @@ class RootTask : public Task<RootTask>
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task);
+    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf);
     virtual ~RootTask();
     void loadConfiguration();
 
@@ -46,11 +47,6 @@ protected:
     void run();
 
 private:
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
-    HWCDC stream_;
-#else
-    UartStream stream_;
-#endif
     MotorTask &motor_task_;
     DisplayTask *display_task_;
     WifiTask *wifi_task_;
@@ -58,6 +54,12 @@ private:
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
+
+    FreeRTOSAdapter *free_rtos_adapter_;
+
+    SerialProtocolPlaintext *serial_protocol_plaintext_;
+    SerialProtocolProtobuf *serial_protocol_protobuf_;
+
     char buf_[128];
 
     std::vector<QueueHandle_t> listeners_;
@@ -101,8 +103,8 @@ private:
 
     OSConfigNotifier os_config_notifier_;
 
-    SerialProtocolPlaintext plaintext_protocol_;
-    SerialProtocolProtobuf proto_protocol_;
+    // SerialProtocolPlaintext plaintext_protocol_;
+    // SerialProtocolProtobuf proto_protocol_;
 
     uint32_t last_calib_state_sent_ = 0;
 

@@ -51,7 +51,7 @@ void Apps::setActive(int8_t id)
         render();
         return;
     }
-    LOGD("Set active %d", id);
+    LOGV(LOG_LEVEL_DEBUG, "Set active %d", id);
     active_id = id;
     if (apps[active_id] == nullptr)
     {

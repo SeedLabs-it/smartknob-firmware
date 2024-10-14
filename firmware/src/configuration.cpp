@@ -3,7 +3,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 
-#include "proto_gen/smartknob.pb.h"
+#include "proto/proto_gen/smartknob.pb.h"
 #include "semaphore_guard.h"
 
 #include "configuration.h"
@@ -15,9 +15,6 @@ Configuration::Configuration()
 
     wifi_config = WiFiConfiguration();
     mqtt_config = MQTTConfiguration();
-    loadOSConfiguration();
-    loadWiFiConfiguration();
-    loadMQTTConfiguration();
 
     std::string mac_address = std::string(WiFi.macAddress().c_str());
     mac_address.erase(
@@ -56,7 +53,7 @@ bool Configuration::loadFromDisk()
     File f = FFat.open(CONFIG_PATH);
     if (!f)
     {
-        LOGE("Failed to read config file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
         return false;
     }
 
@@ -75,24 +72,17 @@ bool Configuration::loadFromDisk()
 
     if (pb_buffer_.version != PERSISTENT_CONFIGURATION_VERSION)
     {
-        char buf_[200];
-        snprintf(buf_, sizeof(buf_), "Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
-        LOGE(buf_);
+        LOGE("Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
         pb_buffer_ = {};
         return false;
     }
     loaded_ = true;
 
-    char buf_[200];
-    snprintf(
-        buf_,
-        sizeof(buf_),
-        "Motor calibration: calib=%u, pole_pairs=%u, zero_offset=%.2f, cw=%u",
-        pb_buffer_.motor.calibrated,
-        pb_buffer_.motor.pole_pairs,
-        pb_buffer_.motor.zero_electrical_offset,
-        pb_buffer_.motor.direction_cw);
-    LOGI(buf_);
+    LOGV(LOG_LEVEL_DEBUG, "Motor calibration: calib=%u, pole_pairs=%u, zero_offset=%.2f, cw=%u",
+         pb_buffer_.motor.calibrated,
+         pb_buffer_.motor.pole_pairs,
+         pb_buffer_.motor.zero_electrical_offset,
+         pb_buffer_.motor.direction_cw);
 
     return true;
 }
@@ -121,7 +111,7 @@ bool Configuration::saveToDisk()
         File f = FFat.open(CONFIG_PATH, FILE_WRITE);
         if (!f)
         {
-            LOGE("Failed to read config file");
+            LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
             return false;
         }
 
@@ -159,7 +149,7 @@ bool Configuration::loadSettingsFromDisk()
     File f = FFat.open(SETTINGS_PATH);
     if (!f)
     {
-        LOGE("Failed to read settings file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
         return false;
     }
 
@@ -212,7 +202,7 @@ bool Configuration::saveSettingsToDisk()
     File f = FFat.open(SETTINGS_PATH, FILE_WRITE);
     if (!f)
     {
-        LOGE("Failed to read settings file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
         return false;
     }
 
@@ -290,28 +280,21 @@ WiFiConfiguration Configuration::getWiFiConfiguration()
 {
     return wifi_config;
 }
-
+// TODO Move storage of config to fatfs instead of EEPROM
 bool Configuration::loadWiFiConfiguration()
 {
-
-    char buf_[512];
-
     EEPROM.get(WIFI_SSID_EEPROM_POS, wifi_config.ssid);
     EEPROM.get(WIFI_PASSPHRASE_EEPROM_POS, wifi_config.passphrase);
     EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
 
-    sprintf(buf_, "loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
-    LOGD(buf_);
+    LOGV(LOG_LEVEL_DEBUG, "Loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
 
     return is_wifi_set;
 }
 
 bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
 {
-    // TODO: persist in a file
-    char buf_[512];
-    sprintf(buf_, "saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
-    LOGD(buf_);
+    LOGV(LOG_LEVEL_DEBUG, "Saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
 
     is_mqtt_set = true;
     EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
@@ -330,16 +313,13 @@ MQTTConfiguration Configuration::getMQTTConfiguration()
 
 bool Configuration::loadMQTTConfiguration()
 {
-    char buf_[512];
-
     EEPROM.get(MQTT_HOST_EEPROM_POS, mqtt_config.host);
     EEPROM.get(MQTT_PORT_EEPROM_POS, mqtt_config.port);
     EEPROM.get(MQTT_USER_EEPROM_POS, mqtt_config.user);
     EEPROM.get(MQTT_PASS_EEPROM_POS, mqtt_config.password);
     EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
 
-    sprintf(buf_, "loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
-    LOGD(buf_);
+    LOGV(LOG_LEVEL_DEBUG, "Loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
 
     return is_mqtt_set;
 }
@@ -348,10 +328,6 @@ bool Configuration::saveOSConfigurationInMemory(OSConfiguration os_config)
 {
 
     this->os_config.mode = os_config.mode;
-    char buf_[32];
-    sprintf(buf_, "os mode set to %d", os_config.mode);
-    LOGD(buf_);
-
     return true;
 }
 

@@ -7,7 +7,6 @@
 
 #include "lvgl.h"
 #include "util.h"
-#include "logging.h"
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
 #include "notify/os_config_notifier/os_config_notifier.h"
@@ -122,7 +121,7 @@ class AboutPage : public BasePage
 public:
     AboutPage(lv_obj_t *parent) : BasePage(parent)
     {
-        lv_obj_t *url_qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+        lv_obj_t *url_qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
         lv_qrcode_update(url_qr, "https://store.seedlabs.it/products/smartknob-devkit-v0-1", strlen("https://store.seedlabs.it/products/smartknob-devkit-v0-1"));
         lv_obj_align(url_qr, LV_ALIGN_CENTER, 0, -20);
 
