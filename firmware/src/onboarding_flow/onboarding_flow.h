@@ -7,7 +7,6 @@
 
 #include "lvgl.h"
 #include "util.h"
-#include "logging.h"
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/wifi_notifier/wifi_notifier.h"
 #include "notify/os_config_notifier/os_config_notifier.h"

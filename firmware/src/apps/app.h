@@ -4,7 +4,7 @@
 #include <lvgl.h>
 
 #include "semaphore_guard.h"
-#include "../proto_gen/smartknob.pb.h"
+#include "../proto/proto_gen/smartknob.pb.h"
 #include "../app_config.h"
 #include "assets/images/icons.h"
 #include "../events/events.h"

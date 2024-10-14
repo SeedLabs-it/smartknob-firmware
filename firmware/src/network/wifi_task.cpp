@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 7, 1, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 9, 0, task_core}
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -73,13 +73,6 @@ void OnWiFiEventGlobal(WiFiEvent_t event)
 
     switch (event)
     {
-
-    case SYSTEM_EVENT_STA_CONNECTED:
-        LOGD("Connected to WiFi Network");
-        break;
-    // case SYSTEM_EVENT_AP_START:
-    //     Serial.println("ESP32 soft AP started");
-    //     break;
     case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
         wifi_event.type = SK_AP_CLIENT;
         wifi_event.body.ap_client.connected = true;
@@ -347,7 +340,7 @@ void WifiTask::startWebServer()
 
     server_->begin();
 
-    LOGI("WebServer started");
+    LOGV(LOG_LEVEL_INFO, "WebServer started");
 
     is_webserver_started = true;
     // TODO: send event to
@@ -376,10 +369,10 @@ void WifiTask::run()
 
         if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
         {
-            LOGD("WiFi status: %d", WiFi.status());
-            LOGD("WiFi connected: %d", WiFi.isConnected());
-            LOGD("Retry count: %d", retry_count);
-            LOGD("last_wifi_status_new: %d", last_wifi_status_new);
+            LOGV(LOG_LEVEL_DEBUG, "WiFi status: %d", WiFi.status());
+            LOGV(LOG_LEVEL_DEBUG, "WiFi connected: %d", WiFi.isConnected());
+            LOGV(LOG_LEVEL_DEBUG, "Retry count: %d", retry_count);
+            LOGV(LOG_LEVEL_DEBUG, "Last_wifi_status_new: %d", last_wifi_status_new);
 
             WiFi.begin(config_.ssid, config_.passphrase);
             while (WiFi.status() != WL_CONNECTED)
@@ -422,7 +415,7 @@ void WifiTask::run()
 
         wifi_notifier.loopTick();
 
-        delay(5);
+        delay(1);
     }
 }
 
