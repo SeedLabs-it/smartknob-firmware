@@ -67,6 +67,11 @@ void Apps::setActive(int8_t id)
 
 App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
 {
+    AppData app_data = {};
+    sprintf(app_data.app_id, "%s", app_id);
+    sprintf(app_data.friendly_name, "%s", friendly_name);
+    sprintf(app_data.entity_id, "%s", entity_id);
+
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(screen_mutex_, app_id, friendly_name, entity_id);
@@ -89,7 +94,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_id, friendly_name, entity_id);
+        LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_data);
         add(position, app);
         return app;
     }
