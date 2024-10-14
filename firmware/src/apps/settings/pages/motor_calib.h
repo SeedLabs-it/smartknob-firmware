@@ -8,6 +8,7 @@ struct MotorCalibState
     bool is_calibrating = false;
     bool timer_running = false;
 
+    lv_obj_t *label;
     lv_obj_t *prompt_label;
     lv_obj_t *time_label;
 };
