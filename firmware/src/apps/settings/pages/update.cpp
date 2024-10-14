@@ -19,7 +19,7 @@ UpdateSettingsPage::UpdateSettingsPage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_set_style_text_font(update_label, &aktivgrotesk_regular_12pt_8bpp_subpixel, LV_PART_MAIN);
     lv_label_set_text(update_label, "SCAN TO UPDATE");
 
-    update_qrcode = lv_qrcode_create(container, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+    update_qrcode = lv_qrcode_create(container, 80, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
     lv_qrcode_update(update_qrcode, "http://192.168.4.1/update", strlen("http://192.168.4.1/update"));
     lv_obj_align(update_qrcode, LV_ALIGN_CENTER, 0, -20);
 

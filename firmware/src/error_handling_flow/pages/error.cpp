@@ -35,7 +35,7 @@ ErrorPage::ErrorPage(lv_obj_t *parent) : BasePage(parent)
     lv_label_set_text(retry_label, "Retry 1");
     lv_obj_align_to(retry_label, countdown_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
-    qr_code = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+    qr_code = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
     lv_qrcode_update(qr_code, "placeholder", strlen("placeholder"));
     lv_obj_align_to(qr_code, error_event_label, LV_ALIGN_OUT_TOP_MID, 0, -10);
 

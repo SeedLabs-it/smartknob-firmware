@@ -11,6 +11,29 @@
 
 #include "driver/temp_sensor.h"
 
+#include <logging.h>
+#include <logging/adapters/freertos/free_rtos_adapter.h>
+#include <logging/adapters/freertos/protocols/serial/serial_protocol_plaintext.h>
+#include "proto/serial_protocol_protobuf.h"
+
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !SK_FORCE_UART_STREAM
+HWCDC stream_ = HWCDC();
+#else
+// TODO Check if uartstream works!!
+UartStream stream_;
+#endif
+
+#if ENABLE_LOGGING
+static SerialProtocolPlaintext serial_protocol(stream_);
+static SerialProtocolPlaintext *serial_protocol_p = &serial_protocol;
+
+static SerialProtocolProtobuf serial_protocol_protobuf(stream_);
+static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_protobuf;
+
+static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 24, 0, 1);
+static FreeRTOSAdapter *adapter_p = &adapter;
+#endif
+
 Configuration config;
 
 #if SK_DISPLAY
@@ -51,7 +74,7 @@ static SensorsTask *sensors_task_p = &sensors_task;
 static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
-RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p);
+RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p, adapter_p, serial_protocol_p, serial_protocol_protobuf_p);
 
 void initTempSensor()
 {
@@ -63,6 +86,14 @@ void initTempSensor()
 
 void setup()
 {
+    delay(100); // Delay to allow usb to connect before starting stream
+    stream_.begin(MONITOR_SPEED);
+
+#if ENABLE_LOGGING
+    Logging::setAdapter(adapter_p);
+#endif
+
+    LOGI("Starting Seedlabs Smart Knob");
 
     initTempSensor();
 
@@ -84,9 +115,6 @@ void setup()
 #if SK_LEDS
     led_ring_task_p->begin();
 #endif
-
-    // TODO: remove this. Wait for display task init finishes
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     root_task.begin();
     if (!config.loadFromDisk())

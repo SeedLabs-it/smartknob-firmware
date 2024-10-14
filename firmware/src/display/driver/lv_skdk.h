@@ -17,7 +17,6 @@ extern "C"
  *********************/
 #pragma once
 #include "lvgl.h"
-#include "logging.h"
 
     /*********************
      *      DEFINES
