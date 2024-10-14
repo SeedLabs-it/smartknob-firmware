@@ -65,3 +65,5 @@ private:
     void shiftFilter(float nextValue);
     void computeAverage();
 };
+
+lv_color_t kelvinToLvColor(int16_t kelvin);

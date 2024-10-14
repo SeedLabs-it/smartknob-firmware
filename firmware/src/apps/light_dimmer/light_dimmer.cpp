@@ -155,7 +155,7 @@ void LightDimmerApp::handleNavigation(NavigationEvent event)
                 0,
                 0,
                 LIGHT_DIMMER_PAGE_COUNT - 2, // -2 dimmer doesnt count as its not selectable (default page)
-                35 * PI / 180,
+                25 * PI / 180,
                 1,
                 1,
                 1.1,

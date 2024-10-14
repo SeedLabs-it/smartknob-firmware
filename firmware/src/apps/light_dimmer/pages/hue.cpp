@@ -5,7 +5,6 @@ static lv_obj_t *meter;
 static void meter_draw_event_cb(lv_event_t *e)
 {
     lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-    lv_color_hsv_t *hsv = (lv_color_hsv_t *)lv_event_get_user_data(e);
     if (dsc->type == LV_METER_DRAW_PART_TICK)
     {
         dsc->line_dsc->color = lv_color_hsv_to_rgb(dsc->id * skip_degrees_def, 100, 100);
@@ -25,7 +24,7 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
 
     // indic_hue = lv_meter_add_needle_line(meter, scale_hue, 2, LV_COLOR_MAKE(0x00, 0x00, 0x00), -20);
 
-    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, &hsv);
+    lv_obj_add_event_cb(meter, meter_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, nullptr);
 
     hue_selector = lvDrawCircle(9, page);
     lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(0 * skip_degrees_selectable, 100, 100), LV_PART_MAIN);
