@@ -35,7 +35,7 @@ class ConnectQRCodePage : public BasePage
 public:
     ConnectQRCodePage(lv_obj_t *parent) : BasePage(parent)
     {
-        qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+        qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
 
         lv_qrcode_update(qr, "", strlen(""));
         lv_obj_center(qr);
@@ -74,7 +74,7 @@ class WebServerQRCodePage : public BasePage
 public:
     WebServerQRCodePage(lv_obj_t *parent) : BasePage(parent)
     {
-        qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), LV_COLOR_MAKE(0x00, 0x00, 0x00));
+        qr = lv_qrcode_create(page, 80, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_COLOR_MAKE(0xFF, 0xFF, 0xFF));
 
         lv_qrcode_update(qr, "", strlen(""));
         lv_obj_center(qr);

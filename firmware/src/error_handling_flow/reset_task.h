@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logger.h"
 #include "task.h"
 #include "esp_ota_ops.h"
 #include "configuration.h"
@@ -21,7 +20,7 @@ public:
 
     void setMotorTask(MotorTask *motor_task);
 
-    void setLogger(Logger *logger);
+    // void setLogger(Logger *logger);
     void setVerbose(bool verbose);
     void toggleVerbose();
 

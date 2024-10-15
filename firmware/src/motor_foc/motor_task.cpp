@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 5, 1, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 8, 0, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);
@@ -91,7 +91,7 @@ void MotorTask::run()
 #else
     if (!c.motor.calibrated)
     {
-        LOGE("Motor not calibrated! Please calibrate before using the SmartKnob.");
+        LOGW("Motor not calibrated! Please calibrate before using the SmartKnob. Press 'c' to calibrate.");
     }
 #endif
 
@@ -100,18 +100,17 @@ void MotorTask::run()
 
     motor.monitor_downsample = 0; // disable monitor at first - optional
 
-    // disableCore0WDT();
-
     float current_detent_center = motor.shaft_angle;
     PB_SmartKnobConfig config = {
-        .position = 0,
-        .sub_position_unit = 0,
-        .position_nonce = 0,
-        .min_position = 0,
-        .max_position = 1,
-        .position_width_radians = 60 * _PI / 180,
-        .detent_strength_unit = 0,
+        .position_width_radians = 60 * M_PI / 180,
+        .endstop_strength_unit = 0,
+        .snap_point = 0.5,
+        .detent_positions_count = 0,
+        .detent_positions = {},
     };
+
+    PB_SmartKnobConfig last_discarded_config = config;
+
     int32_t current_position = 0;
     float latest_sub_position_unit = 0;
 
@@ -129,6 +128,10 @@ void MotorTask::run()
         {
             if (!c.motor.calibrated && command.command_type != CommandType::CALIBRATE)
             {
+                if (command.command_type == CommandType::CONFIG)
+                {
+                    last_discarded_config = command.data.config;
+                }
                 LOGI("Ignoring command, motor not calibrated!");
                 if (motor.enabled)
                     motor.disable();
@@ -142,9 +145,17 @@ void MotorTask::run()
                 if (!motor.enabled)
                     motor.enable();
 
+                motor.PID_velocity.P = FOC_PID_P;
+                motor.PID_velocity.I = FOC_PID_I;
+                motor.PID_velocity.D = FOC_PID_D;
+                motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP;
+                motor.PID_velocity.limit = FOC_PID_LIMIT;
+
                 calibrate();
-                esp_restart(); // Restart to apply new calibration
-                break;
+
+                command.data.config = last_discarded_config; // Re-apply last received config after calibration
+                encoder.update();
+                motor.initFOC();
             case CommandType::CONFIG:
             {
                 // Check new config for validity
@@ -179,7 +190,7 @@ void MotorTask::run()
                 bool position_updated = false;
                 if (new_config.position != config.position || new_config.sub_position_unit != config.sub_position_unit || new_config.position_nonce != config.position_nonce)
                 {
-                    LOGD("applying position change");
+                    LOGV(LOG_LEVEL_DEBUG, "Applying position change");
                     current_position = new_config.position;
                     position_updated = true;
                 }
@@ -190,18 +201,18 @@ void MotorTask::run()
                     if (current_position < new_config.min_position)
                     {
                         current_position = new_config.min_position;
-                        LOGD("adjusting position to min");
+                        LOGV(LOG_LEVEL_DEBUG, "Adjusting position to min");
                     }
                     else if (current_position > new_config.max_position)
                     {
                         current_position = new_config.max_position;
-                        LOGD("adjusting position to max");
+                        LOGV(LOG_LEVEL_DEBUG, "Adjusting position to max");
                     }
                 }
 
                 if (position_updated || new_config.position_width_radians != config.position_width_radians)
                 {
-                    LOGD("adjusting detent center");
+                    LOGV(LOG_LEVEL_DEBUG, "Adjusting detent center");
                     float new_sub_position = position_updated ? new_config.sub_position_unit : latest_sub_position_unit;
 #if SK_INVERT_ROTATION
                     float shaft_angle = -motor.shaft_angle;
@@ -211,7 +222,7 @@ void MotorTask::run()
                     current_detent_center = shaft_angle + new_sub_position * new_config.position_width_radians;
                 }
                 config = new_config;
-                LOGI("Got new config");
+                LOGV(LOG_LEVEL_DEBUG, "Got new config");
 
                 // Update derivative factor of torque controller based on detent width.
                 // If the D factor is large on coarse detents, the motor ends up making noise because the P&D factors amplify the noise from the sensor.
@@ -496,7 +507,7 @@ void MotorTask::calibrate()
         motor.move(a);
         delay(1);
     }
-    LOGI("pause..."); // Let momentum settle...
+    LOGI("Pause..."); // Let momentum settle...
     for (uint16_t i = 0; i < 1000; i++)
     {
         encoder.update();
