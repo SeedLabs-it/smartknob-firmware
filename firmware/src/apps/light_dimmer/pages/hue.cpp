@@ -31,10 +31,20 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_align(hue_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
 }
 
-void HuePage::updateFromSystem(AppState state)
+void HuePage::update(int16_t position)
 {
-}
+    int16_t app_hue_deg = position * skip_degrees_selectable;
 
-void HuePage::handleNavigation(NavigationEvent event)
-{
+    hsv.h = app_hue_deg;
+    hsv.s = 100;
+    hsv.v = 100;
+
+    float u = deg_1_rad * (270 + app_hue_deg);
+
+    uint16_t x = selector_radius * cos(u);
+    uint16_t y = selector_radius * sin(u);
+
+    // SemaphoreGuard lock(mutex_);
+    lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
+    lv_obj_align(hue_selector, LV_ALIGN_CENTER, x, y);
 }

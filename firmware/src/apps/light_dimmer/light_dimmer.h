@@ -8,8 +8,7 @@
 #include "pages/hue.h"
 #include "pages/temp.h"
 
-const uint8_t LIGHT_DIMMER_APP_MODE_DIMMER = 0;
-const uint8_t LIGHT_DIMMER_APP_MODE_HUE = 1;
+#define skip_degrees_selectable 4 // TODO should only be in hue.h
 
 enum LightDimmerPages
 {
@@ -61,6 +60,70 @@ public:
     void handleNavigation(NavigationEvent event) override;
 
 private:
+    PB_SmartKnobConfig dimmer_config = PB_SmartKnobConfig{
+        .position = 0,
+        .sub_position_unit = 0,
+        .position_nonce = 0,
+        .min_position = 0,
+        .max_position = 100,
+        .position_width_radians = 2.4 * PI / 180,
+        .detent_strength_unit = 1,
+        .endstop_strength_unit = 1,
+        .snap_point = 1.1,
+        .detent_positions_count = 0,
+        .detent_positions = {},
+        .snap_point_bias = 0,
+        .led_hue = 27,
+    };
+
+    PB_SmartKnobConfig page_selector_config = PB_SmartKnobConfig{
+        .position = 0,
+        .sub_position_unit = 0,
+        .position_nonce = 0,
+        .min_position = 0,
+        .max_position = LIGHT_DIMMER_PAGE_COUNT - 2,
+        .position_width_radians = 25 * PI / 180,
+        .detent_strength_unit = 1,
+        .endstop_strength_unit = 1,
+        .snap_point = 1.1,
+        .detent_positions_count = 0,
+        .detent_positions = {},
+        .snap_point_bias = 0,
+        .led_hue = 27,
+    };
+
+    PB_SmartKnobConfig hue_config = PB_SmartKnobConfig{
+        .position = 0,
+        .sub_position_unit = 0,
+        .position_nonce = 0,
+        .min_position = 0,
+        .max_position = -1,
+        .position_width_radians = skip_degrees_selectable * PI / 180,
+        .detent_strength_unit = 1,
+        .endstop_strength_unit = 1,
+        .snap_point = 1,
+        .detent_positions_count = 0,
+        .detent_positions = {},
+        .snap_point_bias = 0,
+        .led_hue = 27,
+    };
+
+    PB_SmartKnobConfig temp_config = PB_SmartKnobConfig{
+        .position = 0,
+        .sub_position_unit = 0,
+        .position_nonce = 0,
+        .min_position = 0,
+        .max_position = -1,
+        .position_width_radians = skip_degrees_selectable * PI / 180,
+        .detent_strength_unit = 1,
+        .endstop_strength_unit = 1,
+        .snap_point = 1,
+        .detent_positions_count = 0,
+        .detent_positions = {},
+        .snap_point_bias = 0,
+        .led_hue = 27,
+    };
+
     // void initScreen() override
     // {
     //     // initDimmerScreen();
@@ -90,9 +153,6 @@ private:
     float adjusted_sub_position = 0;
 
     cJSON *json;
-
-    // app state
-    uint8_t app_state_mode = LIGHT_DIMMER_APP_MODE_DIMMER;
 
     bool color_set = false;
 

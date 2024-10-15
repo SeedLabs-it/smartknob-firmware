@@ -6,7 +6,7 @@ class DimmerPage : public BasePage
 {
 public:
     DimmerPage(lv_obj_t *parent, const AppData &app_data);
-    void update(int16_t current_position) override;
+    void update(int16_t position) override;
     void handleNavigation(NavigationEvent event) override;
 
 private:

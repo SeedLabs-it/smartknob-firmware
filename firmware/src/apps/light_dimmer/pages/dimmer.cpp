@@ -37,10 +37,10 @@ DimmerPage::DimmerPage(lv_obj_t *parent, const AppData &app_data) : BasePage(par
     lv_obj_align_to(friendly_name_label_, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-void DimmerPage::update(int16_t current_position)
+void DimmerPage::update(int16_t position)
 {
     // current_position_ = state.current_position;
-    if (current_position == 0)
+    if (position == 0)
     {
         lv_obj_set_style_bg_color(page, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
         lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
@@ -56,9 +56,9 @@ void DimmerPage::update(int16_t current_position)
     //     lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees_selectable, 100, 100), LV_PART_INDICATOR);
     // }
 
-    lv_arc_set_value(arc_, current_position);
+    lv_arc_set_value(arc_, position);
     char buf_[16];
-    sprintf(buf_, "%d%%", current_position);
+    sprintf(buf_, "%d%%", position);
     lv_label_set_text(percentage_label_, buf_);
 }
 

@@ -20,8 +20,7 @@ class TempPage : public BasePage
 {
 public:
     TempPage(lv_obj_t *parent);
-    void updateFromSystem(AppState state) override;
-    void handleNavigation(NavigationEvent event) override;
+    void update(int16_t position) override;
 
 private:
     lv_obj_t *temp_wheel;

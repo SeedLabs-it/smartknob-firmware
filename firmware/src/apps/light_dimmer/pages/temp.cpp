@@ -38,10 +38,23 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
 }
 
-void TempPage::updateFromSystem(AppState state)
+void TempPage::update(int16_t position)
 {
-}
+    int16_t app_temp_deg = (position * skip_degrees_selectable) % 360;
+    uint16_t kelvin;
 
-void TempPage::handleNavigation(NavigationEvent event)
-{
+    uint16_t abs_temp_deg = abs(app_temp_deg);
+
+    LOGE("positiom: %d", abs_temp_deg);
+    if (abs_temp_deg >= 180)
+    {
+        kelvin = temp_max - abs_temp_deg * skip_degrees_def * temp_1_deg;
+    }
+    else
+    {
+        kelvin = temp_min + abs_temp_deg * skip_degrees_def * temp_1_deg;
+    }
+
+    lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(kelvin), LV_PART_MAIN);
+    lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + app_temp_deg)), selector_radius * sin(deg_1_rad * (270 + app_temp_deg)));
 }
