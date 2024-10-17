@@ -184,7 +184,8 @@ void Apps::triggerMotorConfigUpdate()
 
 void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
+    int8_t next_app = 0;
+
     switch (event)
     {
     case NavigationEvent::SHORT:
@@ -196,10 +197,9 @@ void Apps::handleNavigationEvent(NavigationEvent event)
         case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
             break;
         default:
-            setActive(active_app->navigationNext());
+            next_app = active_app->navigationNext();
             break;
         }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
         break;
     case NavigationEvent::LONG:
         switch (active_app->navigationBack())
@@ -210,14 +210,19 @@ void Apps::handleNavigationEvent(NavigationEvent event)
         case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
             break;
         default:
-            setActive(active_app->navigationBack());
+            next_app = active_app->navigationBack();
             break;
         }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
         break;
     default:
         break;
     }
+
+    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
+
+    setActive(next_app);
+
+    motor_notifier->requestUpdate(active_app->getMotorConfig());
 }
 
 std::shared_ptr<App> Apps::find(uint8_t id)

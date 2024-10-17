@@ -25,6 +25,7 @@ enum SharedAppIds : int8_t
     MENU = -2,
     DONT_NAVIGATE = -1,
     DONT_NAVIGATE_UPDATE_MOTOR_CONFIG = -3,
+    USE_NEW_IMPLEMENTATION = -4,
 };
 
 class App

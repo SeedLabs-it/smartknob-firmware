@@ -106,6 +106,10 @@ int8_t LightDimmerApp::navigationNext()
 
 int8_t LightDimmerApp::navigationBack()
 {
+    if (page_mgr_->getCurrentPageNum() == LIGHT_DIMMER_PAGE)
+    {
+        return App::navigationBack();
+    }
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
 }
 
