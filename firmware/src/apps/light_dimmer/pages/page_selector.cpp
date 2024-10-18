@@ -30,7 +30,7 @@ PageSelector::PageSelector(lv_obj_t *parent) : BasePage(parent)
     lv_obj_move_background(selector_);
 }
 
-void PageSelector::update(int16_t current_position)
+void PageSelector::update(xSemaphoreHandle mutex, int16_t current_position)
 {
     pos_ = current_position;
     switch (pos_)

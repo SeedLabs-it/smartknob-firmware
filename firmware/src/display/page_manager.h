@@ -30,7 +30,7 @@ public:
         lv_obj_add_flag(page, LV_OBJ_FLAG_HIDDEN);
     }
 
-    virtual void update(int16_t current_position)
+    virtual void update(xSemaphoreHandle mutex, int16_t current_position)
     {
         // Do nothing by default
     }

@@ -7,7 +7,7 @@ class PageSelector : public BasePage
 {
 public:
     PageSelector(lv_obj_t *parent);
-    void update(int16_t current_position) override;
+    void update(xSemaphoreHandle mutex, int16_t current_position) override;
     // void handleNavigation(NavigationEvent event) override;
 
 private:

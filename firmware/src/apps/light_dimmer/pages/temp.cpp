@@ -38,7 +38,7 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
 }
 
-void TempPage::update(int16_t position)
+void TempPage::update(xSemaphoreHandle mutex, int16_t position)
 {
     int16_t app_temp_deg = (position * skip_degrees_selectable) % 360;
     uint16_t kelvin;

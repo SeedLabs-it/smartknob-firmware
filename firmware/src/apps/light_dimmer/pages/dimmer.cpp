@@ -37,8 +37,9 @@ DimmerPage::DimmerPage(lv_obj_t *parent, const AppData &app_data) : BasePage(par
     lv_obj_align_to(friendly_name_label_, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
-void DimmerPage::update(int16_t position)
+void DimmerPage::update(xSemaphoreHandle mutex, int16_t position)
 {
+    SemaphoreGuard lock(mutex);
     // current_position_ = state.current_position;
     if (position == 0)
     {

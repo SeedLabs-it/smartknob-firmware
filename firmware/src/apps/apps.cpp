@@ -184,7 +184,7 @@ void Apps::triggerMotorConfigUpdate()
 
 void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    int8_t next_app = 0;
+    int8_t next_app = DONT_NAVIGATE;
 
     switch (event)
     {
@@ -220,7 +220,8 @@ void Apps::handleNavigationEvent(NavigationEvent event)
 
     active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
 
-    setActive(next_app);
+    if (next_app != DONT_NAVIGATE)
+        setActive(next_app);
 
     motor_notifier->requestUpdate(active_app->getMotorConfig());
 }

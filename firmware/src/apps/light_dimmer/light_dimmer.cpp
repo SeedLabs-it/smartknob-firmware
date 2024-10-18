@@ -143,8 +143,8 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && first_run)
     {
-        SemaphoreGuard lock(mutex_); // TODO move down into page somehow
-        page_mgr_->getCurrentPage()->update(current_position);
+        // SemaphoreGuard lock(mutex_); // TODO move down into page somehow
+        page_mgr_->getCurrentPage()->update(mutex_, current_position);
 
         new_state.changed = true;
     }
