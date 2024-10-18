@@ -23,7 +23,7 @@ private:
     lv_obj_t *hue_selector;
     lv_obj_t *hue_label;
 
-    lv_color_hsv_t hsv;
+    lv_color_hsv_t hsv = {.h = 0, .s = 100, .v = 100};
 
     const uint8_t skip_degrees = skip_degrees_def;
     const uint8_t skip_degrees_selectable = 4;

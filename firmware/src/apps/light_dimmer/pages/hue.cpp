@@ -1,93 +1,41 @@
 #include "hue.h"
 
-static lv_obj_t *meter;
+#define canvas_buffer_size ((TFT_WIDTH * TFT_WIDTH) * sizeof(uint16_t))
 static lv_color_t *canvas_buffer = NULL;
 
-static void meter_draw_event_cb(lv_event_t *e)
+void drawColorWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canvas)
 {
-    lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-    if (dsc->type == LV_METER_DRAW_PART_TICK)
-    {
-        // LOGE("dsc->id: %d", dsc->id);
-        // dsc->line_dsc->color = lv_color_hsv_to_rgb(dsc->id * skip_degrees_def, 100, 100);
-    }
-}
+    uint16_t outer_radius = inner_radius + width;
+    float angle_step = 0.001f; // Smaller step for smoother arcs
+    float start_rad = 0 * DEG_TO_RAD;
+    float end_rad = 360 * DEG_TO_RAD;
 
-void drawArc(int xc, int yc, int innerRadius, int thickness, int startAngle, int endAngle, lv_obj_t *canvas)
-{
-    int outerRadius = innerRadius + thickness;
-    float angleStep = 0.001f; // Smaller step for smoother arcs
-    float startRad = startAngle * M_PI / 180.0f;
-    float endRad = endAngle * M_PI / 180.0f;
-
-    // Loop through the range of radii from the innerRadius to the outerRadius
-    for (int r = innerRadius; r <= outerRadius; r++)
+    for (int r = inner_radius; r <= outer_radius; r++)
     {
-        for (float theta = startRad; theta <= endRad; theta += angleStep)
+        for (float theta = start_rad; theta <= end_rad; theta += angle_step)
         {
-            // Calculate pixel coordinates in floating point
             float x = r * cos(theta);
             float y = r * sin(theta);
 
-            // Integer coordinates
-            int xInt = static_cast<int>(round(xc + x));
-            int yInt = static_cast<int>(round(yc + y));
+            uint16_t x_pixel = static_cast<int>(round(xc + x));
+            uint16_t y_pixel = static_cast<int>(round(yc + y));
 
-            // Calculate the hue based on the angle
-            int hue = static_cast<int>(theta * 180 / M_PI + 180) % 360;
+            uint16_t hue = static_cast<uint16_t>(theta * 180 / M_PI + 90) % 360;
 
-            // Convert HSV to RGB (100% saturation and brightness)
-            lv_color_t arcColor = lv_color_hsv_to_rgb(hue, 100, 100);
+            lv_color_t arc_color = lv_color_hsv_to_rgb(hue, 100, 100);
 
-            // Default opacity is fully opaque (for non-edge pixels)
-            float finalOpacity = 1.0f;
-
-            // Antialias only the inner and outer radius edges
-            if (r == innerRadius)
-            {
-                // Apply aliasing to inner edge by reducing opacity
-                finalOpacity = 0.5f; // Adjust for smoother inner edge
-            }
-            else if (r == outerRadius)
-            {
-                // Apply aliasing to outer edge by reducing opacity
-                finalOpacity = 0.5f; // Adjust for smoother outer edge
-            }
-
-            // If opacity is full, directly set the pixel without blending
-            if (finalOpacity == 1.0f)
-            {
-                lv_canvas_set_px(canvas, xInt, yInt, arcColor); // Direct pixel placement with no blending
-            }
-            else
-            {
-                // Blend the color with black for the edge pixels
-                lv_color_t mod_color = lv_color_mix(arcColor, lv_color_black(), (1.0f - finalOpacity) * 255);
-                lv_canvas_set_px(canvas, xInt, yInt, mod_color); // Place blended edge pixels
-            }
+            lv_canvas_set_px(canvas, x_pixel, y_pixel, arc_color);
         }
+        delay(1);
     }
+
+    lv_obj_invalidate(canvas);
 }
-
-// void smoothEdges(std::vector<Pixel> &arcPixels, int width, int height)
-// {
-//     // Example: Simple blur algorithm to blend edge pixels (a more complex blur can be applied)
-
-//     for (int i = 1; i < arcPixels.size() - 1; i++)
-//     {
-//         // Blend current pixel opacity with the previous and next pixels
-//         arcPixels[i].opacity = (arcPixels[i - 1].opacity + arcPixels[i].opacity + arcPixels[i + 1].opacity) / 3.0f;
-//     }
-// }
-
-#define canvas_buffer_size ((TFT_WIDTH * TFT_WIDTH) * sizeof(uint16_t))
 
 HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
 {
     const uint16_t color_wheel_inner_diameter = 195;
     const uint16_t color_wheel_width = 10;
-
-    const uint8_t line_thickness = 4;
 
     canvas_buffer = (lv_color_t *)heap_caps_aligned_alloc(4, canvas_buffer_size, MALLOC_CAP_SPIRAM);
     assert(canvas_buffer != NULL);
@@ -98,52 +46,36 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
     lv_obj_align(canvas, LV_ALIGN_CENTER, 0, 0);
     lv_canvas_set_buffer(canvas, canvas_buffer, TFT_WIDTH, TFT_WIDTH, LV_IMG_CF_TRUE_COLOR);
 
-    // lv_coord_t radius = color_wheel_diameter / 2;
-    // lv_coord_t center_x = radius;
-    // lv_coord_t center_y = radius;
-    // TFT_WIDTH / 2 - color_wheel_diameter / 2
-
     lv_coord_t radius = color_wheel_inner_diameter / 2;
     lv_coord_t center = TFT_WIDTH / 2;
 
-    // Iterate over all angles to draw the color wheel
-    // for (int angle = 0; angle < 360; angle++)
-    // {
-    //     // Calculate the color at the current angle (hue value from HSV)
-    //     lv_color_t color = lv_color_hsv_to_rgb(angle, 100, 100); // Full saturation and value for vibrant colors
+    auto taskLambda = [center, radius, color_wheel_width, canvas]()
+    {
+        // Call the drawColorWheel function with the captured parameters
+        drawColorWheel(center, center, radius, color_wheel_width, canvas);
 
-    //     // Calculate angle in radians
-    //     float angle_rad = angle * DEG_TO_RAD;
+        // Task completion: delete the task (if necessary)
+        vTaskDelete(NULL);
+    };
 
-    //     // Take width into account to draw the line from start of width to end of diameter
-    //     int x1 = center_x + (int)((radius - color_wheel_width / 2 - line_thickness) * cos(angle_rad));
-    //     int y1 = center_y + (int)((radius - color_wheel_width / 2 - line_thickness) * sin(angle_rad));
+    // Create the FreeRTOS task using the lambda
+    xTaskCreatePinnedToCore(
+        [](void *taskFunc)
+        {
+            // Call the lambda function (cast taskFunc back to std::function)
+            auto func = static_cast<std::function<void()> *>(taskFunc);
+            (*func)();   // Execute the lambda function
+            delete func; // Clean up after task is done
+            vTaskDelete(NULL);
+        },
+        "DrawColorWheelLambda",                // Name of the task
+        4096,                                  // Stack size
+        new std::function<void()>(taskLambda), // Pass the lambda as the task parameter
+        0,                                     // Priority
+        NULL,                                  // Task handle (optional)
+        0);
 
-    //     // Calculate the end point of the radial line
-    //     int x2 = center_x + (int)((radius - line_thickness) * cos(angle_rad));
-    //     int y2 = center_y + (int)((radius - line_thickness) * sin(angle_rad));
-
-    //     // Draw the radial line using Bresenham's algorithm
-    //     draw_line(canvas, x1, y1, x2, y2, color, line_thickness, true); // Adjust 'thickness' value as needed
-    // }
-
-    drawArc(center, center, radius, color_wheel_width, 0, 360, canvas);
-    // smoothEdges(d, TFT_WIDTH, TFT_WIDTH);
-    // std::vector<Pixel> lowResArc = downsampleArc(d, scaleFactor);
-    // for (Pixel p : d)
-    // {
-    //     // calculate color with opacity
-    //     // lv_color_t color = lv_color_hsv_to_rgb(p.y, 100, 100); // this doesnt go round in a circle with the color
-
-    //     // go round in a circle with the color using x and y
-    //     lv_color_t color = lv_color_hsv_to_rgb(atan2(p.y - center, p.x - center) * 180 / M_PI + 180, 100, 100);
-    //     lv_color_t mod_color = lv_color_mix(color, lv_color_black(), p.opacity * 255);
-    //     lv_canvas_set_px(canvas, p.x, p.y, mod_color);
-    //     // lv_canvas_set_px(canvas, p.x, p.y, lv_color_hsv_to_rgb(p.y, 100, 100));
-    // }
-
-    // After the drawing loop, invalidate the canvas to refresh it
-    lv_obj_invalidate(canvas);
+    // drawColorWheel(center, center, radius, color_wheel_width, canvas);
 
     hue_selector = lvDrawCircle(9, page);
     lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(0 * skip_degrees_selectable, 100, 100), LV_PART_MAIN);
@@ -154,16 +86,17 @@ void HuePage::update(xSemaphoreHandle mutex, int16_t position)
 {
     int16_t app_hue_deg = position * skip_degrees_selectable;
 
-    hsv.h = app_hue_deg;
-    hsv.s = 100;
-    hsv.v = 100;
+    if (app_hue_deg < 0)
+        hsv.h = 360 + app_hue_deg % 360;
+    else
+        hsv.h = app_hue_deg % 360;
 
-    float u = deg_1_rad * (270 + app_hue_deg);
+    float u = DEG_TO_RAD * (270 + app_hue_deg);
 
     uint16_t x = selector_radius * cos(u);
     uint16_t y = selector_radius * sin(u);
 
     SemaphoreGuard lock(mutex);
-    lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(hsv.h, 100, 100), LV_PART_MAIN);
     lv_obj_align(hue_selector, LV_ALIGN_CENTER, x, y);
 }

@@ -4,7 +4,7 @@
 #include "./util.h"
 
 #define temp_min 1000
-#define temp_max 20000
+#define temp_max 5000
 #define temp_1_deg (temp_max - temp_min) / 360
 
 #define skip_degrees_def 1 // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)
