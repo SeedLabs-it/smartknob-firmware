@@ -78,3 +78,36 @@ void MovingAverage::initFilter()
         *(filterPointer + i) = 0.0;
     }
 }
+
+lv_color_t kelvinToLvColor(int16_t kelvin)
+{
+    float temp = kelvin / 100;
+    float red, green, blue;
+
+    if (temp <= 66)
+    {
+        red = 255;
+        green = temp;
+        green = 99.4708025861 * log(green) - 161.1195681661;
+
+        if (temp <= 19)
+        {
+            blue = 0;
+        }
+        else
+        {
+            blue = temp - 10;
+            blue = 138.5177312231 * log(blue) - 305.0447927307;
+        }
+    }
+    else
+    {
+        red = temp - 60;
+        red = 329.698727446 * pow(red, -0.1332047592);
+        green = temp - 60;
+        green = 288.1221695283 * pow(green, -0.0755148492);
+        blue = 255;
+    }
+
+    return LV_COLOR_MAKE(CLAMP<uint8_t>(red, 0, 255), CLAMP<uint8_t>(green, 0, 255), CLAMP<uint8_t>(blue, 0, 255));
+}
