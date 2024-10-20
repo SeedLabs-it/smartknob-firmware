@@ -2,11 +2,11 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 15, 0, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 14, 0, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
-    entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
+    entity_state_to_send_queue_ = xQueueCreate(20, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
 
     mqtt_notifier = MqttNotifier();
@@ -65,7 +65,7 @@ void MqttTask::run()
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     static uint32_t mqtt_init_interval;
-    const uint16_t mqtt_pull_interval_ms = 200;
+    const uint16_t mqtt_pull_interval_ms = 10;
     const uint16_t mqtt_push_interval_ms = 200;
 
     static EntityStateUpdate entity_state_to_process_;
@@ -87,6 +87,8 @@ void MqttTask::run()
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
+                LOGE("MQTT CLIENT STATE %d", mqtt_client.connected());
+                LOGE("WIFI STATE %d", WiFi.isConnected());
                 disconnected_at = millis();
                 if (has_been_connected || retry_count > 0)
                 {
@@ -203,11 +205,14 @@ bool MqttTask::setup(MQTTConfiguration config)
 
     config_ = config;
 
-    wifi_client.setTimeout(10);
+    wifi_client.setTimeout(50);
 
     mqtt_client.setClient(wifi_client);
+    mqtt_client.setSocketTimeout(50); // mqtt_client
+    mqtt_client.setKeepAlive(100);
+    // mqtt_client
     mqtt_client.setServer(config_.host, config_.port);
-    mqtt_client.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setBufferSize(2048 * 2); // ADD BUFFER SIZE TO CONFIG? NO?
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
@@ -282,17 +287,14 @@ bool MqttTask::connect()
     }
 
     bool mqtt_connected = false;
-    if (config_.user == "")
+    if (strcmp(config_.user, "") == 0)
     {
         LOGI("Connecting to MQTT without credentials");
-        // TODO: Create and use knob id
-
         mqtt_connected = mqtt_client.connect(config_.knob_id);
     }
     else
     {
         LOGI("Connecting to MQTT with credentials");
-        // TODO: Create and use knob id
         mqtt_connected = mqtt_client.connect(config_.knob_id, config_.user, config_.password);
     }
 

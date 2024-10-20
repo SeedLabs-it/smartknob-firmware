@@ -22,6 +22,7 @@ private:
     lv_obj_t *player_screen = nullptr;
     lv_obj_t *album_img = nullptr;
     lv_obj_t *playback_state = nullptr;
+    lv_obj_t *track_name_label = nullptr;
     lv_obj_t *volume = nullptr;
 
     lv_obj_t *qr_screen = nullptr;

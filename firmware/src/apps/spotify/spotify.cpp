@@ -42,6 +42,11 @@ void SpotifyApp::initScreen()
     lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
 
     album_img = lv_img_create(player_screen);
+    lv_obj_align(album_img, LV_ALIGN_CENTER, 0, 0);
+
+    track_name_label = lv_label_create(player_screen);
+    lv_label_set_text(track_name_label, "No track playing");
+    lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
 
     playback_state = lv_label_create(player_screen);
     lv_obj_set_style_text_font(playback_state, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
@@ -83,23 +88,19 @@ void SpotifyApp::handleNavigation(NavigationEvent event)
         case SHORT:
             if (spotify.isPlaying())
             {
-                LOGE("PAUSE");
                 if (spotify.pause())
                 {
-                    lv_obj_add_flag(playback_state, LV_OBJ_FLAG_HIDDEN);
-                    lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
-                    // lv_obj_clear_flag(playback_state, LV_OBJ_FLAG_HIDDEN);
+                    LOGE("PAUSE");
+                    lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
                     lv_obj_center(playback_state);
                 }
             }
             else
             {
-                LOGE("PLAY");
                 if (spotify.play())
                 {
-                    lv_obj_add_flag(playback_state, LV_OBJ_FLAG_HIDDEN);
-                    lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
-                    lv_obj_clear_flag(playback_state, LV_OBJ_FLAG_HIDDEN);
+                    LOGE("PLAY");
+                    lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
                     lv_obj_center(playback_state);
 
                     // TODO reenable/refactor
@@ -158,14 +159,44 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         last_connectivity_state = state.connectivity_state;
     }
 
-    if (!is_spotify_configured && state.spotify_config.expires_in > 0)
+    if (!is_spotify_configured && (state.spotify_config.expires_in > 0 || state.spotify_config.access_token != spotify.getConfig().access_token))
     {
         spotify.setConfig(state.spotify_config);
+        if (state.shared_events_queue == nullptr)
+        {
+            LOGE("Shared events queue is null"); // TODO handle
+            return;
+        }
+        spotify.setSharedEventsQueue(state.shared_events_queue);
+
         if (spotify.isAvailable())
         {
             is_spotify_configured = true;
             lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+
+            bool is_playing = spotify.isPlaying();
+            const char *track_name = spotify.getCurrentTrackName().c_str();
+
+            if (is_playing)
+            {
+                lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
+            }
+            else
+            {
+                lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
+            }
+
+            if (strcmp(track_name, "") != 0)
+            {
+                lv_label_set_text(track_name_label, track_name);
+                lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
+            }
+            else
+            {
+                lv_label_set_text(track_name_label, "No track playing");
+                lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
+            }
         }
     }
     else if (lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN) && !is_spotify_configured)

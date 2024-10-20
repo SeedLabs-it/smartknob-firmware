@@ -61,6 +61,7 @@ struct Device
 struct PlaybackState
 {
     bool available;
+    bool spotify_available;
     Device device;
     char repeat_state[16];
     bool shuffle_state;

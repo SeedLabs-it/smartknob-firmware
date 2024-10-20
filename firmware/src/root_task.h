@@ -55,6 +55,8 @@ private:
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
 
+    SpotifyApi spotify_api_;
+
     FreeRTOSAdapter *free_rtos_adapter_;
 
     SerialProtocolPlaintext *serial_protocol_plaintext_;

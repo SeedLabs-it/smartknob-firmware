@@ -105,6 +105,8 @@ struct AppState
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
+    QueueHandle_t shared_events_queue = nullptr;
+    PlaybackState playback_state;
 };
 
 struct EntityStateUpdate

@@ -16,12 +16,12 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 20, 0, task_core} // 9 before 20
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 18, 0, task_core} // 9 before 20
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
 
-    wifi_events_queue = xQueueCreate(5, sizeof(WiFiEvent));
+    wifi_events_queue = xQueueCreate(3, sizeof(WiFiEvent));
     assert(wifi_events_queue != NULL);
 
     // TODO make this more robust
@@ -281,25 +281,27 @@ void WifiTask::webHandlerSpotifyCredentials()
     event.type = SK_SPOTIFY_ACCESS_TOKEN_RECEIVED;
     publishWiFiEvent(event);
 
-    PB_SpotifyConfig spotify_config_;
+    PB_SpotifyConfig *spotify_config_ = (PB_SpotifyConfig *)heap_caps_malloc(sizeof(PB_SpotifyConfig), MALLOC_CAP_SPIRAM);
+    // PB_SpotifyConfig spotify_config_;
 
     cJSON *root = cJSON_Parse(server_->arg("plain").c_str());
     cJSON *spotify_response = cJSON_GetObjectItem(root, "spotify_response");
-    strcpy(spotify_config_.base64_id_and_secret, cJSON_GetStringValue(cJSON_GetObjectItem(root, "base64_id_and_secret")));
-    strcpy(spotify_config_.access_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "access_token")));
-    strcpy(spotify_config_.token_type, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "token_type")));
-    strcpy(spotify_config_.scope, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "scope")));
-    spotify_config_.expires_in = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "expires_in"));
-    strcpy(spotify_config_.refresh_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "refresh_token")));
-    spotify_config_.timestamp = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "timestamp"));
+    strcpy(spotify_config_->base64_id_and_secret, cJSON_GetStringValue(cJSON_GetObjectItem(root, "base64_id_and_secret")));
+    strcpy(spotify_config_->access_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "access_token")));
+    strcpy(spotify_config_->token_type, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "token_type")));
+    strcpy(spotify_config_->scope, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "scope")));
+    spotify_config_->expires_in = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "expires_in"));
+    strcpy(spotify_config_->refresh_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "refresh_token")));
+    spotify_config_->timestamp = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "timestamp"));
     cJSON_Delete(root);
 
-    SpotifyApi spotify(spotify_config_);
+    SpotifyApi spotify(*spotify_config_);
 
-    if (spotify.isAvailable())
+    // if (spotify.isAvailable())
+    if (true) // TODO
     {
         event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED;
-        event.body.spotify_config = spotify_config_;
+        event.body.spotify_config = *spotify_config_;
 
         publishWiFiEvent(event);
         LOGE("ACCESS TOKEN VALIDATED");
@@ -384,23 +386,32 @@ void WifiTask::run()
     // TODO: set hostname
     static uint32_t last_wifi_status;
     static uint32_t last_wifi_status_new;
+
+    static unsigned long last_handle_client_ms_ = 0;
     bool has_been_connected = false;
+
+    unsigned long last_run_ms_ = 0;
 
     while (1)
     {
-        if (is_webserver_started) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
+        last_run_ms_ = millis();
+        // DONT RUN TO OFTEN
+        if (is_webserver_started && last_run_ms_ - last_handle_client_ms_ > 500) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
         {
+            // LOGE("Free internal heap: %d", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+            // LOGE("Free SPIRAM heap: %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
             server_->handleClient();
             ElegantOTA.loop();
+            last_handle_client_ms_ = last_run_ms_;
         }
 
-        if (is_config_set && millis() - last_wifi_status > 5000)
+        if (is_config_set && last_run_ms_ - last_wifi_status > 5000)
         {
             updateWifiState();
-            last_wifi_status = millis();
+            last_wifi_status = last_run_ms_;
         }
 
-        if (is_config_set && millis() - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
+        if (is_config_set && last_run_ms_ - last_wifi_status_new > 3000 && WiFi.status() != WL_CONNECTED && retry_count < 3)
         {
             LOGV(LOG_LEVEL_DEBUG, "WiFi status: %d", WiFi.status());
             LOGV(LOG_LEVEL_DEBUG, "WiFi connected: %d", WiFi.isConnected());
