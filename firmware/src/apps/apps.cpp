@@ -100,14 +100,13 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         add(position, app);
         return app;
     }
-    // else if (app_slug.compare(APP_SLUG_MUSIC) == 0)
-    // {
-    //     MusicApp *app = new MusicApp(this->spr_, app_id);
-    //     // app->friendly_name = friendly_name;
-    //     sprintf(app->friendly_name, "%s", friendly_name);
-    //     add(position, app);
-    //     return app;
-    // }
+    else if (app_slug.compare(APP_SLUG_SPOTIFY) == 0)
+    {
+        SpotifyApp *app = new SpotifyApp(screen_mutex_, app_id, friendly_name, entity_id);
+
+        add(position, app);
+        return app;
+    }
     else if (app_slug.compare(APP_SLUG_STOPWATCH) == 0)
     {
         StopwatchApp *app = new StopwatchApp(screen_mutex_, entity_id);

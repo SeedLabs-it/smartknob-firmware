@@ -117,14 +117,19 @@ void setup()
 #endif
 
     root_task.begin();
-    if (!config.loadFromDisk())
+    if (!config.loadPersistantConfigFromDisk())
     {
-        config.saveToDisk();
+        config.savePersistantConfigToDisk();
     }
 
     if (!config.loadSettingsFromDisk())
     {
         config.saveSettingsToDisk();
+    }
+
+    if (!config.loadSpotifyConfigFromDisk())
+    {
+        config.saveSpotifyConfigToDisk();
     }
 
     root_task.loadConfiguration();

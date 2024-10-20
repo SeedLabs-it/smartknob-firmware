@@ -4,6 +4,8 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
+#include <base64.h>
 #include <WebServer.h>
 #include <vector>
 #include <Preferences.h>
@@ -14,6 +16,8 @@
 
 #include "../events/events.h"
 #include "../notify/wifi_notifier/wifi_notifier.h"
+
+#include "./spotify/spotify_api.h"
 
 #if SK_ELEGANTOTA_PRO
 #include <ElegantOTAPro.h>
@@ -78,6 +82,7 @@ private:
     void webHandlerMQTTForm();
     void webHandlerWiFiCredentials();
     void webHandlerMQTTCredentials();
+    void webHandlerSpotifyCredentials();
 
     void downloadConfig();
 };
