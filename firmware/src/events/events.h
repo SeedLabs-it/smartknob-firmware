@@ -101,6 +101,7 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
+    PB_SpotifyConfig spotify_config; // TODO Quite large resulting in having to up stack size for tasks
     Error error;
     uint8_t calibration_step;
 };
@@ -136,6 +137,9 @@ enum EventType
     SK_MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED,
     SK_MQTT_CONNECTED_NEW_CREDENTIALS,
+
+    SK_SPOTIFY_ACCESS_TOKEN_RECEIVED,
+    SK_SPOTIFY_ACCESS_TOKEN_VALIDATED,
 
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,

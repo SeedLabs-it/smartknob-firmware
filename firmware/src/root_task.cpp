@@ -217,6 +217,8 @@ void RootTask::run()
 
     AppState app_state = {};
 
+    app_state.spotify_config = configuration_->getSpotifyConfig(); // TODO validate it works with no config.
+
     while (1)
     {
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
@@ -366,6 +368,10 @@ void RootTask::run()
                 //      serial_protocol_protobuf_->sendStrainCalibState(wifi_event.body.strain_calibration.step);
                 //      not needed?
                 // }
+                break;
+            case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
+                configuration_->setSpotifyConfig(wifi_event.body.spotify_config);
+                app_state.spotify_config = wifi_event.body.spotify_config;
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);

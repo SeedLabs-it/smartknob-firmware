@@ -274,3 +274,14 @@ message StrainCalibration {
   float calibration_weight = 1;
 }
 
+message SpotifyConfig {
+    uint32 version = 1;
+    string base64_id_and_secret = 2 [(nanopb).max_length = 128];
+    string access_token = 3 [(nanopb).max_length = 512];
+    string token_type = 4 [(nanopb).max_length = 64];
+    string scope = 5 [(nanopb).max_length = 128];
+    uint32 expires_in = 6;
+    string refresh_token = 7 [(nanopb).max_length = 512];
+    uint64 timestamp = 8;
+}
+

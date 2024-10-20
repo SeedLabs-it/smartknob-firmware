@@ -48,6 +48,9 @@ PB_BIND(PB_StrainState, PB_StrainState, AUTO)
 PB_BIND(PB_StrainCalibration, PB_StrainCalibration, AUTO)
 
 
+PB_BIND(PB_SpotifyConfig, PB_SpotifyConfig, 2)
+
+
 
 
 

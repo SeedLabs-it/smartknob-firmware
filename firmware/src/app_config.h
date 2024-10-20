@@ -101,10 +101,10 @@ struct AppState
     OSMode os_mode_state;
     PB_SmartKnobState motor_state;
     ConnectivityState connectivity_state;
+    PB_SpotifyConfig spotify_config;
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
-    cJSON *apps;
 };
 
 struct EntityStateUpdate

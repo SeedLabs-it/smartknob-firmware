@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 9, 0, task_core}
+WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 20, 0, task_core} // 9 before 20
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -268,6 +268,47 @@ void WifiTask::webHandlerMQTTCredentials()
     }
 }
 
+void WifiTask::webHandlerSpotifyCredentials()
+{
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        // TODO handle
+        return;
+    }
+
+    WiFiEvent event;
+
+    event.type = SK_SPOTIFY_ACCESS_TOKEN_RECEIVED;
+    publishWiFiEvent(event);
+
+    PB_SpotifyConfig spotify_config_;
+
+    cJSON *root = cJSON_Parse(server_->arg("plain").c_str());
+    cJSON *spotify_response = cJSON_GetObjectItem(root, "spotify_response");
+    strcpy(spotify_config_.base64_id_and_secret, cJSON_GetStringValue(cJSON_GetObjectItem(root, "base64_id_and_secret")));
+    strcpy(spotify_config_.access_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "access_token")));
+    strcpy(spotify_config_.token_type, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "token_type")));
+    strcpy(spotify_config_.scope, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "scope")));
+    spotify_config_.expires_in = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "expires_in"));
+    strcpy(spotify_config_.refresh_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "refresh_token")));
+    spotify_config_.timestamp = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "timestamp"));
+    cJSON_Delete(root);
+
+    SpotifyApi spotify(spotify_config_);
+
+    if (spotify.isAvailable())
+    {
+        event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED;
+        event.body.spotify_config = spotify_config_;
+
+        publishWiFiEvent(event);
+        LOGE("ACCESS TOKEN VALIDATED");
+        server_->send(200, "text/plain", "Connected to WiFi!");
+        return;
+    }
+    server_->send(302, "text/plain", "Invalid Spotify credentials!");
+}
+
 void WifiTask::mqttConnected(bool connected)
 {
     mqtt_connected = connected;
@@ -320,6 +361,9 @@ void WifiTask::startWebServer()
 
     server_->on("/mqtt", HTTP_POST, [this]()
                 { this->webHandlerMQTTCredentials(); });
+
+    server_->on("/spotify", HTTP_POST, [this]()
+                { this->webHandlerSpotifyCredentials(); });
 
     if (!FFat.begin(true)) // TODO check if viable to leave ffat open for duration of active webapp???
     {

@@ -41,26 +41,122 @@ const char *Configuration::getKnobId()
     return wifi_config.knob_id;
 }
 
-bool Configuration::loadFromDisk()
+pb_istream_t Configuration::loadFromDisk(const char *path, uint8_t *buffer, size_t buffer_size)
 {
-    SemaphoreGuard lock(mutex_);
+    FatGuard fatGuard;
+    if (!fatGuard.mounted_)
+    {
+        return pb_istream_t{}; // TODO Look over this.
+    }
+
+    File f = FFat.open(path);
+    if (!f)
+    {
+        LOGV(LOG_LEVEL_WARNING, "Load From Disk: Failed to read file, %s", path);
+        return pb_istream_t{};
+    }
+
+    size_t read = f.readBytes((char *)buffer, buffer_size);
+    f.close();
+
+    return pb_istream_from_buffer(buffer, read);
+}
+
+bool Configuration::saveToDisk(const char *path, uint8_t *buffer, size_t buffer_size)
+{
     FatGuard fatGuard;
     if (!fatGuard.mounted_)
     {
         return false;
     }
 
-    File f = FFat.open(CONFIG_PATH);
+    File f = FFat.open(path, FILE_WRITE);
     if (!f)
     {
-        LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
+        LOGV(LOG_LEVEL_WARNING, "Failed to read file at, %s", path);
         return false;
     }
 
-    size_t read = f.readBytes((char *)pb_stream_buffer_, sizeof(pb_stream_buffer_));
+    size_t written = f.write(buffer, buffer_size);
     f.close();
 
-    pb_istream_t stream = pb_istream_from_buffer(pb_stream_buffer_, read);
+    if (written != buffer_size)
+    {
+        LOGE("Failed to write all bytes to file, %s", path);
+        return false;
+    }
+
+    return true;
+}
+
+bool Configuration::loadSpotifyConfigFromDisk()
+{
+    SemaphoreGuard lock(mutex_);
+
+    pb_istream_t stream = loadFromDisk(SPOTIFY_CONFIG_PATH, spotify_config_stream_buffer_, sizeof(spotify_config_stream_buffer_));
+    if (!pb_decode(&stream, PB_SpotifyConfig_fields, &spotify_config_buffer_))
+    {
+        LOGE("Decoding spotify config failed: %s", PB_GET_ERROR(&stream));
+        spotify_config_buffer_ = {};
+        return false;
+    }
+
+    if (spotify_config_buffer_.version != SPOTIFY_CONFIG_VERSION)
+    {
+        LOGE("Invalid config version. Expected %u, received %u", SPOTIFY_CONFIG_VERSION, spotify_config_buffer_.version);
+        spotify_config_buffer_ = {};
+        return false;
+    }
+    spotify_config_loaded_ = true;
+
+    return true;
+}
+
+bool Configuration::saveSpotifyConfigToDisk()
+{
+    {
+        SemaphoreGuard lock(mutex_);
+
+        pb_ostream_t stream = pb_ostream_from_buffer(spotify_config_stream_buffer_, sizeof(spotify_config_stream_buffer_));
+        spotify_config_buffer_.version = SPOTIFY_CONFIG_VERSION;
+        if (!pb_encode(&stream, PB_SpotifyConfig_fields, &spotify_config_buffer_))
+        {
+            char buf_[200];
+            snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
+            LOGE(buf_);
+            return false;
+        }
+
+        saveToDisk(SPOTIFY_CONFIG_PATH, spotify_config_stream_buffer_, stream.bytes_written);
+    }
+
+    return true;
+}
+
+bool Configuration::setSpotifyConfig(PB_SpotifyConfig &spotify_config)
+{
+    {
+        SemaphoreGuard lock(mutex_);
+        spotify_config_buffer_ = spotify_config;
+    }
+    return saveSpotifyConfigToDisk();
+}
+
+PB_SpotifyConfig Configuration::getSpotifyConfig()
+{
+    SemaphoreGuard lock(mutex_);
+    if (!spotify_config_loaded_)
+    {
+        return PB_SpotifyConfig();
+    }
+    return spotify_config_buffer_;
+}
+
+bool Configuration::loadPersistantConfigFromDisk()
+{
+    SemaphoreGuard lock(mutex_);
+
+    pb_istream_t stream = loadFromDisk(CONFIG_PATH, pb_stream_buffer_, sizeof(pb_stream_buffer_));
     if (!pb_decode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
     {
         char buf_[200];
@@ -87,7 +183,7 @@ bool Configuration::loadFromDisk()
     return true;
 }
 
-bool Configuration::saveToDisk()
+bool Configuration::savePersistantConfigToDisk()
 {
     {
         SemaphoreGuard lock(mutex_);
@@ -102,29 +198,7 @@ bool Configuration::saveToDisk()
             return false;
         }
 
-        FatGuard fatGuard;
-        if (!fatGuard.mounted_)
-        {
-            return false;
-        }
-
-        File f = FFat.open(CONFIG_PATH, FILE_WRITE);
-        if (!f)
-        {
-            LOGV(LOG_LEVEL_WARNING, "Failed to read config file");
-            return false;
-        }
-
-        size_t written = f.write(pb_stream_buffer_, stream.bytes_written);
-        f.close();
-
-        LOGD("Saved config. Wrote %d bytes", written);
-
-        if (written != stream.bytes_written)
-        {
-            LOGE("Failed to write all bytes to file");
-            return false;
-        }
+        saveToDisk(CONFIG_PATH, pb_stream_buffer_, stream.bytes_written);
     }
 
     if (shared_events_queue != NULL)
@@ -140,29 +214,14 @@ bool Configuration::saveToDisk()
 bool Configuration::loadSettingsFromDisk()
 {
     SemaphoreGuard lock(mutex_);
-    FatGuard fatGuard;
-    if (!fatGuard.mounted_)
-    {
-        return false;
-    }
 
-    File f = FFat.open(SETTINGS_PATH);
-    if (!f)
-    {
-        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
-        return false;
-    }
-
-    size_t read = f.readBytes((char *)settings_stream_buffer_, sizeof(settings_stream_buffer_));
-    f.close();
-
-    pb_istream_t stream = pb_istream_from_buffer(settings_stream_buffer_, read);
+    pb_istream_t stream = loadFromDisk(SETTINGS_PATH, settings_stream_buffer_, sizeof(settings_stream_buffer_));
     if (!pb_decode(&stream, SETTINGS_Settings_fields, &settings_buffer_))
     {
         char buf_[200];
         snprintf(buf_, sizeof(buf_), "Decoding settings failed: %s", PB_GET_ERROR(&stream));
         LOGE(buf_);
-        settings_buffer_ = {};
+        settings_buffer_ = default_settings;
         return false;
     }
 
@@ -171,7 +230,7 @@ bool Configuration::loadSettingsFromDisk()
         char buf_[200];
         snprintf(buf_, sizeof(buf_), "Invalid config version. Expected %u, received %u", SETTINGS_VERSION, settings_buffer_.protocol_version);
         LOGE(buf_);
-        settings_buffer_ = {};
+        settings_buffer_ = default_settings;
         return false;
     }
     settings_loaded_ = true;
@@ -185,6 +244,8 @@ bool Configuration::saveSettingsToDisk()
 
     pb_ostream_t stream = pb_ostream_from_buffer(settings_stream_buffer_, sizeof(settings_stream_buffer_));
     settings_buffer_.protocol_version = SETTINGS_VERSION;
+    LOGE("Saving settings to disk");
+    LOGE("COLOR %d", settings_buffer_.led_ring.color);
     if (!pb_encode(&stream, SETTINGS_Settings_fields, &settings_buffer_))
     {
         char buf_[200];
@@ -193,31 +254,7 @@ bool Configuration::saveSettingsToDisk()
         return false;
     }
 
-    FatGuard fatGuard;
-    if (!fatGuard.mounted_)
-    {
-        return false;
-    }
-
-    File f = FFat.open(SETTINGS_PATH, FILE_WRITE);
-    if (!f)
-    {
-        LOGV(LOG_LEVEL_WARNING, "Failed to read settings file");
-        return false;
-    }
-
-    size_t written = f.write(settings_stream_buffer_, stream.bytes_written);
-    f.close();
-
-    LOGD("Saved settings. Wrote %d bytes", written);
-
-    if (written != stream.bytes_written)
-    {
-        LOGE("Failed to write all bytes to settings file");
-        return false;
-    }
-
-    return true;
+    return saveToDisk(SETTINGS_PATH, settings_stream_buffer_, stream.bytes_written);
 }
 
 bool Configuration::setSettings(SETTINGS_Settings &settings)
@@ -365,7 +402,7 @@ bool Configuration::saveFactoryStrainCalibration(float strain_scale)
         SemaphoreGuard lock(mutex_);
         pb_buffer_.strain_scale = strain_scale;
     }
-    return saveToDisk();
+    return savePersistantConfigToDisk();
 }
 
 OSConfiguration *Configuration::getOSConfiguration()
@@ -390,7 +427,7 @@ bool Configuration::setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibr
         pb_buffer_.motor = motor_calibration;
         pb_buffer_.has_motor = true;
     }
-    return saveToDisk();
+    return savePersistantConfigToDisk();
 }
 
 void Configuration::setSharedEventsQueue(QueueHandle_t shared_events_queue)

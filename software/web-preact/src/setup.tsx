@@ -2,7 +2,6 @@ import { render } from 'preact';
 import WiFiComp from './components/wifi';
 
 import preactLogo from './assets/preact.svg';
-import './style.css';
 import { useState } from 'preact/hooks';
 import MQTTComp from './components/mqtt';
 import DoneComp from './components/done';
@@ -48,6 +47,6 @@ const SetupPage = () => {
       </div>
     </>
   );
-}
+};
 
 export default SetupPage;
