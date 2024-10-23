@@ -121,15 +121,19 @@ const SpotifyPage = () => {
               value={clientId}
               onInput={(e) => setClientId(e.currentTarget.value)}
               required
-              disabled={authState === storedState}
+              disabled={authState != '' && authState === storedState}
             />
           </label>
           <br />
           <a
-            className={`btn ${authState === storedState ? 'disabled' : ''}`}
+            className={`btn ${authState != '' && authState === storedState ? 'disabled' : ''}`}
             href='#'
             onClick={async (e) => {
               e.preventDefault();
+
+              localStorage.setItem('client_id', clientId);
+              localStorage.setItem('client_secret', clientSecret);
+
               const { authUrl, state: state_ } =
                 await getSpotifyOAuthUrl(clientId);
               setAuthUrl(authUrl.toString());
@@ -192,7 +196,7 @@ const SpotifyPage = () => {
               showError('Failed to store Spotify Details');
             }
           }}
-          className={`${authState !== storedState ? 'disabled' : ''}`}
+          className={`${authState == '' || authState !== storedState ? 'disabled' : ''}`}
         >
           <br />
           <label>
@@ -202,7 +206,7 @@ const SpotifyPage = () => {
               value={clientSecret}
               onInput={(e) => setClientSecret(e.currentTarget.value)}
               required
-              disabled={authState !== storedState}
+              disabled={authState == '' || authState !== storedState}
             />
           </label>
           <br />
