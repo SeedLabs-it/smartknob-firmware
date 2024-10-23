@@ -88,7 +88,8 @@
         "lvgl.h": "c",
         "forward_list": "cpp",
         "set": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "icons.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
@@ -104,5 +105,9 @@
         "task": "FLASH RELEASE",
         "tooltip": "FLASH RELEASE",
         "description": "FLASH RELEASE",
-      }]
+    }
+],
+"[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
 }

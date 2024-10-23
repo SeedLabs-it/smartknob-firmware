@@ -33,7 +33,8 @@ RootTask::RootTask(
                                                                                                                                                                        reset_task_(reset_task),
                                                                                                                                                                        free_rtos_adapter_(free_rtos_adapter),
                                                                                                                                                                        serial_protocol_plaintext_(serial_protocol_plaintext),
-                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf)
+                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf),
+//    spotify_api_({})
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -217,6 +218,9 @@ void RootTask::run()
 
     AppState app_state = {};
 
+    app_state.spotify_config = configuration_->getSpotifyConfig(); // TODO validate it works with no config.
+    app_state.shared_events_queue = wifi_task_->getWiFiEventsQueue();
+
     while (1)
     {
         if (xQueueReceive(trigger_motor_calibration_, &trigger_motor_calibration_event_, 0) == pdTRUE)
@@ -366,6 +370,12 @@ void RootTask::run()
                 //      serial_protocol_protobuf_->sendStrainCalibState(wifi_event.body.strain_calibration.step);
                 //      not needed?
                 // }
+                break;
+            case SK_SPOTIFY_REFRESH_TOKEN:
+            case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
+                LOGE("STORE SPOTIFY CONFIGURATION");
+                configuration_->setSpotifyConfig(wifi_event.body.spotify_config);
+                app_state.spotify_config = wifi_event.body.spotify_config;
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);

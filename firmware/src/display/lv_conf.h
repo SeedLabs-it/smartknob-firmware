@@ -41,7 +41,7 @@
 #define LV_MEM_CUSTOM 0
 #if LV_MEM_CUSTOM == 0
     /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
-    #define LV_MEM_SIZE (128U * 1024U)          /*[bytes]*/
+    #define LV_MEM_SIZE (512U * 1024U)          /*[bytes]*/
 
     /*Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too.*/
     #define LV_MEM_ADR 0     /*0: unused*/
@@ -363,7 +363,7 @@
 #define LV_FONT_MONTSERRAT_24 0
 #define LV_FONT_MONTSERRAT_26 0
 #define LV_FONT_MONTSERRAT_28 0
-#define LV_FONT_MONTSERRAT_30 0
+#define LV_FONT_MONTSERRAT_30 1
 #define LV_FONT_MONTSERRAT_32 0
 #define LV_FONT_MONTSERRAT_34 0
 #define LV_FONT_MONTSERRAT_36 0
@@ -655,7 +655,7 @@ LV_FONT_DECLARE(roboto_light_mono_48pt)       \
 
 /* JPG + split JPG decoder library.
  * Split JPG is a custom format optimized for embedded systems. */
-#define LV_USE_SJPG 0
+#define LV_USE_SJPG 1
 
 /*GIF decoder library*/
 #define LV_USE_GIF 0
