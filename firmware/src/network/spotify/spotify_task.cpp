@@ -1,6 +1,6 @@
 #include "spotify_task.h"
 
-SpotifyTask::SpotifyTask(const uint8_t task_core, Configuration &configuration) : Task{"spotify", 1024 * 12, 0, task_core}, spotify_api_(configuration)
+SpotifyTask::SpotifyTask(const uint8_t task_core, Configuration &configuration) : Task{"spotify", 1024 * 12, 1, task_core}, spotify_api_(configuration)
 {
 }
 
@@ -21,7 +21,7 @@ void SpotifyTask::run()
 
             if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms)
             {
-                latest_playback_state_ = spotify_api_.getCurrentPlaybackState(true);
+                latest_playback_state_ = spotify_api_.getCurrentPlaybackState();
 
                 last_fetched_playback_state = millis();
                 ms_since_last_fetch = millis() - last_fetched_playback_state;
@@ -55,6 +55,9 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
         result = spotify_api_.pause(device_id);
 
         break;
+    // case SK_SPOTIFY_VOLUME:
+    //     result = spotify_api_.setVolume(event.body.volume, device_id);
+    //     break;
     default:
         break;
     }

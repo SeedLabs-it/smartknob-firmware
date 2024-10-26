@@ -1,5 +1,23 @@
 #include "spotify.h"
 
+void progress_timer(lv_timer_t *progress_timer)
+{
+    ProgressState *user_data = (ProgressState *)progress_timer->user_data;
+    unsigned long started_ms = user_data->started_ms;
+    unsigned long progress_ms = user_data->progress_ms + (millis() - started_ms);
+    unsigned long song_duration_ms = user_data->song_duration_ms;
+
+    // lv_arc_set_value(user_data->progress, 100 * (1 - ((song_duration_ms - progress_ms / (float)song_duration_ms)));
+    lv_arc_set_angles(user_data->progress, 0, 270 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms))));
+    if (progress_ms > song_duration_ms)
+    {
+        LOGE("Song ended!!!!!!!!!!!!!!!!!!!!!");
+        lv_arc_set_value(user_data->progress, 100);
+        // lv_timer_del(progress_timer);
+        return;
+    }
+}
+
 SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
     sprintf(app_id, "%s", app_id_);
@@ -48,10 +66,24 @@ void SpotifyApp::initScreen()
     lv_label_set_text(track_name_label, "No track playing");
     lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
 
-    playback_state = lv_label_create(player_screen);
-    lv_obj_set_style_text_font(playback_state, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
-    lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
-    lv_obj_center(playback_state);
+    playing = lv_label_create(player_screen);
+    lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
+    lv_label_set_text(playing, LV_SYMBOL_PAUSE);
+    lv_obj_center(playing);
+
+    progress_state_.progress = lv_arc_create(player_screen);
+    lv_obj_t *progress = progress_state_.progress;
+    lv_obj_set_size(progress, 215, 215);
+    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
+
+    lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(progress, 4, LV_PART_INDICATOR);
+
+    lv_arc_set_rotation(progress, 135);
+    lv_arc_set_bg_angles(progress, 0, 270);
+    lv_arc_set_angles(progress, 0, 0);
+    lv_obj_remove_style(progress, NULL, LV_PART_KNOB);
+    lv_obj_center(progress);
 }
 
 void SpotifyApp::initQrScreen()
@@ -75,7 +107,12 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
 
-    // LOGE("SpotifyApp::updateStateFromKnob");
+    if (last_position != state.current_position)
+    {
+        last_position = state.current_position;
+        LOGE("State changed");
+        LOGE("SpotifyApp::updateStateFromKnob: %d", state.current_position);
+    }
 
     first_run = true;
     new_state.changed = false;
@@ -137,15 +174,18 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.playback_state.spotify_available != last_playback_state_.spotify_available || state.playback_state.available != last_playback_state_.available || state.playback_state.timestamp != last_playback_state_.timestamp || state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.is_playing != last_playback_state_.is_playing)
     {
-        last_playback_state_ = state.playback_state;
 
         if (state.playback_state.is_playing)
         {
-            lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
+            updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+            lv_label_set_text(playing, LV_SYMBOL_PAUSE);
         }
         else
         {
-            lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
+            if (progress_timer_ != nullptr)
+                lv_timer_pause(progress_timer_);
+            lv_arc_set_angles(progress_state_.progress, 0, 270 * (1 - (((state.playback_state.item.duration_ms - state.playback_state.progress_ms) / (float)state.playback_state.item.duration_ms)))); // TODO the small jump at pause is a bit ugly...
+            lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
         if (strcmp(state.playback_state.item.name, "") != 0)
@@ -158,6 +198,13 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             lv_label_set_text(track_name_label, "No track playing");
             lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
         }
+
+        // if (strcmp(state.playback_state.item.name, last_playback_state_.item.name) != 0)
+        // {
+        //     updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+        // }
+
+        last_playback_state_ = state.playback_state;
     }
 
     if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
@@ -173,6 +220,20 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+void SpotifyApp::updateTimer(const unsigned long &progress_ms, const unsigned long &song_duration_ms)
+{
+    if (progress_timer_ != nullptr)
+    {
+        lv_timer_del(progress_timer_);
+    }
+    progress_state_.started_ms = millis();
+    progress_state_.progress_ms = progress_ms;
+    progress_state_.song_duration_ms = song_duration_ms;
+
+    LOGE("Progress: %lu, Duration: %lu", progress_ms, song_duration_ms);
+    progress_timer_ = lv_timer_create(progress_timer, 500, &progress_state_);
 }
 
 void SpotifyApp::publishEvent(const WiFiEvent &event)

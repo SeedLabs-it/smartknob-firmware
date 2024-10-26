@@ -103,7 +103,7 @@ bool Configuration::loadSpotifyConfigFromDisk()
 
     if (spotify_config_buffer_.version != SPOTIFY_CONFIG_VERSION)
     {
-        LOGE("Invalid config version. Expected %u, received %u", SPOTIFY_CONFIG_VERSION, spotify_config_buffer_.version);
+        LOGE("Invalid config version for spotify config. Expected %u, received %u", SPOTIFY_CONFIG_VERSION, spotify_config_buffer_.version);
         spotify_config_buffer_ = {};
         return false;
     }

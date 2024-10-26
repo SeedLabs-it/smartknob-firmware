@@ -28,6 +28,8 @@ public:
     bool play(const char *device_id);
     bool pause(const char *device_id);
 
+    bool setVolume(uint8_t volume, const char *device_id);
+
     // void setConfig(const PB_SpotifyConfig &spotify_config);
     // PB_SpotifyConfig getConfig();
 
@@ -36,7 +38,7 @@ public:
 
     String getCurrentTrackName();
 
-    PlaybackState getCurrentPlaybackState(bool override = false);
+    PlaybackState getCurrentPlaybackState();
 
     uint8_t *imageBuffer = nullptr;
     // const char *imageUrl = "https://i.scdn.co/image/ab67616d000048515a2ed586c163472d6d3f8532";

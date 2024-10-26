@@ -37,7 +37,7 @@ bool SpotifyApi::isPlaying()
     // return false;
 }
 
-PlaybackState SpotifyApi::getCurrentPlaybackState(bool override)
+PlaybackState SpotifyApi::getCurrentPlaybackState()
 {
     PlaybackState playback_state{.available = false, .spotify_available = false, .timestamp = 0, .progress_ms = 0};
     if (!checkAndRefreshToken())
@@ -178,7 +178,6 @@ PlaybackState SpotifyApi::getCurrentPlaybackState(bool override)
 
             playback_state.item.duration_ms = cJSON_GetObjectItem(item, "duration_ms")->valueint;
             strcpy(playback_state.item.name, cJSON_GetObjectItem(item, "name")->valuestring);
-            LOGE("Track name: %s", playback_state.item.name);
         }
 
         cJSON *actions = cJSON_GetObjectItem(json, "actions");
@@ -326,6 +325,17 @@ bool SpotifyApi::play(const char *device_id)
 bool SpotifyApi::pause(const char *device_id)
 {
     int result = sendPutRequest("https://api.spotify.com/v1/me/player/pause?device_id=" + String(device_id));
+    if (result == HTTP_CODE_OK || result == HTTP_CODE_NO_CONTENT)
+    {
+        return true;
+    }
+    LOGE("Error in HTTP request: %d", result);
+    return false;
+}
+
+bool SpotifyApi::setVolume(uint8_t volume, const char *device_id)
+{
+    int result = sendPutRequest("https://api.spotify.com/v1/me/player/volume?volume_percent=" + String(volume) + "&device_id=" + String(device_id));
     if (result == HTTP_CODE_OK || result == HTTP_CODE_NO_CONTENT)
     {
         return true;

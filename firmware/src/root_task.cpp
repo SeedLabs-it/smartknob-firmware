@@ -378,9 +378,12 @@ void RootTask::run()
             case SK_SPOTIFY_PLAYBACK_STATE:
                 app_state.playback_state = wifi_event.body.playback_state;
                 break;
+            case SK_SPOTIFY_PLAY:
+            case SK_SPOTIFY_PAUSE:
+                spotify_task_->handleEvent(wifi_event);
+                break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
-                spotify_task_->handleEvent(wifi_event);
                 break;
 
 #endif
