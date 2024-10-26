@@ -19,22 +19,22 @@ RootTask::RootTask(
     DisplayTask *display_task,
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
+    SpotifyTask *spotify_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
     ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
-                                                                                                                                                                       //  stream_(),
                                                                                                                                                                        configuration_(configuration),
                                                                                                                                                                        motor_task_(motor_task),
                                                                                                                                                                        display_task_(display_task),
                                                                                                                                                                        wifi_task_(wifi_task),
                                                                                                                                                                        mqtt_task_(mqtt_task),
+                                                                                                                                                                       spotify_task_(spotify_task),
                                                                                                                                                                        led_ring_task_(led_ring_task),
                                                                                                                                                                        sensors_task_(sensors_task),
                                                                                                                                                                        reset_task_(reset_task),
                                                                                                                                                                        free_rtos_adapter_(free_rtos_adapter),
                                                                                                                                                                        serial_protocol_plaintext_(serial_protocol_plaintext),
-                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf),
-//    spotify_api_({})
+                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf)
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -177,6 +177,8 @@ void RootTask::run()
 #endif
 #endif
 
+    spotify_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
@@ -217,8 +219,6 @@ void RootTask::run()
     WiFiEvent wifi_event;
 
     AppState app_state = {};
-
-    app_state.spotify_config = configuration_->getSpotifyConfig(); // TODO validate it works with no config.
     app_state.shared_events_queue = wifi_task_->getWiFiEventsQueue();
 
     while (1)
@@ -373,12 +373,14 @@ void RootTask::run()
                 break;
             case SK_SPOTIFY_REFRESH_TOKEN:
             case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
-                LOGE("STORE SPOTIFY CONFIGURATION");
-                configuration_->setSpotifyConfig(wifi_event.body.spotify_config);
-                app_state.spotify_config = wifi_event.body.spotify_config;
+                // LOGE("STORE SPOTIFY CONFIGURATION");
+                break;
+            case SK_SPOTIFY_PLAYBACK_STATE:
+                app_state.playback_state = wifi_event.body.playback_state;
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
+                spotify_task_->handleEvent(wifi_event);
                 break;
 
 #endif

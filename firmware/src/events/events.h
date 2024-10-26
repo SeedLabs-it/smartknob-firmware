@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "./network/spotify/structs.h"
 
 struct WiFiAPStarted
 {
@@ -101,7 +102,7 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
-    PB_SpotifyConfig spotify_config; // TODO Quite large resulting in having to up stack size for tasks
+    PlaybackState playback_state;
     Error error;
     uint8_t calibration_step;
 };
@@ -140,7 +141,10 @@ enum EventType
 
     SK_SPOTIFY_ACCESS_TOKEN_RECEIVED,
     SK_SPOTIFY_ACCESS_TOKEN_VALIDATED,
+    SK_SPOTIFY_PLAYBACK_STATE,
     SK_SPOTIFY_REFRESH_TOKEN,
+    SK_SPOTIFY_PAUSE,
+    SK_SPOTIFY_PLAY,
 
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,

@@ -2,7 +2,7 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 14, 0, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 16, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
@@ -65,7 +65,7 @@ void MqttTask::run()
     static uint32_t mqtt_pull;
     static uint32_t mqtt_push; // to prevent spam
     static uint32_t mqtt_init_interval;
-    const uint16_t mqtt_pull_interval_ms = 10;
+    const uint16_t mqtt_pull_interval_ms = 200;
     const uint16_t mqtt_push_interval_ms = 200;
 
     static EntityStateUpdate entity_state_to_process_;
@@ -138,7 +138,6 @@ void MqttTask::run()
 
             if (xQueueReceive(entity_state_to_send_queue_, &entity_state_to_process_, 0) == pdTRUE)
             {
-
                 if (entity_state_to_process_.changed)
                 {
                     entity_states_to_send[entity_state_to_process_.app_id] = entity_state_to_process_;

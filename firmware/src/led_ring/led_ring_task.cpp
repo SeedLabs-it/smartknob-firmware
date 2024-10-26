@@ -11,7 +11,7 @@ uint8_t FULL_BRIGHTNESS = 127;
 #include "../semaphore_guard.h"
 #include "../util.h"
 
-LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 1024 * 7, 0, task_core}
+LedRingTask::LedRingTask(const uint8_t task_core) : Task{"Led_Ring", 1024 * 7, 1, task_core}
 {
 
     render_effect_queue_ = xQueueCreate(10, sizeof(EffectSettings));

@@ -18,7 +18,6 @@ protected:
     void initQrScreen();
 
 private:
-    SpotifyApi spotify;
     lv_obj_t *player_screen = nullptr;
     lv_obj_t *album_img = nullptr;
     lv_obj_t *playback_state = nullptr;
@@ -34,4 +33,8 @@ private:
     bool is_spotify_configured = false; // TODO Replace with actual check!!!!!!
 
     ConnectivityState last_connectivity_state;
+    PlaybackState last_playback_state_;
+
+    QueueHandle_t shared_events_queue;
+    void publishEvent(const WiFiEvent &event);
 };

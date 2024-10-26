@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 // #define MAX_MARKETS 5
-#define MAX_IMAGES 10
+#define MAX_IMAGES 3
 // #define MAX_ARTISTS 5
 
 struct Image
@@ -16,13 +16,6 @@ struct Album
 {
     Image images[MAX_IMAGES]; // Fixed-size array for images
     char name[64];
-};
-
-struct ExternalIds
-{
-    char isrc[32];
-    char ean[32];
-    char upc[32];
 };
 
 struct Item

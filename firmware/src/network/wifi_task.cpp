@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core) : Task{"wifi", 1024 * 18, 0, task_core} // 9 before 20
+WifiTask::WifiTask(const uint8_t task_core, Configuration &configuration) : Task{"wifi", 1024 * 13, 1, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -39,7 +39,7 @@ WifiTask::~WifiTask()
 
 void WifiTask::setConfig(WiFiConfiguration config)
 {
-    config_ = config;
+    wifi_config_ = config;
 }
 
 void WifiTask::handleCommand(WiFiCommand command)
@@ -98,12 +98,12 @@ void WifiTask::startWiFiAP()
     // TODO, randomise hostname and password
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.onEvent(OnWiFiEventGlobal);
-    WiFi.softAP(config_.knob_id, passphrase);
+    WiFi.softAP(wifi_config_.knob_id, passphrase);
 
     WiFiEvent event;
     event.type = SK_WIFI_AP_STARTED;
 
-    strcpy(event.body.wifi_ap_started.ssid, config_.knob_id);
+    strcpy(event.body.wifi_ap_started.ssid, wifi_config_.knob_id);
     strcpy(event.body.wifi_ap_started.passphrase, passphrase);
 
     // DEBUG: added delay for testing, remove this on release
@@ -205,7 +205,7 @@ void WifiTask::webHandlerWiFiCredentials()
     WiFiConfiguration wifi_config;
     sprintf(wifi_config.ssid, "%s", ssid.c_str());
     sprintf(wifi_config.passphrase, "%s", passphrase.c_str());
-    sprintf(wifi_config.knob_id, "%s", config_.knob_id);
+    sprintf(wifi_config.knob_id, "%s", wifi_config_.knob_id);
 
     if (tryNewCredentialsWiFiSTA(wifi_config))
     {
@@ -249,8 +249,8 @@ void WifiTask::webHandlerMQTTCredentials()
     event.body.mqtt_connecting.port = port;
     sprintf(event.body.mqtt_connecting.user, "%s", username);
     sprintf(event.body.mqtt_connecting.password, "%s", password);
-    LOGD("MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, config_.knob_id);
-    sprintf(event.body.mqtt_connecting.knob_id, "%s", config_.knob_id);
+    LOGD("MQTT credentials recieved: %s %d %s %s %s", event.body.mqtt_connecting.host, event.body.mqtt_connecting.port, event.body.mqtt_connecting.user, event.body.mqtt_connecting.password, wifi_config_.knob_id);
+    sprintf(event.body.mqtt_connecting.knob_id, "%s", wifi_config_.knob_id);
 
     publishWiFiEvent(event);
 
@@ -282,7 +282,6 @@ void WifiTask::webHandlerSpotifyCredentials()
     publishWiFiEvent(event);
 
     PB_SpotifyConfig *spotify_config_ = (PB_SpotifyConfig *)heap_caps_malloc(sizeof(PB_SpotifyConfig), MALLOC_CAP_SPIRAM);
-    // PB_SpotifyConfig spotify_config_;
 
     cJSON *root = cJSON_Parse(server_->arg("plain").c_str());
     cJSON *spotify_response = cJSON_GetObjectItem(root, "spotify_response");
@@ -295,16 +294,15 @@ void WifiTask::webHandlerSpotifyCredentials()
     spotify_config_->timestamp = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "timestamp"));
     cJSON_Delete(root);
 
-    SpotifyApi spotify(*spotify_config_);
+    // SpotifyApi spotify(*spotify_config_);
 
     // if (spotify.isAvailable())
-    if (true) // TODO
+    if (true) // TODO actually validate
     {
-        event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED;
-        event.body.spotify_config = *spotify_config_;
+        configuration_.setSpotifyConfig(*spotify_config_);
+        event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED; // TODO actually validate
 
         publishWiFiEvent(event);
-        LOGE("ACCESS TOKEN VALIDATED");
         server_->send(200, "text/plain", "Connected to WiFi!");
         return;
     }
@@ -345,7 +343,7 @@ void WifiTask::startWebServer()
     ElegantOTA.begin(server_);
 
 #if SK_ELEGANTOTA_PRO
-    ElegantOTA.setID(config_.knob_id);
+    ElegantOTA.setID(wifi_config_.knob_id);
     ElegantOTA.setFWVersion(RELEASE_VERSION ? RELEASE_VERSION : "DEV");
     ElegantOTA.setFirmwareMode(true);
     ElegantOTA.setFilesystemMode(false);
@@ -395,18 +393,25 @@ void WifiTask::run()
     while (1)
     {
         last_run_ms_ = millis();
-        // DONT RUN TO OFTEN
-        if (is_webserver_started && last_run_ms_ - last_handle_client_ms_ > 500) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
+        // DONT RUN TO OFTEN, TODO VERIFY IT WORKS WITH UPLOAD FIRMWARE
+        if (is_webserver_started) // WEBSERVER IS ALWAYS STARTED AFTER ONBOARDING AND BOOT SO WIFI CONNECTED LOOP CAN LIVE HERE FOR NOW
         {
-            // LOGE("Free internal heap: %d", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            // LOGE("Free SPIRAM heap: %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
             server_->handleClient();
             ElegantOTA.loop();
-            last_handle_client_ms_ = last_run_ms_;
         }
 
         if (is_config_set && last_run_ms_ - last_wifi_status > 5000)
         {
+            LOGE("FREE HEAP: %d", ESP.getFreeHeap());
+            LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
+            // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
+
+            // LOGE("Free internal heap: %d", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+            // LOGE("Free SPIRAM heap: %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
+            // UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+            // Serial.printf("Remaining stack space: %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
+
             updateWifiState();
             last_wifi_status = last_run_ms_;
         }
@@ -418,7 +423,7 @@ void WifiTask::run()
             LOGV(LOG_LEVEL_DEBUG, "Retry count: %d", retry_count);
             LOGV(LOG_LEVEL_DEBUG, "Last_wifi_status_new: %d", last_wifi_status_new);
 
-            WiFi.begin(config_.ssid, config_.passphrase);
+            WiFi.begin(wifi_config_.ssid, wifi_config_.passphrase);
             while (WiFi.status() != WL_CONNECTED)
             {
                 if (!has_been_connected || retry_count > 0)

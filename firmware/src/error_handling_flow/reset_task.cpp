@@ -2,7 +2,7 @@
 
 #define RESET_BUTTON GPIO_NUM_0
 
-ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 1024 * 4, 0, task_core), configuration_(configuration)
+ResetTask::ResetTask(const uint8_t task_core, Configuration &configuration) : Task("ResetTask", 1024 * 6, 1, task_core), configuration_(configuration)
 {
 }
 

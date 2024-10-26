@@ -1,6 +1,6 @@
 #include "spotify.h"
 
-SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex), spotify({})
+SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
     sprintf(app_id, "%s", app_id_);
     sprintf(friendly_name, "%s", friendly_name_);
@@ -75,7 +75,10 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
 
+    // LOGE("SpotifyApp::updateStateFromKnob");
+
     first_run = true;
+    new_state.changed = false;
     return new_state;
 }
 
@@ -86,51 +89,19 @@ void SpotifyApp::handleNavigation(NavigationEvent event)
         switch (event)
         {
         case SHORT:
-            if (spotify.isPlaying())
+            WiFiEvent wifi_event;
+
+            if (last_playback_state_.is_playing)
             {
-                if (spotify.pause())
-                {
-                    LOGE("PAUSE");
-                    lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
-                    lv_obj_center(playback_state);
-                }
+                wifi_event.type = SK_SPOTIFY_PAUSE;
             }
             else
             {
-                if (spotify.play())
-                {
-                    LOGE("PLAY");
-                    lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
-                    lv_obj_center(playback_state);
-
-                    // TODO reenable/refactor
-                    //     spotify.downloadImage();
-                    //     if (spotify.imageBuffer != nullptr && spotify.imageSize > 0) // TODO image goes white after reload of app
-                    //     {
-                    //         lv_img_dsc_t image_dsc;
-                    //         image_dsc.header.always_zero = 0;
-                    //         image_dsc.header.w = 300;
-                    //         image_dsc.header.h = 300;
-                    //         image_dsc.header.cf = LV_IMG_CF_TRUE_COLOR;
-                    //         image_dsc.data = spotify.imageBuffer;
-                    //         image_dsc.data_size = spotify.imageSize;
-
-                    //         lv_img_set_src(album_img, &image_dsc);
-                    //         // lv_img_set_zoom(img, 128); // Breaks stuff....
-                    //         lv_obj_align(album_img, LV_ALIGN_CENTER, 0, 0);
-
-                    //         free(spotify.imageBuffer);
-                    //     }
-                    //     else
-                    //     {
-                    //         Serial.println("Image buffer is empty or not properly loaded.");
-                    //     }
-                }
+                wifi_event.type = SK_SPOTIFY_PLAY;
             }
-
+            publishEvent(wifi_event);
             break;
         case LONG:
-
             break;
         default:
             break;
@@ -142,6 +113,11 @@ void SpotifyApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update) {}
 
 void SpotifyApp::updateStateFromSystem(AppState state)
 {
+    if (shared_events_queue == nullptr && state.shared_events_queue != nullptr)
+    {
+        shared_events_queue = state.shared_events_queue;
+    }
+
     if (state.connectivity_state.is_connected != last_connectivity_state.is_connected)
     {
         if (state.connectivity_state.is_connected)
@@ -159,49 +135,51 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         last_connectivity_state = state.connectivity_state;
     }
 
-    if (!is_spotify_configured && (state.spotify_config.expires_in > 0 || state.spotify_config.access_token != spotify.getConfig().access_token))
+    if (state.playback_state.spotify_available != last_playback_state_.spotify_available || state.playback_state.available != last_playback_state_.available || state.playback_state.timestamp != last_playback_state_.timestamp || state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.is_playing != last_playback_state_.is_playing)
     {
-        spotify.setConfig(state.spotify_config);
-        if (state.shared_events_queue == nullptr)
+        last_playback_state_ = state.playback_state;
+
+        if (state.playback_state.is_playing)
         {
-            LOGE("Shared events queue is null"); // TODO handle
-            return;
+            lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
         }
-        spotify.setSharedEventsQueue(state.shared_events_queue);
-
-        if (spotify.isAvailable())
+        else
         {
-            is_spotify_configured = true;
-            lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+            lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
+        }
 
-            bool is_playing = spotify.isPlaying();
-            const char *track_name = spotify.getCurrentTrackName().c_str();
-
-            if (is_playing)
-            {
-                lv_label_set_text(playback_state, LV_SYMBOL_PAUSE);
-            }
-            else
-            {
-                lv_label_set_text(playback_state, LV_SYMBOL_PLAY);
-            }
-
-            if (strcmp(track_name, "") != 0)
-            {
-                lv_label_set_text(track_name_label, track_name);
-                lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
-            }
-            else
-            {
-                lv_label_set_text(track_name_label, "No track playing");
-                lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
-            }
+        if (strcmp(state.playback_state.item.name, "") != 0)
+        {
+            lv_label_set_text(track_name_label, state.playback_state.item.name);
+            lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
+        }
+        else
+        {
+            lv_label_set_text(track_name_label, "No track playing");
+            lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
         }
     }
-    else if (lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN) && !is_spotify_configured)
+
+    if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
     {
+        LOGE("Spotify is available");
+        lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+        is_spotify_configured = true;
+    }
+    else if (!state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
+    {
+        LOGE("Spotify is not available");
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void SpotifyApp::publishEvent(const WiFiEvent &event)
+{
+    if (shared_events_queue != nullptr)
+    {
+        LOGE("Publishing event");
+        xQueueSend(shared_events_queue, &event, 0);
     }
 }

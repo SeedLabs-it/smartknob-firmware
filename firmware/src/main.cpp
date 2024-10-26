@@ -5,6 +5,8 @@
 #include "root_task.h"
 #include "motor_foc/motor_task.h"
 #include "network/wifi_task.h"
+#include "network/mqtt_task.h"
+#include "network/spotify/spotify_task.h"
 #include "sensors/sensors_task.h"
 #include "error_handling_flow/reset_task.h"
 #include "led_ring/led_ring_task.h"
@@ -53,7 +55,7 @@ static LedRingTask *led_ring_task_p = nullptr;
 static MotorTask motor_task(1, config);
 
 #if SK_WIFI
-static WifiTask wifi_task(1);
+static WifiTask wifi_task(1, config);
 static WifiTask *wifi_task_p = &wifi_task;
 #else
 static WifiTask *wifi_task_p = nullptr;
@@ -68,13 +70,16 @@ static MqttTask *mqtt_task_p = nullptr;
 
 #endif
 
+static SpotifyTask spotify_task(1, config);
+static SpotifyTask *spotify_task_p = &spotify_task;
+
 static SensorsTask sensors_task(1, &config);
 static SensorsTask *sensors_task_p = &sensors_task;
 
 static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
-RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, led_ring_task_p, sensors_task_p, reset_task_p, adapter_p, serial_protocol_p, serial_protocol_protobuf_p);
+RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p, mqtt_task_p, spotify_task_p, led_ring_task_p, sensors_task_p, reset_task_p, adapter_p, serial_protocol_p, serial_protocol_protobuf_p);
 
 void initTempSensor()
 {
@@ -127,9 +132,15 @@ void setup()
         config.saveSettingsToDisk();
     }
 
-    if (!config.loadSpotifyConfigFromDisk())
+    if (config.loadSpotifyConfigFromDisk())
     {
-        config.saveSpotifyConfigToDisk();
+        PB_SpotifyConfig spotify_config_ = config.getSpotifyConfig(); // TODO Task cant handle this and above at the same time after erase flash....
+        if (strcmp(spotify_config_.access_token, "") != 0)
+        {
+            spotify_task.begin();
+            delay(10);
+            spotify_task.setConfig(spotify_config_);
+        }
     }
 
     root_task.loadConfiguration();

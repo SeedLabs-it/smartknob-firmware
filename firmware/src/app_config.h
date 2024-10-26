@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "configuration.h"
 #include "cJSON.h"
+#include "./network/spotify/structs.h"
 
 // TODO: move it into the app.h
 const uint32_t APP_ID_SETTINGS = 7;
@@ -101,7 +102,6 @@ struct AppState
     OSMode os_mode_state;
     PB_SmartKnobState motor_state;
     ConnectivityState connectivity_state;
-    PB_SpotifyConfig spotify_config;
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;

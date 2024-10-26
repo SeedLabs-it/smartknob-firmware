@@ -133,11 +133,35 @@ bool Configuration::saveSpotifyConfigToDisk()
     return true;
 }
 
-bool Configuration::setSpotifyConfig(PB_SpotifyConfig &spotify_config)
+bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
 {
     {
         SemaphoreGuard lock(mutex_);
-        spotify_config_buffer_ = spotify_config;
+        LOGV(LOG_LEVEL_DEBUG, "Setting Spotify config.");
+        if (strcmp(spotify_config.base64_id_and_secret, "") != 0 && spotify_config_buffer_.base64_id_and_secret != spotify_config.base64_id_and_secret)
+        {
+            strcpy(spotify_config_buffer_.base64_id_and_secret, spotify_config.base64_id_and_secret);
+        }
+        if (strcmp(spotify_config.access_token, "") != 0 && spotify_config_buffer_.access_token != spotify_config.access_token)
+        {
+            strcpy(spotify_config_buffer_.access_token, spotify_config.access_token);
+        }
+        if (strcmp(spotify_config.token_type, "") != 0 && spotify_config_buffer_.token_type != spotify_config.token_type)
+        {
+            strcpy(spotify_config_buffer_.token_type, spotify_config.token_type);
+        }
+        if (strcmp(spotify_config.scope, "") != 0 && spotify_config_buffer_.scope != spotify_config.scope)
+        {
+            strcpy(spotify_config_buffer_.scope, spotify_config.scope);
+        }
+        if (spotify_config.expires_in != 0 && spotify_config_buffer_.expires_in != spotify_config.expires_in)
+        {
+            spotify_config_buffer_.expires_in = spotify_config.expires_in;
+        }
+        if (strcmp(spotify_config.refresh_token, "") != 0 && spotify_config_buffer_.refresh_token != spotify_config.refresh_token)
+        {
+            strcpy(spotify_config_buffer_.refresh_token, spotify_config.refresh_token);
+        }
     }
     return saveSpotifyConfigToDisk();
 }

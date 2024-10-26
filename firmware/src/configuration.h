@@ -114,7 +114,7 @@ public:
     bool loadSpotifyConfigFromDisk();
     bool saveSpotifyConfigToDisk();
 
-    bool setSpotifyConfig(PB_SpotifyConfig &spotify_config);
+    bool setSpotifyConfig(const PB_SpotifyConfig &spotify_config);
     PB_SpotifyConfig getSpotifyConfig();
 
     bool setSettings(SETTINGS_Settings &settings);

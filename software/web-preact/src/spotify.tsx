@@ -178,11 +178,7 @@ const SpotifyPage = () => {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  base64_id_and_secret: btoa(
-                    '92e0c94d48174b608ded52e5a5a26aa0' +
-                      ':' +
-                      '72e8283140e2415c96f4bd66a76ced0b',
-                  ),
+                  base64_id_and_secret: btoa(clientId + ':' + clientSecret),
                   spotify_response: data as SpotifyAuthResponse,
                 }),
               },
