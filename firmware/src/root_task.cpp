@@ -380,6 +380,7 @@ void RootTask::run()
                 break;
             case SK_SPOTIFY_PLAY:
             case SK_SPOTIFY_PAUSE:
+            case SK_SPOTIFY_VOLUME:
                 spotify_task_->handleEvent(wifi_event);
                 break;
             default:

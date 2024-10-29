@@ -92,6 +92,8 @@ struct Error
     ErrorBody body;
 };
 
+using Volume = uint8_t;
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -103,6 +105,7 @@ union WiFiEventBody
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
     PlaybackState playback_state;
+    Volume volume;
     Error error;
     uint8_t calibration_step;
 };
@@ -145,6 +148,7 @@ enum EventType
     SK_SPOTIFY_REFRESH_TOKEN,
     SK_SPOTIFY_PAUSE,
     SK_SPOTIFY_PLAY,
+    SK_SPOTIFY_VOLUME,
 
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,

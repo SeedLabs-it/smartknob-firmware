@@ -8,7 +8,7 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
     // lv_arc_set_value(user_data->progress, 100 * (1 - ((song_duration_ms - progress_ms / (float)song_duration_ms)));
-    lv_arc_set_angles(user_data->progress, 0, 270 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms))));
+    lv_arc_set_angles(user_data->progress, 0, 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms))));
     if (progress_ms > song_duration_ms)
     {
         LOGE("Song ended!!!!!!!!!!!!!!!!!!!!!");
@@ -29,8 +29,8 @@ SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
         .sub_position_unit = 0,
         .position_nonce = 0,
         .min_position = 0,
-        .max_position = 100,
-        .position_width_radians = 2.4 * PI / 180,
+        .max_position = 20,
+        .position_width_radians = 6 * PI / 180,
         .detent_strength_unit = 1,
         .endstop_strength_unit = 1,
         .snap_point = 1.1,
@@ -73,17 +73,30 @@ void SpotifyApp::initScreen()
 
     progress_state_.progress = lv_arc_create(player_screen);
     lv_obj_t *progress = progress_state_.progress;
-    lv_obj_set_size(progress, 215, 215);
+    lv_obj_set_size(progress, 218, 218);
     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
     lv_obj_set_style_arc_width(progress, 4, LV_PART_INDICATOR);
 
-    lv_arc_set_rotation(progress, 135);
-    lv_arc_set_bg_angles(progress, 0, 270);
+    lv_arc_set_rotation(progress, 140);
+    lv_arc_set_bg_angles(progress, 0, 260);
     lv_arc_set_angles(progress, 0, 0);
     lv_obj_remove_style(progress, NULL, LV_PART_KNOB);
     lv_obj_center(progress);
+
+    volume = lv_arc_create(player_screen);
+    lv_obj_set_size(volume, 218, 218);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
+
+    lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(volume, 4, LV_PART_INDICATOR);
+
+    lv_arc_set_rotation(volume, 50);
+    lv_arc_set_bg_angles(volume, 0, 80);
+    lv_arc_set_angles(volume, 0, 0);
+    lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
+    lv_obj_center(volume);
 }
 
 void SpotifyApp::initQrScreen()
@@ -107,14 +120,25 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
 
+    current_position = state.current_position;
+
+    motor_config.position_nonce = current_position;
+    motor_config.position = current_position;
+
     if (last_position != state.current_position)
     {
-        last_position = state.current_position;
         LOGE("State changed");
         LOGE("SpotifyApp::updateStateFromKnob: %d", state.current_position);
+        lv_arc_set_value(volume, state.current_position * 5);
+
+        WiFiEvent wifi_event;
+        wifi_event.type = SK_SPOTIFY_VOLUME;
+        wifi_event.body.volume = state.current_position * 5;
+        publishEvent(wifi_event);
     }
 
     first_run = true;
+    last_position = current_position;
     new_state.changed = false;
     return new_state;
 }
@@ -174,7 +198,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.playback_state.spotify_available != last_playback_state_.spotify_available || state.playback_state.available != last_playback_state_.available || state.playback_state.timestamp != last_playback_state_.timestamp || state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.is_playing != last_playback_state_.is_playing)
     {
-
         if (state.playback_state.is_playing)
         {
             updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
@@ -184,8 +207,17 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         {
             if (progress_timer_ != nullptr)
                 lv_timer_pause(progress_timer_);
-            lv_arc_set_angles(progress_state_.progress, 0, 270 * (1 - (((state.playback_state.item.duration_ms - state.playback_state.progress_ms) / (float)state.playback_state.item.duration_ms)))); // TODO the small jump at pause is a bit ugly...
+            lv_arc_set_angles(progress_state_.progress, 0, 260 * (1 - (((state.playback_state.item.duration_ms - state.playback_state.progress_ms) / (float)state.playback_state.item.duration_ms)))); // TODO the small jump at pause is a bit ugly...
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
+        }
+
+        if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
+        {
+            current_position = state.playback_state.device.volume_percent / 5;
+            last_position = current_position;
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+            lv_arc_set_value(volume, current_position);
         }
 
         if (strcmp(state.playback_state.item.name, "") != 0)

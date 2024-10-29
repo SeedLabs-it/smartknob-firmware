@@ -19,8 +19,9 @@ void SpotifyTask::run()
         {
             unsigned long ms_since_last_fetch = millis() - last_fetched_playback_state;
 
-            if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms)
+            if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || (latest_playback_state_.available && ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms))
             {
+                LOGE("Fetching playback state");
                 latest_playback_state_ = spotify_api_.getCurrentPlaybackState();
 
                 last_fetched_playback_state = millis();
@@ -58,6 +59,11 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
     // case SK_SPOTIFY_VOLUME:
     //     result = spotify_api_.setVolume(event.body.volume, device_id);
     //     break;
+    case SK_SPOTIFY_VOLUME:
+        result = spotify_api_.setVolume(event.body.volume, device_id); // TODO handle
+        LOGE("Volume: %d", event.body.volume);
+        return;
+        break;
     default:
         break;
     }
