@@ -43,6 +43,8 @@ private:
     uint8_t current_position = 0;
     int32_t last_position = 0;
 
+    bool state_sent_from_api = false;
+
     bool is_spotify_configured = false; // TODO Replace with actual check!!!!!!
 
     ConnectivityState last_connectivity_state;

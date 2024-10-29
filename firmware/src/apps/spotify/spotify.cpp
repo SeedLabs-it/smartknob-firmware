@@ -120,6 +120,12 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
 
+    if (state_sent_from_api)
+    {
+        state_sent_from_api = false;
+        return new_state;
+    }
+
     current_position = state.current_position;
 
     motor_config.position_nonce = current_position;
@@ -127,8 +133,6 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != state.current_position)
     {
-        LOGE("State changed");
-        LOGE("SpotifyApp::updateStateFromKnob: %d", state.current_position);
         lv_arc_set_value(volume, state.current_position * 5);
 
         WiFiEvent wifi_event;
@@ -205,19 +209,22 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         }
         else
         {
+            updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
             if (progress_timer_ != nullptr)
                 lv_timer_pause(progress_timer_);
-            lv_arc_set_angles(progress_state_.progress, 0, 260 * (1 - (((state.playback_state.item.duration_ms - state.playback_state.progress_ms) / (float)state.playback_state.item.duration_ms)))); // TODO the small jump at pause is a bit ugly...
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
         {
+            LOGE("Volume changed");
+            LOGE("Volume: %d", state.playback_state.device.volume_percent);
             current_position = state.playback_state.device.volume_percent / 5;
             last_position = current_position;
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
             lv_arc_set_value(volume, state.playback_state.device.volume_percent);
+            state_sent_from_api = true; // TODO
         }
 
         if (strcmp(state.playback_state.item.name, "") != 0)
@@ -229,12 +236,28 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         {
             lv_label_set_text(track_name_label, "No track playing");
             lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
+
+            lv_img_set_src(album_img, NULL);
+
+            lv_arc_set_value(progress_state_.progress, 0);
+
+            lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
-        // if (strcmp(state.playback_state.item.name, last_playback_state_.item.name) != 0)
+        // if (state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.item.duration_ms != last_playback_state_.item.duration_ms)
         // {
         //     updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
         // }
+
+        if (strcmp(state.playback_state.item.name, last_playback_state_.item.name) != 0 || state.playback_state.progress_ms != last_playback_state_.progress_ms)
+        {
+            LOGE("Updating timer");
+            updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+            if (!state.playback_state.is_playing)
+            {
+                lv_timer_pause(progress_timer_);
+            }
+        }
 
         last_playback_state_ = state.playback_state;
     }
