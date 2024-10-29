@@ -207,7 +207,6 @@ PlaybackState SpotifyApi::getCurrentPlaybackState()
     }
     else if (httpCode == HTTP_CODE_NO_CONTENT)
     {
-        LOGE("No content");
         playback_state.available = false;
         playback_state.spotify_available = true;
         return playback_state;
@@ -361,15 +360,15 @@ int SpotifyApi::sendPutRequest(const String &url, const String &body)
 
     if (httpCode == HTTP_CODE_OK)
     {
-        LOGE("Request successful");
+        LOGV(LOG_LEVEL_DEBUG, "HTTP_CODE_OK");
     }
     else if (httpCode == HTTP_CODE_NO_CONTENT)
     {
-        LOGE("No content"); // TODO tell user that the request was successful but no content was returned, ie no device is playing anything
+        LOGV(LOG_LEVEL_DEBUG, "HTTP_CODE_NO_CONTENT");
     }
     else
     {
-        LOGE("Error in HTTP request: %d", httpCode);
+        LOGE("Error in HTTP request code: %d", httpCode);
     }
     http_client_.end();
     return httpCode;

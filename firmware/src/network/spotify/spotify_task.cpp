@@ -45,34 +45,33 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
     playback_state_event.body.playback_state = latest_playback_state_;
 
     const char *device_id = latest_playback_state_.device.id ? latest_playback_state_.device.id : "";
-    bool result = false;
 
     switch (event.type)
     {
     case SK_SPOTIFY_PLAY:
-        result = spotify_api_.play(device_id);
+        if (spotify_api_.play(device_id))
+        {
+            latest_playback_state_.is_playing = !latest_playback_state_.is_playing;
+            playback_state_event.body.playback_state = latest_playback_state_;
+        }
         break;
     case SK_SPOTIFY_PAUSE:
-        result = spotify_api_.pause(device_id);
-
+        if (spotify_api_.pause(device_id))
+        {
+            latest_playback_state_.is_playing = !latest_playback_state_.is_playing;
+            playback_state_event.body.playback_state = latest_playback_state_;
+        }
         break;
-    // case SK_SPOTIFY_VOLUME:
-    //     result = spotify_api_.setVolume(event.body.volume, device_id);
-    //     break;
     case SK_SPOTIFY_VOLUME:
-        result = spotify_api_.setVolume(event.body.volume, device_id); // TODO handle
-        LOGE("Volume: %d", event.body.volume);
+        if (spotify_api_.setVolume(event.body.volume, device_id))
+        {
+            latest_playback_state_.device.volume_percent = event.body.volume;
+            playback_state_event.body.playback_state = latest_playback_state_;
+        }
         return;
         break;
     default:
         break;
-    }
-
-    if (result)
-    {
-        latest_playback_state_.is_playing = !latest_playback_state_.is_playing;
-        playback_state_event.body.playback_state = latest_playback_state_;
-        LOGE(latest_playback_state_.is_playing ? "Playing" : "Paused");
     }
 
     publishEvent(playback_state_event);
