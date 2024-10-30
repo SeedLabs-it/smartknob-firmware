@@ -406,11 +406,8 @@ void WifiTask::run()
             LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
 
-            // LOGE("Free internal heap: %d", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            // LOGE("Free SPIRAM heap: %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-
-            // UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            // Serial.printf("Remaining stack space: %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
+            // Serial.printf("FREE HEAP %d \n", ESP.getFreeHeap());
+            // Serial.printf("FREE MIN HEAP %d \n", ESP.getMinFreeHeap());
 
             updateWifiState();
             last_wifi_status = last_run_ms_;

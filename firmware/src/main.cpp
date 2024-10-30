@@ -32,8 +32,12 @@ static SerialProtocolPlaintext *serial_protocol_p = &serial_protocol;
 static SerialProtocolProtobuf serial_protocol_protobuf(stream_);
 static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_protobuf;
 
-static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 24, 0, 1);
+static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 4, 0, 1);
 static FreeRTOSAdapter *adapter_p = &adapter;
+#else
+static FreeRTOSAdapter *adapter_p = nullptr;
+static SerialProtocolPlaintext *serial_protocol_p = nullptr;
+static SerialProtocolProtobuf *serial_protocol_protobuf_p = nullptr;
 #endif
 
 Configuration config;
@@ -91,10 +95,10 @@ void initTempSensor()
 
 void setup()
 {
+#if ENABLE_LOGGING
     delay(100); // Delay to allow usb to connect before starting stream
     stream_.begin(MONITOR_SPEED);
 
-#if ENABLE_LOGGING
     Logging::setAdapter(adapter_p);
 #endif
 
