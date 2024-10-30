@@ -120,18 +120,12 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
 
-    if (state_sent_from_api)
-    {
-        state_sent_from_api = false;
-        return new_state;
-    }
-
     current_position = state.current_position;
 
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
-    if (last_position != state.current_position)
+    if (last_position != current_position && !first_run)
     {
         lv_arc_set_value(volume, state.current_position * 5);
 
@@ -141,7 +135,7 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
         publishEvent(wifi_event);
     }
 
-    first_run = true;
+    first_run = false;
     last_position = current_position;
     new_state.changed = false;
     return new_state;
@@ -178,7 +172,7 @@ void SpotifyApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update) {}
 
 void SpotifyApp::updateStateFromSystem(AppState state)
 {
-    if (shared_events_queue == nullptr && state.shared_events_queue != nullptr)
+    if (shared_events_queue == nullptr && state.shared_events_queue != nullptr || shared_events_queue != state.shared_events_queue)
     {
         shared_events_queue = state.shared_events_queue;
     }
@@ -224,7 +218,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
             lv_arc_set_value(volume, state.playback_state.device.volume_percent);
-            state_sent_from_api = true; // TODO
+
+            motor_notifier->requestUpdate(motor_config);
         }
 
         if (strcmp(state.playback_state.item.name, "") != 0)

@@ -39,11 +39,9 @@ private:
     lv_obj_t *qr_screen = nullptr;
     lv_obj_t *qr_code = nullptr;
 
-    bool first_run = false;
+    bool first_run = true;
     uint8_t current_position = 0;
     int32_t last_position = 0;
-
-    bool state_sent_from_api = false;
 
     bool is_spotify_configured = false; // TODO Replace with actual check!!!!!!
 
