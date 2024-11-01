@@ -17,11 +17,18 @@ struct Album
     char name[64];
 };
 
+// struct Artist
+// {
+//     char name[64];
+// };
+
 struct Item
 {
     Album album;
     int duration_ms;
     char name[64];
+    // Artist artists[4]; // Only one artist for now
+    char artist[64]; // Only one artist for now
 };
 
 struct Actions

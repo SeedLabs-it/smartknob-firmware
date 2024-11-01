@@ -70,6 +70,19 @@ void SpotifyTask::run()
 
                 latest_playback_state_ = playback_state;
             }
+
+            if (latest_playback_state_.spotify_available)
+            {
+                if (millis() - last_volume_change_ms > 200 && last_volume != latest_playback_state_.device.volume_percent && last_volume != 255)
+                {
+                    last_volume_change_ms = millis();
+                    if (spotify_api_.setVolume(last_volume, latest_playback_state_.device.id))
+                    {
+                        LOGE("Volume changed");
+                        latest_playback_state_.device.volume_percent = last_volume;
+                    }
+                }
+            }
         }
         delay(1);
     }
@@ -100,12 +113,10 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
         }
         break;
     case SK_SPOTIFY_VOLUME:
-        if (spotify_api_.setVolume(event.body.volume, device_id))
+        if (event.body.volume != last_volume && latest_playback_state_.device.volume_percent != event.body.volume)
         {
-            latest_playback_state_.device.volume_percent = event.body.volume;
-            playback_state_event.body.playback_state = latest_playback_state_;
+            last_volume = event.body.volume;
         }
-        return;
         break;
     default:
         break;

@@ -134,6 +134,20 @@ PlaybackState SpotifyApi::getCurrentPlaybackState()
         }
         else
         {
+            cJSON *artists = cJSON_GetObjectItem(item, "artists");
+
+            if (artists == NULL)
+            {
+                LOGE("No artists object found in JSON");
+                cJSON_Delete(json);
+                http_client_.end();
+                return playback_state;
+            }
+            else
+            {
+                strcpy(playback_state.item.artist, cJSON_GetObjectItem(cJSON_GetArrayItem(artists, 0), "name")->valuestring); // only first artist for now
+            }
+
             cJSON *album = cJSON_GetObjectItem(item, "album");
             if (album == NULL)
             {

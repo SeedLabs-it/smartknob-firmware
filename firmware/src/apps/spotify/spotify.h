@@ -31,9 +31,10 @@ private:
     lv_obj_t *album_img = nullptr;
     SpotifyCoverArt latest_cover_art = nullptr;
     lv_obj_t *playing = nullptr;
-    // lv_obj_t *progress = nullptr;
     lv_obj_t *track_name_label = nullptr;
+    lv_obj_t *track_artist_label = nullptr;
     lv_obj_t *volume = nullptr;
+    lv_timer_t *volume_timer_ = nullptr;
     ProgressState progress_state_;
     lv_timer_t *progress_timer_ = nullptr;
 

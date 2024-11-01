@@ -24,6 +24,9 @@ protected:
     void run();
 
 private:
+    unsigned long last_volume_change_ms = 0;
+    uint8_t last_volume = 255;
+
     SpotifyApi spotify_api_;
 
     lv_img_dsc_t *image_dsc = nullptr;

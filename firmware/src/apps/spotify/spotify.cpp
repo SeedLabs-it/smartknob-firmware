@@ -7,12 +7,21 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long progress_ms = user_data->progress_ms + (millis() - started_ms);
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
-    lv_arc_set_angles(user_data->progress, 0, 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms))));
+    float end_angle = 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms)));
+
+    lv_arc_set_angles(user_data->progress, end_angle - 5, end_angle);
     if (progress_ms > song_duration_ms)
     {
-        lv_arc_set_value(user_data->progress, 100);
+        lv_arc_set_angles(user_data->progress, 255, 260);
         return;
     }
+}
+
+void hide_volume_arc(void *volume_arc)
+{
+    LOGE("HIDE VOLUME ARC");
+    delay(3000);
+    LOGE("HIDE VOLUME ARC END");
 }
 
 SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
@@ -26,7 +35,7 @@ SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
         .sub_position_unit = 0,
         .position_nonce = 0,
         .min_position = 0,
-        .max_position = 20,
+        .max_position = 100,
         .position_width_radians = 6 * PI / 180,
         .detent_strength_unit = 1,
         .endstop_strength_unit = 1,
@@ -61,28 +70,17 @@ void SpotifyApp::initScreen()
     lv_obj_center(album_img);
     lv_obj_set_style_img_opa(album_img, LV_OPA_60, 0);
 
-    // lv_obj_t *opacity_cover = lv_obj_create(player_screen);
-    // lv_obj_set_size(opacity_cover, 300, 300);
-    // lv_obj_align(album_img, LV_ALIGN_CENTER, 0, 0);
-    // lv_obj_set_style_bg_color(opacity_cover, LV_COLOR_MAKE(0, 0, 0), 0);
-    // lv_obj_set_style_bg_opa(opacity_cover, LV_OPA_50, 0);
-
-    track_name_label = lv_label_create(player_screen);
-    lv_label_set_text(track_name_label, "No track playing");
-    lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
-
-    playing = lv_label_create(player_screen);
-    lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
-    lv_label_set_text(playing, LV_SYMBOL_PAUSE);
-    lv_obj_center(playing);
-
     progress_state_.progress = lv_arc_create(player_screen);
     lv_obj_t *progress = progress_state_.progress;
-    lv_obj_set_size(progress, 226, 226);
+    lv_obj_set_size(progress, 232, 232);
+    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
 
-    lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(progress, 4, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(progress, 8, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(progress, 8, LV_PART_INDICATOR);
+
+    lv_obj_set_style_arc_rounded(progress, false, LV_PART_MAIN);
+    lv_obj_set_style_arc_rounded(progress, false, LV_PART_INDICATOR);
 
     lv_arc_set_rotation(progress, 140);
     lv_arc_set_bg_angles(progress, 0, 260);
@@ -90,19 +88,106 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(progress, NULL, LV_PART_KNOB);
     lv_obj_center(progress);
 
+    lv_obj_set_style_radius(progress, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(progress, 0, LV_PART_INDICATOR);
+
     volume = lv_arc_create(player_screen);
-    lv_obj_set_size(volume, 226, 226);
-    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0xBB, 0xBB, 0xBB), LV_PART_INDICATOR);
+    lv_obj_set_size(volume, 212, 212);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
 
-    lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(volume, 4, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(volume, 8, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(volume, 8, LV_PART_INDICATOR);
 
-    lv_arc_set_rotation(volume, 50);
-    lv_arc_set_bg_angles(volume, 0, 80);
+    lv_obj_set_style_arc_rounded(volume, false, LV_PART_MAIN);
+    lv_obj_set_style_arc_rounded(volume, false, LV_PART_INDICATOR);
+
+    lv_arc_set_rotation(volume, 140);
+    lv_arc_set_bg_angles(volume, 0, 260);
     lv_arc_set_angles(volume, 0, 0);
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
+
+    lv_obj_add_flag(volume, LV_OBJ_FLAG_HIDDEN);
+
+    playing = lv_label_create(player_screen);
+    lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
+    lv_label_set_text(playing, LV_SYMBOL_PAUSE);
+    lv_obj_center(playing);
+
+    lv_obj_t *text_box = lv_obj_create(player_screen);
+    lv_obj_remove_style_all(text_box);
+    lv_obj_set_size(text_box, 132, 40);
+    lv_obj_align(text_box, LV_ALIGN_BOTTOM_MID, 0, -26);
+
+    lv_obj_set_style_bg_color(text_box, LV_COLOR_MAKE(0x99, 0x99, 0x99), 0);
+    lv_obj_set_style_bg_opa(text_box, LV_OPA_80, 0);
+    lv_obj_set_style_text_color(text_box, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+
+    lv_obj_set_flex_flow(text_box, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(text_box, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+
+    track_name_label = lv_label_create(text_box);
+    lv_obj_set_size(track_name_label, 126, 16);
+    lv_label_set_text(track_name_label, "No track playing");
+    lv_label_set_long_mode(track_name_label, LV_LABEL_LONG_DOT);
+
+    track_artist_label = lv_label_create(text_box);
+    lv_obj_set_size(track_artist_label, 126, 16);
+    lv_label_set_text(track_artist_label, "");
+    lv_obj_set_style_text_font(track_artist_label, &aktivgrotesk_regular_8pt_8bpp_subpixel, 0);
 }
+
+// OLD
+// void SpotifyApp::initScreen()
+// {
+//     SemaphoreGuard lock(mutex_);
+//     player_screen = lv_obj_create(screen);
+//     lv_obj_remove_style_all(player_screen);
+//     lv_obj_set_size(player_screen, LV_HOR_RES, LV_VER_RES);
+//     lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+
+//     album_img = lv_img_create(player_screen);
+//     lv_obj_set_size(album_img, 300, 300);
+//     lv_obj_center(album_img);
+//     lv_obj_set_style_img_opa(album_img, LV_OPA_60, 0);
+
+//     track_name_label = lv_label_create(player_screen);
+//     lv_label_set_text(track_name_label, "No track playing");
+//     lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
+
+//     playing = lv_label_create(player_screen);
+//     lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
+//     lv_label_set_text(playing, LV_SYMBOL_PAUSE);
+//     lv_obj_center(playing);
+
+//     progress_state_.progress = lv_arc_create(player_screen);
+//     lv_obj_t *progress = progress_state_.progress;
+//     lv_obj_set_size(progress, 226, 226);
+//     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
+
+//     lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
+//     lv_obj_set_style_arc_width(progress, 4, LV_PART_INDICATOR);
+
+//     lv_arc_set_rotation(progress, 140);
+//     lv_arc_set_bg_angles(progress, 0, 260);
+//     lv_arc_set_angles(progress, 0, 0);
+//     lv_obj_remove_style(progress, NULL, LV_PART_KNOB);
+//     lv_obj_center(progress);
+
+//     volume = lv_arc_create(player_screen);
+//     lv_obj_set_size(volume, 226, 226);
+//     lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0xBB, 0xBB, 0xBB), LV_PART_INDICATOR);
+
+//     lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
+//     lv_obj_set_style_arc_width(volume, 4, LV_PART_INDICATOR);
+
+//     lv_arc_set_rotation(volume, 50);
+//     lv_arc_set_bg_angles(volume, 0, 80);
+//     lv_arc_set_angles(volume, 0, 0);
+//     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
+//     lv_obj_center(volume);
+// }
 
 void SpotifyApp::initQrScreen()
 {
@@ -132,11 +217,12 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && !first_run)
     {
-        lv_arc_set_value(volume, state.current_position * 5);
+        lv_obj_clear_flag(volume, LV_OBJ_FLAG_HIDDEN);
+        lv_arc_set_value(volume, state.current_position);
 
         WiFiEvent wifi_event;
         wifi_event.type = SK_SPOTIFY_VOLUME;
-        wifi_event.body.volume = state.current_position * 5;
+        wifi_event.body.volume = state.current_position;
         publishEvent(wifi_event);
     }
 
@@ -229,22 +315,9 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
-        // LOGE("POINTER %p", state.playback_state.image_dsc);
-
-        // if (state.playback_state.image_dsc != nullptr)
-        // {
-        //     if (last_playback_state_.image_dsc == nullptr)
-        //         LOGE("LAST IMGAGE NULL");
-        //     if (last_playback_state_.image_dsc == nullptr || state.playback_state.image_dsc->data != last_playback_state_.image_dsc->data)
-        //     {
-        //         LOGE("Setting image");
-        //         lv_img_set_src(album_img, state.playback_state.image_dsc);
-        //     }
-        // }
-
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
         {
-            current_position = state.playback_state.device.volume_percent / 5;
+            current_position = state.playback_state.device.volume_percent;
             last_position = current_position;
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
@@ -256,18 +329,25 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         if (strcmp(state.playback_state.item.name, "") != 0)
         {
             lv_label_set_text(track_name_label, state.playback_state.item.name);
-            lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
         }
         else
         {
             lv_label_set_text(track_name_label, "No track playing");
-            lv_obj_align(track_name_label, LV_ALIGN_CENTER, 0, 32);
 
             lv_img_set_src(album_img, NULL);
 
             lv_arc_set_value(progress_state_.progress, 0);
 
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
+        }
+
+        if (strcmp(state.playback_state.item.artist, "") != 0)
+        {
+            lv_label_set_text(track_artist_label, state.playback_state.item.artist);
+        }
+        else
+        {
+            lv_label_set_text(track_artist_label, "");
         }
 
         if (strcmp(state.playback_state.item.name, last_playback_state_.item.name) != 0 || state.playback_state.progress_ms != last_playback_state_.progress_ms)
