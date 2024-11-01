@@ -382,74 +382,50 @@ bool SpotifyApi::isAvailable() // TODO
     return true;
 }
 
-void SpotifyApi::downloadImage() // TODO
+void SpotifyApi::downloadImage(char *image_url) // TODO
 {
-    // if (WiFi.status() == WL_CONNECTED)
-    // {
-    //     char imageUrl[128] = "";
-    //     PlaybackState playback_state = getCurrentPlaybackState();
-    //     if (!playback_state.available)
-    //     {
-    //         LOGW("Playback state not available");
-    //         return;
-    //     }
+    if (WiFi.status() == WL_CONNECTED)
+    {
 
-    //     for (int i = 0; i < MAX_IMAGES; i++)
-    //     {
-    //         if (playback_state.item.album.images[i].height == 300)
-    //         {
-    //             strcpy(imageUrl, playback_state.item.album.images[i].url);
-    //             break;
-    //         }
-    //     }
+        LOGV(LOG_LEVEL_DEBUG, "Downloading image from: %s", image_url);
 
-    //     if (strlen(imageUrl) == 0)
-    //     {
-    //         LOGE("No image found");
-    //         return;
-    //     }
+        http_client_.begin(image_url);
+        int httpCode = http_client_.GET();
+        if (httpCode == HTTP_CODE_OK)
+        {
+            imageSize = http_client_.getSize();
+            imageBuffer = (uint8_t *)heap_caps_aligned_alloc(16, imageSize, MALLOC_CAP_SPIRAM);
 
-    //     LOGE("Downloading image from: %s", imageUrl);
+            if (imageBuffer != nullptr)
+            {
+                WiFiClient *stream = http_client_.getStreamPtr();
+                size_t offset = 0;
+                uint8_t buff[256];
 
-    //     http_client_.setTimeout(1000);
-    //     http_client_.begin(imageUrl);
+                while (http_client_.connected() && (stream->available() > 0) && (offset < imageSize))
+                {
+                    int bytesRead = stream->readBytes(buff, sizeof(buff));
+                    if (bytesRead > 0)
+                    {
+                        memcpy(imageBuffer + offset, buff, bytesRead);
+                        offset += bytesRead;
+                    }
+                }
 
-    //     int httpCode = http_client_.GET();
-    //     if (httpCode == HTTP_CODE_OK)
-    //     {
-    //         imageSize = http_client_.getSize();
-    //         imageBuffer = (uint8_t *)heap_caps_aligned_alloc(16, imageSize, MALLOC_CAP_SPIRAM);
+                LOGV(LOG_LEVEL_DEBUG, "Spotify cover art downloaded successfully.");
+            }
+            else
+            {
+                LOGE("Failed to allocate PSRAM for spotify cover art.");
+            }
+        }
+        else
+        {
+            LOGE("Spotify cover art download failed with HTTP code: %d", httpCode);
+        }
 
-    //         if (imageBuffer != nullptr)
-    //         {
-    //             WiFiClient *stream = http_client_.getStreamPtr();
-    //             size_t offset = 0;
-    //             uint8_t buff[256];
-
-    //             while (http_client_.connected() && (stream->available() > 0) && (offset < imageSize))
-    //             {
-    //                 int bytesRead = stream->readBytes(buff, sizeof(buff));
-    //                 if (bytesRead > 0)
-    //                 {
-    //                     memcpy(imageBuffer + offset, buff, bytesRead);
-    //                     offset += bytesRead;
-    //                 }
-    //             }
-
-    //             LOGV(LOG_LEVEL_DEBUG, "Image downloaded and stored in PSRAM");
-    //         }
-    //         else
-    //         {
-    //             LOGE("Failed to allocate PSRAM for image.");
-    //         }
-    //     }
-    //     else
-    //     {
-    //         LOGE("Error in HTTP request: %d", httpCode);
-    //     }
-
-    //     http_client_.end();
-    // }
+        http_client_.end();
+    }
 }
 
 String SpotifyApi::getCurrentTrackName()

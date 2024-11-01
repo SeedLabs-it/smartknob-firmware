@@ -94,6 +94,8 @@ struct Error
 
 using Volume = uint8_t;
 
+using SpotifyCoverArt = lv_img_dsc_t *;
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -105,6 +107,7 @@ union WiFiEventBody
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
     PlaybackState playback_state;
+    SpotifyCoverArt cover_art;
     Volume volume;
     Error error;
     uint8_t calibration_step;
@@ -149,6 +152,7 @@ enum EventType
     SK_SPOTIFY_PAUSE,
     SK_SPOTIFY_PLAY,
     SK_SPOTIFY_VOLUME,
+    SK_SPOTIFY_NEW_COVER_ART,
 
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,

@@ -1,9 +1,8 @@
 #pragma once
 #include <Arduino.h>
+#include <draw/lv_img_buf.h>
 
-// #define MAX_MARKETS 5
 #define MAX_IMAGES 3
-// #define MAX_ARTISTS 5
 
 struct Image
 {

@@ -29,6 +29,7 @@ protected:
 private:
     lv_obj_t *player_screen = nullptr;
     lv_obj_t *album_img = nullptr;
+    SpotifyCoverArt latest_cover_art = nullptr;
     lv_obj_t *playing = nullptr;
     // lv_obj_t *progress = nullptr;
     lv_obj_t *track_name_label = nullptr;

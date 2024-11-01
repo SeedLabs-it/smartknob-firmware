@@ -7,13 +7,10 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long progress_ms = user_data->progress_ms + (millis() - started_ms);
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
-    // lv_arc_set_value(user_data->progress, 100 * (1 - ((song_duration_ms - progress_ms / (float)song_duration_ms)));
     lv_arc_set_angles(user_data->progress, 0, 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms))));
     if (progress_ms > song_duration_ms)
     {
-        LOGE("Song ended!!!!!!!!!!!!!!!!!!!!!");
         lv_arc_set_value(user_data->progress, 100);
-        // lv_timer_del(progress_timer);
         return;
     }
 }
@@ -60,7 +57,15 @@ void SpotifyApp::initScreen()
     lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
 
     album_img = lv_img_create(player_screen);
-    lv_obj_align(album_img, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_size(album_img, 300, 300);
+    lv_obj_center(album_img);
+    lv_obj_set_style_img_opa(album_img, LV_OPA_60, 0);
+
+    // lv_obj_t *opacity_cover = lv_obj_create(player_screen);
+    // lv_obj_set_size(opacity_cover, 300, 300);
+    // lv_obj_align(album_img, LV_ALIGN_CENTER, 0, 0);
+    // lv_obj_set_style_bg_color(opacity_cover, LV_COLOR_MAKE(0, 0, 0), 0);
+    // lv_obj_set_style_bg_opa(opacity_cover, LV_OPA_50, 0);
 
     track_name_label = lv_label_create(player_screen);
     lv_label_set_text(track_name_label, "No track playing");
@@ -73,7 +78,7 @@ void SpotifyApp::initScreen()
 
     progress_state_.progress = lv_arc_create(player_screen);
     lv_obj_t *progress = progress_state_.progress;
-    lv_obj_set_size(progress, 218, 218);
+    lv_obj_set_size(progress, 226, 226);
     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
@@ -86,8 +91,8 @@ void SpotifyApp::initScreen()
     lv_obj_center(progress);
 
     volume = lv_arc_create(player_screen);
-    lv_obj_set_size(volume, 218, 218);
-    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
+    lv_obj_set_size(volume, 226, 226);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0xBB, 0xBB, 0xBB), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
     lv_obj_set_style_arc_width(volume, 4, LV_PART_INDICATOR);
@@ -194,25 +199,51 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         last_connectivity_state = state.connectivity_state;
     }
 
+    if (state.cover_art != nullptr && latest_cover_art != state.cover_art)
+    {
+        LOGE("COVER ART");
+        latest_cover_art = state.cover_art;
+        lv_img_set_src(album_img, latest_cover_art);
+    }
+
     if (state.playback_state.spotify_available != last_playback_state_.spotify_available || state.playback_state.available != last_playback_state_.available || state.playback_state.timestamp != last_playback_state_.timestamp || state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.is_playing != last_playback_state_.is_playing)
     {
         if (state.playback_state.is_playing)
         {
-            updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+            // updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+            if (progress_timer_ != nullptr)
+            {
+                progress_state_.started_ms = millis();
+                lv_timer_resume(progress_timer_);
+            }
             lv_label_set_text(playing, LV_SYMBOL_PAUSE);
         }
         else
         {
-            updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
+            // updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
             if (progress_timer_ != nullptr)
+            {
                 lv_timer_pause(progress_timer_);
+                progress_state_.progress_ms = progress_state_.progress_ms + (millis() - progress_state_.started_ms);
+            }
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
+        // LOGE("POINTER %p", state.playback_state.image_dsc);
+
+        // if (state.playback_state.image_dsc != nullptr)
+        // {
+        //     if (last_playback_state_.image_dsc == nullptr)
+        //         LOGE("LAST IMGAGE NULL");
+        //     if (last_playback_state_.image_dsc == nullptr || state.playback_state.image_dsc->data != last_playback_state_.image_dsc->data)
+        //     {
+        //         LOGE("Setting image");
+        //         lv_img_set_src(album_img, state.playback_state.image_dsc);
+        //     }
+        // }
+
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
         {
-            LOGE("Volume changed");
-            LOGE("Volume: %d", state.playback_state.device.volume_percent);
             current_position = state.playback_state.device.volume_percent / 5;
             last_position = current_position;
             motor_config.position_nonce = current_position;
@@ -239,14 +270,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
         }
 
-        // if (state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.item.duration_ms != last_playback_state_.item.duration_ms)
-        // {
-        //     updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
-        // }
-
         if (strcmp(state.playback_state.item.name, last_playback_state_.item.name) != 0 || state.playback_state.progress_ms != last_playback_state_.progress_ms)
         {
-            LOGE("Updating timer");
             updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
             if (!state.playback_state.is_playing)
             {
@@ -282,7 +307,6 @@ void SpotifyApp::updateTimer(const unsigned long &progress_ms, const unsigned lo
     progress_state_.progress_ms = progress_ms;
     progress_state_.song_duration_ms = song_duration_ms;
 
-    LOGE("Progress: %lu, Duration: %lu", progress_ms, song_duration_ms);
     progress_timer_ = lv_timer_create(progress_timer, 500, &progress_state_);
 }
 
@@ -290,7 +314,6 @@ void SpotifyApp::publishEvent(const WiFiEvent &event)
 {
     if (shared_events_queue != nullptr)
     {
-        LOGE("Publishing event");
         xQueueSend(shared_events_queue, &event, 0);
     }
 }

@@ -32,7 +32,7 @@ static SerialProtocolPlaintext *serial_protocol_p = &serial_protocol;
 static SerialProtocolProtobuf serial_protocol_protobuf(stream_);
 static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_protobuf;
 
-static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 4, 0, 1);
+static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 10, 0, 1);
 static FreeRTOSAdapter *adapter_p = &adapter;
 #else
 static FreeRTOSAdapter *adapter_p = nullptr;

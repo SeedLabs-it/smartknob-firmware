@@ -45,7 +45,7 @@ public:
 
     size_t imageSize = 0;
 
-    void downloadImage();
+    void downloadImage(char *image_url);
 
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 

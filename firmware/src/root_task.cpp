@@ -382,6 +382,9 @@ void RootTask::run()
             case SK_SPOTIFY_PLAYBACK_STATE:
                 app_state.playback_state = wifi_event.body.playback_state;
                 break;
+            case SK_SPOTIFY_NEW_COVER_ART:
+                app_state.cover_art = wifi_event.body.cover_art;
+                break;
             case SK_SPOTIFY_PLAY:
             case SK_SPOTIFY_PAUSE:
             case SK_SPOTIFY_VOLUME:
