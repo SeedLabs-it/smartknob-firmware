@@ -38,6 +38,8 @@ private:
     ProgressState progress_state_;
     lv_timer_t *progress_timer_ = nullptr;
 
+    unsigned long last_updated_ms_ = 0;
+
     lv_obj_t *qr_screen = nullptr;
     lv_obj_t *qr_code = nullptr;
 

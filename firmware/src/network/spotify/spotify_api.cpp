@@ -307,8 +307,12 @@ bool SpotifyApi::refreshToken()
 
 bool SpotifyApi::checkAndRefreshToken()
 {
-    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + expires_in_ * 1000) // 10x for testing 3.6mins // seems to be working but mqtt and wifi having problems....
+    LOGE("millis %lu", millis());
+    LOGE("Last - 1000 + expires_in_ * 1000 %lu", (last_refreshed_ms_ - 1000) + expires_in_ * 1000);
+    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + expires_in_ * 1000) // TODO convert expires_in_ to ms at "init/fetch"
     {
+        LOGE("TRYING TO REFRESH TOKEN");
+        LOGE("last_refreshed_ms_: %lu", last_refreshed_ms_);
         if (refreshToken())
         {
             last_refreshed_ms_ = millis();

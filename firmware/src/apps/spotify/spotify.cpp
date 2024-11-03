@@ -215,8 +215,14 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
+    if (millis() - last_updated_ms_ > 2000 && !lv_obj_has_flag(volume, LV_OBJ_FLAG_HIDDEN))
+    {
+        lv_obj_add_flag(volume, LV_OBJ_FLAG_HIDDEN);
+    }
+
     if (last_position != current_position && !first_run)
     {
+        last_updated_ms_ = millis();
         lv_obj_clear_flag(volume, LV_OBJ_FLAG_HIDDEN);
         lv_arc_set_value(volume, state.current_position);
 
