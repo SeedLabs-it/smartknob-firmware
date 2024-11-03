@@ -163,7 +163,15 @@ bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
             strcpy(spotify_config_buffer_.refresh_token, spotify_config.refresh_token);
         }
     }
-    return saveSpotifyConfigToDisk();
+
+    if (saveSpotifyConfigToDisk())
+    {
+
+        publishEvent(WiFiEvent{.type = SK_SPOTIFY_CONFIG_CHANGED});
+        return true;
+    }
+
+    return false;
 }
 
 PB_SpotifyConfig Configuration::getSpotifyConfig()

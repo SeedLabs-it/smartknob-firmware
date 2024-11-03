@@ -390,6 +390,9 @@ void RootTask::run()
             case SK_SPOTIFY_VOLUME:
                 spotify_task_->handleEvent(wifi_event);
                 break;
+            case SK_SPOTIFY_CONFIG_CHANGED:
+                spotify_task_->setConfig(configuration_->getSpotifyConfig());
+                break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
                 break;
