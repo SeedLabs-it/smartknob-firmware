@@ -65,3 +65,5 @@ private:
     void shiftFilter(float nextValue);
     void computeAverage();
 };
+
+#define LOG_STACK() LOGD("FREE STACK MEM: %d", uxTaskGetStackHighWaterMark(NULL))
