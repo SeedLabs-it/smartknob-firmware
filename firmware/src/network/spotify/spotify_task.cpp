@@ -22,7 +22,6 @@ void SpotifyTask::run()
             if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || (latest_playback_state_.available && ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms))
             {
                 PlaybackState playback_state = spotify_api_.getCurrentPlaybackState();
-                LOGE("Fetching playback state");
 
                 last_fetched_playback_state = millis();
                 ms_since_last_fetch = millis() - last_fetched_playback_state;
@@ -36,20 +35,20 @@ void SpotifyTask::run()
                 if (playback_state.available && (latest_playback_state_.timestamp == 0 || strcmp(playback_state.item.name, latest_playback_state_.item.name) != 0))
                 {
                     delay(50); // TODO Look into if this helped preventing failure of image fetch!?
-                    LOGE("Fetching cover art");
                     if (strcmp(playback_state.item.album.images[1].url, "") != 0)
                     {
+                        LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from: %s", playback_state.item.album.images[1].url);
                         spotify_api_.downloadImage(playback_state.item.album.images[1].url);
                     }
                     else
                     {
-                        LOGE("No image found");
+                        LOGE("No cover art found");
                         return; // TODO handle
                     }
 
                     if (spotify_api_.imageSize == 0)
                     {
-                        LOGE("No image found");
+                        LOGE("No cover art found");
                         return; // TODO handle
                     }
 
@@ -76,10 +75,15 @@ void SpotifyTask::run()
                 if (millis() - last_volume_change_ms > 200 && last_volume != latest_playback_state_.device.volume_percent && last_volume != 255)
                 {
                     last_volume_change_ms = millis();
+                    LOGV(LOG_LEVEL_DEBUG, "Adjusting Spotify volume");
                     if (spotify_api_.setVolume(last_volume, latest_playback_state_.device.id))
                     {
-                        LOGE("Volume changed");
+                        LOGV(LOG_LEVEL_DEBUG, "Spotify volume set to: %d", last_volume);
                         latest_playback_state_.device.volume_percent = last_volume;
+                    }
+                    else
+                    {
+                        LOGW("Failed to set Spotify volume");
                     }
                 }
             }

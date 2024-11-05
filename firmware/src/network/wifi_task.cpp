@@ -402,8 +402,8 @@ void WifiTask::run()
 
         if (is_config_set && last_run_ms_ - last_wifi_status > 5000)
         {
-            LOGE("FREE HEAP: %d", ESP.getFreeHeap());
-            LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
+            // LOGE("FREE HEAP: %d", ESP.getFreeHeap());
+            // LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
 
             // Serial.printf("FREE HEAP %d \n", ESP.getFreeHeap());
