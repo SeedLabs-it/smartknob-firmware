@@ -376,10 +376,12 @@ void RootTask::run()
                 // }
                 break;
             case SK_SPOTIFY_DEVICE_CHANGED:
-                PB_SpotifyConfig config;
+            {
+                PB_SpotifyConfig config = configuration_->getSpotifyConfig();
                 strcpy(config.device_id, wifi_event.body.spotify_device_id);
                 configuration_->setSpotifyConfig(config);
                 break;
+            }
             case SK_SPOTIFY_REFRESH_TOKEN:
             case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
                 // LOGE("STORE SPOTIFY CONFIGURATION");

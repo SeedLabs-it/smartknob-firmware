@@ -119,6 +119,7 @@ bool Configuration::saveSpotifyConfigToDisk()
 
         pb_ostream_t stream = pb_ostream_from_buffer(spotify_config_stream_buffer_, sizeof(spotify_config_stream_buffer_));
         spotify_config_buffer_.version = SPOTIFY_CONFIG_VERSION;
+
         if (!pb_encode(&stream, PB_SpotifyConfig_fields, &spotify_config_buffer_))
         {
             char buf_[200];
@@ -139,7 +140,6 @@ bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
     {
         SemaphoreGuard lock(mutex_);
         LOGV(LOG_LEVEL_DEBUG, "Setting Spotify config.");
-        LOGE("Setting spotify base64_id_and_secret: %s", spotify_config.base64_id_and_secret);
         if (strcmp(spotify_config.base64_id_and_secret, "") != 0 && spotify_config_buffer_.base64_id_and_secret != spotify_config.base64_id_and_secret)
         {
             strcpy(spotify_config_buffer_.base64_id_and_secret, spotify_config.base64_id_and_secret);
@@ -194,8 +194,6 @@ PB_SpotifyConfig Configuration::getSpotifyConfig()
     {
         return PB_SpotifyConfig();
     }
-    // LOGE("Spotify config loaded");
-    // LOGE("Spotify config: %s", spotify_config_buffer_.device_id);
     return spotify_config_buffer_;
 }
 
