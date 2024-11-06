@@ -66,4 +66,5 @@ private:
     void computeAverage();
 };
 
+// FOR DEBUGGING
 #define LOG_STACK() LOGD("FREE STACK MEM: %d", uxTaskGetStackHighWaterMark(NULL))

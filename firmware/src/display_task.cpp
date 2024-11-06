@@ -15,7 +15,7 @@
 #define LVGL_TASK_MAX_DELAY_MS (500)
 #define LVGL_TASK_MIN_DELAY_MS (1)
 
-DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 20, 2, task_core}
+DisplayTask::DisplayTask(const uint8_t task_core) : Task{"Display", 1024 * 4, 2, task_core}
 {
     app_state_queue_ = xQueueCreate(1, sizeof(AppState));
     assert(app_state_queue_ != NULL);

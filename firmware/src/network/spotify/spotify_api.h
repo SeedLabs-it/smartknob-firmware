@@ -9,6 +9,7 @@
 #include "./structs.h"
 #include "./events/events.h"
 #include "./configuration.h"
+#include "./util.h"
 
 // const char *client_id = "your_spotify_client_id";         // Your Spotify client ID
 // const char *client_secret = "your_spotify_client_secret"; // Your Spotify client secret
@@ -71,6 +72,8 @@ private:
     char *auth_header_ = nullptr;
     char *refresh_token_body_ = nullptr;
     char *base64_basic_auth_header_ = nullptr;
+
+    char device_id_[64] = ""; // Your device ID
     // String redirect_uri = "your_redirect_uri";
     // String scope = "user-read-playback-state"; // Example scope
     // char code_challenge[128];                  // Pre-generated code challenge

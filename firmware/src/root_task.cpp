@@ -375,6 +375,11 @@ void RootTask::run()
                 //      not needed?
                 // }
                 break;
+            case SK_SPOTIFY_DEVICE_CHANGED:
+                PB_SpotifyConfig config;
+                strcpy(config.device_id, wifi_event.body.spotify_device_id);
+                configuration_->setSpotifyConfig(config);
+                break;
             case SK_SPOTIFY_REFRESH_TOKEN:
             case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
                 // LOGE("STORE SPOTIFY CONFIGURATION");
@@ -391,6 +396,10 @@ void RootTask::run()
                 spotify_task_->handleEvent(wifi_event);
                 break;
             case SK_SPOTIFY_CONFIG_CHANGED:
+                if (spotify_task_->getHandle() == nullptr)
+                {
+                    spotify_task_->begin();
+                }
                 spotify_task_->setConfig(configuration_->getSpotifyConfig());
                 break;
             default:

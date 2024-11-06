@@ -257,6 +257,7 @@ typedef struct _PB_SpotifyConfig {
     uint32_t expires_in;
     char refresh_token[513];
     uint64_t timestamp;
+    char device_id[65]; /* Verify max length of device_id */
 } PB_SpotifyConfig;
 
 
@@ -306,7 +307,7 @@ extern "C" {
 #define PB_MotorCalibration_init_default         {0, 0, 0, 0}
 #define PB_StrainState_init_default              {0, 0}
 #define PB_StrainCalibration_init_default        {0}
-#define PB_SpotifyConfig_init_default            {0, "", "", "", "", 0, "", 0}
+#define PB_SpotifyConfig_init_default            {0, "", "", "", "", 0, "", 0, ""}
 #define PB_FromSmartKnob_init_zero               {0, 0, {PB_Knob_init_zero}}
 #define PB_ToSmartknob_init_zero                 {0, 0, 0, {PB_RequestState_init_zero}}
 #define PB_Knob_init_zero                        {"", "", false, PB_PersistentConfiguration_init_zero, false, SETTINGS_Settings_init_zero}
@@ -321,7 +322,7 @@ extern "C" {
 #define PB_MotorCalibration_init_zero            {0, 0, 0, 0}
 #define PB_StrainState_init_zero                 {0, 0}
 #define PB_StrainCalibration_init_zero           {0}
-#define PB_SpotifyConfig_init_zero               {0, "", "", "", "", 0, "", 0}
+#define PB_SpotifyConfig_init_zero               {0, "", "", "", "", 0, "", 0, ""}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define PB_MotorCalibState_calibrated_tag        1
@@ -385,6 +386,7 @@ extern "C" {
 #define PB_SpotifyConfig_expires_in_tag          6
 #define PB_SpotifyConfig_refresh_token_tag       7
 #define PB_SpotifyConfig_timestamp_tag           8
+#define PB_SpotifyConfig_device_id_tag           9
 
 /* Struct field encoding specification for nanopb */
 #define PB_FromSmartKnob_FIELDLIST(X, a) \
@@ -519,7 +521,8 @@ X(a, STATIC,   SINGULAR, STRING,   token_type,        4) \
 X(a, STATIC,   SINGULAR, STRING,   scope,             5) \
 X(a, STATIC,   SINGULAR, UINT32,   expires_in,        6) \
 X(a, STATIC,   SINGULAR, STRING,   refresh_token,     7) \
-X(a, STATIC,   SINGULAR, UINT64,   timestamp,         8)
+X(a, STATIC,   SINGULAR, UINT64,   timestamp,         8) \
+X(a, STATIC,   SINGULAR, STRING,   device_id,         9)
 #define PB_SpotifyConfig_CALLBACK NULL
 #define PB_SpotifyConfig_DEFAULT NULL
 
@@ -568,7 +571,7 @@ extern const pb_msgdesc_t PB_SpotifyConfig_msg;
 #define PB_SMARTKNOB_PB_H_MAX_SIZE               PB_SpotifyConfig_size
 #define PB_SmartKnobConfig_size                  198
 #define PB_SmartKnobState_size                   220
-#define PB_SpotifyConfig_size                    1381
+#define PB_SpotifyConfig_size                    1447
 #define PB_StrainCalibState_size                 11
 #define PB_StrainCalibration_size                5
 #define PB_StrainState_size                      16

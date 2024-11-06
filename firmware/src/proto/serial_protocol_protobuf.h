@@ -27,7 +27,7 @@ public:
     SerialProtocolProtobuf(Stream &stream);
     ~SerialProtocolProtobuf() {}
 
-    void log(const LogMessage &log_msg) override;
+    void log(LogMessage *log_msg) override;
     void log_raw(const char *msg) override;
 
     void registerTagCallback(pb_size_t tag, TagCallback callback);

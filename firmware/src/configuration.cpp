@@ -86,7 +86,7 @@ bool Configuration::saveToDisk(const char *path, uint8_t *buffer, size_t buffer_
         return false;
     }
 
-    return true;
+    return false;
 }
 
 bool Configuration::loadSpotifyConfigFromDisk()
@@ -135,36 +135,49 @@ bool Configuration::saveSpotifyConfigToDisk()
 
 bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
 {
+    bool changed = false;
     {
         SemaphoreGuard lock(mutex_);
         LOGV(LOG_LEVEL_DEBUG, "Setting Spotify config.");
+        LOGE("Setting spotify base64_id_and_secret: %s", spotify_config.base64_id_and_secret);
         if (strcmp(spotify_config.base64_id_and_secret, "") != 0 && spotify_config_buffer_.base64_id_and_secret != spotify_config.base64_id_and_secret)
         {
             strcpy(spotify_config_buffer_.base64_id_and_secret, spotify_config.base64_id_and_secret);
+            changed = true;
         }
         if (strcmp(spotify_config.access_token, "") != 0 && spotify_config_buffer_.access_token != spotify_config.access_token)
         {
             strcpy(spotify_config_buffer_.access_token, spotify_config.access_token);
+            changed = true;
         }
         if (strcmp(spotify_config.token_type, "") != 0 && spotify_config_buffer_.token_type != spotify_config.token_type)
         {
             strcpy(spotify_config_buffer_.token_type, spotify_config.token_type);
+            changed = true;
         }
         if (strcmp(spotify_config.scope, "") != 0 && spotify_config_buffer_.scope != spotify_config.scope)
         {
             strcpy(spotify_config_buffer_.scope, spotify_config.scope);
+            changed = true;
         }
         if (spotify_config.expires_in != 0 && spotify_config_buffer_.expires_in != spotify_config.expires_in)
         {
             spotify_config_buffer_.expires_in = spotify_config.expires_in;
+            changed = true;
         }
         if (strcmp(spotify_config.refresh_token, "") != 0 && spotify_config_buffer_.refresh_token != spotify_config.refresh_token)
         {
             strcpy(spotify_config_buffer_.refresh_token, spotify_config.refresh_token);
+            changed = true;
+        }
+        if (strcmp(spotify_config.device_id, "") != 0 && spotify_config_buffer_.device_id != spotify_config.device_id)
+        {
+            strcpy(spotify_config_buffer_.device_id, spotify_config.device_id);
+            changed = true;
         }
     }
 
-    if (saveSpotifyConfigToDisk())
+    if (changed && saveSpotifyConfigToDisk())
     {
 
         publishEvent(WiFiEvent{.type = SK_SPOTIFY_CONFIG_CHANGED});
@@ -181,6 +194,8 @@ PB_SpotifyConfig Configuration::getSpotifyConfig()
     {
         return PB_SpotifyConfig();
     }
+    // LOGE("Spotify config loaded");
+    // LOGE("Spotify config: %s", spotify_config_buffer_.device_id);
     return spotify_config_buffer_;
 }
 

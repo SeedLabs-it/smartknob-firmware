@@ -370,14 +370,14 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
     {
-        LOGE("Spotify is available");
+        LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
         lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         is_spotify_configured = true;
     }
     else if (!state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
     {
-        LOGE("Spotify is not available");
+        LOGW("Spotify is not available");
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
     }

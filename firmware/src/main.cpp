@@ -138,7 +138,9 @@ void setup()
 
     if (config.loadSpotifyConfigFromDisk())
     {
-        PB_SpotifyConfig spotify_config_ = config.getSpotifyConfig(); // TODO Task cant handle this and above at the same time after erase flash....
+        PB_SpotifyConfig spotify_config_ = config.getSpotifyConfig();
+        LOGE("Spotify config loaded");
+        LOGE("Spotify base64_id_and_secret: %s", spotify_config_.base64_id_and_secret);
         if (strcmp(spotify_config_.access_token, "") != 0)
         {
             spotify_task.begin();

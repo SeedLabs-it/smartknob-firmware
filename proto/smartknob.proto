@@ -283,5 +283,6 @@ message SpotifyConfig {
     uint32 expires_in = 6;
     string refresh_token = 7 [(nanopb).max_length = 512];
     uint64 timestamp = 8;
+    string device_id = 9 [(nanopb).max_length = 64]; // Verify max length of device_id
 }
 

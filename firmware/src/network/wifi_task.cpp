@@ -16,7 +16,7 @@ QueueHandle_t wifi_events_queue;
 // example article
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 
-WifiTask::WifiTask(const uint8_t task_core, Configuration &configuration) : Task{"wifi", 1024 * 13, 1, task_core}, configuration_(configuration)
+WifiTask::WifiTask(const uint8_t task_core, Configuration &configuration) : Task{"wifi", 1024 * 10, 1, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
@@ -292,6 +292,7 @@ void WifiTask::webHandlerSpotifyCredentials()
     spotify_config_->expires_in = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "expires_in"));
     strcpy(spotify_config_->refresh_token, cJSON_GetStringValue(cJSON_GetObjectItem(spotify_response, "refresh_token")));
     spotify_config_->timestamp = cJSON_GetNumberValue(cJSON_GetObjectItem(spotify_response, "timestamp"));
+    strcpy(spotify_config_->device_id, "");
     cJSON_Delete(root);
 
     // SpotifyApi spotify(*spotify_config_);
@@ -402,8 +403,8 @@ void WifiTask::run()
 
         if (is_config_set && last_run_ms_ - last_wifi_status > 5000)
         {
-            // LOGE("FREE HEAP: %d", ESP.getFreeHeap());
-            // LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
+            LOGE("FREE HEAP: %d", ESP.getFreeHeap());
+            LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
 
             // Serial.printf("FREE HEAP %d \n", ESP.getFreeHeap());
