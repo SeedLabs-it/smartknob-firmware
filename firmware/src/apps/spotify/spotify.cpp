@@ -8,9 +8,14 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
     float end_angle = 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms)));
+    if (end_angle < 5)
+        end_angle = 5;
 
-    lv_arc_set_angles(user_data->progress, end_angle - 5, end_angle);
-    if (progress_ms > song_duration_ms)
+    if (progress_ms < song_duration_ms)
+    {
+        lv_arc_set_angles(user_data->progress, end_angle - 5, end_angle);
+    }
+    else
     {
         lv_arc_set_angles(user_data->progress, 255, 260);
         return;
