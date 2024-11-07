@@ -15,17 +15,14 @@ void SpotifyTask::run()
 
     while (1)
     {
-        if (WiFi.status() == WL_CONNECTED && shared_events_queue_ != nullptr) // TODO check spotify availability
+        if (spotify_api_.hasConfig() && WiFi.status() == WL_CONNECTED && shared_events_queue_ != nullptr) // TODO check spotify availability
         {
             unsigned long ms_since_last_fetch = millis() - last_fetched_playback_state;
-
             if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || (latest_playback_state_.available && ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms))
             {
-                delay(50); // TODO Look into if this helped preventing failure of image fetch!?
                 PlaybackState playback_state = spotify_api_.getCurrentPlaybackState();
 
                 last_fetched_playback_state = millis();
-                ms_since_last_fetch = millis() - last_fetched_playback_state;
 
                 WiFiEvent playback_state_event;
                 playback_state_event.type = SK_SPOTIFY_PLAYBACK_STATE;
@@ -91,6 +88,7 @@ void SpotifyTask::run()
                 {
                     last_volume_change_ms = millis();
                     LOGV(LOG_LEVEL_DEBUG, "Adjusting Spotify volume");
+                    LOGE("DEVICE ID: %s", latest_playback_state_.device.id);
                     if (spotify_api_.setVolume(last_volume, latest_playback_state_.device.id))
                     {
                         LOGV(LOG_LEVEL_DEBUG, "Spotify volume set to: %d", last_volume);
@@ -98,6 +96,7 @@ void SpotifyTask::run()
                     }
                     else
                     {
+                        last_volume = latest_playback_state_.device.volume_percent;
                         LOGW("Failed to set Spotify volume");
                     }
                 }

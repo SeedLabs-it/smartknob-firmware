@@ -51,6 +51,7 @@ public:
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
     void setConfig(const PB_SpotifyConfig &spotify_config);
+    bool hasConfig() { return auth_header_ != nullptr; }
 
     // void setAuthHeader(const char *access_token);
     // char *getAuthHeader();

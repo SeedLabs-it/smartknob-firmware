@@ -291,6 +291,21 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         last_connectivity_state = state.connectivity_state;
     }
 
+    if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
+    {
+        LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
+        lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+        is_spotify_configured = true;
+    }
+    else if (!state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
+    {
+        LOGW("Spotify is not available");
+        lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
+        is_spotify_configured = false;
+    }
+
     if (state.cover_art != nullptr && latest_cover_art != state.cover_art)
     {
         latest_cover_art = state.cover_art;
@@ -363,20 +378,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         }
 
         last_playback_state_ = state.playback_state;
-    }
-
-    if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
-    {
-        LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
-        lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
-        is_spotify_configured = true;
-    }
-    else if (!state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
-    {
-        LOGW("Spotify is not available");
-        lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
