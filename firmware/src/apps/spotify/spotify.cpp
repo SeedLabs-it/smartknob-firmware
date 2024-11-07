@@ -293,7 +293,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.cover_art != nullptr && latest_cover_art != state.cover_art)
     {
-        LOGE("COVER ART");
         latest_cover_art = state.cover_art;
         lv_img_set_src(album_img, latest_cover_art);
     }
@@ -302,7 +301,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
     {
         if (state.playback_state.is_playing)
         {
-            // updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
             if (progress_timer_ != nullptr)
             {
                 progress_state_.started_ms = millis();
@@ -312,7 +310,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         }
         else
         {
-            // updateTimer(state.playback_state.progress_ms, state.playback_state.item.duration_ms);
             if (progress_timer_ != nullptr)
             {
                 lv_timer_pause(progress_timer_);

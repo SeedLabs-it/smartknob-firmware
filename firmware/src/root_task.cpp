@@ -377,6 +377,7 @@ void RootTask::run()
                 break;
             case SK_SPOTIFY_DEVICE_CHANGED:
             {
+                LOGV(LOG_LEVEL_DEBUG, "Spotify device changed");
                 PB_SpotifyConfig config = configuration_->getSpotifyConfig();
                 strcpy(config.device_id, wifi_event.body.spotify_device_id);
                 configuration_->setSpotifyConfig(config);

@@ -70,11 +70,8 @@ void SpotifyTask::run()
                         publishEvent(cover_art_event);
                     }
 
-                    LOGE("DEVICE_ID: %s", playback_state.device.id);
-
                     if (strcmp(playback_state.device.id, "") != 0 && strcmp(playback_state.device.id, latest_playback_state_.device.id) != 0)
                     {
-                        LOGE("Device changed");
                         WiFiEvent device_changed_event = {
                             .type = SK_SPOTIFY_DEVICE_CHANGED,
                         };
