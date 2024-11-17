@@ -44,3 +44,6 @@ software/release/mac_addresses.txt
 
 # Prevent user from committing their own config.pb
 firmware/data/config.pb
+
+.cache/
+compile_commands.json
