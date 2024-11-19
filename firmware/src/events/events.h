@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "./network/spotify/structs.h"
 
 struct WiFiAPStarted
 {
@@ -91,6 +92,12 @@ struct Error
     ErrorBody body;
 };
 
+using Volume = uint8_t;
+
+using SpotifyCoverArt = lv_img_dsc_t *;
+
+using SpotifyDeviceId = char[64];
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -101,6 +108,10 @@ union WiFiEventBody
     WiFiSTAConnecting wifi_sta_connected;
     MQTTConfiguration mqtt_connecting;
     MQTTStateUpdate mqtt_state_update;
+    PlaybackState playback_state;
+    SpotifyDeviceId spotify_device_id;
+    SpotifyCoverArt cover_art;
+    Volume volume;
     Error error;
     uint8_t calibration_step;
 };
@@ -136,6 +147,17 @@ enum EventType
     SK_MQTT_STATE_UPDATE,
     SK_MQTT_CONNECTED,
     SK_MQTT_CONNECTED_NEW_CREDENTIALS,
+
+    SK_SPOTIFY_ACCESS_TOKEN_RECEIVED,
+    SK_SPOTIFY_ACCESS_TOKEN_VALIDATED,
+    SK_SPOTIFY_PLAYBACK_STATE,
+    SK_SPOTIFY_REFRESH_TOKEN,
+    SK_SPOTIFY_CONFIG_CHANGED,
+    SK_SPOTIFY_PAUSE,
+    SK_SPOTIFY_PLAY,
+    SK_SPOTIFY_VOLUME,
+    SK_SPOTIFY_NEW_COVER_ART,
+    SK_SPOTIFY_DEVICE_CHANGED,
 
     SK_RESET_ERROR,
     SK_DISMISS_ERROR,

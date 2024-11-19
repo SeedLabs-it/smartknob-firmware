@@ -16,15 +16,15 @@ SerialProtocolProtobuf::SerialProtocolProtobuf(Stream &stream) : SerialProtocol(
                                     { singleton_for_packet_serial->handlePacket(buffer, size); });
 }
 
-void SerialProtocolProtobuf::log(const LogMessage &log_msg)
+void SerialProtocolProtobuf::log(LogMessage *log_msg)
 {
     pb_tx_buffer_ = {};
     pb_tx_buffer_.which_payload = PB_FromSmartKnob_log_tag;
-    pb_tx_buffer_.payload.log.level = LogLevelConverter::toPBLogLevel(log_msg.level);
-    pb_tx_buffer_.payload.log.isVerbose = log_msg.verbose;
+    pb_tx_buffer_.payload.log.level = LogLevelConverter::toPBLogLevel(log_msg->level);
+    pb_tx_buffer_.payload.log.isVerbose = log_msg->verbose;
 
-    strlcpy(pb_tx_buffer_.payload.log.origin, log_msg.origin, sizeof(pb_tx_buffer_.payload.log.origin));
-    strlcpy(pb_tx_buffer_.payload.log.msg, log_msg.msg, sizeof(pb_tx_buffer_.payload.log.msg));
+    strlcpy(pb_tx_buffer_.payload.log.origin, log_msg->origin, sizeof(pb_tx_buffer_.payload.log.origin));
+    strlcpy(pb_tx_buffer_.payload.log.msg, log_msg->msg, sizeof(pb_tx_buffer_.payload.log.msg));
     // TODO add timestamp
 
     sendPBTxBuffer();
