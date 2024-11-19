@@ -1,5 +1,6 @@
 #include <FFat.h>
 
+#include "logging.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 
@@ -17,29 +18,20 @@ Configuration::Configuration()
     mqtt_config = MQTTConfiguration();
 
     std::string mac_address = std::string(WiFi.macAddress().c_str());
-    mac_address.erase(
-        std::remove_if(
-            mac_address.begin(),
-            mac_address.end(),
-            [](char c)
-            {
-                return c == ':';
-            }),
-        mac_address.end());
+    mac_address.erase(std::remove_if(mac_address.begin(), mac_address.end(),
+                                     [](char c)
+                                     { return c == ':'; }),
+                      mac_address.end());
 
-    sprintf(wifi_config.knob_id, "%s", std::string("SKDK_" + mac_address.substr(mac_address.length() - 6)).c_str());
+    sprintf(wifi_config.knob_id, "%s",
+            std::string("SKDK_" + mac_address.substr(mac_address.length() - 6))
+                .c_str());
     sprintf(mqtt_config.knob_id, "%s", wifi_config.knob_id);
 }
 
-Configuration::~Configuration()
-{
-    vSemaphoreDelete(mutex_);
-}
+Configuration::~Configuration() { vSemaphoreDelete(mutex_); }
 
-const char *Configuration::getKnobId()
-{
-    return wifi_config.knob_id;
-}
+const char *Configuration::getKnobId() { return wifi_config.knob_id; }
 
 pb_istream_t Configuration::loadFromDisk(const char *path, uint8_t *buffer, size_t buffer_size)
 {
@@ -117,18 +109,21 @@ bool Configuration::saveSpotifyConfigToDisk()
     {
         SemaphoreGuard lock(mutex_);
 
-        pb_ostream_t stream = pb_ostream_from_buffer(spotify_config_stream_buffer_, sizeof(spotify_config_stream_buffer_));
+        pb_ostream_t stream = pb_ostream_from_buffer(
+            spotify_config_stream_buffer_, sizeof(spotify_config_stream_buffer_));
         spotify_config_buffer_.version = SPOTIFY_CONFIG_VERSION;
 
         if (!pb_encode(&stream, PB_SpotifyConfig_fields, &spotify_config_buffer_))
         {
             char buf_[200];
-            snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
+            snprintf(buf_, sizeof(buf_), "Encoding failed: %s",
+                     PB_GET_ERROR(&stream));
             LOGE(buf_);
             return false;
         }
 
-        saveToDisk(SPOTIFY_CONFIG_PATH, spotify_config_stream_buffer_, stream.bytes_written);
+        saveToDisk(SPOTIFY_CONFIG_PATH, spotify_config_stream_buffer_,
+                   stream.bytes_written);
     }
 
     return true;
@@ -140,37 +135,47 @@ bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
     {
         SemaphoreGuard lock(mutex_);
         LOGV(LOG_LEVEL_DEBUG, "Setting Spotify config.");
-        if (strcmp(spotify_config.base64_id_and_secret, "") != 0 && spotify_config_buffer_.base64_id_and_secret != spotify_config.base64_id_and_secret)
+        if (strcmp(spotify_config.base64_id_and_secret, "") != 0 &&
+            spotify_config_buffer_.base64_id_and_secret !=
+                spotify_config.base64_id_and_secret)
         {
-            strcpy(spotify_config_buffer_.base64_id_and_secret, spotify_config.base64_id_and_secret);
+            strcpy(spotify_config_buffer_.base64_id_and_secret,
+                   spotify_config.base64_id_and_secret);
             changed = true;
         }
-        if (strcmp(spotify_config.access_token, "") != 0 && spotify_config_buffer_.access_token != spotify_config.access_token)
+        if (strcmp(spotify_config.access_token, "") != 0 &&
+            spotify_config_buffer_.access_token != spotify_config.access_token)
         {
             strcpy(spotify_config_buffer_.access_token, spotify_config.access_token);
             changed = true;
         }
-        if (strcmp(spotify_config.token_type, "") != 0 && spotify_config_buffer_.token_type != spotify_config.token_type)
+        if (strcmp(spotify_config.token_type, "") != 0 &&
+            spotify_config_buffer_.token_type != spotify_config.token_type)
         {
             strcpy(spotify_config_buffer_.token_type, spotify_config.token_type);
             changed = true;
         }
-        if (strcmp(spotify_config.scope, "") != 0 && spotify_config_buffer_.scope != spotify_config.scope)
+        if (strcmp(spotify_config.scope, "") != 0 &&
+            spotify_config_buffer_.scope != spotify_config.scope)
         {
             strcpy(spotify_config_buffer_.scope, spotify_config.scope);
             changed = true;
         }
-        if (spotify_config.expires_in != 0 && spotify_config_buffer_.expires_in != spotify_config.expires_in)
+        if (spotify_config.expires_in != 0 &&
+            spotify_config_buffer_.expires_in != spotify_config.expires_in)
         {
             spotify_config_buffer_.expires_in = spotify_config.expires_in;
             changed = true;
         }
-        if (strcmp(spotify_config.refresh_token, "") != 0 && spotify_config_buffer_.refresh_token != spotify_config.refresh_token)
+        if (strcmp(spotify_config.refresh_token, "") != 0 &&
+            spotify_config_buffer_.refresh_token != spotify_config.refresh_token)
         {
-            strcpy(spotify_config_buffer_.refresh_token, spotify_config.refresh_token);
+            strcpy(spotify_config_buffer_.refresh_token,
+                   spotify_config.refresh_token);
             changed = true;
         }
-        if (strcmp(spotify_config.device_id, "") != 0 && spotify_config_buffer_.device_id != spotify_config.device_id)
+        if (strcmp(spotify_config.device_id, "") != 0 &&
+            spotify_config_buffer_.device_id != spotify_config.device_id)
         {
             strcpy(spotify_config_buffer_.device_id, spotify_config.device_id);
             changed = true;
@@ -201,11 +206,13 @@ bool Configuration::loadPersistantConfigFromDisk()
 {
     SemaphoreGuard lock(mutex_);
 
-    pb_istream_t stream = loadFromDisk(CONFIG_PATH, pb_stream_buffer_, sizeof(pb_stream_buffer_));
+    pb_istream_t stream =
+        loadFromDisk(CONFIG_PATH, pb_stream_buffer_, sizeof(pb_stream_buffer_));
     if (!pb_decode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
     {
         char buf_[200];
-        snprintf(buf_, sizeof(buf_), "Decoding config failed: %s", PB_GET_ERROR(&stream));
+        snprintf(buf_, sizeof(buf_), "Decoding config failed: %s",
+                 PB_GET_ERROR(&stream));
         LOGE(buf_);
         pb_buffer_ = {};
         return false;
@@ -213,17 +220,17 @@ bool Configuration::loadPersistantConfigFromDisk()
 
     if (pb_buffer_.version != PERSISTENT_CONFIGURATION_VERSION)
     {
-        LOGE("Invalid config version. Expected %u, received %u", PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
+        LOGE("Invalid config version. Expected %u, received %u",
+             PERSISTENT_CONFIGURATION_VERSION, pb_buffer_.version);
         pb_buffer_ = {};
         return false;
     }
     loaded_ = true;
 
-    LOGV(LOG_LEVEL_DEBUG, "Motor calibration: calib=%u, pole_pairs=%u, zero_offset=%.2f, cw=%u",
-         pb_buffer_.motor.calibrated,
-         pb_buffer_.motor.pole_pairs,
-         pb_buffer_.motor.zero_electrical_offset,
-         pb_buffer_.motor.direction_cw);
+    LOGV(LOG_LEVEL_DEBUG,
+         "Motor calibration: calib=%u, pole_pairs=%u, zero_offset=%.2f, cw=%u",
+         pb_buffer_.motor.calibrated, pb_buffer_.motor.pole_pairs,
+         pb_buffer_.motor.zero_electrical_offset, pb_buffer_.motor.direction_cw);
 
     return true;
 }
@@ -233,12 +240,14 @@ bool Configuration::savePersistantConfigToDisk()
     {
         SemaphoreGuard lock(mutex_);
 
-        pb_ostream_t stream = pb_ostream_from_buffer(pb_stream_buffer_, sizeof(pb_stream_buffer_));
+        pb_ostream_t stream =
+            pb_ostream_from_buffer(pb_stream_buffer_, sizeof(pb_stream_buffer_));
         pb_buffer_.version = PERSISTENT_CONFIGURATION_VERSION;
         if (!pb_encode(&stream, PB_PersistentConfiguration_fields, &pb_buffer_))
         {
             char buf_[200];
-            snprintf(buf_, sizeof(buf_), "Encoding failed: %s", PB_GET_ERROR(&stream));
+            snprintf(buf_, sizeof(buf_), "Encoding failed: %s",
+                     PB_GET_ERROR(&stream));
             LOGE(buf_);
             return false;
         }
@@ -260,11 +269,13 @@ bool Configuration::loadSettingsFromDisk()
 {
     SemaphoreGuard lock(mutex_);
 
-    pb_istream_t stream = loadFromDisk(SETTINGS_PATH, settings_stream_buffer_, sizeof(settings_stream_buffer_));
+    pb_istream_t stream = loadFromDisk(SETTINGS_PATH, settings_stream_buffer_,
+                                       sizeof(settings_stream_buffer_));
     if (!pb_decode(&stream, SETTINGS_Settings_fields, &settings_buffer_))
     {
         char buf_[200];
-        snprintf(buf_, sizeof(buf_), "Decoding settings failed: %s", PB_GET_ERROR(&stream));
+        snprintf(buf_, sizeof(buf_), "Decoding settings failed: %s",
+                 PB_GET_ERROR(&stream));
         LOGE(buf_);
         settings_buffer_ = default_settings;
         return false;
@@ -273,7 +284,9 @@ bool Configuration::loadSettingsFromDisk()
     if (settings_buffer_.protocol_version != SETTINGS_VERSION)
     {
         char buf_[200];
-        snprintf(buf_, sizeof(buf_), "Invalid config version. Expected %u, received %u", SETTINGS_VERSION, settings_buffer_.protocol_version);
+        snprintf(buf_, sizeof(buf_),
+                 "Invalid config version. Expected %u, received %u",
+                 SETTINGS_VERSION, settings_buffer_.protocol_version);
         LOGE(buf_);
         settings_buffer_ = default_settings;
         return false;
@@ -287,10 +300,10 @@ bool Configuration::saveSettingsToDisk()
 {
     SemaphoreGuard lock(mutex_);
 
-    pb_ostream_t stream = pb_ostream_from_buffer(settings_stream_buffer_, sizeof(settings_stream_buffer_));
+    pb_ostream_t stream = pb_ostream_from_buffer(settings_stream_buffer_,
+                                                 sizeof(settings_stream_buffer_));
     settings_buffer_.protocol_version = SETTINGS_VERSION;
     LOGE("Saving settings to disk");
-    LOGE("COLOR %d", settings_buffer_.led_ring.color);
     if (!pb_encode(&stream, SETTINGS_Settings_fields, &settings_buffer_))
     {
         char buf_[200];
@@ -299,7 +312,8 @@ bool Configuration::saveSettingsToDisk()
         return false;
     }
 
-    return saveToDisk(SETTINGS_PATH, settings_stream_buffer_, stream.bytes_written);
+    return saveToDisk(SETTINGS_PATH, settings_stream_buffer_,
+                      stream.bytes_written);
 }
 
 bool Configuration::setSettings(SETTINGS_Settings &settings)
@@ -325,7 +339,8 @@ SETTINGS_Settings Configuration::getSettings()
         if (!loadSettingsFromDisk())
         {
             SemaphoreGuard lock(mutex_);
-            LOGD("Settings couldnt load from disk, loading default settings instead.");
+            LOGD(
+                "Settings couldnt load from disk, loading default settings instead.");
             settings_buffer_ = default_settings;
             settings_loaded_ = true;
             return settings_buffer_;
@@ -343,11 +358,13 @@ bool Configuration::resetToDefaults()
     return true;
 }
 
-bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
+bool Configuration::saveWiFiConfiguration(
+    WiFiConfiguration wifi_config_to_save)
 {
     // TODO: persist in a file
     char buf_[512];
-    sprintf(buf_, "Saving wifi credentials %s %s", wifi_config_to_save.ssid, wifi_config_to_save.passphrase);
+    sprintf(buf_, "Saving wifi credentials %s %s", wifi_config_to_save.ssid,
+            wifi_config_to_save.passphrase);
     LOGD(buf_);
 
     is_wifi_set = true;
@@ -358,10 +375,7 @@ bool Configuration::saveWiFiConfiguration(WiFiConfiguration wifi_config_to_save)
     return EEPROM.commit();
 }
 
-WiFiConfiguration Configuration::getWiFiConfiguration()
-{
-    return wifi_config;
-}
+WiFiConfiguration Configuration::getWiFiConfiguration() { return wifi_config; }
 // TODO Move storage of config to fatfs instead of EEPROM
 bool Configuration::loadWiFiConfiguration()
 {
@@ -369,14 +383,18 @@ bool Configuration::loadWiFiConfiguration()
     EEPROM.get(WIFI_PASSPHRASE_EEPROM_POS, wifi_config.passphrase);
     EEPROM.get(WIFI_SET_EEPROM_POS, is_wifi_set);
 
-    LOGV(LOG_LEVEL_DEBUG, "Loaded wifi credentials %s %s %d", wifi_config.ssid, wifi_config.passphrase, is_wifi_set);
+    LOGV(LOG_LEVEL_DEBUG, "Loaded wifi credentials %s %s %d", wifi_config.ssid,
+         wifi_config.passphrase, is_wifi_set);
 
     return is_wifi_set;
 }
 
-bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
+bool Configuration::saveMQTTConfiguration(
+    MQTTConfiguration mqtt_config_to_save)
 {
-    LOGV(LOG_LEVEL_DEBUG, "Saving MQTT credentials %s %d %s %s", mqtt_config_to_save.host, mqtt_config_to_save.port, mqtt_config_to_save.user, mqtt_config_to_save.password);
+    LOGV(LOG_LEVEL_DEBUG, "Saving MQTT credentials %s %d %s %s",
+         mqtt_config_to_save.host, mqtt_config_to_save.port,
+         mqtt_config_to_save.user, mqtt_config_to_save.password);
 
     is_mqtt_set = true;
     EEPROM.put(MQTT_HOST_EEPROM_POS, mqtt_config_to_save.host);
@@ -388,10 +406,7 @@ bool Configuration::saveMQTTConfiguration(MQTTConfiguration mqtt_config_to_save)
     return EEPROM.commit();
 }
 
-MQTTConfiguration Configuration::getMQTTConfiguration()
-{
-    return mqtt_config;
-}
+MQTTConfiguration Configuration::getMQTTConfiguration() { return mqtt_config; }
 
 bool Configuration::loadMQTTConfiguration()
 {
@@ -401,7 +416,9 @@ bool Configuration::loadMQTTConfiguration()
     EEPROM.get(MQTT_PASS_EEPROM_POS, mqtt_config.password);
     EEPROM.get(MQTT_SET_EEPROM_POS, is_mqtt_set);
 
-    LOGV(LOG_LEVEL_DEBUG, "Loaded MQTT credentials %s %d %s %s %d", mqtt_config.host, mqtt_config.port, mqtt_config.user, mqtt_config.password, is_mqtt_set);
+    LOGV(LOG_LEVEL_DEBUG, "Loaded MQTT credentials %s %d %s %s %d",
+         mqtt_config.host, mqtt_config.port, mqtt_config.user,
+         mqtt_config.password, is_mqtt_set);
 
     return is_mqtt_set;
 }
@@ -450,10 +467,7 @@ bool Configuration::saveFactoryStrainCalibration(float strain_scale)
     return savePersistantConfigToDisk();
 }
 
-OSConfiguration *Configuration::getOSConfiguration()
-{
-    return &os_config;
-}
+OSConfiguration *Configuration::getOSConfiguration() { return &os_config; }
 
 PB_PersistentConfiguration Configuration::get()
 {
@@ -465,7 +479,8 @@ PB_PersistentConfiguration Configuration::get()
     return pb_buffer_;
 }
 
-bool Configuration::setMotorCalibrationAndSave(PB_MotorCalibration &motor_calibration)
+bool Configuration::setMotorCalibrationAndSave(
+    PB_MotorCalibration &motor_calibration)
 {
     {
         SemaphoreGuard lock(mutex_);

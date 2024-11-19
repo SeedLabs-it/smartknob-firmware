@@ -1,12 +1,13 @@
 #include "spotify_task.h"
 
-SpotifyTask::SpotifyTask(const uint8_t task_core, Configuration &configuration) : Task{"spotify", 1024 * 10, 1, task_core}, spotify_api_(configuration)
+SpotifyTask::SpotifyTask(const uint8_t task_core, Configuration &configuration)
+    : Task{"spotify", 1024 * 10, 1, task_core}, spotify_api_(configuration)
 {
+    mutex_ = xSemaphoreCreateMutex();
+    assert(mutex_ != nullptr);
 }
 
-SpotifyTask::~SpotifyTask()
-{
-}
+SpotifyTask::~SpotifyTask() {}
 
 void SpotifyTask::run()
 {
@@ -15,11 +16,20 @@ void SpotifyTask::run()
 
     while (1)
     {
-        if (spotify_api_.hasConfig() && WiFi.status() == WL_CONNECTED && shared_events_queue_ != nullptr) // TODO check spotify availability
+        if (spotify_api_.hasConfig() && WiFi.status() == WL_CONNECTED &&
+            shared_events_queue_ != nullptr) // TODO check spotify availability
         {
-            unsigned long ms_since_last_fetch = millis() - last_fetched_playback_state;
-            if (last_fetched_playback_state == 0 || millis() - last_fetched_playback_state > playback_state_fetch_interval || (latest_playback_state_.available && ms_since_last_fetch + latest_playback_state_.progress_ms > latest_playback_state_.item.duration_ms))
+            unsigned long ms_since_last_fetch =
+                millis() - last_fetched_playback_state;
+            if (state_invalidated || last_fetched_playback_state == 0 ||
+                millis() - last_fetched_playback_state >
+                    playback_state_fetch_interval ||
+                (latest_playback_state_.available &&
+                 ms_since_last_fetch + latest_playback_state_.progress_ms >
+                     latest_playback_state_.item.duration_ms))
             {
+                SemaphoreGuard lock(mutex_);
+                state_invalidated = false;
                 PlaybackState playback_state = spotify_api_.getCurrentPlaybackState();
 
                 last_fetched_playback_state = millis();
@@ -32,13 +42,18 @@ void SpotifyTask::run()
 
                 if (playback_state.available)
                 {
-                    if (latest_playback_state_.timestamp == 0 || strcmp(playback_state.item.name, latest_playback_state_.item.name) != 0)
+                    if (latest_playback_state_.timestamp == 0 ||
+                        strcmp(playback_state.item.name,
+                               latest_playback_state_.item.name) != 0)
                     {
-                        delay(50); // TODO Look into if this helped preventing failure of image fetch!?
+                        delay(50); // TODO Look into if this helped preventing failure of
+                                   // image fetch!?
                         if (strcmp(playback_state.item.album.images[1].url, "") != 0)
                         {
-                            LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from: %s", playback_state.item.album.images[1].url);
-                            spotify_api_.downloadImage(playback_state.item.album.images[1].url);
+                            LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from: %s",
+                                 playback_state.item.album.images[1].url);
+                            spotify_api_.downloadImage(
+                                playback_state.item.album.images[1].url);
                         }
                         else
                         {
@@ -52,7 +67,8 @@ void SpotifyTask::run()
                             return; // TODO handle
                         }
 
-                        image_dsc = (lv_img_dsc_t *)heap_caps_malloc(sizeof(lv_img_dsc_t), MALLOC_CAP_SPIRAM);
+                        image_dsc = (lv_img_dsc_t *)heap_caps_malloc(sizeof(lv_img_dsc_t),
+                                                                     MALLOC_CAP_SPIRAM);
 
                         image_dsc->header.always_zero = 0;
                         image_dsc->header.w = 300;
@@ -67,13 +83,16 @@ void SpotifyTask::run()
                         publishEvent(cover_art_event);
                     }
 
-                    if (strcmp(playback_state.device.id, "") != 0 && strcmp(playback_state.device.id, latest_playback_state_.device.id) != 0)
+                    if (strcmp(playback_state.device.id, "") != 0 &&
+                        strcmp(playback_state.device.id,
+                               latest_playback_state_.device.id) != 0)
                     {
                         WiFiEvent device_changed_event = {
                             .type = SK_SPOTIFY_DEVICE_CHANGED,
                         };
 
-                        strcpy(device_changed_event.body.spotify_device_id, playback_state.device.id);
+                        strcpy(device_changed_event.body.spotify_device_id,
+                               playback_state.device.id);
 
                         publishEvent(device_changed_event);
                     }
@@ -84,12 +103,15 @@ void SpotifyTask::run()
 
             if (latest_playback_state_.spotify_available)
             {
-                if (millis() - last_volume_change_ms > 200 && last_volume != latest_playback_state_.device.volume_percent && last_volume != 255)
+                if (millis() - last_volume_change_ms > 200 &&
+                    last_volume != latest_playback_state_.device.volume_percent &&
+                    last_volume != 255)
                 {
+                    SemaphoreGuard lock(mutex_);
                     last_volume_change_ms = millis();
-                    LOGV(LOG_LEVEL_DEBUG, "Adjusting Spotify volume");
-                    LOGE("DEVICE ID: %s", latest_playback_state_.device.id);
-                    if (spotify_api_.setVolume(last_volume, latest_playback_state_.device.id))
+                    LOGV(LOG_LEVEL_DEBUG, "Adjusting Spotify volume on device: %s", latest_playback_state_.device.id);
+                    if (spotify_api_.setVolume(last_volume,
+                                               latest_playback_state_.device.id))
                     {
                         LOGV(LOG_LEVEL_DEBUG, "Spotify volume set to: %d", last_volume);
                         latest_playback_state_.device.volume_percent = last_volume;
@@ -101,6 +123,10 @@ void SpotifyTask::run()
                     }
                 }
             }
+
+            // if (latest_playback_state_.spotify_available &&
+            //     !latest_playback_state_.available) {
+            // }
         }
         delay(1);
     }
@@ -108,12 +134,17 @@ void SpotifyTask::run()
 
 void SpotifyTask::handleEvent(const WiFiEvent &event)
 {
+    SemaphoreGuard lock(mutex_);
     WiFiEvent playback_state_event;
     playback_state_event.type = SK_SPOTIFY_PLAYBACK_STATE;
     playback_state_event.body.playback_state = latest_playback_state_;
 
-    const char *device_id = latest_playback_state_.device.id ? latest_playback_state_.device.id : "";
-
+    const char *device_id =
+        latest_playback_state_.device.id ? latest_playback_state_.device.id : "";
+    if (strcmp(latest_playback_state_.device.id, "") == 0)
+    {
+        state_invalidated = true;
+    }
     switch (event.type)
     {
     case SK_SPOTIFY_PLAY:
@@ -131,7 +162,8 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
         }
         break;
     case SK_SPOTIFY_VOLUME:
-        if (event.body.volume != last_volume && latest_playback_state_.device.volume_percent != event.body.volume)
+        if (event.body.volume != last_volume &&
+            latest_playback_state_.device.volume_percent != event.body.volume)
         {
             last_volume = event.body.volume;
         }
