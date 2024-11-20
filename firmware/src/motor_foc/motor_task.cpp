@@ -33,6 +33,8 @@ MotorTask::~MotorTask() {}
 TlvSensor encoder = TlvSensor();
 #elif SENSOR_MT6701
 MT6701Sensor encoder = MT6701Sensor();
+#elif SENSOR_CH605
+HallSensor encoder = HallSensor(PIN_CH605_U, PIN_CH605_V, PIN_CH605_W, 7);
 #elif SENSOR_MAQ430
 MagneticSensorSPI encoder = MagneticSensorSPI(MAQ430_SPI, PIN_MAQ_SS);
 #endif
