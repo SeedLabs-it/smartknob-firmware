@@ -183,7 +183,6 @@ void SensorsTask::run()
 
                 if (do_strain)
                 {
-
                     strain_reading_raw = strain.get_units(1);
 
                     if (abs(last_strain_reading_raw_ - strain_reading_raw) > 2000)

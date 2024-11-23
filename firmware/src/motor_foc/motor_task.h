@@ -8,6 +8,9 @@
 #include "../proto/proto_gen/smartknob.pb.h"
 #include "../task.h"
 
+#include <PciManager.h>
+#include <PciListenerImp.h>
+
 enum class CommandType
 {
     CALIBRATE,
@@ -57,7 +60,7 @@ private:
     char buf_[72];
 
     // BLDC motor & driver instance
-    BLDCMotor motor = BLDCMotor(1);
+    BLDCMotor motor = BLDCMotor(7, 5.4, 300);
     BLDCDriver6PWM driver = BLDCDriver6PWM(PIN_UH, PIN_UL, PIN_VH, PIN_VL, PIN_WH, PIN_WL);
 
     void publish(const PB_SmartKnobState &state);

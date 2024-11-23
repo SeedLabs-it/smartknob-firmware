@@ -69,6 +69,8 @@ void RootTask::run()
 
     motor_task_.addListener(knob_state_queue_);
 
+#if ENABLE_LOGGING
+
     serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_settings_tag, [this](PB_ToSmartknob to_smartknob)
                                                    { configuration_->setSettings(to_smartknob.payload.settings); });
 
@@ -110,6 +112,7 @@ void RootTask::run()
     { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
     serial_protocol_plaintext_->registerKeyHandler('q', callbackSetProtocol);
     serial_protocol_plaintext_->registerKeyHandler(0, callbackSetProtocol); // Switches to protobuf protocol on protobuf message from configurator
+#endif
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -347,12 +350,13 @@ void RootTask::run()
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
             case SK_CONFIGURATION_SAVED:
+#if ENABLE_LOGGING
                 if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
                 {
                     LOGV(LOG_LEVEL_DEBUG, "Sending knob config state.");
                     callbackGetKnobInfo();
                 }
-
+#endif
                 break;
             case SK_SETTINGS_CHANGED:
                 settings_ = configuration_->getSettings();

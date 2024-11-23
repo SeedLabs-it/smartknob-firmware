@@ -32,6 +32,10 @@ static SerialProtocolProtobuf *serial_protocol_protobuf_p = &serial_protocol_pro
 
 static FreeRTOSAdapter adapter(&serial_protocol, xSemaphoreCreateMutex(), "FreeRTOSAdapter", 1024 * 24, 0, 1);
 static FreeRTOSAdapter *adapter_p = &adapter;
+#else
+static FreeRTOSAdapter *adapter_p = nullptr;
+static SerialProtocolPlaintext *serial_protocol_p = nullptr;
+static SerialProtocolProtobuf *serial_protocol_protobuf_p = nullptr;
 #endif
 
 Configuration config;

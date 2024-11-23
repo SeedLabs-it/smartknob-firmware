@@ -21,7 +21,7 @@ static const uint32_t IDLE_CORRECTION_DELAY_MILLIS = 500;
 static const float IDLE_CORRECTION_MAX_ANGLE_RAD = 5 * PI / 180;
 static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
-MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 8, 0, task_core), configuration_(configuration)
+MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 8, 1, task_core), configuration_(configuration)
 {
     queue_ = xQueueCreate(5, sizeof(Command));
     assert(queue_ != NULL);
@@ -34,7 +34,10 @@ TlvSensor encoder = TlvSensor();
 #elif SENSOR_MT6701
 MT6701Sensor encoder = MT6701Sensor();
 #elif SENSOR_CH605
-HallSensor encoder = HallSensor(PIN_CH605_U, PIN_CH605_V, PIN_CH605_W, 7);
+HallSensor encoder(PIN_CH605_U, PIN_CH605_V, PIN_CH605_W, 7);
+void doA() { encoder.handleA(); }
+void doB() { encoder.handleB(); }
+void doC() { encoder.handleC(); }
 #elif SENSOR_MAQ430
 MagneticSensorSPI encoder = MagneticSensorSPI(MAQ430_SPI, PIN_MAQ_SS);
 #endif
@@ -49,6 +52,24 @@ void MotorTask::run()
     encoder.init(&Wire, false);
 #elif SENSOR_MT6701
     encoder.init();
+#elif SENSOR_CH605
+    // encoder.pullup = Pullup::USE_INTERN;
+    encoder.init();
+
+    encoder.enableInterrupts(doA, doB, doC);
+
+    // while (1)
+    // {
+    //     // encoder.handleA();
+    //     // encoder.handleB();
+    //     // encoder.handleC();
+    //     encoder.update(); // Manually call this if interrupts are not enabled
+    //     delay(100);       // Adjust to match motor speed
+
+    //     float angle = encoder.getAngle();
+    //     Serial.println(angle);
+    //     LOGE("PINS %d %d %d", digitalRead(PIN_CH605_U), digitalRead(PIN_CH605_V), digitalRead(PIN_CH605_W));
+    // }
 #elif SENSOR_MAQ430
     SPIClass *spi = new SPIClass(HSPI);
     spi->begin(PIN_MAQ_SCK, PIN_MAQ_MISO, PIN_MAQ_MOSI, PIN_MAQ_SS);
@@ -64,11 +85,27 @@ void MotorTask::run()
 
     // Not actually using the velocity loop built into SimpleFOC; but I'm using those PID variables
     // to run PID for torque (and SimpleFOC studio supports updating them easily over serial for tuning)
-    motor.PID_velocity.P = FOC_PID_P;
-    motor.PID_velocity.I = FOC_PID_I;
-    motor.PID_velocity.D = FOC_PID_D;
-    motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP;
-    motor.PID_velocity.limit = FOC_PID_LIMIT;
+
+    // #define FOC_PID_P_TEST 4
+    // #define FOC_PID_I_TEST 10
+    // #define FOC_PID_D_TEST 0
+    // #define FOC_PID_OUTPUT_RAMP_TEST 10000
+    // #define FOC_PID_LIMIT_TEST 2
+
+#define FOC_PID_P_TEST 4
+#define FOC_PID_I_TEST 0
+#define FOC_PID_D_TEST 0.04
+#define FOC_PID_OUTPUT_RAMP_TEST 10000
+#define FOC_PID_LIMIT_TEST 10
+
+#define FOC_VOLTAGE_LIMIT_TEST 5
+#define FOC_LPF_TEST 0
+    motor.PID_velocity.P = FOC_PID_P_TEST;
+    motor.PID_velocity.I = FOC_PID_I_TEST;
+    motor.PID_velocity.D = FOC_PID_D_TEST;
+    motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP_TEST;
+    motor.PID_velocity.limit = FOC_PID_LIMIT_TEST;
+    motor.LPF_velocity.Tf = FOC_LPF_TEST;
 
 #ifdef FOC_LPF
     motor.LPF_angle.Tf = FOC_LPF;
@@ -102,7 +139,7 @@ void MotorTask::run()
 
     motor.monitor_downsample = 0; // disable monitor at first - optional
 
-    float current_detent_center = motor.shaft_angle;
+    float current_detent_center = motor.shaft_angle / 7;
     PB_SmartKnobConfig config = {
         .position_width_radians = 60 * M_PI / 180,
         .endstop_strength_unit = 0,
@@ -147,11 +184,12 @@ void MotorTask::run()
                 if (!motor.enabled)
                     motor.enable();
 
-                motor.PID_velocity.P = FOC_PID_P;
-                motor.PID_velocity.I = FOC_PID_I;
-                motor.PID_velocity.D = FOC_PID_D;
-                motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP;
-                motor.PID_velocity.limit = FOC_PID_LIMIT;
+                motor.PID_velocity.P = FOC_PID_P_TEST;
+                motor.PID_velocity.I = FOC_PID_I_TEST;
+                motor.PID_velocity.D = FOC_PID_D_TEST;
+                motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP_TEST;
+                motor.PID_velocity.limit = FOC_PID_LIMIT_TEST;
+                motor.LPF_velocity.Tf = FOC_LPF_TEST;
 
                 calibrate();
 
@@ -217,9 +255,9 @@ void MotorTask::run()
                     LOGV(LOG_LEVEL_DEBUG, "Adjusting detent center");
                     float new_sub_position = position_updated ? new_config.sub_position_unit : latest_sub_position_unit;
 #if SK_INVERT_ROTATION
-                    float shaft_angle = -motor.shaft_angle;
+                    float shaft_angle = -motor.shaft_angle / 7;
 #else
-                    float shaft_angle = motor.shaft_angle;
+                    float shaft_angle = motor.shaft_angle / 7;
 #endif
                     current_detent_center = shaft_angle + new_sub_position * new_config.position_width_radians;
                 }
@@ -286,15 +324,15 @@ void MotorTask::run()
                 last_idle_start = millis();
             }
         }
-        if (last_idle_start > 0 && millis() - last_idle_start > IDLE_CORRECTION_DELAY_MILLIS && fabsf(motor.shaft_angle - current_detent_center) < IDLE_CORRECTION_MAX_ANGLE_RAD)
+        if (last_idle_start > 0 && millis() - last_idle_start > IDLE_CORRECTION_DELAY_MILLIS && fabsf(motor.shaft_angle / 7 - current_detent_center) < IDLE_CORRECTION_MAX_ANGLE_RAD)
         {
-            current_detent_center = motor.shaft_angle * IDLE_CORRECTION_RATE_ALPHA + current_detent_center * (1 - IDLE_CORRECTION_RATE_ALPHA);
+            current_detent_center = motor.shaft_angle / 7 * IDLE_CORRECTION_RATE_ALPHA + current_detent_center * (1 - IDLE_CORRECTION_RATE_ALPHA);
         }
 
         // Check where we are relative to the current nearest detent; update our position if we've moved far enough to snap to another detent
-        float angle_to_detent_center = motor.shaft_angle - current_detent_center;
+        float angle_to_detent_center = motor.shaft_angle / 7 - current_detent_center;
 #if SK_INVERT_ROTATION
-        angle_to_detent_center = -motor.shaft_angle - current_detent_center;
+        angle_to_detent_center = -motor.shaft_angle / 7 - current_detent_center;
 #endif
 
         float snap_point_radians = config.position_width_radians * config.snap_point;
@@ -468,6 +506,8 @@ void MotorTask::calibrate()
     motor.voltage_limit = 0;
     motor.move(a);
 
+    LOGE("AFTER MOVE");
+
     float movement_angle = fabsf(end_sensor - start_sensor);
     if (movement_angle < radians(30) || movement_angle > radians(180))
     {
@@ -538,9 +578,7 @@ void MotorTask::calibrate()
     if (fabsf(motor.shaft_angle - motor.target) > 1 * PI / 180)
     {
         LOGE("ERROR: motor did not reach target!");
-        while (1)
-        {
-        }
+        return;
     }
 
     float electrical_per_mechanical = electrical_revolutions * _2PI / (end_sensor - start_sensor);
