@@ -3,8 +3,10 @@
 #include "./display/page_manager.h"
 #include "./util.h"
 
-#define temp_min 1000
-#define temp_max 5000
+// TODO: Retrieve from HASS entity.
+#define temp_min 2000 // Philips hue min
+#define temp_max 6500 // Philips hue max
+
 #define temp_1_deg (temp_max - temp_min) / 360
 
 #define skip_degrees_def 1 // distance between two lines in degrees [TODO] refactor this should be the space between lines, not the distance between the start of a line and the other (To account of >1px line)

@@ -3,9 +3,6 @@
 #define canvas_buffer_size ((TFT_WIDTH * TFT_WIDTH) * sizeof(uint16_t))
 static lv_color_t *canvas_buffer = NULL;
 
-#define temp_min 1000
-#define temp_max 20000
-
 void drawKelvinWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canvas)
 {
     uint16_t outer_radius = inner_radius + width;
@@ -24,6 +21,7 @@ void drawKelvinWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canv
             uint16_t y_pixel = static_cast<int>(round(yc + y));
 
             float normalized_angle = (theta - start_rad) / (end_rad - start_rad);
+
             uint16_t kelvin;
 
             if (normalized_angle <= 0.5f)
@@ -61,38 +59,31 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
     lv_coord_t radius = temp_wheel_inner_diameter / 2;
     lv_coord_t center = TFT_WIDTH / 2;
 
-    // drawKelvinWheel(center, center, radius, temp_wheel_width, canvas);
-    // lv_obj_invalidate(canvas);
-
     auto taskLambda = [center, radius, temp_wheel_width, canvas]()
     {
-        // Call the drawColorWheel function with the captured parameters
         drawKelvinWheel(center, center, radius, temp_wheel_width, canvas);
 
-        // Task completion: delete the task (if necessary)
         vTaskDelete(NULL);
     };
 
-    // Create the FreeRTOS task using the lambda
     xTaskCreatePinnedToCore(
         [](void *taskFunc)
         {
-            // Call the lambda function (cast taskFunc back to std::function)
             auto func = static_cast<std::function<void()> *>(taskFunc);
-            (*func)();   // Execute the lambda function
-            delete func; // Clean up after task is done
+            (*func)();
+            delete func;
             vTaskDelete(NULL);
         },
-        "DrawColorWheelLambda",                // Name of the task
-        4096,                                  // Stack size
-        new std::function<void()>(taskLambda), // Pass the lambda as the task parameter
-        0,                                     // Priority
-        NULL,                                  // Task handle (optional)
+        "DrawColorWheelLambda",
+        4096,
+        new std::function<void()>(taskLambda),
+        0,
+        NULL,
         0);
 
     temp_selector = lvDrawCircle(9, page);
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(1000), LV_PART_MAIN);
-    lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
+    lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad), selector_radius * sin(deg_1_rad));
 }
 
 void TempPage::update(xSemaphoreHandle mutex, int16_t position)
@@ -102,16 +93,19 @@ void TempPage::update(xSemaphoreHandle mutex, int16_t position)
 
     uint16_t abs_temp_deg = abs(app_temp_deg);
 
-    LOGE("positiom: %d", abs_temp_deg);
-    if (abs_temp_deg >= 180)
+    float normalized_angle = fmodf(abs(app_temp_deg), 360.0f) / 360.0f; // Normalize to [0, 1]
+
+    if (normalized_angle <= 0.5f)
     {
-        kelvin = temp_max - abs_temp_deg * skip_degrees_def * temp_1_deg;
+        kelvin = temp_min + normalized_angle * 2 * (temp_max - temp_min); // Increase from 1000K to 10000K
     }
     else
     {
-        kelvin = temp_min + abs_temp_deg * skip_degrees_def * temp_1_deg;
+        kelvin = temp_max - (normalized_angle - 0.5f) * 2 * (temp_max - temp_min); // Decrease back to 1000K
     }
 
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(kelvin), LV_PART_MAIN);
-    lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + app_temp_deg)), selector_radius * sin(deg_1_rad * (270 + app_temp_deg)));
+    lv_obj_align(temp_selector, LV_ALIGN_CENTER,
+                 selector_radius * cos(deg_1_rad * (app_temp_deg)),
+                 selector_radius * sin(deg_1_rad * (app_temp_deg)));
 }
