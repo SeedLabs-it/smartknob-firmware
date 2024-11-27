@@ -49,7 +49,7 @@ void drawKelvinWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canv
 
                 float temp_t = 1.0f - fabsf(2.0f * t - 1.0f);
 
-                uint16_t kelvin = temp_min + temp_t * (temp_max - temp_min);
+                uint16_t kelvin = temp_max + temp_t * (temp_min - temp_max);
                 lv_color_t color = kelvinToLvColor(kelvin);
 
                 lv_color_t blended_color = lv_color_mix(color, lv_color_make(0, 0, 0), intensity * 255);
@@ -100,7 +100,7 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
         0);
 
     temp_selector = lvDrawCircle(16, page);
-    lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(1000), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(temp_max), LV_PART_MAIN);
     lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad), selector_radius * sin(deg_1_rad));
 }
 
@@ -115,11 +115,11 @@ void TempPage::update(xSemaphoreHandle mutex, int16_t position)
 
     if (normalized_angle <= 0.5f)
     {
-        kelvin = temp_min + normalized_angle * 2 * (temp_max - temp_min); // Increase from 1000K to 10000K
+        kelvin = temp_max + normalized_angle * 2 * (temp_min - temp_max); // Increase from 1000K to 10000K
     }
     else
     {
-        kelvin = temp_max - (normalized_angle - 0.5f) * 2 * (temp_max - temp_min); // Decrease back to 1000K
+        kelvin = temp_min - (normalized_angle - 0.5f) * 2 * (temp_min - temp_max); // Decrease back to 1000K
     }
 
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(kelvin), LV_PART_MAIN);

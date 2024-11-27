@@ -5,8 +5,8 @@
 #include <cmath>
 
 // TODO: Retrieve from HASS entity.
-#define temp_min 2000 // Philips hue min
-#define temp_max 6500 // Philips hue max
+#define temp_max 2000 // Philips hue min
+#define temp_min 6500 // Philips hue max
 
 #define temp_1_deg (temp_max - temp_min) / 360
 
