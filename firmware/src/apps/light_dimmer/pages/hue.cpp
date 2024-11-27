@@ -5,28 +5,54 @@ static lv_color_t *canvas_buffer = NULL;
 
 void drawColorWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canvas)
 {
-    uint16_t outer_radius = inner_radius + width;
-    float angle_step = 0.001f; // Smaller step for smoother arcs
-    float start_rad = 0 * DEG_TO_RAD;
-    float end_rad = 360 * DEG_TO_RAD;
+    int outer_radius = inner_radius + width;
+    int x_start = xc - outer_radius - 1;
+    int x_end = xc + outer_radius + 1;
+    int y_start = yc - outer_radius - 1;
+    int y_end = yc + outer_radius + 1;
 
-    for (int r = inner_radius; r <= outer_radius; r++)
+    for (int y = y_start; y <= y_end; y++)
     {
-        for (float theta = start_rad; theta <= end_rad; theta += angle_step)
+        for (int x = x_start; x <= x_end; x++)
         {
-            float x = r * cos(theta);
-            float y = r * sin(theta);
+            float dx = x - xc + 0.5f;
+            float dy = y - yc + 0.5f;
+            float distance = sqrtf(dx * dx + dy * dy);
 
-            uint16_t x_pixel = static_cast<int>(round(xc + x));
-            uint16_t y_pixel = static_cast<int>(round(yc + y));
+            if (distance >= inner_radius - 0.5f && distance <= outer_radius + 0.5f)
+            {
+                float delta = 0.0f;
+                if (distance < inner_radius)
+                {
+                    delta = inner_radius - distance;
+                }
+                else if (distance > outer_radius)
+                {
+                    delta = distance - outer_radius;
+                }
 
-            uint16_t hue = static_cast<uint16_t>(theta * 180 / M_PI + 90) % 360;
+                float intensity = 1.0f - fabsf(delta);
+                intensity = intensity < 0.0f ? 0.0f : intensity;
+                intensity = intensity > 1.0f ? 1.0f : intensity;
 
-            lv_color_t arc_color = lv_color_hsv_to_rgb(hue, 100, 100);
+                float angle_dx = x - xc;
+                float angle_dy = y - yc;
+                float theta = atan2f(angle_dy, angle_dx);
+                if (theta < 0)
+                {
+                    theta += 2 * M_PI;
+                }
+                float t = theta / (2 * M_PI);
 
-            lv_canvas_set_px(canvas, x_pixel, y_pixel, arc_color);
+                float temp_t = 1.0f - fabsf(2.0f * t - 1.0f);
+
+                uint16_t hue = static_cast<uint16_t>(theta * 180 / M_PI + 90) % 360;
+                lv_color_t color = lv_color_hsv_to_rgb(hue, 100, 100);
+
+                lv_color_t blended_color = lv_color_mix(color, lv_color_make(0, 0, 0), intensity * 255);
+                lv_canvas_set_px(canvas, x, y, blended_color);
+            }
         }
-        delay(1);
     }
 
     lv_obj_invalidate(canvas);
@@ -34,6 +60,7 @@ void drawColorWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canva
 
 HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
 {
+
     const uint16_t color_wheel_inner_diameter = 195;
     const uint16_t color_wheel_width = 10;
 
@@ -51,33 +78,26 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
 
     auto taskLambda = [center, radius, color_wheel_width, canvas]()
     {
-        // Call the drawColorWheel function with the captured parameters
         drawColorWheel(center, center, radius, color_wheel_width, canvas);
-
-        // Task completion: delete the task (if necessary)
         vTaskDelete(NULL);
     };
 
-    // Create the FreeRTOS task using the lambda
     xTaskCreatePinnedToCore(
         [](void *taskFunc)
         {
-            // Call the lambda function (cast taskFunc back to std::function)
             auto func = static_cast<std::function<void()> *>(taskFunc);
-            (*func)();   // Execute the lambda function
-            delete func; // Clean up after task is done
+            (*func)();
+            delete func;
             vTaskDelete(NULL);
         },
-        "DrawColorWheelLambda",                // Name of the task
-        4096,                                  // Stack size
-        new std::function<void()>(taskLambda), // Pass the lambda as the task parameter
-        0,                                     // Priority
-        NULL,                                  // Task handle (optional)
+        "DrawColorWheelLambda",
+        4096,
+        new std::function<void()>(taskLambda),
+        0,
+        NULL,
         0);
 
-    // drawColorWheel(center, center, radius, color_wheel_width, canvas);
-
-    hue_selector = lvDrawCircle(9, page);
+    hue_selector = lvDrawCircle(16, page);
     lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(0 * skip_degrees_selectable, 100, 100), LV_PART_MAIN);
     lv_obj_align(hue_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
 }

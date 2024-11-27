@@ -3,41 +3,59 @@
 #define canvas_buffer_size ((TFT_WIDTH * TFT_WIDTH) * sizeof(uint16_t))
 static lv_color_t *canvas_buffer = NULL;
 
+#include <math.h>
+#include <stdint.h>
+
 void drawKelvinWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canvas)
 {
-    uint16_t outer_radius = inner_radius + width;
-    float angle_step = 0.001f; // Smaller step for smoother arcs
-    float start_rad = 0 * DEG_TO_RAD;
-    float end_rad = 360 * DEG_TO_RAD;
+    int outer_radius = inner_radius + width;
+    int x_start = xc - outer_radius - 1;
+    int x_end = xc + outer_radius + 1;
+    int y_start = yc - outer_radius - 1;
+    int y_end = yc + outer_radius + 1;
 
-    for (int r = inner_radius; r <= outer_radius; r++)
+    for (int y = y_start; y <= y_end; y++)
     {
-        for (float theta = start_rad; theta <= end_rad; theta += angle_step)
+        for (int x = x_start; x <= x_end; x++)
         {
-            float x = r * cos(theta);
-            float y = r * sin(theta);
+            float dx = x - xc + 0.5f;
+            float dy = y - yc + 0.5f;
+            float distance = sqrtf(dx * dx + dy * dy);
 
-            uint16_t x_pixel = static_cast<int>(round(xc + x));
-            uint16_t y_pixel = static_cast<int>(round(yc + y));
-
-            float normalized_angle = (theta - start_rad) / (end_rad - start_rad);
-
-            uint16_t kelvin;
-
-            if (normalized_angle <= 0.5f)
+            if (distance >= inner_radius - 0.5f && distance <= outer_radius + 0.5f)
             {
-                kelvin = temp_min + normalized_angle * 2 * (temp_max - temp_min);
-            }
-            else
-            {
-                kelvin = temp_max - (normalized_angle - 0.5f) * 2 * (temp_max - temp_min);
-            }
+                float delta = 0.0f;
+                if (distance < inner_radius)
+                {
+                    delta = inner_radius - distance;
+                }
+                else if (distance > outer_radius)
+                {
+                    delta = distance - outer_radius;
+                }
 
-            lv_color_t arc_color = kelvinToLvColor(kelvin);
+                float intensity = 1.0f - fabsf(delta);
+                intensity = intensity < 0.0f ? 0.0f : intensity;
+                intensity = intensity > 1.0f ? 1.0f : intensity;
 
-            lv_canvas_set_px(canvas, x_pixel, y_pixel, arc_color);
+                float angle_dx = x - xc;
+                float angle_dy = y - yc;
+                float theta = atan2f(angle_dy, angle_dx);
+                if (theta < 0)
+                {
+                    theta += 2 * M_PI;
+                }
+                float t = theta / (2 * M_PI);
+
+                float temp_t = 1.0f - fabsf(2.0f * t - 1.0f);
+
+                uint16_t kelvin = temp_min + temp_t * (temp_max - temp_min);
+                lv_color_t color = kelvinToLvColor(kelvin);
+
+                lv_color_t blended_color = lv_color_mix(color, lv_color_make(0, 0, 0), intensity * 255);
+                lv_canvas_set_px(canvas, x, y, blended_color);
+            }
         }
-        delay(1);
     }
     lv_obj_invalidate(canvas);
 }
@@ -74,14 +92,14 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
             delete func;
             vTaskDelete(NULL);
         },
-        "DrawColorWheelLambda",
+        "DrawKelvinWheelLambda",
         4096,
         new std::function<void()>(taskLambda),
         0,
         NULL,
         0);
 
-    temp_selector = lvDrawCircle(9, page);
+    temp_selector = lvDrawCircle(16, page);
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(1000), LV_PART_MAIN);
     lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad), selector_radius * sin(deg_1_rad));
 }
