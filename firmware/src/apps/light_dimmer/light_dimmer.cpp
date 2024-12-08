@@ -139,6 +139,60 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
     {
         page_mgr_->getCurrentPage()->update(mutex_, motor_config.position);
 
+        // switch (page_mgr_->getCurrentPageNum())
+        // {
+        // case LIGHT_DIMMER_PAGE:
+        //     new_state.state = cJSON_CreateObject();
+        //     cJSON_AddNumberToObject(new_state.state, "brightness", current_position);
+        //     break;
+        // case HUE_PAGE:
+        //     new_state.state = cJSON_CreateObject();
+        //     cJSON_AddNumberToObject(new_state.state, "hue", current_position);
+        //     break;
+        // case TEMP_PAGE:
+        //     new_state.state = cJSON_CreateObject();
+        //     cJSON_AddNumberToObject(new_state.state, "color_temp", current_position);
+        //     break;
+        // default:
+        //     break;
+        // }
+
+        snprintf(new_state.app_id, sizeof(new_state.app_id) - 1, "%s", app_id);
+        snprintf(new_state.entity_id, sizeof(new_state.entity_id) - 1, "%s", entity_id);
+
+        cJSON *json = cJSON_CreateObject();
+        cJSON *rgb = cJSON_CreateArray();
+
+        switch (page_mgr_->getCurrentPageNum())
+        {
+        case LIGHT_DIMMER_PAGE:
+            cJSON_AddBoolToObject(json, "on", current_position > 0);
+            cJSON_AddNumberToObject(json, "brightness", round(current_position * 2.55));
+            cJSON_AddNumberToObject(json, "color_temp", 0);
+            cJSON_AddItemToObject(json, "rgb_color", cJSON_CreateNull());
+            break;
+        case HUE_PAGE:
+            // cJSON_AddItemToArray(rgb, cJSON_CreateNumber(r));
+            // cJSON_AddItemToArray(rgb, cJSON_CreateNumber(g));
+            // cJSON_AddItemToArray(rgb, cJSON_CreateNumber(b));
+            // cJSON_AddItemToObject(json, "rgb_color", rgb);
+            break;
+        case TEMP_PAGE:
+            // cJSON_AddNumberToObject(json, "color_temp", current_position);
+            break;
+        default:
+            break;
+        }
+
+        char *json_str = cJSON_PrintUnformatted(json);
+        snprintf(new_state.state, sizeof(new_state.state) - 1, "%s", json_str);
+
+        cJSON_free(json_str);
+        cJSON_Delete(rgb);
+        cJSON_Delete(json);
+
+        snprintf(new_state.app_slug, sizeof(new_state.app_slug) - 1, "%s", APP_SLUG_LIGHT_SWITCH);
+
         new_state.changed = true;
     }
 
@@ -150,11 +204,17 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
 void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
-    // cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
-    // cJSON *on = cJSON_GetObjectItem(new_state, "on");
-    // cJSON *brightness = cJSON_GetObjectItem(new_state, "brightness");
-    // cJSON *color_temp = cJSON_GetObjectItem(new_state, "color_temp");
-    // cJSON *rgb_color = cJSON_GetObjectItem(new_state, "rgb_color");
+    cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
+    cJSON *on = cJSON_GetObjectItem(new_state, "on");
+    cJSON *brightness = cJSON_GetObjectItem(new_state, "brightness");
+    cJSON *color_temp = cJSON_GetObjectItem(new_state, "color_temp");
+    cJSON *rgb_color = cJSON_GetObjectItem(new_state, "rgb_color");
+
+    LightDimmerPages page_num = page_mgr_->getCurrentPageNum();
+
+    int16_t brightness_pos = 0;
+    int16_t hue_pos = 0;
+    int16_t temp_pos = 0;
 
     // if (on != NULL)
     // {
@@ -168,44 +228,73 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     //     }
     // }
 
-    // if (brightness != NULL)
-    // {
-    //     current_brightness = round(brightness->valueint / 2.55);
-    //     if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER && current_brightness != current_position)
-    //     {
-    //         current_position = current_brightness;
-    //         last_position = current_position;
+    if (brightness != NULL)
+    {
+        brightness_pos = round(brightness->valueint / 2.55);
+        if (page_num == LIGHT_DIMMER_PAGE && motor_config.position != brightness_pos)
+        {
+            current_position = brightness_pos;
+            last_position = current_position;
 
-    //         motor_config.position_nonce = current_position;
-    //         motor_config.position = current_position;
-    //     }
-    // }
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+        }
+        else
+        {
+            dimmer_config.position = brightness_pos;
+            dimmer_config.position_nonce = brightness_pos;
+        }
 
-    // if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
-    // {
-    //     color_set = true;
+        // // current_brightness = round(brightness->valueint / 2.55);
+        // if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER && current_brightness != current_position)
+        // {
+        //     current_position = current_brightness;
+        //     last_position = current_position;
 
-    //     r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
-    //     g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
-    //     b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
+        //     motor_config.position_nonce = current_position;
+        //     motor_config.position = current_position;
+        // }
+    }
 
-    //     hsv = lv_color_rgb_to_hsv(r, g, b);
+    if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
+    {
+        // color_set = true;
 
-    //     app_hue_position = hsv.h / skip_degrees;
+        r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
+        g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
+        b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
 
-    //     if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
-    //     {
-    //         current_position = app_hue_position;
+        hsv = lv_color_rgb_to_hsv(r, g, b);
 
-    //         motor_config.position_nonce = app_hue_position;
-    //         motor_config.position = app_hue_position;
-    //     }
-    // }
+        hue_pos = hsv.h / skip_degrees_selectable;
 
-    // if (cJSON_IsNull(rgb_color))
-    // {
-    //     color_set = false;
-    // }
+        if (page_num == HUE_PAGE && motor_config.position != hue_pos)
+        {
+            current_position = hue_pos;
+            last_position = current_position;
+
+            motor_config.position_nonce = hue_pos;
+            motor_config.position = hue_pos;
+        }
+        else
+        {
+            hue_config.position = hue_pos;
+            hue_config.position_nonce = hue_pos;
+        }
+
+        // if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE && app_hue_position != current_position)
+        // {
+        //     current_position = app_hue_position;
+
+        //     motor_config.position_nonce = app_hue_position;
+        //     motor_config.position = app_hue_position;
+        // }
+    }
+
+    if (cJSON_IsNull(rgb_color))
+    {
+        color_set = false;
+    }
 
     // if (brightness != NULL || (color_temp != NULL && cJSON_IsNull(color_temp) == 0) || (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0))
     // {
@@ -221,46 +310,53 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     //     }
     // }
 
-    // if (on != NULL || brightness != NULL || color_temp != NULL || rgb_color != NULL)
-    // {
-    //     state_sent_from_hass = true;
-    // }
+    if (on != NULL || brightness != NULL || color_temp != NULL || rgb_color != NULL)
+    {
+        state_sent_from_hass = true;
+    }
 
-    // cJSON_Delete(new_state);
+    cJSON_Delete(new_state);
 
-    // last_position = current_position;
+    last_position = current_position;
 
-    // {
-    //     SemaphoreGuard lock(mutex_);
+    {
+        // SemaphoreGuard lock(mutex_);
 
-    //     if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
-    //     {
+        // if (app_state_mode == LIGHT_DIMMER_APP_MODE_DIMMER)
+        // {
+        page_mgr_->getPage(LIGHT_DIMMER_PAGE)->update(mutex_, brightness_pos);
+        page_mgr_->getPage(HUE_PAGE)->update(mutex_, hue_pos);
+        page_mgr_->getPage(TEMP_PAGE)->update(mutex_, temp_pos);
+        if (page_num == LIGHT_DIMMER_PAGE)
+        {
+            // page_mgr_->getPage(LIGHT_DIMMER_PAGE)->update(mutex_, brightness_pos);
+            // page_mgr_->getPage(HUE_PAGE)->update(mutex_, hue_pos);
+            // page_mgr_->getPage(TEMP_PAGE)->update(mutex_, temp_pos);
+            // if (brightness_val == 0)
+            // {
+            //     lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+            //     lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
+            // }
+            // else
+            // {
+            //     lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x47, 0x27, 0x01), LV_PART_MAIN);
+            //     lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x47, 0x27, 0x01), 128), LV_PART_MAIN);
+            // }
 
-    //         if (current_brightness == 0)
-    //         {
-    //             lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    //             lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
-    //         }
-    //         else
-    //         {
-    //             lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x47, 0x27, 0x01), LV_PART_MAIN);
-    //             lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x47, 0x27, 0x01), 128), LV_PART_MAIN);
-    //         }
+            // if (color_set)
+            // {
+            //     lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(r, g, b), LV_PART_INDICATOR);
+            // }
 
-    //         if (color_set)
-    //         {
-    //             lv_obj_set_style_arc_color(arc_, LV_COLOR_MAKE(r, g, b), LV_PART_INDICATOR);
-    //         }
-
-    //         lv_arc_set_value(arc_, current_brightness);
-    //         char buf_[16];
-    //         sprintf(buf_, "%d%%", current_brightness);
-    //         lv_label_set_text(percentage_label_, buf_);
-    //     }
-    //     // else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
-    //     // {
-    //     //     LOGE("HUE: %d", hsv.h);
-    //     //     lv_obj_set_style_bg_color(selected_hue, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
-    //     // }
-    // }
+            // lv_arc_set_value(arc_, current_brightness);
+            // char buf_[16];
+            // sprintf(buf_, "%d%%", current_brightness);
+            // lv_label_set_text(percentage_label_, buf_);
+        }
+        // else if (app_state_mode == LIGHT_DIMMER_APP_MODE_HUE)
+        // {
+        //     LOGE("HUE: %d", hsv.h);
+        //     lv_obj_set_style_bg_color(selected_hue, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
+        // }
+    }
 }
