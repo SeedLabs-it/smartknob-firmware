@@ -2,12 +2,6 @@
 #include "cJSON.h"
 #include <cstring>
 
-#define TFT_HOR_RES 240 // TODO inherit this from config rather than redefine.
-#define TFT_VER_RES 240 // TODO inherit this from config rather than redefine.
-
-#define CANVAS_BUF_SIZE ((TFT_HOR_RES * TFT_VER_RES) * 4)
-uint32_t *canvas_buf = NULL;
-
 LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, AppData app_data) : App(mutex)
 {
     strcpy(app_id, app_data.app_id);
@@ -21,9 +15,6 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, AppData app_data) : App(
 
     motor_config = dimmer_config;
     motor_config.position = current_position;
-    motor_config.position_nonce = current_position;
-
-    // // num_positions = motor_config.max_position - motor_config.min_position;
 
     LV_IMG_DECLARE(x80_light_outline);
     LV_IMG_DECLARE(x40_light_outline);
@@ -31,29 +22,26 @@ LightDimmerApp::LightDimmerApp(SemaphoreHandle_t mutex, AppData app_data) : App(
     big_icon = x80_light_outline;
     small_icon = x40_light_outline;
 
-    // json = cJSON_CreateObject();
-
-    // initScreen();
-
     page_mgr_ = new LightDimmerPageManager(screen, mutex, app_data);
 }
 
 void LightDimmerApp::handleNavigation(NavigationEvent event)
 {
+    uint8_t prev_nonce = motor_config.position_nonce;
+    LightDimmerPages page_num = page_mgr_->getCurrentPageNum();
     switch (event)
     {
     case SHORT:
         switch (page_mgr_->getCurrentPageNum())
         {
         case LIGHT_DIMMER_PAGE:
-            // page_mgr_->getCurrentPage()->handleNavigation(event);
+            dimmer_config = motor_config;
             motor_config = page_selector_config;
-            strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+            motor_config.position = 0;
             page_mgr_->show(PAGE_SELECTOR);
             break;
         case PAGE_SELECTOR:
-            // current_position = brightness_pos;
-            switch (((LightDimmerPages)(2 + current_position)))
+            switch (2 + current_position)
             {
             case HUE_PAGE:
                 motor_config = hue_config;
@@ -70,35 +58,41 @@ void LightDimmerApp::handleNavigation(NavigationEvent event)
                 LOGW("No valid page found, page number: %d", 2 + current_position);
                 break;
             }
-            motor_config.position = current_position;
-            motor_config.position_nonce = current_position;
             break;
         default:
             break;
         }
         break;
     case LONG:
-        switch (page_mgr_->getCurrentPageNum())
+        if (page_num == LIGHT_DIMMER_PAGE)
         {
-        case LIGHT_DIMMER_PAGE:
-            LOGE("LightDimmerPage::handleNavigation");
-            LOGE("SHOULD RETURN TO MAIN MENU");
+            return;
+        }
+
+        switch (page_num)
+        {
+        case HUE_PAGE:
+            hue_config = motor_config;
             break;
+        case TEMP_PAGE:
+            temp_config = motor_config;
+            break;
+            // case PRESETS_PAGE:
+            //     page_mgr_->show(PRESETS_PAGE);
+            //     break;
         default:
-            motor_config = dimmer_config;
-            motor_config.position = current_position;
-            motor_config.position_nonce = current_position;
-            strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
-            page_mgr_->show(LIGHT_DIMMER_PAGE);
             break;
         }
+        motor_config = dimmer_config;
+        page_mgr_->show(LIGHT_DIMMER_PAGE);
         break;
     default:
         break;
     }
+    motor_config.position_nonce = prev_nonce + 1;
 }
 
-// update motor config trought handleNavigation
+// update motor config trough handleNavigation
 int8_t LightDimmerApp::navigationNext()
 {
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
@@ -127,7 +121,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
     sub_position_unit = state.sub_position_unit;
     // //! needed to next reload of App
-    motor_config.position_nonce = current_position;
+    // motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
     adjusted_sub_position = sub_position_unit * motor_config.position_width_radians;
@@ -141,17 +135,16 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         adjusted_sub_position = logf(1 + sub_position_unit * motor_config.position_width_radians / 5 / PI * 180) * 5 * PI / 180;
     }
 
-    if (last_position != current_position && first_run)
+    if (last_position != current_position && !first_run)
     {
-        // SemaphoreGuard lock(mutex_); // TODO move down into page somehow
-        page_mgr_->getCurrentPage()->update(mutex_, current_position);
+        page_mgr_->getCurrentPage()->update(mutex_, motor_config.position);
 
         new_state.changed = true;
     }
 
     //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
     last_position = current_position;
-    first_run = true;
+    first_run = false;
     return new_state;
 }
 

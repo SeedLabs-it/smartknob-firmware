@@ -24,19 +24,6 @@ class LightDimmerPageManager : public PageManager<LightDimmerPages>
 public:
     LightDimmerPageManager(lv_obj_t *parent, SemaphoreHandle_t mutex, const AppData &app_data) : PageManager<LightDimmerPages>(parent, mutex)
     {
-        // add(WIFI_PAGE_SETTINGS, new WiFiSettingsPage(parent));
-        // // add(HASS_PAGE_SETTINGS, new HASSSettingsPage(parent));
-        // DemoSettingsPage *demo_page = new DemoSettingsPage(parent);
-        // demo_page->setOSConfigNotifier(os_config_notifier);
-        // add(DEMO_PAGE_SETTINGS, demo_page);
-        // add(MOTOR_CALIBRATION_SETTINGS, new MotorCalibrationSettingsPage(parent));
-        // add(UPDATE_PAGE_SETTINGS, new UpdateSettingsPage(parent));
-        // // add(STRAIN_CALIBRATION_SETTINGS, new StrainCalibrationSettingsPage(parent));
-
-        // dotIndicatorInit();
-
-        // page_name = lv_label_create(overlay_);
-        // lv_obj_align(page_name, LV_ALIGN_TOP_MID, 0, 10);
         add(LIGHT_DIMMER_PAGE, new DimmerPage(parent, app_data));
         add(PAGE_SELECTOR, new PageSelector(parent));
         add(HUE_PAGE, new HuePage(parent));
@@ -81,7 +68,7 @@ private:
         .sub_position_unit = 0,
         .position_nonce = 0,
         .min_position = 0,
-        .max_position = LIGHT_DIMMER_PAGE_COUNT - 2,
+        .max_position = LIGHT_DIMMER_PAGE_COUNT - 3, // -2 when presets are implemented
         .position_width_radians = 25 * PI / 180,
         .detent_strength_unit = 1,
         .endstop_strength_unit = 1,
@@ -159,7 +146,7 @@ private:
     uint8_t app_hue_position = 0;
     bool is_on = false;
 
-    bool first_run = false;
+    bool first_run = true;
 
     int8_t calculateAppHuePosition(int8_t position);
 
