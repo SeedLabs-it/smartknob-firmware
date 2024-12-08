@@ -104,7 +104,6 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
 
 void HuePage::update(xSemaphoreHandle mutex, int16_t position)
 {
-    LOGE("HUE: %d", position);
     int16_t app_hue_deg = position * skip_degrees_selectable;
 
     if (app_hue_deg < 0)

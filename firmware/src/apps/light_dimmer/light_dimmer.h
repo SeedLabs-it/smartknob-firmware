@@ -161,7 +161,11 @@ private:
     uint8_t g = 0;
     uint8_t b = 0;
 
-    lv_color_hsv_t hsv;
+    lv_color_hsv_t hsv_ = {.h = 0, .s = 100, .v = 50};
+
+    int16_t brightness_pos = 0;
+    int16_t hue_pos = 0;
+    int16_t temp_pos = 0;
 
     LightDimmerPageManager *page_mgr_ = nullptr;
 };
