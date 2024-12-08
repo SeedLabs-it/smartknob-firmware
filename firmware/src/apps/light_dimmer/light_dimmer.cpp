@@ -278,6 +278,29 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
+    if (color_temp != NULL)
+    {
+        uint16_t mired_value = color_temp->valueint; // TODO MAKE sure all values provided from hass are either mired or kelvin!!!!
+        float kelvin = 1000000.0f / mired_value;
+        float normalized_kelvin = (kelvin - temp_min) / (temp_max - temp_min);
+
+        temp_pos = -static_cast<int16_t>((1.0f - normalized_kelvin) * 45.0f);
+
+        if (page_num == TEMP_PAGE && motor_config.position != temp_pos)
+        {
+            current_position = temp_pos;
+            last_position = current_position;
+
+            motor_config.position_nonce = temp_pos;
+            motor_config.position = temp_pos;
+        }
+        else
+        {
+            temp_config.position = temp_pos;
+            temp_config.position_nonce = temp_pos;
+        }
+    }
+
     if (cJSON_IsNull(rgb_color))
     {
         color_set = false;
