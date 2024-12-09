@@ -111,29 +111,8 @@ private:
         .led_hue = 27,
     };
 
-    // void initScreen() override
-    // {
-    //     // initDimmerScreen();
-    //     // initHueScreen();
-    //     // updateHueWheel();
-    // }
-
-    // void initDimmerScreen();
-    // void initHueScreen();
-
-    // void updateHueWheel();
-
-    lv_obj_t *arc_;
-    // lv_obj_t *outer_mask_arc;
-    // lv_obj_t *inner_mask_circle;
-    // lv_obj_t *selector_inner_mask_circle;
-    // lv_obj_t *inner_indicator_mask_arc;
-
-    lv_obj_t *percentage_label_;
-
     int16_t current_position = 0;
     int16_t last_position = 0;
-    uint8_t num_positions = 0;
 
     // needed for UI
     float sub_position_unit = 0;
@@ -141,21 +120,7 @@ private:
 
     cJSON *json;
 
-    bool color_set = false;
-
-    uint8_t app_hue_position = 0;
-    bool is_on = false;
-
     bool first_run = true;
-
-    int8_t calculateAppHuePosition(int8_t position);
-
-    // lv_obj_t *mask_img;
-    lv_obj_t *dimmer_screen;
-    // lv_obj_t *hue_screen;
-    // lv_obj_t *hue_wheel;
-
-    // lv_obj_t *selected_hue;
 
     uint8_t r = 0;
     uint8_t g = 0;

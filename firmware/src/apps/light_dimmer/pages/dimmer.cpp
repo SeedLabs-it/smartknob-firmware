@@ -26,7 +26,6 @@ DimmerPage::DimmerPage(lv_obj_t *parent, const AppData &app_data) : BasePage(par
 
     percentage_label_ = lv_label_create(page);
     char buf_[16];
-    // sprintf(buf_, "%d%%", current_brightness);
     sprintf(buf_, "%d%%", 0);
     lv_label_set_text(percentage_label_, buf_);
     lv_obj_set_style_text_font(percentage_label_, &roboto_light_mono_48pt, 0);

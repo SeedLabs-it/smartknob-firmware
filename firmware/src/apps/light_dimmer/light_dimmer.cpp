@@ -236,9 +236,8 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (on != NULL)
     {
-        is_on = on->valueint;
         brightness_pos = 3; // 3 = 1%
-        if (brightness == NULL && is_on == 1)
+        if (brightness == NULL && on->valueint == 1)
         {
             current_position = brightness_pos;
 
@@ -272,7 +271,6 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     if (rgb_color != NULL)
     {
-
         r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
         g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
         b = cJSON_GetArrayItem(rgb_color, 2)->valueint;
@@ -299,7 +297,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(LV_COLOR_MAKE(r, g, b));
     }
 
-    if (color_temp != NULL && rgb_color == NULL)
+    if (color_temp != NULL && !cJSON_IsNull(color_temp))
     {
         uint16_t mired_value = color_temp->valueint; // TODO MAKE sure all values provided from hass are either mired or kelvin!!!!
         float kelvin = 1000000.0f / mired_value;
@@ -323,11 +321,6 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
         lv_color_t kelvin_color = kelvinToLvColor(kelvin);
         static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(kelvin_color);
-    }
-
-    if (cJSON_IsNull(rgb_color))
-    {
-        color_set = false;
     }
 
     if (on != NULL || brightness != NULL || color_temp != NULL || rgb_color != NULL)
