@@ -69,7 +69,6 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 
 void DisplayTask::run()
 {
-    delay(1000);
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
     ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
@@ -86,8 +85,6 @@ void DisplayTask::run()
     {
         delay(50);
     }
-
-    delay(1000);
 
     while (1)
     {
