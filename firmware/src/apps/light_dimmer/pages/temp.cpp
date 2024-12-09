@@ -60,7 +60,7 @@ void drawKelvinWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canv
     lv_obj_invalidate(canvas);
 }
 
-TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
+TempPage::TempPage(lv_obj_t *parent, const AppData &app_data) : BasePage(parent)
 {
     const uint16_t temp_wheel_inner_diameter = 195;
     const uint16_t temp_wheel_width = 10;
@@ -102,6 +102,14 @@ TempPage::TempPage(lv_obj_t *parent) : BasePage(parent)
     temp_selector = lvDrawCircle(16, page);
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(temp_max), LV_PART_MAIN);
     lv_obj_align(temp_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad), selector_radius * sin(deg_1_rad));
+
+    selected_temp_circle = lvDrawCircle(24, page);
+    lv_obj_set_style_bg_color(selected_temp_circle, lv_color_black(), LV_PART_MAIN);
+    lv_obj_align(selected_temp_circle, LV_ALIGN_CENTER, 0, 0);
+
+    friendly_name_label_ = lv_label_create(page);
+    lv_label_set_text(friendly_name_label_, app_data.friendly_name);
+    lv_obj_align(friendly_name_label_, LV_ALIGN_CENTER, 0, 24);
 }
 
 void TempPage::update(xSemaphoreHandle mutex, int16_t position)
@@ -121,6 +129,8 @@ void TempPage::update(xSemaphoreHandle mutex, int16_t position)
     {
         kelvin = temp_min - (normalized_angle - 0.5f) * 2 * (temp_min - temp_max); // Decrease back to 1000K
     }
+
+    lv_obj_set_style_bg_color(selected_temp_circle, kelvinToLvColor(kelvin), LV_PART_MAIN);
 
     lv_obj_set_style_bg_color(temp_selector, kelvinToLvColor(kelvin), LV_PART_MAIN);
     lv_obj_align(temp_selector, LV_ALIGN_CENTER,

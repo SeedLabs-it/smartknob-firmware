@@ -58,7 +58,7 @@ void drawColorWheel(int xc, int yc, int inner_radius, int width, lv_obj_t *canva
     lv_obj_invalidate(canvas);
 }
 
-HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
+HuePage::HuePage(lv_obj_t *parent, const AppData &app_data) : BasePage(parent)
 {
 
     const uint16_t color_wheel_inner_diameter = 195;
@@ -100,6 +100,14 @@ HuePage::HuePage(lv_obj_t *parent) : BasePage(parent)
     hue_selector = lvDrawCircle(16, page);
     lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(0 * skip_degrees_selectable, 100, 100), LV_PART_MAIN);
     lv_obj_align(hue_selector, LV_ALIGN_CENTER, selector_radius * cos(deg_1_rad * (270 + 0)), selector_radius * sin(deg_1_rad * (270 + 0)));
+
+    selected_hue_circle = lvDrawCircle(24, page);
+    lv_obj_set_style_bg_color(selected_hue_circle, lv_color_black(), LV_PART_MAIN);
+    lv_obj_align(selected_hue_circle, LV_ALIGN_CENTER, 0, 0);
+
+    friendly_name_label_ = lv_label_create(page);
+    lv_label_set_text(friendly_name_label_, app_data.friendly_name);
+    lv_obj_align(friendly_name_label_, LV_ALIGN_CENTER, 0, 24);
 }
 
 void HuePage::update(xSemaphoreHandle mutex, int16_t position)
@@ -116,7 +124,8 @@ void HuePage::update(xSemaphoreHandle mutex, int16_t position)
     uint16_t x = selector_radius * cos(u);
     uint16_t y = selector_radius * sin(u);
 
-    SemaphoreGuard lock(mutex);
-    lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(hsv.h, 100, 100), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(selected_hue_circle, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
+
+    lv_obj_set_style_bg_color(hue_selector, lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v), LV_PART_MAIN);
     lv_obj_align(hue_selector, LV_ALIGN_CENTER, x, y);
 }

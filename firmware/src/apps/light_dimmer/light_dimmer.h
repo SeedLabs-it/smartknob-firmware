@@ -26,8 +26,8 @@ public:
     {
         add(LIGHT_DIMMER_PAGE, new DimmerPage(parent, app_data));
         add(PAGE_SELECTOR, new PageSelector(parent));
-        add(HUE_PAGE, new HuePage(parent));
-        add(TEMP_PAGE, new TempPage(parent));
+        add(HUE_PAGE, new HuePage(parent, app_data));
+        add(TEMP_PAGE, new TempPage(parent, app_data));
 
         show(LIGHT_DIMMER_PAGE);
     }
@@ -161,7 +161,7 @@ private:
     uint8_t g = 0;
     uint8_t b = 0;
 
-    lv_color_hsv_t hsv_ = {.h = 0, .s = 100, .v = 50};
+    lv_color_hsv_t hsv_ = {.h = 0, .s = 100, .v = 100};
 
     int16_t brightness_pos = 0;
     int16_t hue_pos = 0;

@@ -15,13 +15,15 @@
 class TempPage : public BasePage
 {
 public:
-    TempPage(lv_obj_t *parent);
+    TempPage(lv_obj_t *parent, const AppData &app_data);
     void update(xSemaphoreHandle mutex, int16_t position) override;
 
 private:
     lv_obj_t *temp_wheel;
     lv_obj_t *temp_selector;
     lv_obj_t *temp_label;
+    lv_obj_t *selected_temp_circle;
+    lv_obj_t *friendly_name_label_;
 
     lv_color_hsv_t hsv;
 

@@ -8,13 +8,15 @@
 class HuePage : public BasePage
 {
 public:
-    HuePage(lv_obj_t *parent);
+    HuePage(lv_obj_t *parent, const AppData &app_data);
     void update(xSemaphoreHandle mutex, int16_t position) override;
 
 private:
     lv_obj_t *hue_wheel;
     lv_obj_t *hue_selector;
     lv_obj_t *hue_label;
+    lv_obj_t *selected_hue_circle;
+    lv_obj_t *friendly_name_label_;
 
     lv_color_hsv_t hsv = {.h = 0, .s = 100, .v = 100};
 

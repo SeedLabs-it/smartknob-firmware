@@ -59,6 +59,14 @@ void LightDimmerApp::handleNavigation(NavigationEvent event)
                 break;
             }
             break;
+        case HUE_PAGE:
+            motor_config = temp_config;
+            page_mgr_->show(TEMP_PAGE);
+            break;
+        case TEMP_PAGE:
+            motor_config = dimmer_config; // TODO: Change to preset config etc
+            page_mgr_->show(LIGHT_DIMMER_PAGE);
+            break;
         default:
             break;
         }
@@ -92,7 +100,6 @@ void LightDimmerApp::handleNavigation(NavigationEvent event)
     motor_config.position_nonce = prev_nonce + 1;
 }
 
-// update motor config trough handleNavigation
 int8_t LightDimmerApp::navigationNext()
 {
     return DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
@@ -178,6 +185,8 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             cJSON_AddItemToArray(rgb, cJSON_CreateNumber(rgb_color.ch.green));
             cJSON_AddItemToArray(rgb, cJSON_CreateNumber(rgb_color.ch.blue));
             cJSON_AddItemToObject(json, "rgb_color", rgb);
+
+            static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(rgb_color);
         }
         else if (page_num == TEMP_PAGE)
         {
@@ -187,10 +196,13 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
             uint16_t abs_temp_deg = abs(app_temp_deg);
             float normalized_angle = fmodf(abs(app_temp_deg), 360.0f) / 360.0f; // Normalize to [0, 1]
             if (normalized_angle <= 0.5f)
-                kelvin = temp_max + normalized_angle * 2 * (temp_min - temp_max); // Increase from 1000K to 10000K
+                kelvin = temp_max + normalized_angle * 2 * (temp_min - temp_max);
             else
-                kelvin = temp_min - (normalized_angle - 0.5f) * 2 * (temp_min - temp_max); // Decrease back to 1000K
-            cJSON_AddNumberToObject(json, "color_temp", round(1000000 / kelvin));          // TODO convert kelvin to mired, make sure no values provided by hass are in kelvin....
+                kelvin = temp_min - (normalized_angle - 0.5f) * 2 * (temp_min - temp_max);
+            cJSON_AddNumberToObject(json, "color_temp", round(1000000 / kelvin)); // TODO convert kelvin to mired, make sure no values provided by hass are in kelvin.... or make sure all values provided by hass is kelvin wich would be better.
+
+            lv_color_t kelvin_color = kelvinToLvColor(kelvin);
+            static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(kelvin_color);
         }
 
         char *json_str = cJSON_PrintUnformatted(json);
@@ -220,19 +232,25 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
     LightDimmerPages page_num = page_mgr_->getCurrentPageNum();
 
-    lv_color_hsv_t hsv = {.h = 0, .s = 100, .v = 50};
+    lv_color_hsv_t hsv = {.h = 0, .s = 100, .v = 100};
 
-    // if (on != NULL)
-    // {
-    //     is_on = on->valueint;
-    //     if (brightness == NULL && is_on == 1)
-    //     {
-    //         current_brightness = 3; // 3 = 1%
+    if (on != NULL)
+    {
+        is_on = on->valueint;
+        brightness_pos = 3; // 3 = 1%
+        if (brightness == NULL && is_on == 1)
+        {
+            current_position = brightness_pos;
 
-    //         motor_config.position_nonce = current_position;
-    //         motor_config.position = current_position;
-    //     }
-    // }
+            motor_config.position_nonce = current_position;
+            motor_config.position = current_position;
+        }
+        else
+        {
+            dimmer_config.position = brightness_pos;
+            dimmer_config.position_nonce = brightness_pos;
+        }
+    }
 
     if (brightness != NULL)
     {
@@ -252,7 +270,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
-    if (rgb_color != NULL && cJSON_IsNull(rgb_color) == 0)
+    if (rgb_color != NULL)
     {
 
         r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
@@ -276,9 +294,12 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
             hue_config.position = hue_pos;
             hue_config.position_nonce = hue_pos;
         }
+
+        lv_color_t rgb_color = lv_color_hsv_to_rgb(hsv.h, hsv.s, hsv.v);
+        static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(LV_COLOR_MAKE(r, g, b));
     }
 
-    if (color_temp != NULL)
+    if (color_temp != NULL && rgb_color == NULL)
     {
         uint16_t mired_value = color_temp->valueint; // TODO MAKE sure all values provided from hass are either mired or kelvin!!!!
         float kelvin = 1000000.0f / mired_value;
@@ -299,6 +320,9 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
             temp_config.position = temp_pos;
             temp_config.position_nonce = temp_pos;
         }
+
+        lv_color_t kelvin_color = kelvinToLvColor(kelvin);
+        static_cast<DimmerPage *>(page_mgr_->getPage(LIGHT_DIMMER_PAGE))->updateArcColor(kelvin_color);
     }
 
     if (cJSON_IsNull(rgb_color))

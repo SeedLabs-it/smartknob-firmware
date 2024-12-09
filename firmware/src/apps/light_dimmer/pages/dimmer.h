@@ -9,6 +9,8 @@ public:
     void update(xSemaphoreHandle mutex, int16_t position) override;
     void handleNavigation(NavigationEvent event) override;
 
+    void updateArcColor(lv_color_t color);
+
 private:
     lv_obj_t *arc_;
     lv_obj_t *percentage_label_;

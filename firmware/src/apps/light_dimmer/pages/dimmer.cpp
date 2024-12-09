@@ -34,13 +34,11 @@ DimmerPage::DimmerPage(lv_obj_t *parent, const AppData &app_data) : BasePage(par
 
     friendly_name_label_ = lv_label_create(page);
     lv_label_set_text(friendly_name_label_, app_data.friendly_name);
-    lv_obj_align_to(friendly_name_label_, percentage_label_, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
+    lv_obj_align(friendly_name_label_, LV_ALIGN_CENTER, 0, 24);
 }
 
 void DimmerPage::update(xSemaphoreHandle mutex, int16_t position)
 {
-    SemaphoreGuard lock(mutex);
-    // current_position_ = state.current_position;
     if (position == 0)
     {
         lv_obj_set_style_bg_color(page, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
@@ -52,11 +50,6 @@ void DimmerPage::update(xSemaphoreHandle mutex, int16_t position)
         lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x47, 0x27, 0x01), 128), LV_PART_MAIN);
     }
 
-    // if (color_set)
-    // {
-    //     lv_obj_set_style_arc_color(arc_, lv_color_hsv_to_rgb(app_hue_position * skip_degrees_selectable, 100, 100), LV_PART_INDICATOR);
-    // }
-
     lv_arc_set_value(arc_, position);
     char buf_[16];
     sprintf(buf_, "%d%%", position);
@@ -66,4 +59,9 @@ void DimmerPage::update(xSemaphoreHandle mutex, int16_t position)
 void DimmerPage::handleNavigation(NavigationEvent event)
 {
     LOGE("DimmerPage::handleNavigation");
+}
+
+void DimmerPage::updateArcColor(lv_color_t color)
+{
+    lv_obj_set_style_arc_color(arc_, color, LV_PART_INDICATOR);
 }
