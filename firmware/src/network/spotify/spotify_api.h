@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <logging.h>
+#include <cstdlib>
 
 #include "base64.h"
 #include "proto/proto_gen/smartknob.pb.h"
@@ -42,11 +43,11 @@ public:
     PlaybackState getCurrentPlaybackState();
 
     uint8_t *imageBuffer = nullptr;
-    // const char *imageUrl = "https://i.scdn.co/image/ab67616d000048515a2ed586c163472d6d3f8532";
 
     size_t imageSize = 0;
 
     void downloadImage(char *image_url);
+    lv_color_t *fetchImageColors(char *image_url);
 
     void setSharedEventsQueue(QueueHandle_t shared_events_queue);
 
@@ -62,6 +63,7 @@ public:
 private:
     // PB_SpotifyConfig *spotify_config_ = nullptr;
     HTTPClient http_client_;
+    HTTPClient http_client_image_;
 
     Configuration &configuration_;
 

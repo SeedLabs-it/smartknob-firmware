@@ -94,7 +94,12 @@ struct Error
 
 using Volume = uint8_t;
 
-using SpotifyCoverArt = lv_img_dsc_t *;
+// using SpotifyCoverArt = lv_img_dsc_t *;
+struct SpotifyCoverArt
+{
+    lv_img_dsc_t *art;
+    lv_color_t *colors;
+};
 
 using SpotifyDeviceId = char[64];
 

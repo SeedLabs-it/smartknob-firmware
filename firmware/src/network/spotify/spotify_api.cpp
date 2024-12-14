@@ -476,30 +476,26 @@ void SpotifyApi::downloadImage(char *image_url) // TODO
 {
     if (WiFi.status() == WL_CONNECTED)
     {
+        LOGV(LOG_LEVEL_DEBUG, "Fetching spotify image");
+        http_client_image_.begin(image_url);
 
-        LOGV(LOG_LEVEL_DEBUG, "Downloading image from: %s", image_url);
-
-        http_client_.begin(image_url);
-        int httpCode = http_client_.GET();
+        int httpCode = http_client_image_.GET();
         if (httpCode == HTTP_CODE_OK)
         {
-            imageSize = http_client_.getSize();
+            imageSize = http_client_image_.getSize();
             imageBuffer =
                 (uint8_t *)heap_caps_aligned_alloc(16, imageSize, MALLOC_CAP_SPIRAM);
 
             if (imageBuffer != nullptr)
             {
-                WiFiClient *stream = http_client_.getStreamPtr();
+                WiFiClient *stream = http_client_image_.getStreamPtr();
                 size_t offset = 0;
-                uint8_t buff[256];
-
-                while (http_client_.connected() && (stream->available() > 0) &&
+                while (http_client_image_.connected() && (stream->available() > 0) &&
                        (offset < imageSize))
                 {
-                    int bytesRead = stream->readBytes(buff, sizeof(buff));
+                    int bytesRead = stream->readBytes(imageBuffer + offset, imageSize - offset);
                     if (bytesRead > 0)
                     {
-                        memcpy(imageBuffer + offset, buff, bytesRead);
                         offset += bytesRead;
                     }
                 }
@@ -516,7 +512,90 @@ void SpotifyApi::downloadImage(char *image_url) // TODO
             LOGE("Spotify cover art download failed with HTTP code: %d", httpCode);
         }
 
-        http_client_.end();
+        http_client_image_.end();
+    }
+}
+
+lv_color_t *SpotifyApi::fetchImageColors(char *image_colors_url)
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        LOGV(LOG_LEVEL_DEBUG, "Fetching spotify image colors");
+
+        http_client_image_.begin(image_colors_url);
+        int httpCode = http_client_image_.GET();
+        if (httpCode == HTTP_CODE_OK)
+        {
+            int content_length = http_client_image_.getSize();
+            char *buffer_ =
+                (char *)heap_caps_calloc(1, content_length, MALLOC_CAP_SPIRAM);
+            if (buffer_ == nullptr)
+            {
+                LOGE("Failed to allocate memory for buffer");
+                http_client_image_.end();
+                return nullptr;
+            }
+
+            WiFiClient *stream = http_client_image_.getStreamPtr();
+            uint16_t total_bytes_read = 0;
+            while (http_client_image_.connected() && (total_bytes_read < content_length))
+            {
+                size_t available_data = stream->available();
+                if (available_data)
+                {
+                    char buffer[128];
+                    uint16_t bytes_read =
+                        stream->readBytes(buffer, min(available_data, sizeof(buffer)));
+                    memcpy(buffer_ + total_bytes_read, buffer, bytes_read);
+
+                    assert(total_bytes_read + bytes_read <= content_length);
+
+                    total_bytes_read += bytes_read;
+                }
+            }
+
+            cJSON *json = cJSON_Parse(buffer_);
+
+            if (json == NULL)
+            {
+                LOGE("Error parsing JSON");
+                http_client_image_.end();
+                return nullptr;
+            }
+
+            lv_color_t *colors = (lv_color_t *)heap_caps_calloc(
+                1, sizeof(lv_color_t) * 2, MALLOC_CAP_SPIRAM);
+
+            // uint32_t color1rgb565 = atoi(cJSON_GetObjectItem(json, "color1")->valuestring);
+            // uint32_t color2rgb565 = atoi(cJSON_GetObjectItem(json, "color2")->valuestring);
+
+            // uint8_t r1 = (color1rgb565 >> 16) & 0xFF;
+            // uint8_t g1 = (color1rgb565 >> 8) & 0xFF;
+            // uint8_t b1 = color1rgb565 & 0xFF;
+
+            // uint8_t r2 = (color2rgb565 >> 16) & 0xFF;
+            // uint8_t g2 = (color2rgb565 >> 8) & 0xFF;
+            // uint8_t b2 = color2rgb565 & 0xFF;
+
+            // colors[0] = lv_color_make((r1 * 255) / 31, (g1 * 255) / 63, (b1 * 255) / 31);
+            // colors[1] = lv_color_make((r2 * 255) / 31, (g2 * 255) / 63, (b2 * 255) / 31);
+
+            colors[0] = lv_color_hex(cJSON_GetObjectItem(json, "color1")->valueint);
+            colors[1] = lv_color_hex(cJSON_GetObjectItem(json, "color2")->valueint);
+
+            // LOGE("Color 1: (%d, %d, %d)", r1, g1, b1);
+            // LOGE("Color 2: (%d, %d, %d)", r2, g2, b2);
+
+            cJSON_Delete(json); // Free memory
+            http_client_image_.end();
+            return colors;
+        }
+        else
+        {
+            LOGE("Error in HTTP request: %d", httpCode);
+        }
+        http_client_image_.end();
+        return nullptr;
     }
 }
 
