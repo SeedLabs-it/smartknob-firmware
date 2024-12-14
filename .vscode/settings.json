@@ -89,7 +89,8 @@
         "forward_list": "cpp",
         "set": "cpp",
         "iostream": "cpp",
-        "icons.h": "c"
+        "icons.h": "c",
+        "semaphore_guard.h": "c"
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

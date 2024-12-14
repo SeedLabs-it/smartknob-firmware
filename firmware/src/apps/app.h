@@ -26,6 +26,7 @@ enum SharedAppIds : int8_t
     MENU = -2,
     DONT_NAVIGATE = -1,
     DONT_NAVIGATE_UPDATE_MOTOR_CONFIG = -3,
+    USE_NEW_IMPLEMENTATION = -4,
 };
 
 class App
@@ -65,9 +66,9 @@ public:
 
     lv_img_dsc_t small_icon;
     lv_img_dsc_t big_icon;
-    char friendly_name[64] = "";
-    char app_id[64] = "";
-    char entity_id[64] = "";
+    char friendly_name[256] = "";
+    char app_id[256] = "";
+    char entity_id[256] = "";
 
 protected:
     virtual void initScreen() {};

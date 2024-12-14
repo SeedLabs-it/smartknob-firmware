@@ -24,6 +24,10 @@ build/
 # Apple/Macintosh
 .DS_Store
 
+# nvim
+.cache/
+compile_commands.json
+
 # VSCode
 .vscode/*
 !.vscode/settings.json

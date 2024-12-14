@@ -68,3 +68,9 @@ private:
 
 // FOR DEBUGGING
 #define LOG_STACK() LOGD("FREE STACK MEM: %d", uxTaskGetStackHighWaterMark(NULL))
+
+lv_color_t kelvinToLvColor(int16_t kelvin);
+
+lv_color_t kelvinToLvColor(int16_t kelvin);
+// FOR DEBUGGING
+#define LOG_STACK() LOGD("FREE STACK MEM: %d", uxTaskGetStackHighWaterMark(NULL))

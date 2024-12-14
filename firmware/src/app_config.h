@@ -121,3 +121,10 @@ struct EntityStateUpdate
     bool acknowledged = false;
     bool play_haptic = false;
 };
+
+struct AppData
+{
+    char app_id[256];
+    char friendly_name[256];
+    char entity_id[256];
+};

@@ -67,6 +67,11 @@ void Apps::setActive(int8_t id)
 
 App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *friendly_name, char *entity_id)
 {
+    AppData app_data = {};
+    sprintf(app_data.app_id, "%s", app_id);
+    sprintf(app_data.friendly_name, "%s", friendly_name);
+    sprintf(app_data.entity_id, "%s", entity_id);
+
     if (app_slug.compare(APP_SLUG_CLIMATE) == 0)
     {
         ClimateApp *app = new ClimateApp(screen_mutex_, app_id, friendly_name, entity_id);
@@ -89,7 +94,7 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
     }
     else if (app_slug.compare(APP_SLUG_LIGHT_DIMMER) == 0)
     {
-        LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_id, friendly_name, entity_id);
+        LightDimmerApp *app = new LightDimmerApp(screen_mutex_, app_data);
         add(position, app);
         return app;
     }
@@ -178,7 +183,8 @@ void Apps::triggerMotorConfigUpdate()
 
 void Apps::handleNavigationEvent(NavigationEvent event)
 {
-    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
+    int8_t next_app = DONT_NAVIGATE;
+
     switch (event)
     {
     case NavigationEvent::SHORT:
@@ -190,10 +196,9 @@ void Apps::handleNavigationEvent(NavigationEvent event)
         case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
             break;
         default:
-            setActive(active_app->navigationNext());
+            next_app = active_app->navigationNext();
             break;
         }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
         break;
     case NavigationEvent::LONG:
         switch (active_app->navigationBack())
@@ -204,14 +209,20 @@ void Apps::handleNavigationEvent(NavigationEvent event)
         case DONT_NAVIGATE_UPDATE_MOTOR_CONFIG:
             break;
         default:
-            setActive(active_app->navigationBack());
+            next_app = active_app->navigationBack();
             break;
         }
-        motor_notifier->requestUpdate(active_app->getMotorConfig());
         break;
     default:
         break;
     }
+
+    active_app->handleNavigation(event); // For settings app and future reimplementation of navigation
+
+    if (next_app != DONT_NAVIGATE)
+        setActive(next_app);
+
+    motor_notifier->requestUpdate(active_app->getMotorConfig());
 }
 
 std::shared_ptr<App> Apps::find(uint8_t id)
