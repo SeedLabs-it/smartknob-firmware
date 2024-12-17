@@ -33,6 +33,8 @@ public:
     void strainPowerDown();
     void strainPowerUp();
 
+    bool isStrainPowered() { return strain_powered; }
+
 protected:
     void run();
 

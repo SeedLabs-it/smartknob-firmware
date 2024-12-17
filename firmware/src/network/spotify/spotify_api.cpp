@@ -1,6 +1,15 @@
 
 #include "spotify_api.h"
 
+AsyncClient *cover_art_client = nullptr;
+AsyncClient *cover_art_colors_client = nullptr;
+
+AsyncHttp *cover_art_http = nullptr;
+AsyncHttp *cover_art_colors_http = nullptr;
+
+#define HOST "configurator.seedlabs.it"
+#define PORT 80
+
 SpotifyApi::SpotifyApi(Configuration &configuration)
     : configuration_(configuration)
 {
@@ -15,6 +24,12 @@ SpotifyApi::SpotifyApi(Configuration &configuration)
     base64_basic_auth_header_ = (char *)heap_caps_calloc(
         1, BASE64_BASIC_AUTH_HEADER_SIZE, MALLOC_CAP_SPIRAM);
     assert(base64_basic_auth_header_ != nullptr);
+
+    cover_art_client = new AsyncClient();
+    cover_art_colors_client = new AsyncClient();
+
+    cover_art_http = new AsyncHttp(cover_art_client, HOST, PORT);
+    cover_art_colors_http = new AsyncHttp(cover_art_colors_client, HOST, PORT);
 }
 
 SpotifyApi::~SpotifyApi()
@@ -39,6 +54,14 @@ bool SpotifyApi::isPlaying()
 {
     return getCurrentPlaybackState().is_playing;
     // return false;
+}
+
+void processImage(char *body, size_t length)
+{
+    LOGD("Processing image of size: %zu bytes", length);
+
+    // Example: Save to a file or decode the image
+    // Here you can decode the image (e.g., using a JPEG/PNG decoder)
 }
 
 PlaybackState SpotifyApi::getCurrentPlaybackState()
@@ -472,130 +495,305 @@ bool SpotifyApi::isAvailable() // TODO
     return true;
 }
 
-void SpotifyApi::downloadImage(char *image_url) // TODO
+void SpotifyApi::getImageCb(void *arg, AsyncClient *client, void *data, size_t len)
 {
-    if (WiFi.status() == WL_CONNECTED)
+    static SpotifyApi *spotify_api = nullptr;
+    if (arg != nullptr)
+        spotify_api = static_cast<SpotifyApi *>(arg);
+    if (spotify_api == nullptr)
     {
-        LOGV(LOG_LEVEL_DEBUG, "Fetching spotify image");
-        http_client_image_.begin(image_url);
+        LOGE("SpotifyApi instance not provided");
+        return;
+    }
 
-        int httpCode = http_client_image_.GET();
-        if (httpCode == HTTP_CODE_OK)
+    static char *resp_buffer = nullptr; // Buffer for response
+    static char *body_start = nullptr;  // Pointer to start of body
+    static size_t resp_size = 0;        // Accumulated response size
+    static size_t content_length = 0;   // Expected Content-Length
+
+    static bool headers_parsed = false; // Headers parsing flag
+    static bool body_processed = false; // Prevent reprocessing
+
+    // Allocate or reallocate buffer for new data
+    char *buffer = (char *)heap_caps_realloc(resp_buffer, resp_size + len + 1, MALLOC_CAP_SPIRAM);
+    if (!buffer)
+    {
+        LOGE("Memory allocation failed");
+        if (resp_buffer)
+            heap_caps_free(resp_buffer);
+        resp_buffer = nullptr;
+        resp_size = 0;
+        return;
+    }
+
+    resp_buffer = buffer;
+    memcpy(resp_buffer + resp_size, data, len);
+    resp_size += len;
+    resp_buffer[resp_size] = '\0'; // Null-terminate for safety
+
+    if (!headers_parsed)
+    {
+        body_start = strstr(resp_buffer, "\r\n\r\n");
+        if (body_start)
         {
-            imageSize = http_client_image_.getSize();
-            imageBuffer =
-                (uint8_t *)heap_caps_aligned_alloc(16, imageSize, MALLOC_CAP_SPIRAM);
-
-            if (imageBuffer != nullptr)
+            char *content_type_start = strstr(resp_buffer, "Content-Type:");
+            if (!content_type_start)
             {
-                WiFiClient *stream = http_client_image_.getStreamPtr();
-                size_t offset = 0;
-                while (http_client_image_.connected() && (stream->available() > 0) &&
-                       (offset < imageSize))
-                {
-                    int bytesRead = stream->readBytes(imageBuffer + offset, imageSize - offset);
-                    if (bytesRead > 0)
-                    {
-                        offset += bytesRead;
-                    }
-                }
+                LOGE("No Content-Type found");
+                return;
+            }
+            content_type_start += 14;
+            char *content_type_end = strstr(content_type_start, "\r\n");
 
-                LOGV(LOG_LEVEL_DEBUG, "Spotify cover art downloaded successfully.");
+            char *content_type_str = (char *)heap_caps_calloc(1, content_type_end - content_type_start, MALLOC_CAP_SPIRAM);
+            strncpy(content_type_str, content_type_start, content_type_end - content_type_start);
+            content_type_str[content_type_end - content_type_start] = '\0';
+
+            if (content_type_str)
+            {
+                if (strcmp(content_type_str, "image/png") != 0)
+                {
+                    LOGE("Invalid Content-Type: %s", content_type_str);
+                    return;
+                }
             }
             else
             {
-                LOGE("Failed to allocate PSRAM for spotify cover art.");
+                LOGE("No Content-Type found");
+                return;
+            }
+
+            char *content_length_str = strstr(resp_buffer, "Content-Length:");
+            if (content_length_str)
+            {
+                content_length = atoi(content_length_str + 15);
+            }
+            else
+            {
+                LOGD("No Content-Length found");
+                return;
+            }
+            headers_parsed = true;
+
+            size_t initial_body_size = resp_size - (body_start - resp_buffer);
+            if (content_length > 0 && initial_body_size >= content_length)
+            {
+                if (!body_processed)
+                {
+                    body_processed = true;
+                    // TODO handle if image tiny?
+                }
             }
         }
         else
         {
-            LOGE("Spotify cover art download failed with HTTP code: %d", httpCode);
+            LOGE("No body found");
         }
-
-        http_client_image_.end();
     }
+    else
+    {
+        body_start = strstr(resp_buffer, "\r\n\r\n");
+        if (!body_start)
+        {
+            LOGE("No body found");
+            return;
+        }
+        body_start += 4; // Move past "\r\n\r\n"
+
+        char *body_end = resp_buffer + resp_size;
+        size_t body_size = body_end - body_start;
+
+        if (content_length > 0 && body_size >= content_length)
+        {
+            if (!body_processed)
+            {
+                if (content_length != body_size)
+                {
+                    LOGE("");
+                    LOGE("Content-Length mismatch")
+                    LOGE("content_length: %zu", content_length);
+                    LOGE("body_size: %zu", body_size);
+                    LOGE("");
+                    client->close(true);
+                    return;
+                }
+
+                LOGE("content_length: %zu", content_length);
+                LOGE("final body_size: %zu", body_size);
+                LOGD("Complete Body Received");
+
+                spotify_api->imageSize = body_size;
+                spotify_api->imageBuffer =
+                    (uint8_t *)heap_caps_aligned_alloc(16, body_size, MALLOC_CAP_SPIRAM);
+                memcpy(spotify_api->imageBuffer, body_start, body_size);
+
+                lv_img_dsc_t *image_dsc = (lv_img_dsc_t *)heap_caps_malloc(sizeof(lv_img_dsc_t),
+                                                                           MALLOC_CAP_SPIRAM);
+
+                image_dsc->header.always_zero = 0;
+                image_dsc->header.w = 240;
+                image_dsc->header.h = 240;
+                image_dsc->header.cf = LV_IMG_CF_TRUE_COLOR_ALPHA;
+                image_dsc->data = spotify_api->imageBuffer;
+                image_dsc->data_size = body_size;
+
+                WiFiEvent cover_art_event;
+                cover_art_event.type = SK_SPOTIFY_NEW_COVER_ART;
+                cover_art_event.body.cover_art = image_dsc;
+                spotify_api->publishEvent(cover_art_event);
+
+                body_processed = true;
+                client->close();
+            }
+        }
+    }
+
+    client->onDisconnect([](void *arg, AsyncClient *client)
+                         {
+        LOGD("Cleaning up response buffer");
+        // resp_buffer is reallocated, so no need to free it
+        // body_start is a pointer to resp_buffer, so no need to free it
+        resp_size = 0;
+        content_length = 0;
+        headers_parsed = false;
+        body_processed = false; });
 }
 
-lv_color_t *SpotifyApi::fetchImageColors(char *image_colors_url)
+void SpotifyApi::downloadImage(char *path) // TODO
 {
     if (WiFi.status() == WL_CONNECTED)
     {
-        LOGV(LOG_LEVEL_DEBUG, "Fetching spotify image colors");
+        cover_art_http->get(path, getImageCb, this);
+    }
+}
 
-        http_client_image_.begin(image_colors_url);
-        int httpCode = http_client_image_.GET();
-        if (httpCode == HTTP_CODE_OK)
+void SpotifyApi::getColorsCb(void *arg, AsyncClient *client, void *data, size_t len)
+{
+    static SpotifyApi *spotify_api = nullptr;
+    if (arg != nullptr)
+        spotify_api = static_cast<SpotifyApi *>(arg);
+    if (spotify_api == nullptr)
+    {
+        LOGE("SpotifyApi instance not provided");
+        return;
+    }
+
+    static char *resp_buffer = nullptr; // Buffer for response
+    static char *body_start = nullptr;  // Pointer to start of body
+    static size_t resp_size = 0;        // Accumulated response size
+    static size_t content_length = 0;   // Expected Content-Length
+
+    static bool headers_parsed = false; // Headers parsing flag
+    static bool body_processed = false; // Prevent reprocessing
+
+    // Allocate or reallocate buffer for new data
+    char *buffer = (char *)heap_caps_realloc(resp_buffer, resp_size + len + 1, MALLOC_CAP_SPIRAM);
+    if (!buffer)
+    {
+        LOGE("Memory allocation failed");
+        if (resp_buffer)
+            heap_caps_free(resp_buffer);
+        resp_buffer = nullptr;
+        resp_size = 0;
+        return;
+    }
+
+    resp_buffer = buffer;
+    memcpy(resp_buffer + resp_size, data, len);
+    resp_size += len;
+    resp_buffer[resp_size] = '\0'; // Null-terminate for safety
+
+    if (!headers_parsed)
+    {
+        body_start = strstr(resp_buffer, "\r\n\r\n");
+        if (body_start)
         {
-            int content_length = http_client_image_.getSize();
-            char *buffer_ =
-                (char *)heap_caps_calloc(1, content_length, MALLOC_CAP_SPIRAM);
-            if (buffer_ == nullptr)
-            {
-                LOGE("Failed to allocate memory for buffer");
-                http_client_image_.end();
-                return nullptr;
-            }
+            char *content_type_start = strstr(resp_buffer, "Content-Type:") + 14;
+            char *content_type_end = strstr(content_type_start, "\r\n");
 
-            WiFiClient *stream = http_client_image_.getStreamPtr();
-            uint16_t total_bytes_read = 0;
-            while (http_client_image_.connected() && (total_bytes_read < content_length))
+            char *content_type_str = (char *)heap_caps_calloc(1, content_type_end - content_type_start, MALLOC_CAP_SPIRAM);
+            strncpy(content_type_str, content_type_start, content_type_end - content_type_start);
+            content_type_str[content_type_end - content_type_start] = '\0';
+
+            if (content_type_str)
             {
-                size_t available_data = stream->available();
-                if (available_data)
+                if (!strstr(content_type_str, "application/json"))
                 {
-                    char buffer[128];
-                    uint16_t bytes_read =
-                        stream->readBytes(buffer, min(available_data, sizeof(buffer)));
-                    memcpy(buffer_ + total_bytes_read, buffer, bytes_read);
-
-                    assert(total_bytes_read + bytes_read <= content_length);
-
-                    total_bytes_read += bytes_read;
+                    LOGE("Invalid Content-Type");
+                    client->close(true);
+                    return;
                 }
             }
-
-            cJSON *json = cJSON_Parse(buffer_);
-
-            if (json == NULL)
+            else
             {
-                LOGE("Error parsing JSON");
-                http_client_image_.end();
-                return nullptr;
+                LOGE("Invalid Content-Type");
+                client->close(true);
+                return;
             }
 
-            lv_color_t *colors = (lv_color_t *)heap_caps_calloc(
-                1, sizeof(lv_color_t) * 2, MALLOC_CAP_SPIRAM);
+            char *content_length_str = strstr(resp_buffer, "Content-Length:");
+            if (content_length_str)
+            {
+                content_length = atoi(content_length_str + 15);
+            }
+            else
+            {
+                LOGD("No Content-Length found");
+            }
+            headers_parsed = true;
 
-            // uint32_t color1rgb565 = atoi(cJSON_GetObjectItem(json, "color1")->valuestring);
-            // uint32_t color2rgb565 = atoi(cJSON_GetObjectItem(json, "color2")->valuestring);
+            size_t initial_body_size = resp_size - (body_start - resp_buffer);
+            if (content_length > 0 && initial_body_size >= content_length)
+            {
+                if (!body_processed)
+                {
+                    body_processed = true;
+                    cJSON *json = cJSON_Parse(body_start);
+                    if (json == NULL)
+                    {
+                        LOGE("Error parsing JSON");
+                        client->close(true);
+                        return;
+                    }
 
-            // uint8_t r1 = (color1rgb565 >> 16) & 0xFF;
-            // uint8_t g1 = (color1rgb565 >> 8) & 0xFF;
-            // uint8_t b1 = color1rgb565 & 0xFF;
+                    lv_color_t *colors = (lv_color_t *)heap_caps_calloc(
+                        1, sizeof(lv_color_t) * 2, MALLOC_CAP_SPIRAM);
 
-            // uint8_t r2 = (color2rgb565 >> 16) & 0xFF;
-            // uint8_t g2 = (color2rgb565 >> 8) & 0xFF;
-            // uint8_t b2 = color2rgb565 & 0xFF;
+                    colors[0] = lv_color_hex(cJSON_GetObjectItem(json, "color1")->valueint);
+                    colors[1] = lv_color_hex(cJSON_GetObjectItem(json, "color2")->valueint);
 
-            // colors[0] = lv_color_make((r1 * 255) / 31, (g1 * 255) / 63, (b1 * 255) / 31);
-            // colors[1] = lv_color_make((r2 * 255) / 31, (g2 * 255) / 63, (b2 * 255) / 31);
+                    WiFiEvent cover_art_colors_event;
+                    cover_art_colors_event.type = SK_SPOTIFY_NEW_COVER_ART_COLORS;
+                    cover_art_colors_event.body.cover_art_colors = colors;
+                    spotify_api->publishEvent(cover_art_colors_event);
 
-            colors[0] = lv_color_hex(cJSON_GetObjectItem(json, "color1")->valueint);
-            colors[1] = lv_color_hex(cJSON_GetObjectItem(json, "color2")->valueint);
-
-            // LOGE("Color 1: (%d, %d, %d)", r1, g1, b1);
-            // LOGE("Color 2: (%d, %d, %d)", r2, g2, b2);
-
-            cJSON_Delete(json); // Free memory
-            http_client_image_.end();
-            return colors;
+                    cJSON_Delete(json); // Free memory
+                    client->close();
+                }
+            }
         }
         else
         {
-            LOGE("Error in HTTP request: %d", httpCode);
+            LOGE("No body found");
         }
-        http_client_image_.end();
-        return nullptr;
+    }
+
+    client->onDisconnect([](void *arg, AsyncClient *client)
+                         {
+        LOGD("Cleaning up response buffer");
+        // resp_buffer is reallocated, so no need to free it
+        // body_start is a pointer to resp_buffer, so no need to free it
+        resp_size = 0;
+        content_length = 0;
+        headers_parsed = false;
+        body_processed = false; });
+}
+
+void SpotifyApi::fetchImageColors(char *path)
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        cover_art_colors_http->get(path, getColorsCb, this);
     }
 }
 
@@ -623,4 +821,20 @@ void SpotifyApi::setConfig(const PB_SpotifyConfig &spotify_config)
 
     expires_in_ = spotify_config.expires_in;
     strcpy(device_id_, spotify_config.device_id);
+}
+
+void SpotifyApi::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    shared_events_queue_ = shared_events_queue;
+}
+
+void SpotifyApi::publishEvent(WiFiEvent event)
+{
+    if (shared_events_queue_ == NULL)
+    {
+        LOGE("No shared events queue set");
+        return; // TODO handle!!!!!!!!!
+    }
+    event.sent_at = millis();
+    xQueueSendToBack(shared_events_queue_, &event, 0);
 }

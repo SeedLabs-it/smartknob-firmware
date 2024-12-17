@@ -47,56 +47,25 @@ void SpotifyTask::run()
                                latest_playback_state_.item.name) != 0)
                     {
                         delay(50); // TODO Look into if this helped preventing failure of
-                        lv_color_t *image_colors = nullptr;
-                        // image fetch!?
                         if (strcmp(playback_state.item.album.images[1].url, "") != 0)
                         {
                             LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from");
-                            char image_url[512];
-                            snprintf(image_url, sizeof(image_url),
-                                     "https://configurator.seedlabs.it/backend/v1/cover_art.php?url=%s", playback_state.item.album.images[1].url);
+                            char image_path[512];
+                            snprintf(image_path, sizeof(image_path),
+                                     "/backend/v1/cover_art.php?url=%s", playback_state.item.album.images[1].url);
 
-                            spotify_api_.downloadImage(image_url);
+                            spotify_api_.downloadImage(image_path);
 
-                            char image_colors_url[512];
-                            snprintf(image_colors_url, sizeof(image_colors_url), "https://configurator.seedlabs.it/backend/v1/cover_art_colors_extraction.php?url=%s", playback_state.item.album.images[1].url);
+                            char colors_path[512];
+                            snprintf(colors_path, sizeof(colors_path), "/backend/v1/cover_art_colors_extraction.php?url=%s", playback_state.item.album.images[1].url);
 
-                            image_colors = spotify_api_.fetchImageColors(image_colors_url);
-                            if (image_colors != nullptr)
-                            {
-                                LOGV(LOG_LEVEL_DEBUG, "Spotify cover art colors fetched successfully.");
-                            }
-                            else
-                            {
-                                LOGE("Failed to fetch Spotify cover art colors.");
-                            }
+                            spotify_api_.fetchImageColors(colors_path);
                         }
                         else
                         {
                             LOGE("No cover art found");
                             continue; // TODO handle!!!!!!!!!
                         }
-
-                        if (spotify_api_.imageSize == 0)
-                        {
-                            LOGE("No cover art found");
-                            continue; // TODO handle!!!!!!!!!
-                        }
-
-                        image_dsc = (lv_img_dsc_t *)heap_caps_malloc(sizeof(lv_img_dsc_t),
-                                                                     MALLOC_CAP_SPIRAM);
-
-                        image_dsc->header.always_zero = 0;
-                        image_dsc->header.w = 240;
-                        image_dsc->header.h = 240;
-                        image_dsc->header.cf = LV_IMG_CF_TRUE_COLOR_ALPHA;
-                        image_dsc->data = spotify_api_.imageBuffer;
-                        image_dsc->data_size = spotify_api_.imageSize;
-
-                        WiFiEvent cover_art_event;
-                        cover_art_event.type = SK_SPOTIFY_NEW_COVER_ART;
-                        cover_art_event.body.cover_art = {.art = image_dsc, .colors = image_colors};
-                        publishEvent(cover_art_event);
                     }
 
                     if (strcmp(playback_state.device.id, "") != 0 &&
@@ -139,10 +108,6 @@ void SpotifyTask::run()
                     }
                 }
             }
-
-            // if (latest_playback_state_.spotify_available &&
-            //     !latest_playback_state_.available) {
-            // }
         }
         delay(1);
     }
@@ -199,6 +164,7 @@ void SpotifyTask::setConfig(const PB_SpotifyConfig &spotify_config)
 void SpotifyTask::setSharedEventsQueue(QueueHandle_t shared_events_queue)
 {
     shared_events_queue_ = shared_events_queue;
+    spotify_api_.setSharedEventsQueue(shared_events_queue);
 }
 
 void SpotifyTask::publishEvent(WiFiEvent event)

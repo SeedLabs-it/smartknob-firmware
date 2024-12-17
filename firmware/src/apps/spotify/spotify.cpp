@@ -129,16 +129,18 @@ void SpotifyApp::initScreen()
     // // lv_obj_set_flex_align(text_box, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);  // Left align text
     lv_obj_set_flex_align(text_box, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER); // Center text
 
+    lv_obj_set_style_pad_row(text_box, 3, 0);
+
     track_name_label = lv_label_create(text_box);
     lv_label_set_text(track_name_label, "No track playing");
     lv_label_set_long_mode(track_name_label, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_font(track_name_label, &aktivgrotesk_regular_8pt_8bpp_subpixel, 0);
+    lv_obj_set_style_text_font(track_name_label, &aktivgrotesk_regular_10pt, 0);
     // lv_obj_align(track_name_label, LV_ALIGN_BOTTOM_MID, 0, -28);
 
     track_artist_label = lv_label_create(text_box);
     lv_label_set_text(track_artist_label, "");
     lv_label_set_long_mode(track_artist_label, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_font(track_artist_label, &aktivgrotesk_regular_8pt_8bpp_subpixel, 0);
+    lv_obj_set_style_text_font(track_artist_label, &aktivgrotesk_regular_10pt, 0);
     // lv_obj_align_to(track_artist_label, track_name_label, LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 }
 
@@ -259,21 +261,21 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         is_spotify_configured = false;
     }
 
-    if (state.cover_art.art != nullptr && latest_cover_art.art != state.cover_art.art)
+    if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive after
     {
+        LOGI("COVER ART CHANGED");
         latest_cover_art = state.cover_art;
-        lv_img_set_src(album_img, latest_cover_art.art);
-        if (latest_cover_art.colors != nullptr)
+        lv_img_set_src(album_img, latest_cover_art);
+        if (state.cover_art_colors != nullptr && latest_cover_art_colors != state.cover_art_colors)
         {
-            lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art.colors[0], LV_PART_INDICATOR);
-            lv_obj_set_style_arc_color(volume, latest_cover_art.colors[0], LV_PART_INDICATOR);
+            LOGI("COVER ART COLORS CHANGED");
+            latest_cover_art_colors = state.cover_art_colors;
 
-            LOGE("COLOR in app 1: %d", latest_cover_art.colors[0].full);
+            lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art_colors[0], LV_PART_INDICATOR);
+            lv_obj_set_style_arc_color(volume, latest_cover_art_colors[0], LV_PART_INDICATOR);
 
-            lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art.colors[1], LV_PART_MAIN);
-            lv_obj_set_style_arc_color(volume, latest_cover_art.colors[1], LV_PART_MAIN);
-
-            LOGE("COLOR in app 2: %d", latest_cover_art.colors[1].full);
+            lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art_colors[1], LV_PART_MAIN);
+            lv_obj_set_style_arc_color(volume, latest_cover_art_colors[1], LV_PART_MAIN);
         }
     }
 
@@ -314,11 +316,9 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             lv_coord_t width = lv_txt_get_width(
                 state.playback_state.item.name,
                 strlen(state.playback_state.item.name),
-                &aktivgrotesk_regular_8pt_8bpp_subpixel,
+                &aktivgrotesk_regular_10pt,
                 0,
                 LV_TEXT_FLAG_NONE);
-
-            LOGE("WIDTH: %d", width);
 
             if (width > 130)
             {

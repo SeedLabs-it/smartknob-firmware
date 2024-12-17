@@ -393,6 +393,9 @@ void RootTask::run()
             case SK_SPOTIFY_NEW_COVER_ART:
                 app_state.cover_art = wifi_event.body.cover_art;
                 break;
+            case SK_SPOTIFY_NEW_COVER_ART_COLORS:
+                app_state.cover_art_colors = wifi_event.body.cover_art_colors;
+                break;
             case SK_SPOTIFY_PLAY:
             case SK_SPOTIFY_PAUSE:
             case SK_SPOTIFY_VOLUME:
@@ -553,7 +556,7 @@ void RootTask::run()
 
         if (app_state.screen_state.has_been_engaged == true)
         {
-            if (app_state.screen_state.brightness != settings_.screen.max_bright)
+            if (app_state.screen_state.brightness != settings_.screen.max_bright || (!settings_.screen.dim && !sensors_task_->isStrainPowered()))
             {
                 app_state.screen_state.brightness = settings_.screen.max_bright;
                 sensors_task_->strainPowerUp();
@@ -564,6 +567,10 @@ void RootTask::run()
                 app_state.screen_state.has_been_engaged = false;
                 sensors_task_->strainPowerDown();
             }
+        }
+        else
+        {
+            LOGE("Not Engaged");
         }
 
         delay(10);

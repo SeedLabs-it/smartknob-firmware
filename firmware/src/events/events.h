@@ -94,13 +94,8 @@ struct Error
 
 using Volume = uint8_t;
 
-// using SpotifyCoverArt = lv_img_dsc_t *;
-struct SpotifyCoverArt
-{
-    lv_img_dsc_t *art;
-    lv_color_t *colors;
-};
-
+using SpotifyCoverArt = lv_img_dsc_t *;
+using SpotifyCoverArtColors = lv_color_t *;
 using SpotifyDeviceId = char[64];
 
 union WiFiEventBody
@@ -116,6 +111,7 @@ union WiFiEventBody
     PlaybackState playback_state;
     SpotifyDeviceId spotify_device_id;
     SpotifyCoverArt cover_art;
+    SpotifyCoverArtColors cover_art_colors;
     Volume volume;
     Error error;
     uint8_t calibration_step;
@@ -162,6 +158,7 @@ enum EventType
     SK_SPOTIFY_PLAY,
     SK_SPOTIFY_VOLUME,
     SK_SPOTIFY_NEW_COVER_ART,
+    SK_SPOTIFY_NEW_COVER_ART_COLORS,
     SK_SPOTIFY_DEVICE_CHANGED,
 
     SK_RESET_ERROR,

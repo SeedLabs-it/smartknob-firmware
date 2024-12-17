@@ -108,6 +108,7 @@ struct AppState
     QueueHandle_t shared_events_queue = nullptr;
     PlaybackState playback_state;
     SpotifyCoverArt cover_art;
+    SpotifyCoverArtColors cover_art_colors;
 };
 
 struct EntityStateUpdate
