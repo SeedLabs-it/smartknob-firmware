@@ -7,7 +7,7 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long progress_ms = user_data->progress_ms + (millis() - started_ms);
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
-    float end_angle = 260 * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms)));
+    float end_angle = SPOTIFY_ARC_MAX_ANGLE * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms)));
     if (end_angle < 5)
         end_angle = 5;
 
@@ -17,7 +17,7 @@ void progress_timer(lv_timer_t *progress_timer)
     }
     else
     {
-        lv_arc_set_angles(user_data->progress, 255, 260);
+        lv_arc_set_angles(user_data->progress, SPOTIFY_ARC_MAX_ANGLE - 5, SPOTIFY_ARC_MAX_ANGLE);
         return;
     }
 }
@@ -88,7 +88,7 @@ void SpotifyApp::initScreen()
     lv_obj_set_style_arc_rounded(progress, false, LV_PART_INDICATOR);
 
     lv_arc_set_rotation(progress, 271);
-    lv_arc_set_bg_angles(progress, 0, 358);
+    lv_arc_set_bg_angles(progress, 0, SPOTIFY_ARC_MAX_ANGLE);
     lv_arc_set_angles(progress, 0, 0);
     lv_obj_remove_style(progress, NULL, LV_PART_KNOB);
     lv_obj_center(progress);

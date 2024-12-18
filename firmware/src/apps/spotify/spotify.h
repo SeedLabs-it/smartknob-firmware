@@ -3,6 +3,8 @@
 #include "../app.h"
 #include "../util.h"
 
+#define SPOTIFY_ARC_MAX_ANGLE 358
+
 struct ProgressState
 {
     unsigned long started_ms;
