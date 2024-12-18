@@ -263,10 +263,16 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive after
     {
+        if (latest_cover_art != nullptr)
+            heap_caps_free(latest_cover_art);
+
         latest_cover_art = state.cover_art;
         lv_img_set_src(album_img, latest_cover_art);
         if (state.cover_art_colors != nullptr && latest_cover_art_colors != state.cover_art_colors)
         {
+            if (latest_cover_art_colors != nullptr)
+                heap_caps_free(latest_cover_art_colors);
+
             latest_cover_art_colors = state.cover_art_colors;
 
             lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art_colors[0], LV_PART_INDICATOR);
@@ -311,6 +317,7 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
         if (strcmp(state.playback_state.item.name, "") != 0)
         {
+            lv_label_set_text(track_name_label, state.playback_state.item.name);
             lv_coord_t width_track_name = lv_txt_get_width(
                 state.playback_state.item.name,
                 strlen(state.playback_state.item.name),

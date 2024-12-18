@@ -405,6 +405,7 @@ void WifiTask::run()
         {
             // LOGE("FREE HEAP: %d", ESP.getFreeHeap());
             // LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
+            LOGE("FREE PSRAM: %d", ESP.getFreePsram());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
 
             // Serial.printf("FREE HEAP %d \n", ESP.getFreeHeap());

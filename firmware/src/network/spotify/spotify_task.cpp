@@ -11,7 +11,7 @@ SpotifyTask::~SpotifyTask() {}
 
 void SpotifyTask::run()
 {
-    static uint16_t playback_state_fetch_interval = 20000;
+    static uint16_t playback_state_fetch_interval = 5000;
     static unsigned long last_fetched_playback_state = 0;
 
     while (1)
