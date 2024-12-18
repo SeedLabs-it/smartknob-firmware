@@ -78,7 +78,7 @@ void HassApps::handleEvent(WiFiEvent event)
 }
 void HassApps::handleNavigationEvent(NavigationEvent event)
 {
-    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
+    if (active_app == nullptr || apps.size() <= 1) // 1 is menu which doesnt get removed when sync = 0 apps
     {
         return;
     }
@@ -87,7 +87,7 @@ void HassApps::handleNavigationEvent(NavigationEvent event)
 
 void HassApps::render()
 {
-    if (active_app == nullptr || apps.size() <= 1) // 1 is menu wich doesnt get removed when sync = 0 apps
+    if (active_app == nullptr || apps.size() <= 1) // 1 is menu which doesnt get removed when sync = 0 apps
     {
         return lv_scr_load(waiting_for_hass);
     }

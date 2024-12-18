@@ -74,7 +74,7 @@ protected:
     virtual void initScreen() {};
 
     SemaphoreHandle_t mutex_;
-    int8_t next_ = DONT_NAVIGATE;
+    int8_t next_ = DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
     int8_t back_ = MENU;
     PB_SmartKnobConfig motor_config;
 

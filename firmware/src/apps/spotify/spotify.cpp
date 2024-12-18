@@ -311,23 +311,37 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
         if (strcmp(state.playback_state.item.name, "") != 0)
         {
-            lv_coord_t width = lv_txt_get_width(
+            lv_coord_t width_track_name = lv_txt_get_width(
                 state.playback_state.item.name,
                 strlen(state.playback_state.item.name),
                 &aktivgrotesk_regular_10pt,
                 0,
                 LV_TEXT_FLAG_NONE);
 
-            if (width > 130)
+            if (width_track_name > 130)
             {
-                lv_obj_set_size(track_name_label, 130, 9); // 9 is the height of the font
+                lv_obj_set_size(track_name_label, 130, 11); // 11 is the height of the font
             }
             else
             {
-                lv_obj_set_size(track_name_label, width, 9); // 9 is the height of the font
+                lv_obj_set_size(track_name_label, width_track_name, 11); // 11 is the height of the font
             }
 
-            lv_label_set_text(track_name_label, state.playback_state.item.name);
+            lv_coord_t width_track_artist = lv_txt_get_width(
+                state.playback_state.item.artist,
+                strlen(state.playback_state.item.artist),
+                &aktivgrotesk_regular_10pt,
+                0,
+                LV_TEXT_FLAG_NONE);
+
+            if (width_track_artist > 90)
+            {
+                lv_obj_set_size(track_artist_label, 90, 11); // 11 is the height of the font
+            }
+            else
+            {
+                lv_obj_set_size(track_artist_label, width_track_artist, 11); // 11 is the height of the font
+            }
         }
         else
         {
