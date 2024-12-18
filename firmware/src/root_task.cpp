@@ -568,10 +568,6 @@ void RootTask::run()
                 sensors_task_->strainPowerDown();
             }
         }
-        else
-        {
-            LOGE("Not Engaged");
-        }
 
         delay(10);
     }

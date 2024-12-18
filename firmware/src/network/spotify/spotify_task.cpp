@@ -49,16 +49,18 @@ void SpotifyTask::run()
                         delay(50); // TODO Look into if this helped preventing failure of
                         if (strcmp(playback_state.item.album.images[1].url, "") != 0)
                         {
-                            LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from");
                             char image_path[512];
                             snprintf(image_path, sizeof(image_path),
                                      "/backend/v1/cover_art.php?url=%s", playback_state.item.album.images[1].url);
+
+                            LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art from: https://configurator.seedlabs.it%s", image_path);
 
                             spotify_api_.downloadImage(image_path);
 
                             char colors_path[512];
                             snprintf(colors_path, sizeof(colors_path), "/backend/v1/cover_art_colors_extraction.php?url=%s", playback_state.item.album.images[1].url);
 
+                            LOGV(LOG_LEVEL_DEBUG, "Fetching spotify cover art colors from: https://configurator.seedlabs.it%s", colors_path);
                             spotify_api_.fetchImageColors(colors_path);
                         }
                         else

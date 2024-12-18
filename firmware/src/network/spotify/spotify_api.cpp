@@ -609,18 +609,11 @@ void SpotifyApi::getImageCb(void *arg, AsyncClient *client, void *data, size_t l
             {
                 if (content_length != body_size)
                 {
-                    LOGE("");
-                    LOGE("Content-Length mismatch")
-                    LOGE("content_length: %zu", content_length);
-                    LOGE("body_size: %zu", body_size);
-                    LOGE("");
+                    LOGE("Content-Length mismatch, expected: %zu, received: %zu",
+                         content_length, body_size);
                     client->close(true);
                     return;
                 }
-
-                LOGE("content_length: %zu", content_length);
-                LOGE("final body_size: %zu", body_size);
-                LOGD("Complete Body Received");
 
                 spotify_api->imageSize = body_size;
                 spotify_api->imageBuffer =
@@ -650,7 +643,6 @@ void SpotifyApi::getImageCb(void *arg, AsyncClient *client, void *data, size_t l
 
     client->onDisconnect([](void *arg, AsyncClient *client)
                          {
-        LOGD("Cleaning up response buffer");
         // resp_buffer is reallocated, so no need to free it
         // body_start is a pointer to resp_buffer, so no need to free it
         resp_size = 0;
@@ -780,7 +772,6 @@ void SpotifyApi::getColorsCb(void *arg, AsyncClient *client, void *data, size_t 
 
     client->onDisconnect([](void *arg, AsyncClient *client)
                          {
-        LOGD("Cleaning up response buffer");
         // resp_buffer is reallocated, so no need to free it
         // body_start is a pointer to resp_buffer, so no need to free it
         resp_size = 0;

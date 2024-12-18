@@ -263,12 +263,10 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive after
     {
-        LOGI("COVER ART CHANGED");
         latest_cover_art = state.cover_art;
         lv_img_set_src(album_img, latest_cover_art);
         if (state.cover_art_colors != nullptr && latest_cover_art_colors != state.cover_art_colors)
         {
-            LOGI("COVER ART COLORS CHANGED");
             latest_cover_art_colors = state.cover_art_colors;
 
             lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art_colors[0], LV_PART_INDICATOR);
