@@ -66,4 +66,7 @@ private:
     void computeAverage();
 };
 
+// FOR DEBUGGING
+#define LOG_STACK() LOGD("FREE STACK MEM: %d", uxTaskGetStackHighWaterMark(NULL))
+
 lv_color_t kelvinToLvColor(int16_t kelvin);
