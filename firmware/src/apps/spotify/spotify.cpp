@@ -261,13 +261,15 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         is_spotify_configured = false;
     }
 
-    if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive after
+    if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive before
     {
-        if (latest_cover_art != nullptr)
-            heap_caps_free(latest_cover_art);
+        lv_img_cache_invalidate_src(latest_cover_art);
+        heap_caps_free(latest_cover_art);
 
         latest_cover_art = state.cover_art;
-        lv_img_set_src(album_img, latest_cover_art);
+
+        lv_img_set_src(album_img, state.cover_art);
+
         if (state.cover_art_colors != nullptr && latest_cover_art_colors != state.cover_art_colors)
         {
             if (latest_cover_art_colors != nullptr)
