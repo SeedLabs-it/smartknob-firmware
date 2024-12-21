@@ -117,6 +117,8 @@ void SpotifyApp::initScreen()
 
     playing = lv_label_create(player_screen);
     lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
+    lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
+    lv_obj_set_style_opa(playing, LV_OPA_70, 0);
     lv_label_set_text(playing, LV_SYMBOL_PAUSE);
     lv_obj_center(playing);
 
