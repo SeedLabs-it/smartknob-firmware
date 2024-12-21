@@ -292,7 +292,7 @@ void LedRingTask::run()
 {
 
     FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(leds, NUM_LEDS);
-    uint8_t hue = 150; // 150 = teal colour.
+    uint8_t hue = 39;
     for (int i = 0; i < NUM_LEDS; i++)
     {
         // Set the current LED to full color with changing hue

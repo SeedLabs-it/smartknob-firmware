@@ -88,12 +88,12 @@ static const SETTINGS_Settings default_settings =
             .dim = true,
             .max_bright = 65535,
             .min_bright = 19661,
-            .color = 32896,
+            .color = 16754176,
             .has_beacon = true,
             .beacon = {
                 .enabled = true,
                 .brightness = 19661,
-                .color = 32896,
+                .color = 16754176,
             },
         },
 };
