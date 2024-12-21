@@ -355,6 +355,16 @@ bool Configuration::resetToDefaults()
     EEPROM.put(MQTT_SET_EEPROM_POS, false);
     EEPROM.put(OS_MODE_EEPROM_POS, OSMode::ONBOARDING);
     EEPROM.commit();
+
+    FatGuard fatGuard;
+    if (!fatGuard.mounted_)
+    {
+        return false;
+    }
+
+    // FFat.remove(CONFIG_PATH); // TODO: Uncomment this line for prod
+    // FFat.remove(SETTINGS_PATH); // TODO: Uncomment this line for prod
+    FFat.remove(SPOTIFY_CONFIG_PATH);
     return true;
 }
 
@@ -445,7 +455,7 @@ bool Configuration::loadOSConfiguration()
     // boot mode
     EEPROM.get(OS_MODE_EEPROM_POS, os_config.mode);
 
-    if (os_config.mode > OSMode::HASS)
+    if (os_config.mode > OSMode::SPOTIFY)
     {
         os_config.mode = OSMode::ONBOARDING;
     }

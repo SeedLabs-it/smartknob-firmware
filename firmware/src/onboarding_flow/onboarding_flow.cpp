@@ -41,6 +41,12 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 
     hass_flow = new HassOnboardingFlow(mutex, [this]()
                                        { this->render(); this->triggerMotorConfigUpdate(); });
+    // spotify_flow = new SpotifyOnboardingFlow(mutex, [this]()
+    //                                          { this->render(); this->triggerMotorConfigUpdate(); });
+
+    wifi_flow = new WiFiOnboardingFlow(mutex, [this]()
+                                       { this->render(); this->triggerMotorConfigUpdate(); }, [this]()
+                                       { hass_flow->render(); });
 #ifdef RELEASE_VERSION
     sprintf(firmware_version, "%s", RELEASE_VERSION);
 #else
@@ -73,7 +79,7 @@ void OnboardingFlow::render()
 
 void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
 {
-    if (active_sub_menu == HASS_SUB_MENU)
+    if (active_sub_menu == HASS_SUB_MENU || active_sub_menu == SPOTIFY_SUB_MENU)
     {
         hass_flow->handleNavigationEvent(event);
         return;
@@ -89,9 +95,22 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
             case ABOUT_PAGE:
                 break;
             case HASS_PAGE:
-                wifi_notifier->requestAP();
                 active_sub_menu = HASS_SUB_MENU;
-                hass_flow->render();
+                // hass_flow->render();
+                wifi_flow->setCallback([this]()
+                                       { hass_flow->render(); });
+                wifi_flow->render();
+
+                wifi_notifier->requestAP();
+                break;
+            case SPOTIFY_PAGE:
+                active_sub_menu = SPOTIFY_SUB_MENU;
+                // spotify_flow->render();
+                wifi_flow->setCallback([this]()
+                                       { LOGE("Spotify callback"); });
+                wifi_flow->render();
+
+                wifi_notifier->requestAP();
                 break;
             case DEMO_PAGE:
                 os_config_notifier->setOSMode(OSMode::DEMO);
@@ -127,6 +146,7 @@ void OnboardingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {
     this->motor_notifier = motor_notifier;
     hass_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
+    wifi_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
 }
 
 void OnboardingFlow::triggerMotorConfigUpdate()
@@ -161,12 +181,14 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
     case SK_WEB_CLIENT:
     case SK_WIFI_STA_TRY_NEW_CREDENTIALS:
     case SK_WIFI_STA_TRY_NEW_CREDENTIALS_FAILED:
+    case SK_WIFI_STA_CONNECTED_NEW_CREDENTIALS:
     case SK_WEB_CLIENT_MQTT:
     case SK_MQTT_TRY_NEW_CREDENTIALS:
-    case SK_MQTT_TRY_NEW_CREDENTIALS_FAILED:
     case SK_MQTT_CONNECTED_NEW_CREDENTIALS:
     case SK_MQTT_STATE_UPDATE:
+        wifi_flow->handleEvent(event);
         hass_flow->handleEvent(event);
+        // spotify_flow->handleEvent(event);
         break;
     default:
         break;

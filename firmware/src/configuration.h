@@ -64,6 +64,7 @@ enum OSMode
     ONBOARDING = 0,
     DEMO,
     HASS,
+    SPOTIFY,
     UNSET
 };
 
