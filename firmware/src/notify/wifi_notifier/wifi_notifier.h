@@ -9,11 +9,21 @@ enum WiFiCommandType
 {
     RequestAP,
     RequestSTA,
+    RequestRedirect
+};
+
+enum RedirectPage
+{
+    REDIRECT_MQTT,
+    REDIRECT_SPOTIFY,
+    DONE_MQTT,
+    DONE_SPOTIFY
 };
 
 union WiFiCommandBody
 {
     WiFiConfiguration wifi_sta_config;
+    RedirectPage redirect_page;
 };
 
 struct WiFiCommand
@@ -22,7 +32,8 @@ struct WiFiCommand
     WiFiCommandBody body;
 };
 
-typedef std::function<void(WiFiCommand)> WiFiNotifierCallback;
+typedef std::function<void(WiFiCommand)>
+    WiFiNotifierCallback;
 
 class WiFiNotifier
 {
@@ -32,6 +43,7 @@ public:
     void requestSTA(WiFiConfiguration wifi_config);
     void loopTick();
     void setCallback(WiFiNotifierCallback callback);
+    void redirect(RedirectPage page);
 
 private:
     QueueHandle_t wifi_notifications_queue;

@@ -13,6 +13,7 @@
 
 static const char *CONFIG_PATH = "/config.pb";
 static const char *SETTINGS_PATH = "/settings.pb";
+static const char *SPOTIFY_CONFIG_PATH = "/spotify.pb";
 
 // TODO: should move these consts to wifi?
 static const uint16_t WIFI_SSID_LENGTH = 128;
@@ -49,6 +50,7 @@ static const uint16_t EEPROM_SIZE = 512;
 
 const uint32_t PERSISTENT_CONFIGURATION_VERSION = 2;
 const uint32_t SETTINGS_VERSION = 1;
+const uint32_t SPOTIFY_CONFIG_VERSION = 1;
 
 struct WiFiConfiguration
 {
@@ -62,6 +64,7 @@ enum OSMode
     ONBOARDING = 0,
     DEMO,
     HASS,
+    SPOTIFY,
     UNSET
 };
 
@@ -101,13 +104,20 @@ public:
     Configuration();
     ~Configuration();
 
-    bool loadFromDisk();
-    bool saveToDisk();
+    bool loadPersistantConfigFromDisk();
+    bool savePersistantConfigToDisk();
     bool resetToDefaults();
     PB_PersistentConfiguration get();
 
     bool loadSettingsFromDisk();
     bool saveSettingsToDisk();
+
+    bool loadSpotifyConfigFromDisk();
+    bool saveSpotifyConfigToDisk();
+
+    bool setSpotifyConfig(const PB_SpotifyConfig &spotify_config);
+    PB_SpotifyConfig getSpotifyConfig();
+
     bool setSettings(SETTINGS_Settings &settings);
     // bool resetSettingsToDefaults();
     SETTINGS_Settings getSettings();
@@ -140,6 +150,9 @@ private:
     bool settings_loaded_ = false;
     SETTINGS_Settings settings_buffer_ = default_settings;
 
+    bool spotify_config_loaded_ = false;
+    PB_SpotifyConfig spotify_config_buffer_ = {};
+
     WiFiConfiguration wifi_config;
     bool is_wifi_set = false;
     MQTTConfiguration mqtt_config;
@@ -148,8 +161,12 @@ private:
 
     uint8_t pb_stream_buffer_[PB_PersistentConfiguration_size];
     uint8_t settings_stream_buffer_[SETTINGS_Settings_size];
+    uint8_t spotify_config_stream_buffer_[PB_SpotifyConfig_size];
 
     std::string knob_id;
+
+    pb_istream_t loadFromDisk(const char *path, uint8_t *buffer, size_t buffer_size);
+    bool saveToDisk(const char *path, uint8_t *buffer, size_t buffer_size);
 };
 class FatGuard
 {
