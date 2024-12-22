@@ -248,14 +248,14 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         last_connectivity_state = state.connectivity_state;
     }
 
-    if ((state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
+    if ((state.os_mode_state == OSMode::SPOTIFY || state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
     {
         LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
         lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         is_spotify_configured = true;
     }
-    else if (!state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
+    else if (state.os_mode_state != OSMode::SPOTIFY && !state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
     {
         LOGW("Spotify is not available");
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);

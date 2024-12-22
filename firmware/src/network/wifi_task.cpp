@@ -365,6 +365,7 @@ void WifiTask::webHandlerSpotifyCredentials()
     {
         configuration_.setSpotifyConfig(*spotify_config_);
         event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED; // TODO actually validate
+        event.body.spotify_setup.os = strcmp(redirect_page, "done_spotify") == 0 ? true : false;
 
         publishWiFiEvent(event);
 
@@ -474,7 +475,7 @@ void WifiTask::run()
         {
             // LOGE("FREE HEAP: %d", ESP.getFreeHeap());
             // LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
-            LOGE("FREE PSRAM: %d", ESP.getFreePsram());
+            // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());
 
             // Serial.printf("FREE HEAP %d \n", ESP.getFreeHeap());

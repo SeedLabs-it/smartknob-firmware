@@ -98,6 +98,11 @@ using SpotifyCoverArt = lv_img_dsc_t *;
 using SpotifyCoverArtColors = lv_color_t *;
 using SpotifyDeviceId = char[64];
 
+struct SpotifySetup
+{
+    bool os;
+};
+
 union WiFiEventBody
 {
     WiFiAPStarted wifi_ap_started;
@@ -115,6 +120,7 @@ union WiFiEventBody
     Volume volume;
     Error error;
     uint8_t calibration_step;
+    SpotifySetup spotify_setup;
 };
 
 // TODO, think events more careful, for example add SK_MQTT_CREDENTIALS_RECIEVED

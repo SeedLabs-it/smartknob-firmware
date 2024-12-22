@@ -4,7 +4,7 @@ import SetupPage from './setup';
 import WiFiComp from './components/wifi';
 import MqttComp from './components/mqtt';
 import DoneComp from './components/done';
-import SpotifyCredsComp from './components/spotify_creds';
+import SpotifyComp from './components/spotify';
 
 import StatusAlert from 'react-status-alert';
 import 'react-status-alert/dist/status-alert.css';
@@ -60,7 +60,7 @@ export function App() {
       )}
       {wifi && <WiFiComp />}
       {mqtt && <MqttComp />}
-      {spotify && <SpotifyCredsComp />}
+      {spotify && <SpotifyComp />}
       {done && <DoneComp />}
     </div>
   );

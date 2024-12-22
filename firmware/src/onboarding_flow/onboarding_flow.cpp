@@ -108,9 +108,9 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
                 active_sub_menu = SPOTIFY_SUB_MENU;
                 wifi_notifier->redirect(REDIRECT_SPOTIFY);
                 wifi_flow->setCallback([this]()
-                                       {                
-                                    spotify_flow->render();
-                                    wifi_notifier->redirect(DONE_SPOTIFY); });
+                                       {  
+                                    wifi_notifier->redirect(DONE_SPOTIFY);              
+                                    spotify_flow->render(); });
                 wifi_flow->render();
 
                 wifi_notifier->requestAP();

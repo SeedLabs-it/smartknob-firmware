@@ -145,6 +145,11 @@ void RootTask::run()
             display_task_->enableHass();
             this->configuration_->saveOSConfiguration(*os_config);
             break;
+        case SPOTIFY:
+            display_task_->enableSpotify();
+            this->configuration_->saveOSConfiguration(*os_config);
+            esp_restart();
+            break;
         default:
             break;
         } });
@@ -190,6 +195,8 @@ void RootTask::run()
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
     display_task_->getHassApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getSpotifyStandalone()->setMotorNotifier(&motor_notifier);
+    display_task_->getSpotifyStandalone()->setOSConfigNotifier(&os_config_notifier_);
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
@@ -210,7 +217,10 @@ void RootTask::run()
         // os_config_notifier_.setOSMode(HASS);
         display_task_->enableHass();
         break;
-
+    case SPOTIFY:
+        // os_config_notifier_.setOSMode(SPOTIFY);
+        display_task_->enableSpotify();
+        break;
     default:
         break;
     }
@@ -273,6 +283,9 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    break;
                 default:
                     break;
                 }
@@ -303,6 +316,9 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    break;
                 default:
                     break;
                 }
@@ -329,6 +345,11 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     display_task_->getHassApps()->triggerMotorConfigUpdate();
+                    break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    display_task_->getSpotifyStandalone()->triggerMotorConfigUpdate();
+                    break;
                 default:
                     break;
                 }
@@ -389,7 +410,10 @@ void RootTask::run()
             }
             case SK_SPOTIFY_REFRESH_TOKEN:
             case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
-                // LOGE("STORE SPOTIFY CONFIGURATION");
+                if (wifi_event.body.spotify_setup.os)
+                {
+                    os_config_notifier_.setOSMode(SPOTIFY);
+                }
                 break;
             case SK_SPOTIFY_PLAYBACK_STATE:
                 app_state.playback_state = wifi_event.body.playback_state;
@@ -492,6 +516,9 @@ void RootTask::run()
                 break;
             case OSMode::HASS:
                 entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
+                break;
+            case OSMode::SPOTIFY:
+                entity_state_update_to_send = display_task_->getSpotifyStandalone()->update(app_state);
                 break;
             default:
                 break;
@@ -632,6 +659,8 @@ void RootTask::updateHardware(AppState *app_state)
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                    case SPOTIFY:
+                        display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
                     default:
                         break;
                     }
@@ -666,6 +695,8 @@ void RootTask::updateHardware(AppState *app_state)
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                    case SPOTIFY:
+                        display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
                     default:
                         break;
                     }
@@ -784,22 +815,14 @@ void RootTask::loadConfiguration()
             settings_ = configuration_->getSettings();
 
             configuration_->loadOSConfiguration();
-
+            OSMode os_mode = configuration_->getOSConfiguration()->mode;
 #if SK_WIFI
-            if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadWiFiConfiguration())
+            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && configuration_->loadWiFiConfiguration())
             {
 
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
                 // TODO: send event to wifi to start STA part with given credentials
                 wifi_task_->getNotifier()->requestSTA(wifi_config);
-            }
-#endif
-#if SK_MQTT
-            if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadMQTTConfiguration())
-            {
-                // UNECCESARY
-                // MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                // LOGD("MQTT_CONFIG: %s", mqtt_config.host);
             }
 #endif
             configuration_loaded_ = true;
