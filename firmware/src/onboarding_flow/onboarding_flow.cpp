@@ -41,12 +41,11 @@ OnboardingFlow::OnboardingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
 
     hass_flow = new HassOnboardingFlow(mutex, [this]()
                                        { this->render(); this->triggerMotorConfigUpdate(); });
-    // spotify_flow = new SpotifyOnboardingFlow(mutex, [this]()
-    //                                          { this->render(); this->triggerMotorConfigUpdate(); });
+    spotify_flow = new SpotifyOnboardingFlow(mutex, [this]()
+                                             { this->render(); this->triggerMotorConfigUpdate(); });
 
     wifi_flow = new WiFiOnboardingFlow(mutex, [this]()
-                                       { this->render(); this->triggerMotorConfigUpdate(); }, [this]()
-                                       { hass_flow->render(); });
+                                       { this->render(); this->triggerMotorConfigUpdate(); });
 #ifdef RELEASE_VERSION
     sprintf(firmware_version, "%s", RELEASE_VERSION);
 #else
@@ -96,18 +95,22 @@ void OnboardingFlow::handleNavigationEvent(NavigationEvent event)
                 break;
             case HASS_PAGE:
                 active_sub_menu = HASS_SUB_MENU;
-                // hass_flow->render();
+                wifi_notifier->redirect(REDIRECT_MQTT);
                 wifi_flow->setCallback([this]()
-                                       { hass_flow->render(); });
+                                       { 
+                                    hass_flow->render(); 
+                                    wifi_notifier->redirect(DONE_MQTT); });
                 wifi_flow->render();
 
                 wifi_notifier->requestAP();
                 break;
             case SPOTIFY_PAGE:
                 active_sub_menu = SPOTIFY_SUB_MENU;
-                // spotify_flow->render();
+                wifi_notifier->redirect(REDIRECT_SPOTIFY);
                 wifi_flow->setCallback([this]()
-                                       { LOGE("Spotify callback"); });
+                                       {                
+                                    spotify_flow->render();
+                                    wifi_notifier->redirect(DONE_SPOTIFY); });
                 wifi_flow->render();
 
                 wifi_notifier->requestAP();
@@ -145,8 +148,9 @@ EntityStateUpdate OnboardingFlow::updateStateFromKnob(PB_SmartKnobState state)
 void OnboardingFlow::setMotorNotifier(MotorNotifier *motor_notifier)
 {
     this->motor_notifier = motor_notifier;
-    hass_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
-    wifi_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
+    hass_flow->setMotorNotifier(motor_notifier);    // TODO: BAD WAY? FIX
+    wifi_flow->setMotorNotifier(motor_notifier);    // TODO: BAD WAY? FIX
+    spotify_flow->setMotorNotifier(motor_notifier); // TODO: BAD WAY? FIX
 }
 
 void OnboardingFlow::triggerMotorConfigUpdate()
@@ -188,9 +192,25 @@ void OnboardingFlow::handleEvent(WiFiEvent event)
     case SK_MQTT_STATE_UPDATE:
         wifi_flow->handleEvent(event);
         hass_flow->handleEvent(event);
-        // spotify_flow->handleEvent(event);
+        spotify_flow->handleEvent(event);
         break;
     default:
         break;
     }
+}
+
+void OnboardingFlow::setSharedEventsQueue(QueueHandle_t shared_events_queue)
+{
+    shared_events_queue_ = shared_events_queue;
+}
+
+void OnboardingFlow::publishEvent(WiFiEvent event)
+{
+    if (shared_events_queue_ == NULL)
+    {
+        LOGE("No shared events queue set");
+        return;
+    }
+
+    xQueueSendToBack(shared_events_queue_, &event, 0);
 }

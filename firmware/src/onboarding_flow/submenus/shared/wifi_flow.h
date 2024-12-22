@@ -87,7 +87,7 @@ public:
 
         lv_obj_t *or_connect_label = lv_label_create(page);
         lv_label_set_recolor(or_connect_label, true);
-        sprintf(buf, "OR OPEN #FFFFFF http://192.168.4.1#\n IN YOUR BROWSER");
+        sprintf(buf, "OR OPEN #FFFFFF http://192.168.4.1/?wifi#\n IN YOUR BROWSER");
         lv_label_set_text(or_connect_label, buf);
         lv_obj_set_style_text_color(or_connect_label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_PART_MAIN);
         lv_obj_set_style_text_align(or_connect_label, LV_TEXT_ALIGN_CENTER, 0);
@@ -147,7 +147,7 @@ typedef std::function<void(void)> Callback;
 class WiFiOnboardingFlow
 {
 public:
-    WiFiOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent, Callback cb);
+    WiFiOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent);
 
     void render();
 

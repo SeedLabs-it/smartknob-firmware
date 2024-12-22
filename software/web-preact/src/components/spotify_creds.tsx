@@ -20,13 +20,16 @@ const SpotifyCredsComp = () => {
 
     try {
       setDisabled(true);
-      const response = await fetch(`http://${window.location.hostname}/spotify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `http://${window.location.hostname}/spotify`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-      });
+      );
 
       if (response.ok) {
         StatusAlertService.showSuccess(
@@ -41,6 +44,9 @@ const SpotifyCredsComp = () => {
             autoHideTime: 2500,
           },
         );
+
+        var json = await response.json();
+        window.location.href = '/?' + json.redirect + '&spotify';
       } else {
         StatusAlertService.showWarning(
           <div>

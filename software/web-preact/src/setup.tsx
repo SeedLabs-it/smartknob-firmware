@@ -32,8 +32,8 @@ const SetupPage = () => {
           </button>
         </div>
         <div className='tab-content'>
-          {activeTab === 'wifi' && <WiFiComp setActiveTab={setActiveTab} />}
-          {activeTab === 'mqtt' && <MQTTComp setActiveTab={setActiveTab} />}
+          {activeTab === 'wifi' && <WiFiComp />}
+          {activeTab === 'mqtt' && <MQTTComp />}
           {activeTab === 'done' && ( // Done tab
             <DoneComp />
           )}

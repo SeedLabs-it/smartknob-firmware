@@ -87,6 +87,8 @@ private:
     void webHandlerSpotifyCredentials();
 
     void downloadConfig();
+
+    char redirect_page[32] = "done";
 };
 
 #else

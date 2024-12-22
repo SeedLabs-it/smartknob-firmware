@@ -9,8 +9,8 @@ WiFiOnboardingPages getWiFiPageEnum(uint8_t screen)
     return CONNECT_QRCODE_PAGE; // TODO handle error here instead of returning CONNECT_QRCODE_PAGE
 };
 
-WiFiOnboardingFlow::WiFiOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent, Callback cb)
-    : mutex_(mutex), render_parent_(render_parent), cb_(cb)
+WiFiOnboardingFlow::WiFiOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCallback render_parent)
+    : mutex_(mutex), render_parent_(render_parent)
 {
     root_level_motor_config = PB_SmartKnobConfig{
         0,
@@ -59,7 +59,7 @@ void WiFiOnboardingFlow::handleEvent(WiFiEvent event)
     case SK_AP_CLIENT:
         if (event.body.ap_client.connected)
         {
-            sprintf(ip_data, "%s", "http://192.168.4.1"); // always the same
+            sprintf(ip_data, "%s", "http://192.168.4.1/?wifi", WiFi.localIP().toString().c_str()); // always the same
             lv_qrcode_update(page_server->qr, ip_data, strlen(ip_data));
 
             page_mgr->show(getWiFiPageEnum(WEBSERVER_QRCODE_PAGE));

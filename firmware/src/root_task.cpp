@@ -160,11 +160,13 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
-    configuration_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    QueueHandle_t shared_events_queue = wifi_task_->getWiFiEventsQueue();
 
-    sensors_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    configuration_->setSharedEventsQueue(shared_events_queue);
 
-    reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    sensors_task_->setSharedEventsQueue(shared_events_queue);
+
+    reset_task_->setSharedEventsQueue(shared_events_queue);
 
     display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
@@ -172,14 +174,16 @@ void RootTask::run()
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
-    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(shared_events_queue);
 #if SK_MQTT
     mqtt_task_->setConfig(configuration_->getMQTTConfiguration());
-    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    mqtt_task_->setSharedEventsQueue(shared_events_queue);
 #endif
 #endif
 
-    spotify_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    spotify_task_->setSharedEventsQueue(shared_events_queue);
+
+    display_task_->getOnboardingFlow()->setSharedEventsQueue(shared_events_queue);
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
@@ -221,7 +225,7 @@ void RootTask::run()
     WiFiEvent wifi_event;
 
     AppState app_state = {};
-    app_state.shared_events_queue = wifi_task_->getWiFiEventsQueue();
+    app_state.shared_events_queue = shared_events_queue;
 
     while (1)
     {
@@ -232,7 +236,7 @@ void RootTask::run()
             motor_task_.runCalibration();
         }
 #if SK_WIFI
-        if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
+        if (xQueueReceive(shared_events_queue, &wifi_event, 0) == pdTRUE)
         {
             switch (configuration_->getOSConfiguration()->mode)
             {

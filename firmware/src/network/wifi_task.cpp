@@ -56,6 +56,26 @@ void WifiTask::handleCommand(WiFiCommand command)
             this->startWebServer();
         }
         break;
+    case RequestRedirect:
+        LOGE("Redirecting to page");
+        switch (command.body.redirect_page)
+        {
+        case REDIRECT_MQTT:
+            snprintf(redirect_page, sizeof(redirect_page), "mqtt");
+            break;
+        case REDIRECT_SPOTIFY:
+            snprintf(redirect_page, sizeof(redirect_page), "spotify");
+            break;
+        case DONE_MQTT:
+            snprintf(redirect_page, sizeof(redirect_page), "done_mqtt");
+            break;
+        case DONE_SPOTIFY:
+            snprintf(redirect_page, sizeof(redirect_page), "done_spotify");
+            break;
+        default:
+            break;
+        }
+        break;
     default:
         break;
     }
@@ -216,13 +236,51 @@ void WifiTask::webHandlerWiFiCredentials()
 
         publishWiFiEvent(wifi_sta_connected);
 
-        server_->send(200, "text/plain", "Connected to WiFi!");
+        delay(200);
+
+        char response[128];
+        snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
+
+        server_->send(200, "application/json", response);
+
+        auto taskLambda = []()
+        {
+            delay(400);
+            WiFi.softAPdisconnect();
+            vTaskDelete(NULL);
+        };
+
+        xTaskCreatePinnedToCore(
+            [](void *taskFunc)
+            {
+                auto func = static_cast<std::function<void()> *>(taskFunc);
+                (*func)();
+                delete func;
+                vTaskDelete(NULL);
+            },
+            "disconnect_ap",
+            1024 * 2,
+            new std::function<void()>(taskLambda),
+            0,
+            NULL,
+            0);
     }
     else
     {
         server_->send(302, "text/plain", "Invalid WiFi credentials!");
     }
 }
+
+// void WifiTask::sendMqttPage()
+// {
+//     LOGE("Send MQTT page");
+//     // server_->send(200, "application/json", "{\"redirect\": \"mqtt\"}");
+// }
+// void WifiTask::sendSpotifyPage()
+// {
+//     LOGE("Send Spotify page");
+//     // server_->send(200, "application/json", "{\"redirect\": \"spotify\"}");
+// }
 
 void WifiTask::webHandlerMQTTCredentials()
 {
@@ -260,7 +318,12 @@ void WifiTask::webHandlerMQTTCredentials()
     }
     if (mqtt_connected)
     {
-        server_->send(200, "text/plain", "Connected to MQTT!");
+        delay(200);
+
+        char response[128];
+        snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
+
+        server_->send(200, "application/json", response);
     }
     else
     {
@@ -304,7 +367,13 @@ void WifiTask::webHandlerSpotifyCredentials()
         event.type = SK_SPOTIFY_ACCESS_TOKEN_VALIDATED; // TODO actually validate
 
         publishWiFiEvent(event);
-        server_->send(200, "text/plain", "Connected to WiFi!");
+
+        delay(200);
+
+        char response[128];
+        snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
+
+        server_->send(200, "application/json", response);
         return;
     }
     server_->send(302, "text/plain", "Invalid Spotify credentials!");

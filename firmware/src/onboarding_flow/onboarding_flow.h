@@ -12,7 +12,7 @@
 #include "notify/os_config_notifier/os_config_notifier.h"
 
 #include "onboarding_flow/submenus/hass_flow.h"
-// #include "onboarding_flow/submenus/spotify_flow.h"
+#include "onboarding_flow/submenus/spotify_flow.h"
 #include "onboarding_flow/submenus/shared/wifi_flow.h"
 
 enum OnboardingFlowPages
@@ -260,11 +260,13 @@ public:
     void triggerMotorConfigUpdate();
     void handleNavigationEvent(NavigationEvent event);
 
+    void setSharedEventsQueue(QueueHandle_t shared_events_queue);
+
 private:
     SemaphoreHandle_t mutex_;
 
     HassOnboardingFlow *hass_flow;
-    // SpotifyOnboardingFlow *spotify_flow;
+    SpotifyOnboardingFlow *spotify_flow;
     WiFiOnboardingFlow *wifi_flow;
 
     ActiveSubMenu active_sub_menu = NONE;
@@ -283,4 +285,7 @@ private:
     lv_obj_t *main_screen = lv_obj_create(NULL);
 
     OnboardingPageManager *page_mgr = nullptr;
+
+    QueueHandle_t shared_events_queue_;
+    void publishEvent(WiFiEvent event);
 };

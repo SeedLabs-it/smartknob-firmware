@@ -176,6 +176,9 @@ enum EventType
 
     SK_STRAIN_CALIBRATION,
 
+    SK_DO_MQTT_SETUP,
+    SK_DO_SPOTIFY_SETUP,
+
     SK_NO_EVENT
 
 };

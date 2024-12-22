@@ -4,7 +4,7 @@ import { useRef, useState } from 'preact/hooks';
 import './comp.css';
 import { StatusAlertService } from 'react-status-alert';
 
-const MQTTComp = ({ setActiveTab }: { setActiveTab: any }) => {
+const MqttComp = () => {
   const [disabled, setDisabled] = useState(false);
 
   const [server, setServer] = useState('');
@@ -43,7 +43,9 @@ const MQTTComp = ({ setActiveTab }: { setActiveTab: any }) => {
             autoHideTime: 2500,
           },
         );
-        setActiveTab('done');
+
+        var json = await response.json();
+        window.location.href = '/?' + json.redirect + '&mqtt';
       } else {
         StatusAlertService.showWarning(
           <div>
@@ -126,4 +128,4 @@ const MQTTComp = ({ setActiveTab }: { setActiveTab: any }) => {
   );
 };
 
-export default MQTTComp;
+export default MqttComp;

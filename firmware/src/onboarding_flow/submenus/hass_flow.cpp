@@ -35,7 +35,6 @@ HassOnboardingFlow::HassOnboardingFlow(SemaphoreHandle_t mutex, RenderParentCall
 
 void HassOnboardingFlow::render()
 {
-
     SemaphoreGuard lock(mutex_);
     lv_scr_load(main_screen);
     triggerMotorConfigUpdate();
