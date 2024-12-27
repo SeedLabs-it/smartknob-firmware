@@ -25,7 +25,7 @@ jobs:
         echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
     - name: Cache pip
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -33,7 +33,7 @@ jobs:
           ${{ runner.os }}-pip-
 
     - name: Cache PlatformIO
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.platformio
         key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
@@ -47,21 +47,29 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
 
-    - name: Build Firmware (seedlabs_devkit)
+    - name: Build Firmware (seedlabs_devkit_github_action_release)
       # Run regardless of other build step failures, as long as setup steps completed
       if: always() && steps.pio_install.outcome == 'success'
       run: |
         pio run \
           -e seedlabs_devkit_github_action_release
-    - name: Zip Firmware
+    - name: Build FS (seedlabs_devkit_github_action_release)
+      # Run regardless of other build step failures, as long as setup steps completed
+      if: always() && steps.pio_install.outcome == 'success'
+      run: |
+        pio run \
+          -e seedlabs_devkit_github_action_release \
+          -t buildfs
+    - name: Zip Firmware & FS
       run: |
         cd .pio/build/seedlabs_devkit_github_action_release/
         cp ./firmware.bin "../firmware_${RELEASE_VERSION}.bin"
+        cp ./fatfs.bin "../fatfs_${RELEASE_VERSION}.bin"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin ./boot_app0.bin
         zip -r "${RELEASE_VERSION}.zip" ./*.bin ./*.elf
     
     - name: Upload Release Assets
       uses: AButler/upload-release-assets@v3.0
       with:
-        files: ".pio/build/firmware_*.bin;.pio/build/seedlabs_devkit_github_action_release/*.zip"
+        files: ".pio/build/firmware_*.bin;.pio/build/fatfs_*.bin;.pio/build/seedlabs_devkit_github_action_release/*.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}

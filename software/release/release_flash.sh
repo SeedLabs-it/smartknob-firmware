@@ -1,9 +1,10 @@
 #!/bin/bash
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-export PATH=$PATH:$HOME/.platformio/penv/bin
+
 
 git fetch --tags
 
@@ -38,7 +39,7 @@ else
     echo "Latest release already downloaded."
 fi
 
-# Check if Platformio is installed
+#Check if Platformio is installed
 if ! command -v platformio &> /dev/null 
 then
     echo "Platformio is not installed."
@@ -81,8 +82,8 @@ echo ""
 # Check if idf.py is available
 if ! command -v idf.py &> /dev/null; then
     echo "Initializing ESP-IDF..."
-    ./software/release/esp-idf/install.sh >/dev/null 2>&1
-    . ./software/release/esp-idf/export.sh >/dev/null 2>&1
+    ./software/release/esp-idf/install.sh > /dev/null
+    . ./software/release/esp-idf/export.sh > /dev/null
         
 else
     echo "ESP-IDF is already cloned&installed, idf.py is available."
@@ -108,44 +109,49 @@ echo ""
 
 start=$(date +%s)
 mac_address=$(platformio device list | grep -B2 'VID:PID=303A:1001' | grep 'SER=' | grep -o 'SER=[^ ]*' | grep -o '[^=]*$')
-echo "[0/4] Saving mac address $mac_address"
+echo "[0/5] Saving mac address $mac_address"
 echo "$order - $mac_address" >> "./software/release/mac_addresses.txt"
 end=$(date +%s)
-echo "[0/4] done in $(($end-$start)) seconds"
+echo -e "[0/5] Done in $(($end-$start)) seconds \n"
 
 start=$(date +%s)
-echo "[1/4] Erasing flash..."
-~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after hard_reset erase_flash > /dev/null
+echo "[1/5] Erasing flash..."
+~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after no_reset erase_flash > /dev/null
 end=$(date +%s)
-echo "[1/4] done in $(($end-$start)) seconds"
+echo -e "[1/5] Done in $(($end-$start)) seconds\n"
 
 start=$(date +%s)
-echo "[2/4] Uploading recovery firmware..."
+echo "[2/5] Uploading recovery firmware..."
 #find way to have same partitions for recovery and firmware etc
-~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
+~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
 0x0000 $dist_recovery_path/bootloader.bin \
 0x8000 $dist_recovery_path/partitions.bin \
 0xe000 $dist_recovery_path/boot_app0.bin \
 0x10000 $dist_recovery_path/firmware.bin > /dev/null
 end=$(date +%s)
-echo "[2/4] done in $(($end-$start)) seconds"
+echo -e "[2/5] Done in $(($end-$start)) seconds\n"
 
 start=$(date +%s)
-echo "[3/4] Uploading firmware..."
+echo "[3/5] Uploading firmware..."
 ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
-0x610000 $dist_path/firmware.bin > /dev/null
-otatool.py -p $device switch_ota_partition --slot 1 > /dev/null 
+0x610000 $dist_path/firmware.bin \
+0xC51000 $dist_path/fatfs.bin > /dev/null #0xC51000 instead of 0xC50000
 end=$(date +%s)
-echo "[3/4] done in $(($end-$start)) seconds"
+echo -e "[3/5] Done in $(($end-$start)) seconds\n"
 
 start=$(date +%s)
-echo "[3/4] Connect to serial..."
+echo "[4/5] Switching to release firmware OTA partition..."
+otatool.py -p $device switch_ota_partition --slot 1
+end=$(date +%s)
+echo -e "[4/5] Done in $(($end-$start)) seconds\n"
+
+
+start=$(date +%s)
+echo "[5/5] Connect to serial..."
 (while ! test -c $device; do sleep 1; echo 'connecting...'; done; )
 platformio device monitor --baud 115200
-
-deactivate
 end=$(date +%s)
-echo "[4/4] done in $(($end-$start)) seconds"
-
+echo -e "[5/5] Done in $(($end-$start)) seconds\n"
 echo "Finished in $(($end-$start_0)) seconds"
 
+deactivate
