@@ -134,16 +134,17 @@ echo -e "[2/6] Done in $(($end-$start)) seconds\n"
 start=$(date +%s)
 echo "[3/6] Uploading firmware..."
 ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
-0x610000 $dist_path/firmware.bin > /dev/null
+0x610000 $dist_path/firmware.bin \
+0xC50000 $dist_path/fatfs.bin
 end=$(date +%s)
 echo -e "[3/6] Done in $(($end-$start)) seconds\n"
 
-start=$(date +%s)
-echo "[4/6] Uploading filesystem..."
-~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
-0xC50000 $dist_path/fatfs.bin > /dev/null
-end=$(date +%s)
-echo -e "[4/6] Done in $(($end-$start)) seconds\n"
+# start=$(date +%s)
+# echo "[4/6] Uploading filesystem..."
+# ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32s3 --port $device --baud 921600 --before default_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB \
+# 0xC50000 $dist_path/fatfs.bin
+# end=$(date +%s)
+# echo -e "[4/6] Done in $(($end-$start)) seconds\n"
 
 start=$(date +%s)
 echo "[5/6] Switching to release firmware OTA partition..."
