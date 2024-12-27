@@ -25,7 +25,7 @@ jobs:
         echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
     - name: Cache pip
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -33,7 +33,7 @@ jobs:
           ${{ runner.os }}-pip-
 
     - name: Cache PlatformIO
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.platformio
         key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
@@ -71,5 +71,5 @@ jobs:
     - name: Upload Release Assets
       uses: AButler/upload-release-assets@v3.0
       with:
-        files: ".pio/build/firmware_*.bin;.pio/build/seedlabs_devkit_github_action_release/*.zip"
+        files: ".pio/build/firmware_*.bin;.pio/build/fatfs_*.bin;.pio/build/seedlabs_devkit_github_action_release/*.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
