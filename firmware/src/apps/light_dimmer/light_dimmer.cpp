@@ -269,7 +269,7 @@ void LightDimmerApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
         }
     }
 
-    if (rgb_color != NULL)
+    if (rgb_color != NULL && cJSON_IsNull(rgb_color) != NULL)
     {
         r = cJSON_GetArrayItem(rgb_color, 0)->valueint;
         g = cJSON_GetArrayItem(rgb_color, 1)->valueint;
