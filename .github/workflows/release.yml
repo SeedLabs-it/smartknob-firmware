@@ -60,7 +60,7 @@ jobs:
         pio run \
           -e seedlabs_devkit_github_action_release \
           -t buildfs
-    - name: Zip Firmware
+    - name: Zip Firmware & FS
       run: |
         cd .pio/build/seedlabs_devkit_github_action_release/
         cp ./firmware.bin "../firmware_${RELEASE_VERSION}.bin"
