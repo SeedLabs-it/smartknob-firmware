@@ -141,7 +141,7 @@ echo -e "[3/5] Done in $(($end-$start)) seconds\n"
 
 start=$(date +%s)
 echo "[4/5] Switching to release firmware OTA partition..."
-otatool.py -p $device switch_ota_partition --slot 1
+otatool.py -p $device switch_ota_partition --slot 1 > /dev/null
 end=$(date +%s)
 echo -e "[4/5] Done in $(($end-$start)) seconds\n"
 
