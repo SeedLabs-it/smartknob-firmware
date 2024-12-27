@@ -53,10 +53,18 @@ jobs:
       run: |
         pio run \
           -e seedlabs_devkit_github_action_release
+    - name: Build FS (seedlabs_devkit)
+      # Run regardless of other build step failures, as long as setup steps completed
+      if: always() && steps.pio_install.outcome == 'success'
+      run: |
+        pio run \
+          -e seedlabs_devkit_github_action_release \
+          -t buildfs
     - name: Zip Firmware
       run: |
         cd .pio/build/seedlabs_devkit_github_action_release/
         cp ./firmware.bin "../firmware_${RELEASE_VERSION}.bin"
+        cp ./fatfs.bin "../fatfs_${RELEASE_VERSION}.bin"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin ./boot_app0.bin
         zip -r "${RELEASE_VERSION}.zip" ./*.bin ./*.elf
     
