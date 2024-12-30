@@ -75,6 +75,33 @@ void RootTask::run()
     serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_strain_calibration_tag, [this](PB_ToSmartknob to_smartknob)
                                                    { sensors_task_->factoryStrainCalibrationCallback(to_smartknob.payload.strain_calibration.calibration_weight); });
 
+    serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_smartknob_config_tag, [this](PB_ToSmartknob to_smartknob)
+                                                   { 
+                                                    if (strcmp(to_smartknob.payload.smartknob_config.id, "MOTOR_TESTING") == 0)
+                                                    {
+                                                        static bool testing = false;
+                                                        static MotorTestingApp *motor_testing_app = new MotorTestingApp(to_smartknob.payload.smartknob_config);
+                                                        DemoApps *demo = display_task_->getDemoApps();
+
+                                                        if (!testing) {
+                                                            testing = true;
+                                                            display_task_->getErrorHandlingFlow()->setEnabled(false);
+
+                                                            os_config_notifier_.setOSMode(DEMO);
+                                                            display_task_->enableDemo();
+
+                                                            demo->add(99, motor_testing_app);
+                                                            demo->setActive(99);
+
+
+                                                        }
+
+                                                        motor_testing_app->setMotorConfig(to_smartknob.payload.smartknob_config);
+
+                                                    }
+
+                                                    applyConfig(to_smartknob.payload.smartknob_config, true); });
+
     serial_protocol_protobuf_->registerCommandCallback(PB_SmartKnobCommand_MOTOR_CALIBRATE, [this]()
                                                        { motor_task_.runCalibration(); });
 

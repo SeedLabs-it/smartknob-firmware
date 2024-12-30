@@ -43,6 +43,8 @@ public:
     void setMotorNotifier(MotorNotifier *motor_notifier);
     void setWiFiNotifier(WiFiNotifier *wifi_notifier);
 
+    void setEnabled(bool enabled);
+
     void setSharedEventsQueue(QueueHandle_t shared_event_queue);
     void publishEvent(WiFiEvent event);
 
@@ -50,6 +52,8 @@ public:
 
 private:
     SemaphoreHandle_t mutex_;
+
+    bool enabled = true;
 
     ErrorHandlingPageManager *page_manager = nullptr;
 

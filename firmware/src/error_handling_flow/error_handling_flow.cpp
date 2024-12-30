@@ -5,8 +5,18 @@ ErrorHandlingFlow::ErrorHandlingFlow(SemaphoreHandle_t mutex) : mutex_(mutex)
     page_manager = new ErrorHandlingPageManager(lv_obj_create(NULL), mutex_);
 }
 
+void ErrorHandlingFlow::setEnabled(bool enabled)
+{
+    this->enabled = enabled;
+}
+
 void ErrorHandlingFlow::handleEvent(WiFiEvent event)
 {
+    if (!enabled)
+    {
+        return;
+    }
+
     WiFiEvent send_event;
     motor_notifier->requestUpdate(blocked_motor_config);
 

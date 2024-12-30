@@ -23,6 +23,8 @@
 
 #include "navigation/navigation.h"
 
+#include "apps/motor_testing/motor_testing.h"
+
 void delete_me_TriggerMotorCalibration();
 
 class RootTask : public Task<RootTask>
