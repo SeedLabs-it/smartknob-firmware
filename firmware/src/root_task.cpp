@@ -77,8 +77,19 @@ void RootTask::run()
 
     serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_smartknob_config_tag, [this](PB_ToSmartknob to_smartknob)
                                                    { 
-                                                    if (strcmp(to_smartknob.payload.smartknob_config.id, "MOTOR_TESTING") == 0)
+
+                                                    char* token = strtok(to_smartknob.payload.smartknob_config.id, "-");
+                                                    char* id = token;
+                                                    token = strtok(NULL, "-");
+                                                    char* dirStr = token;
+                                                    token = strtok(NULL, "-");
+                                                    char* speedStr = token;
+
+                                                    LOGE("id: %s, dirStr: %s, speedStr: %s", id, dirStr, speedStr);
+
+                                                    if (strcmp(id, "MOTOR_TESTING") == 0)
                                                     {
+                                                        strcpy(to_smartknob.payload.smartknob_config.id, id);
                                                         static bool testing = false;
                                                         static MotorTestingApp *motor_testing_app = new MotorTestingApp(to_smartknob.payload.smartknob_config);
                                                         DemoApps *demo = display_task_->getDemoApps();
@@ -92,12 +103,19 @@ void RootTask::run()
 
                                                             demo->add(99, motor_testing_app);
                                                             demo->setActive(99);
-
-
                                                         }
-
                                                         motor_testing_app->setMotorConfig(to_smartknob.payload.smartknob_config);
 
+                                                        if(strcmp(dirStr, "none") !=0) {
+                                                            LOGE("Motor Testing: %s, %d", dirStr, atoi(speedStr));
+                                                            LOGE("MOTOR TESTING DIR ENUM: %d", strcmp(dirStr, "left") == 0 ? MotorDirection::LEFT : MotorDirection::RIGHT);
+                                                            motor_task_.motorTest(strcmp(dirStr, "left") == 0 ? MotorDirection::LEFT : MotorDirection::RIGHT, atoi(speedStr));
+                                                        } 
+                                                        else if (motor_task_.isMotorTesting())
+                                                        {
+                                                            motor_task_.motorTest(MotorDirection::DIR_NONE, atoi(speedStr));
+                                                        }
+                                                        
                                                     }
 
                                                     applyConfig(to_smartknob.payload.smartknob_config, true); });

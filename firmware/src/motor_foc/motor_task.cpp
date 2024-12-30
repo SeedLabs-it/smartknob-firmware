@@ -23,7 +23,7 @@ static const float IDLE_CORRECTION_RATE_ALPHA = 0.0005;
 
 MotorTask::MotorTask(const uint8_t task_core, Configuration &configuration) : Task("Motor", 1024 * 8, 0, task_core), configuration_(configuration)
 {
-    queue_ = xQueueCreate(5, sizeof(Command));
+    queue_ = xQueueCreate(10, sizeof(Command));
     assert(queue_ != NULL);
 }
 
@@ -57,7 +57,7 @@ void MotorTask::run()
 
     motor.controller = MotionControlType::torque;
     motor.voltage_limit = FOC_VOLTAGE_LIMIT;
-    motor.velocity_limit = 10000;
+    motor.velocity_limit = FOC_PID_LIMIT;
     motor.linkSensor(&encoder);
 
     // Not actually using the velocity loop built into SimpleFOC; but I'm using those PID variables
@@ -117,7 +117,7 @@ void MotorTask::run()
     float idle_check_velocity_ewma = 0;
     uint32_t last_idle_start = 0;
     uint32_t last_publish = 0;
-
+    uint32_t last_motor_testing_command = 0;
     while (1)
     {
         motor.loopFOC();
@@ -139,6 +139,12 @@ void MotorTask::run()
                 delay(1);
                 continue;
             }
+
+            if (motor_testing_enabled_ && command.command_type != CommandType::MOTOR_TESTING)
+            {
+                continue;
+            }
+
             switch (command.command_type)
             {
             case CommandType::CALIBRATE:
@@ -158,6 +164,12 @@ void MotorTask::run()
                 motor.initFOC();
             case CommandType::CONFIG:
             {
+                if (motor_testing_enabled_)
+                {
+                    LOGV(LOG_LEVEL_DEBUG, "Ignoring config change while motor testing is active");
+                    break;
+                }
+
                 // Check new config for validity
                 PB_SmartKnobConfig &new_config = command.data.config;
                 if (new_config.detent_strength_unit < 0)
@@ -268,7 +280,71 @@ void MotorTask::run()
                 motor.loopFOC();
                 break;
             }
+            case CommandType::MOTOR_TESTING:
+            {
+                if (command.data.testing.dir == MotorDirection::DIR_NONE)
+                {
+                    LOGE("STOPPING MOTOR TESTING");
+                    motor_testing_enabled_ = false;
+                    motor.controller = MotionControlType::torque;
+                    motor.PID_velocity.P = FOC_PID_P;
+                    motor.PID_velocity.I = FOC_PID_I;
+                    motor.PID_velocity.D = FOC_PID_D;
+                    motor.PID_velocity.limit = FOC_PID_LIMIT;
+                    motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP;
+
+#if SK_INVERT_ROTATION
+                    current_detent_center = -motor.shaft_angle;
+#else
+                    current_detent_center = motor.shaft_angle;
+#endif
+                    // motor.zero_electric_angle = encoder.getAngle();
+
+                    motor.initFOC();
+                    motor.move(0);
+                    delay(200);
+                    break;
+                }
+                motor.controller = MotionControlType::velocity;
+                motor.PID_velocity.P = 0.1;                           // Proportional gain
+                motor.PID_velocity.I = 0.05;                          // Integral gain
+                motor.PID_velocity.D = 0;                             // Derivative gain
+                motor.PID_velocity.limit = 50;                        // Limit PID output
+                motor.PID_velocity.output_ramp = FOC_PID_OUTPUT_RAMP; // Rate of change of the control signal
+                motor.LPF_velocity.Tf = 0.1;                          // added as test for motor testing.
+                motor.initFOC();
+
+                LOGE("MOTOR TESTING COMMAND RECEIVED");
+                motor_testing_enabled_ = true;
+
+                testing_data_ = command.data.testing;
+
+                LOGE("MOTOR SPEED: %f", command.data.testing.speed);
+                break;
             }
+            }
+        }
+
+        if (motor_testing_enabled_)
+        {
+            switch (testing_data_.dir)
+            {
+            case MotorDirection::LEFT:
+                motor.move(-testing_data_.speed);
+                break;
+            case MotorDirection::RIGHT:
+                motor.move(testing_data_.speed);
+                break;
+            }
+
+            if (millis() - last_motor_testing_command > 1000)
+            {
+                LOGE("ANGLE: %f, VELOCITY: %f", motor.shaft_angle, motor.shaft_velocity);
+                LOGE("VOLTAGE: %f", motor.voltage.q);
+                last_motor_testing_command = millis();
+            }
+            delay(1);
+            continue;
         }
 
         // If we are not moving and we're close to the center (but not exactly there), slowly adjust the centerpoint to match the current position
@@ -294,6 +370,8 @@ void MotorTask::run()
 #if SK_INVERT_ROTATION
         angle_to_detent_center = -motor.shaft_angle - current_detent_center;
 #endif
+        // LOGE("angle_to_detent_center: %f", angle_to_detent_center);
+        // LOGE("motor.shaft_angle: %f, current_detent_center: %f", motor.shaft_angle, current_detent_center);
 
         float snap_point_radians = config.position_width_radians * config.snap_point;
         float bias_radians = config.position_width_radians * config.snap_point_bias;
@@ -402,6 +480,24 @@ void MotorTask::runCalibration()
         .command_type = CommandType::CALIBRATE,
         .data = {
             .unused = 0,
+        }};
+    xQueueSend(queue_, &command, portMAX_DELAY);
+}
+
+bool MotorTask::isMotorTesting()
+{
+    return motor_testing_enabled_;
+}
+
+void MotorTask::motorTest(MotorDirection dir, int speed)
+{
+    Command command = {
+        .command_type = CommandType::MOTOR_TESTING,
+        .data = {
+            .testing = {
+                .dir = dir,
+                .speed = (float)speed,
+            },
         }};
     xQueueSend(queue_, &command, portMAX_DELAY);
 }

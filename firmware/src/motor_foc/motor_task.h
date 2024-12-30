@@ -13,6 +13,20 @@ enum class CommandType
     CALIBRATE,
     CONFIG,
     HAPTIC,
+    MOTOR_TESTING
+};
+
+enum MotorDirection
+{
+    DIR_NONE,
+    LEFT,
+    RIGHT
+};
+
+struct TestingData
+{
+    MotorDirection dir;
+    float speed;
 };
 
 struct HapticData
@@ -29,6 +43,7 @@ struct Command
         uint8_t unused;
         PB_SmartKnobConfig config;
         HapticData haptic;
+        TestingData testing;
     };
     CommandData data;
 };
@@ -45,6 +60,10 @@ public:
     void playHaptic(bool press, bool long_press);
     void runCalibration();
 
+    bool isMotorTesting();
+    void toggleMotorTesting();
+    void motorTest(MotorDirection dir, int speed);
+
     void addListener(QueueHandle_t queue);
 
 protected:
@@ -55,6 +74,9 @@ private:
     QueueHandle_t queue_;
     std::vector<QueueHandle_t> listeners_;
     char buf_[72];
+
+    bool motor_testing_enabled_ = false;
+    TestingData testing_data_;
 
     // BLDC motor & driver instance
     BLDCMotor motor = BLDCMotor(1);
