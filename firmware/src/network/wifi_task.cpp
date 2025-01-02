@@ -243,27 +243,30 @@ void WifiTask::webHandlerWiFiCredentials()
 
         server_->send(200, "application/json", response);
 
-        auto taskLambda = []()
+        if (strcmp(redirect_page, "spotify") == 0)
         {
-            delay(400);
-            WiFi.softAPdisconnect();
-            vTaskDelete(NULL);
-        };
-
-        xTaskCreatePinnedToCore(
-            [](void *taskFunc)
+            auto taskLambda = []()
             {
-                auto func = static_cast<std::function<void()> *>(taskFunc);
-                (*func)();
-                delete func;
+                delay(200);
+                WiFi.softAPdisconnect();
                 vTaskDelete(NULL);
-            },
-            "disconnect_ap",
-            1024 * 2,
-            new std::function<void()>(taskLambda),
-            0,
-            NULL,
-            0);
+            };
+
+            xTaskCreatePinnedToCore(
+                [](void *taskFunc)
+                {
+                    auto func = static_cast<std::function<void()> *>(taskFunc);
+                    (*func)();
+                    delete func;
+                    vTaskDelete(NULL);
+                },
+                "disconnect_ap",
+                1024 * 2,
+                new std::function<void()>(taskLambda),
+                0,
+                NULL,
+                0);
+        }
     }
     else
     {
