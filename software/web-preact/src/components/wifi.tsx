@@ -45,7 +45,7 @@ const WiFiComp = () => {
         var json = await response.json();
         if (json.redirect == 'spotify') {
           //   window.location.href = '/?' + json.redirect;
-          window.location.href = 'http://192.168.2.90/?spotify';
+          window.location.href = `http://${window.location.hostname}/?spotify`;
         } else {
           window.location.href = '/?' + json.redirect;
         }
