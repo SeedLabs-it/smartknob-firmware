@@ -148,8 +148,8 @@ void setup()
         PB_SpotifyConfig spotify_config_ = config.getSpotifyConfig();
         if (strcmp(spotify_config_.access_token, "") != 0)
         {
-            LOGV(LOG_LEVEL_DEBUG, "SPOTIFY SCOPE %s", spotify_config_.scope);
-            LOGV(LOG_LEVEL_DEBUG, "LOADED DEVICE ID %s", spotify_config_.device_id);
+            LOGV(LOG_LEVEL_DEBUG, "Loaded Spotify device id: %s", spotify_config_.device_id);
+            LOGV(LOG_LEVEL_DEBUG, "Spotify scope: %s", spotify_config_.scope);
             spotify_task.begin();
             delay(10);
             spotify_task.setConfig(spotify_config_);
