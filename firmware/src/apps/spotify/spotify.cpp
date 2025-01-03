@@ -234,7 +234,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         motor_config = spotify_config_;
-        LOGE("ENABLING SPOTIFY MOTOR CONFIG");
+        motor_config.position_nonce = motor_config.position_nonce + 1;
+        motor_notifier->requestUpdate(motor_config);
         is_spotify_configured = true;
     }
     else if (state.os_mode_state != OSMode::SPOTIFY && !state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
@@ -243,7 +244,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
         motor_config = blocked_motor_config;
-        LOGE("DISABLING SPOTIFY MOTOR CONFIG");
+        motor_config.position_nonce = motor_config.position_nonce + 1;
+        motor_notifier->requestUpdate(motor_config);
         is_spotify_configured = false;
     }
 
