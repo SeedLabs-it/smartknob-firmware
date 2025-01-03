@@ -29,6 +29,22 @@ protected:
     void initQrScreen();
 
 private:
+    PB_SmartKnobConfig spotify_config_ = PB_SmartKnobConfig{
+        .position = 0,
+        .sub_position_unit = 0,
+        .position_nonce = 0,
+        .min_position = 0,
+        .max_position = 100,
+        .position_width_radians = 6 * PI / 180,
+        .detent_strength_unit = 1,
+        .endstop_strength_unit = 1,
+        .snap_point = 1.1,
+        .detent_positions_count = 0,
+        .detent_positions = {},
+        .snap_point_bias = 0,
+        .led_hue = 27,
+    };
+
     lv_obj_t *player_screen = nullptr;
     lv_obj_t *album_img = nullptr;
     SpotifyCoverArt latest_cover_art = nullptr;

@@ -239,7 +239,7 @@ void WifiTask::webHandlerWiFiCredentials()
         delay(200);
 
         char response[128];
-        snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
+        snprintf(response, sizeof(response), "{\"redirect\": \"%s\", \"data\": \"%s\"}", redirect_page, WiFi.localIP().toString().c_str());
 
         server_->send(200, "application/json", response);
 

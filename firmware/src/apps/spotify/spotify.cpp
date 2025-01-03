@@ -35,22 +35,9 @@ SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
     sprintf(friendly_name, "%s", friendly_name_);
     sprintf(entity_id, "%s", entity_id_);
 
-    motor_config = PB_SmartKnobConfig{
-        .position = 0,
-        .sub_position_unit = 0,
-        .position_nonce = 0,
-        .min_position = 0,
-        .max_position = 100,
-        .position_width_radians = 6 * PI / 180,
-        .detent_strength_unit = 1,
-        .endstop_strength_unit = 1,
-        .snap_point = 1.1,
-        .detent_positions_count = 0,
-        .detent_positions = {},
-        .snap_point_bias = 0,
-        .led_hue = 27,
-    };
+    motor_config = blocked_motor_config;
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
+    strncpy(spotify_config_.id, app_id, sizeof(spotify_config_.id) - 1);
 
     LV_IMG_DECLARE(x80_spotify);
     LV_IMG_DECLARE(x40_spotify);
@@ -113,8 +100,6 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
 
-    // lv_obj_add_flag(volume, LV_OBJ_FLAG_HIDDEN);
-
     playing = lv_label_create(player_screen);
     lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
     lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
@@ -171,11 +156,6 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
-
-    // if (millis() - last_updated_ms_ > 2000 && !lv_obj_has_flag(volume, LV_OBJ_FLAG_HIDDEN))
-    // {
-    //     lv_obj_add_flag(volume, LV_OBJ_FLAG_HIDDEN);
-    // }
 
     if (last_position != current_position && !first_run)
     {
@@ -253,6 +233,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
         lv_obj_add_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
+        motor_config = spotify_config_;
+        LOGE("ENABLING SPOTIFY MOTOR CONFIG");
         is_spotify_configured = true;
     }
     else if (state.os_mode_state != OSMode::SPOTIFY && !state.playback_state.spotify_available && lv_obj_has_flag(qr_screen, LV_OBJ_FLAG_HIDDEN))
@@ -260,6 +242,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         LOGW("Spotify is not available");
         lv_obj_add_flag(player_screen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(qr_screen, LV_OBJ_FLAG_HIDDEN);
+        motor_config = blocked_motor_config;
+        LOGE("DISABLING SPOTIFY MOTOR CONFIG");
         is_spotify_configured = false;
     }
 

@@ -79,7 +79,10 @@ protected:
     PB_SmartKnobConfig motor_config;
 
     PB_SmartKnobConfig root_level_motor_config;
-    PB_SmartKnobConfig blocked_motor_config;
+    PB_SmartKnobConfig blocked_motor_config = {
+        .endstop_strength_unit = 1,
+        .snap_point = 0.5,
+    };
 
     bool state_sent_from_hass = false;
 
