@@ -817,7 +817,7 @@ void RootTask::loadConfiguration()
             configuration_->loadOSConfiguration();
             OSMode os_mode = configuration_->getOSConfiguration()->mode;
 #if SK_WIFI
-            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && !configuration_->loadWiFiConfiguration())
+            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && configuration_->loadWiFiConfiguration())
             {
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
                 // TODO: send event to wifi to start STA part with given credentials
