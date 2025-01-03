@@ -817,14 +817,18 @@ void RootTask::loadConfiguration()
             configuration_->loadOSConfiguration();
             OSMode os_mode = configuration_->getOSConfiguration()->mode;
 #if SK_WIFI
-            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && configuration_->loadWiFiConfiguration())
+            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && !configuration_->loadWiFiConfiguration())
             {
-
-                WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
-                // TODO: send event to wifi to start STA part with given credentials
-                wifi_task_->getNotifier()->requestSTA(wifi_config);
+                // handle wifi config not loaded.
             }
+            WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
+            // TODO: send event to wifi to start STA part with given credentials
+            wifi_task_->getNotifier()->requestSTA(wifi_config);
 #endif
+            if (configuration_->getOSConfiguration()->mode == HASS && !configuration_->loadMQTTConfiguration())
+            {
+                // handle mqtt config not loaded.
+            }
             configuration_loaded_ = true;
         }
     }
