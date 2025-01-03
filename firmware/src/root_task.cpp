@@ -659,8 +659,10 @@ void RootTask::updateHardware(AppState *app_state)
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                        break;
                     case SPOTIFY:
                         display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
+                        break;
                     default:
                         break;
                     }
@@ -688,15 +690,19 @@ void RootTask::updateHardware(AppState *app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case ONBOARDING:
+                        LOGE("Handling short press released for onboarding");
                         display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case DEMO:
+                        LOGE("Handling short press released for demo");
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                        break;
                     case SPOTIFY:
                         display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
+                        break;
                     default:
                         break;
                     }
