@@ -22,13 +22,6 @@ void progress_timer(lv_timer_t *progress_timer)
     }
 }
 
-void hide_volume_arc(void *volume_arc)
-{
-    LOGE("HIDE VOLUME ARC");
-    delay(3000);
-    LOGE("HIDE VOLUME ARC END");
-}
-
 SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
 {
     sprintf(app_id, "%s", app_id_);
@@ -100,7 +93,7 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
 
-    lv_obj_t *playing_circle = lvDrawCircle(38, player_screen);
+    lv_obj_t *playing_circle = lvDrawCircle(39, player_screen);
     lv_obj_set_style_bg_color(playing_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
     lv_obj_set_style_opa(playing_circle, LV_OPA_70, 0);
     lv_obj_center(playing_circle);
@@ -164,8 +157,11 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && !first_run)
     {
+        // SemaphoreGuard lock(mutex_);
         uint8_t volume_val = current_position * (100 / motor_config.max_position);
         lv_arc_set_value(volume, volume_val);
+
+        lv_obj_invalidate(volume); // Force redraw, (believe this fixes arc artifacting issue)
 
         WiFiEvent wifi_event;
         wifi_event.type = SK_SPOTIFY_VOLUME;
