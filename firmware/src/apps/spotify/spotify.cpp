@@ -65,7 +65,7 @@ void SpotifyApp::initScreen()
     progress_state_.progress = lv_arc_create(player_screen);
     lv_obj_t *progress = progress_state_.progress;
     lv_obj_set_size(progress, 232, 232);
-    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
+    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x60, 0x60, 0x60), LV_PART_MAIN);
     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
@@ -85,7 +85,7 @@ void SpotifyApp::initScreen()
 
     volume = lv_arc_create(player_screen);
     lv_obj_set_size(volume, 219, 219);
-    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x60, 0x60, 0x60), LV_PART_MAIN);
     lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
@@ -107,7 +107,7 @@ void SpotifyApp::initScreen()
 
     playing = lv_label_create(player_screen);
     lv_obj_set_style_text_font(playing, &lv_font_montserrat_22, 0); // TODO Add own symbol font!!
-    lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
+    lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x60, 0x60, 0x60), LV_PART_MAIN);
     lv_obj_set_style_opa(playing, LV_OPA_80, LV_PART_MAIN);
     lv_label_set_text(playing, LV_SYMBOL_PLAY);
     lv_obj_align(playing, LV_ALIGN_CENTER, 2, 0);
