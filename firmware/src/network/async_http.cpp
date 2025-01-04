@@ -15,6 +15,7 @@ void AsyncHttp::get(const char *path, const char *content_type, ResponseCallback
     {
         if (client_->connect(host_, port_))
         {
+            LOGV(LOG_LEVEL_DEBUG, "Connected to server %s:%d", host_, port_);
         }
         else
         {
