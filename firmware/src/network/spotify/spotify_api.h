@@ -52,6 +52,7 @@ public:
 
     void setConfig(const PB_SpotifyConfig &spotify_config);
     bool hasConfig() { return auth_header_ != nullptr; }
+    const char *getDeviceId() { return device_id_; }
 
 private:
     HTTPClient http_client_;

@@ -8,16 +8,16 @@ void progress_timer(lv_timer_t *progress_timer)
     unsigned long song_duration_ms = user_data->song_duration_ms;
 
     float end_angle = SPOTIFY_ARC_MAX_ANGLE * (1 - (((song_duration_ms - progress_ms) / (float)song_duration_ms)));
-    if (end_angle < 5)
-        end_angle = 5;
+    if (end_angle < 9)
+        end_angle = 9;
 
     if (progress_ms < song_duration_ms)
     {
-        lv_arc_set_angles(user_data->progress, end_angle - 5, end_angle);
+        lv_arc_set_angles(user_data->progress, end_angle - 9, end_angle);
     }
     else
     {
-        lv_arc_set_angles(user_data->progress, SPOTIFY_ARC_MAX_ANGLE - 5, SPOTIFY_ARC_MAX_ANGLE);
+        lv_arc_set_angles(user_data->progress, SPOTIFY_ARC_MAX_ANGLE - 9, SPOTIFY_ARC_MAX_ANGLE);
         return;
     }
 }
@@ -66,7 +66,7 @@ void SpotifyApp::initScreen()
     lv_obj_t *progress = progress_state_.progress;
     lv_obj_set_size(progress, 232, 232);
     lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(progress, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(progress, 4, LV_PART_MAIN);
     lv_obj_set_style_arc_width(progress, 4, LV_PART_INDICATOR);
@@ -86,7 +86,7 @@ void SpotifyApp::initScreen()
     volume = lv_arc_create(player_screen);
     lv_obj_set_size(volume, 219, 219);
     lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x1D, 0xB9, 0x54), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(volume, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_INDICATOR);
 
     lv_obj_set_style_arc_width(volume, 4, LV_PART_MAIN);
     lv_obj_set_style_arc_width(volume, 4, LV_PART_INDICATOR);
@@ -100,10 +100,15 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
 
+    lv_obj_t *playing_circle = lvDrawCircle(40, player_screen);
+    lv_obj_set_style_bg_color(playing_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_set_style_opa(playing_circle, LV_OPA_70, 0);
+    lv_obj_center(playing_circle);
+
     playing = lv_label_create(player_screen);
-    lv_obj_set_style_text_font(playing, &lv_font_montserrat_30, 0); // TODO Add own symbol font!!
-    lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
-    lv_obj_set_style_opa(playing, LV_OPA_70, 0);
+    lv_obj_set_style_text_font(playing, &lv_font_montserrat_22, 0); // TODO Add own symbol font!!
+    lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
+    lv_obj_set_style_opa(playing, LV_OPA_80, LV_PART_MAIN);
     lv_label_set_text(playing, LV_SYMBOL_PAUSE);
     lv_obj_center(playing);
 
@@ -159,13 +164,12 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
 
     if (last_position != current_position && !first_run)
     {
-        // last_updated_ms_ = millis();
-        // lv_obj_clear_flag(volume, LV_OBJ_FLAG_HIDDEN);
-        lv_arc_set_value(volume, state.current_position);
+        uint8_t volume_val = current_position * (100 / motor_config.max_position);
+        lv_arc_set_value(volume, volume_val);
 
         WiFiEvent wifi_event;
         wifi_event.type = SK_SPOTIFY_VOLUME;
-        wifi_event.body.volume = state.current_position;
+        wifi_event.body.volume = volume_val;
         publishEvent(wifi_event);
     }
 
@@ -270,6 +274,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
             lv_obj_set_style_arc_color(progress_state_.progress, latest_cover_art_colors[1], LV_PART_MAIN);
             lv_obj_set_style_arc_color(volume, latest_cover_art_colors[1], LV_PART_MAIN);
+
+            lv_obj_set_style_text_color(playing, latest_cover_art_colors[0], LV_PART_MAIN);
         }
     }
 
@@ -283,6 +289,7 @@ void SpotifyApp::updateStateFromSystem(AppState state)
                 lv_timer_resume(progress_timer_);
             }
             lv_label_set_text(playing, LV_SYMBOL_PAUSE);
+            lv_obj_center(playing);
         }
         else
         {
@@ -292,11 +299,12 @@ void SpotifyApp::updateStateFromSystem(AppState state)
                 progress_state_.progress_ms = progress_state_.progress_ms + (millis() - progress_state_.started_ms);
             }
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
+            lv_obj_center(playing);
         }
 
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
         {
-            current_position = state.playback_state.device.volume_percent;
+            current_position = state.playback_state.device.volume_percent / (100 / motor_config.max_position);
             last_position = current_position;
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
@@ -349,6 +357,7 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             lv_arc_set_value(progress_state_.progress, 0);
 
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
+            lv_obj_center(playing);
         }
 
         if (strcmp(state.playback_state.item.artist, "") != 0)

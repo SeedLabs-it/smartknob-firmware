@@ -72,7 +72,8 @@ void SpotifyTask::run()
 
                     if (strcmp(playback_state.device.id, "") != 0 &&
                         strcmp(playback_state.device.id,
-                               latest_playback_state_.device.id) != 0)
+                               latest_playback_state_.device.id) != 0 &&
+                        strcmp(spotify_api_.getDeviceId(), playback_state.device.id) != 0)
                     {
                         WiFiEvent device_changed_event = {
                             .type = SK_SPOTIFY_DEVICE_CHANGED,

@@ -34,7 +34,7 @@ private:
         .sub_position_unit = 0,
         .position_nonce = 0,
         .min_position = 0,
-        .max_position = 100,
+        .max_position = 50,
         .position_width_radians = 6 * PI / 180,
         .detent_strength_unit = 1,
         .endstop_strength_unit = 1,
