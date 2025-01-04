@@ -100,7 +100,7 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
 
-    lv_obj_t *playing_circle = lvDrawCircle(40, player_screen);
+    lv_obj_t *playing_circle = lvDrawCircle(38, player_screen);
     lv_obj_set_style_bg_color(playing_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
     lv_obj_set_style_opa(playing_circle, LV_OPA_70, 0);
     lv_obj_center(playing_circle);
@@ -109,8 +109,8 @@ void SpotifyApp::initScreen()
     lv_obj_set_style_text_font(playing, &lv_font_montserrat_22, 0); // TODO Add own symbol font!!
     lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
     lv_obj_set_style_opa(playing, LV_OPA_80, LV_PART_MAIN);
-    lv_label_set_text(playing, LV_SYMBOL_PAUSE);
-    lv_obj_center(playing);
+    lv_label_set_text(playing, LV_SYMBOL_PLAY);
+    lv_obj_align(playing, LV_ALIGN_CENTER, 2, 0);
 
     lv_obj_t *text_box = lv_obj_create(player_screen);
     lv_obj_remove_style_all(text_box);
@@ -299,7 +299,8 @@ void SpotifyApp::updateStateFromSystem(AppState state)
                 progress_state_.progress_ms = progress_state_.progress_ms + (millis() - progress_state_.started_ms);
             }
             lv_label_set_text(playing, LV_SYMBOL_PLAY);
-            lv_obj_center(playing);
+
+            lv_obj_align(playing, LV_ALIGN_CENTER, 2, 0);
         }
 
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
