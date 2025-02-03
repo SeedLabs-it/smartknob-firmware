@@ -3,9 +3,11 @@
  *
  */
 
-#include "LGFX_SKDK.hpp"
+// #include "LGFX_SKDK.hpp"
 
-#include <LovyanGFX.hpp>
+// #include <LovyanGFX.hpp>
+#include "Arduino_GFX_Library.h"
+// #include "Arduino_DriveBus_Library.h"
 #ifdef __cplusplus
 
 extern "C"
@@ -32,7 +34,8 @@ extern "C"
     void lv_skdk_create();
 
     lv_disp_drv_t *lv_skdk_get_disp_drv();
-    LGFX *lv_skdk_get_lcd();
+    // LGFX *lv_skdk_get_lcd();
+    // Arduino_GFX *lv_skdk_get_lcd();
 
     /**********************
      *      MACROS

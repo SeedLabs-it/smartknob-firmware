@@ -9,9 +9,6 @@
 
 #include "cJSON.h"
 
-#define TFT_HOR_RES 240
-#define TFT_VER_RES 240
-
 #define LVGL_TASK_MAX_DELAY_MS (500)
 #define LVGL_TASK_MIN_DELAY_MS (1)
 
@@ -69,9 +66,9 @@ ErrorHandlingFlow *DisplayTask::getErrorHandlingFlow()
 
 void DisplayTask::run()
 {
-    ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
-    ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
-    ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
+    // ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, SK_BACKLIGHT_BIT_DEPTH);
+    // ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
+    // ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, (1 << SK_BACKLIGHT_BIT_DEPTH) - 1);
 
     lv_init();
     lv_skdk_create();
@@ -103,7 +100,8 @@ QueueHandle_t DisplayTask::getKnobStateQueue()
 void DisplayTask::setBrightness(uint16_t brightness)
 {
     SemaphoreGuard lock(mutex_);
-    lv_skdk_get_lcd()->setBrightness((((float)brightness / UINT16_MAX) * 255)); // Quickly implemented brightness for lvgl with old (current) impl.
+    LOGE("SHOULD SET !!!!!! brightness to %d", brightness);
+    // lv_skdk_get_lcd()->setBrightness((((float)brightness / UINT16_MAX) * 255)); // Quickly implemented brightness for lvgl with old (current) impl.
 }
 
 void DisplayTask::enableOnboarding()

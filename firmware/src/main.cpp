@@ -84,6 +84,8 @@ void initTempSensor()
     temp_sensor_start();
 }
 
+// Disabled mutliple tasks during testing of qspi screen.
+
 void setup()
 {
     delay(100); // Delay to allow usb to connect before starting stream
@@ -95,7 +97,7 @@ void setup()
 
     LOGI("Starting Seedlabs Smart Knob");
 
-    initTempSensor();
+    // initTempSensor();
 
     // TODO: move from eeprom to ffatfs
     if (!EEPROM.begin(EEPROM_SIZE))
@@ -112,9 +114,9 @@ void setup()
 
 #endif
 
-#if SK_LEDS
-    led_ring_task_p->begin();
-#endif
+    // #if SK_LEDS
+    //     led_ring_task_p->begin();
+    // #endif
 
     root_task.begin();
     if (!config.loadFromDisk())
@@ -129,7 +131,7 @@ void setup()
 
     root_task.loadConfiguration();
 
-    motor_task.begin();
+    // motor_task.begin();
 
 #if SK_WIFI
     wifi_task.addStateListener(root_task.getConnectivityStateQueue());
@@ -143,7 +145,7 @@ void setup()
 #endif
 
     sensors_task_p->addStateListener(root_task.getSensorsStateQueue());
-    sensors_task_p->begin();
+    // sensors_task_p->begin();
 
     reset_task_p->begin();
 
