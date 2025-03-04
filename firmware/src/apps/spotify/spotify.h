@@ -12,6 +12,11 @@ struct ProgressState
     unsigned long song_duration_ms;
 
     lv_obj_t *progress = nullptr;
+
+    lv_obj_t *playing_circle = nullptr;
+
+    unsigned long last_playing_update;
+    bool is_playing = false;
 };
 
 class SpotifyApp : public App
@@ -49,9 +54,9 @@ private:
     lv_obj_t *album_img = nullptr;
     SpotifyCoverArt latest_cover_art = nullptr;
     SpotifyCoverArtColors latest_cover_art_colors = nullptr;
-    lv_obj_t *playing = nullptr;
     lv_obj_t *track_name_label = nullptr;
     lv_obj_t *track_artist_label = nullptr;
+    lv_obj_t *playing = nullptr;
     lv_obj_t *volume = nullptr;
     lv_timer_t *volume_timer_ = nullptr;
     ProgressState progress_state_;

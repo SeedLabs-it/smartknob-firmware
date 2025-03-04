@@ -3,6 +3,19 @@
 void progress_timer(lv_timer_t *progress_timer)
 {
     ProgressState *user_data = (ProgressState *)progress_timer->user_data;
+
+    if (lv_label_get_text(user_data->playing_circle) != LV_SYMBOL_PAUSE && !lv_obj_has_flag(user_data->playing_circle, LV_OBJ_FLAG_HIDDEN) && millis() - user_data->last_playing_update > 1500)
+    {
+        lv_obj_set_style_opa(user_data->playing_circle, max(0, lv_obj_get_style_opa(user_data->playing_circle, LV_PART_MAIN) - 10), LV_PART_MAIN);
+
+        if (lv_obj_get_style_opa(user_data->playing_circle, LV_PART_MAIN) == 0)
+        {
+            lv_obj_add_flag(user_data->playing_circle, LV_OBJ_FLAG_HIDDEN);
+
+            lv_obj_set_style_opa(user_data->playing_circle, LV_OPA_COVER, LV_PART_MAIN);
+        }
+    }
+
     unsigned long started_ms = user_data->started_ms;
     unsigned long progress_ms = user_data->progress_ms + (millis() - started_ms);
     unsigned long song_duration_ms = user_data->song_duration_ms;
@@ -93,12 +106,12 @@ void SpotifyApp::initScreen()
     lv_obj_remove_style(volume, NULL, LV_PART_KNOB);
     lv_obj_center(volume);
 
-    lv_obj_t *playing_circle = lvDrawCircle(39, player_screen);
-    lv_obj_set_style_bg_color(playing_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
-    lv_obj_set_style_opa(playing_circle, LV_OPA_70, 0);
-    lv_obj_center(playing_circle);
+    progress_state_.playing_circle = lvDrawCircle(39, player_screen);
+    lv_obj_set_style_bg_color(progress_state_.playing_circle, LV_COLOR_MAKE(0x00, 0x00, 0x00), LV_PART_MAIN);
+    lv_obj_set_style_opa(progress_state_.playing_circle, LV_OPA_70, 0);
+    lv_obj_center(progress_state_.playing_circle);
 
-    playing = lv_label_create(player_screen);
+    playing = lv_label_create(progress_state_.playing_circle);
     lv_obj_set_style_text_font(playing, &lv_font_montserrat_22, 0); // TODO Add own symbol font!!
     lv_obj_set_style_text_color(playing, LV_COLOR_MAKE(0x99, 0x99, 0x99), LV_PART_MAIN);
     lv_obj_set_style_opa(playing, LV_OPA_80, LV_PART_MAIN);
@@ -276,26 +289,42 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
     if (state.playback_state.spotify_available != last_playback_state_.spotify_available || state.playback_state.available != last_playback_state_.available || state.playback_state.timestamp != last_playback_state_.timestamp || state.playback_state.progress_ms != last_playback_state_.progress_ms || state.playback_state.is_playing != last_playback_state_.is_playing)
     {
-        if (state.playback_state.is_playing)
+        if (state.playback_state.is_playing != last_playback_state_.is_playing)
         {
-            if (progress_timer_ != nullptr)
+            if (state.playback_state.is_playing)
             {
-                progress_state_.started_ms = millis();
-                lv_timer_resume(progress_timer_);
-            }
-            lv_label_set_text(playing, LV_SYMBOL_PAUSE);
-            lv_obj_center(playing);
-        }
-        else
-        {
-            if (progress_timer_ != nullptr)
-            {
-                lv_timer_pause(progress_timer_);
-                progress_state_.progress_ms = progress_state_.progress_ms + (millis() - progress_state_.started_ms);
-            }
-            lv_label_set_text(playing, LV_SYMBOL_PLAY);
+                if (progress_timer_ != nullptr)
+                {
+                    progress_state_.started_ms = millis();
+                    lv_timer_resume(progress_timer_);
+                }
 
-            lv_obj_align(playing, LV_ALIGN_CENTER, 2, 0);
+                progress_state_.is_playing = true;
+                progress_state_.last_playing_update = millis();
+
+                lv_obj_set_style_opa(progress_state_.playing_circle, LV_OPA_COVER, LV_PART_MAIN);
+                lv_obj_clear_flag(progress_state_.playing_circle, LV_OBJ_FLAG_HIDDEN);
+
+                lv_label_set_text(playing, LV_SYMBOL_PAUSE);
+                lv_obj_center(playing);
+            }
+            else
+            {
+                if (progress_timer_ != nullptr)
+                {
+                    lv_timer_pause(progress_timer_);
+                    progress_state_.progress_ms = progress_state_.progress_ms + (millis() - progress_state_.started_ms);
+                }
+
+                progress_state_.is_playing = false;
+                progress_state_.last_playing_update = millis();
+
+                lv_obj_set_style_opa(progress_state_.playing_circle, LV_OPA_COVER, LV_PART_MAIN);
+                lv_obj_clear_flag(progress_state_.playing_circle, LV_OBJ_FLAG_HIDDEN);
+
+                lv_label_set_text(playing, LV_SYMBOL_PLAY);
+                lv_obj_align(playing, LV_ALIGN_CENTER, 2, 0);
+            }
         }
 
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
@@ -388,7 +417,7 @@ void SpotifyApp::updateTimer(const unsigned long &progress_ms, const unsigned lo
     progress_state_.progress_ms = progress_ms;
     progress_state_.song_duration_ms = song_duration_ms;
 
-    progress_timer_ = lv_timer_create(progress_timer, 500, &progress_state_);
+    progress_timer_ = lv_timer_create(progress_timer, 50, &progress_state_);
 }
 
 void SpotifyApp::publishEvent(const WiFiEvent &event)
