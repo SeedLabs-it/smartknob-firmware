@@ -378,6 +378,8 @@ void WifiTask::webHandlerSpotifyCredentials()
         snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
 
         server_->send(200, "application/json", response);
+
+        ESP.restart(); // Restart to apply new config
         return;
     }
     server_->send(302, "text/plain", "Invalid Spotify credentials!");

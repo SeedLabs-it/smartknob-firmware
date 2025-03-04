@@ -59,6 +59,8 @@ private:
 
     unsigned long last_updated_ms_ = 0;
 
+    bool first_run_state_system = false;
+
     lv_obj_t *qr_screen = nullptr;
     lv_obj_t *qr_code = nullptr;
 

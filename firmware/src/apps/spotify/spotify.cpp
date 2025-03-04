@@ -211,23 +211,6 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         shared_events_queue = state.shared_events_queue;
     }
 
-    if (state.connectivity_state.is_connected != last_connectivity_state.is_connected)
-    {
-        if (state.connectivity_state.is_connected)
-        {
-            static char ip_data[50];
-            sprintf(ip_data, "http://%s/?spotify", state.connectivity_state.ip_address);
-            lv_qrcode_update(qr_code, ip_data, strlen(ip_data));
-        }
-        else
-        {
-            {
-                lv_qrcode_update(qr_code, "http://192.168.4.1/?spotify", strlen("http://192.168.4.1/?spotify"));
-            }
-        }
-        last_connectivity_state = state.connectivity_state;
-    }
-
     if ((state.os_mode_state == OSMode::SPOTIFY || state.playback_state.spotify_available || state.playback_state.available) && lv_obj_has_flag(player_screen, LV_OBJ_FLAG_HIDDEN))
     {
         LOGV(LOG_LEVEL_DEBUG, "Spotify is available");
@@ -247,6 +230,22 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         motor_config.position_nonce = motor_config.position_nonce + 1;
         motor_notifier->requestUpdate(motor_config);
         is_spotify_configured = false;
+    }
+
+    if (state.connectivity_state.is_connected != last_connectivity_state.is_connected || !first_run_state_system)
+    {
+        if (state.connectivity_state.is_connected)
+        {
+            static char ip_data[50];
+            sprintf(ip_data, "http://%s/?spotify", state.connectivity_state.ip_address);
+            lv_qrcode_update(qr_code, ip_data, strlen(ip_data));
+        }
+        else
+        {
+            LOGE("No connection Spotify wont work.");
+        }
+        last_connectivity_state = state.connectivity_state;
+        first_run_state_system = true;
     }
 
     if (state.cover_art != nullptr && latest_cover_art != state.cover_art) // TODO Cover art should arrive after colors but technically it could arrive before
@@ -301,7 +300,7 @@ void SpotifyApp::updateStateFromSystem(AppState state)
 
         if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
         {
-            current_position = state.playback_state.device.volume_percent / (100 / motor_config.max_position);
+            current_position = state.playback_state.device.volume_percent / (100 / min(1, motor_config.max_position));
             last_position = current_position;
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;
