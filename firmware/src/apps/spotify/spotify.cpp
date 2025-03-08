@@ -168,9 +168,8 @@ EntityStateUpdate SpotifyApp::updateStateFromKnob(PB_SmartKnobState state)
     motor_config.position_nonce = current_position;
     motor_config.position = current_position;
 
-    if (last_position != current_position && !first_run)
+    if (last_position != current_position && !first_run && motor_config.max_position != 0)
     {
-        // SemaphoreGuard lock(mutex_);
         uint8_t volume_val = current_position * (100 / motor_config.max_position);
         lv_arc_set_value(volume, volume_val);
 
@@ -327,9 +326,9 @@ void SpotifyApp::updateStateFromSystem(AppState state)
             }
         }
 
-        if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent)
+        if (state.playback_state.device.volume_percent != last_playback_state_.device.volume_percent && motor_config.max_position != 0)
         {
-            current_position = state.playback_state.device.volume_percent / (100 / min(1, motor_config.max_position));
+            current_position = state.playback_state.device.volume_percent / (100 / motor_config.max_position);
             last_position = current_position;
             motor_config.position_nonce = current_position;
             motor_config.position = current_position;

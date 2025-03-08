@@ -109,6 +109,7 @@ void SpotifyTask::run()
                         last_volume = latest_playback_state_.device.volume_percent;
                         LOGW("Failed to set Spotify volume");
                     }
+                    last_volume = 255;
                 }
             }
         }
