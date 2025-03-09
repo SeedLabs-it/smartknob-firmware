@@ -27,21 +27,15 @@ void AsyncHttp::get(const char *path, const char *content_type, ResponseCallback
     char request[512];
     snprintf(request, 512, "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: ESP\r\nConnection: close\r\n\r\n", path, host_);
 
-    // HttpResponseState state = {};
-    HttpResponseState state;
-
     client_->onConnect([this, request, rc, content_type](void *arg, AsyncClient *client)
                        {
                            size_t len = client_->write(request);
                            // TODO verify if all bytes were written and or handle errors etc.
-                           client->onData([this, rc, content_type](void *arg, AsyncClient *client, void *data, size_t len)
-                                          { handleHttpResponse(arg, client, data, len, content_type, rc); }); });
 
-    // client_->onDisconnect([this, request](void *arg, AsyncClient *client)
-    //                       {
-    //                             LOGV(LOG_LEVEL_DEBUG, "Disconnected from server %s:%d", host_, port_);
-    //                             client_->close();
-    //                             heap_caps_free(request); });
+                           client->onData([this, rc, content_type](void *arg, AsyncClient *client, void *data, size_t len)
+                                          { handleHttpResponse(arg, client, data, len, content_type, rc); 
+                                        }); });
+
     client_->onDisconnect([this](void *arg, AsyncClient *client)
                           { resetHttpResponseState(); });
 }
@@ -105,6 +99,9 @@ bool AsyncHttp::parseHeaders(const char *expected_content_type)
         state_.content_length = atoi(content_length_str + 15);
     }
 
+    size_t header_size = state_.body_start - state_.resp_buffer + 4;
+    state_.body_size = state_.resp_size - header_size;
+
     state_.headers_parsed = true;
     return true;
 }
@@ -118,11 +115,16 @@ bool AsyncHttp::isBodyComplete()
     const char *header_end = strstr(state_.resp_buffer, "\r\n\r\n");
     if (!header_end)
         return false;
+
     size_t received_body_size = state_.resp_size - (header_end + 4 - state_.resp_buffer);
+
     if (state_.content_length == 0 || received_body_size >= state_.content_length)
     {
+        // LOGE("RECEIVED BODY SIZE: %d", received_body_size);
+        // LOGE("CONTENT LENGTH: %d", state_.content_length);
         return true;
     }
+
     return false;
 }
 

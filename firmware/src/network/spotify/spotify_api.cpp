@@ -306,6 +306,9 @@ bool SpotifyApi::refreshToken()
 
     int httpCode = http_client_.POST(refresh_token_body_);
 
+    // LOGE("Refresh token body: %s", refresh_token_body_);
+    // LOGE("Refresh token header: %s", base64_basic_auth_header_);
+
     if (httpCode == HTTP_CODE_OK)
     {
         // String payload = http_client_.getString();
@@ -353,7 +356,7 @@ bool SpotifyApi::refreshToken()
         strcpy(spotify_config_->token_type,
                cJSON_GetStringValue(cJSON_GetObjectItem(json, "token_type")));
         spotify_config_->expires_in =
-            cJSON_GetNumberValue(cJSON_GetObjectItem(json, "expires_in"));
+            cJSON_GetNumberValue(cJSON_GetObjectItem(json, "expires_in")) * 1000;
         if (cJSON_HasObjectItem(json, "refresh_token"))
             strcpy(spotify_config_->refresh_token,
                    cJSON_GetStringValue(cJSON_GetObjectItem(json, "refresh_token")));
@@ -364,6 +367,7 @@ bool SpotifyApi::refreshToken()
         expires_in_ = spotify_config_->expires_in;
 
         configuration_.setSpotifyConfig(*spotify_config_);
+        http_client_.end();
         return true;
     }
     else
@@ -376,16 +380,14 @@ bool SpotifyApi::refreshToken()
 
 bool SpotifyApi::checkAndRefreshToken()
 {
-    if (last_refreshed_ms_ == 0 ||
-        millis() >=
-            (last_refreshed_ms_ - 1000) +
-                expires_in_ *
-                    1000) // TODO convert expires_in_ to ms at "init/fetch"
+    // LOGE("Last refreshed: %lu", last_refreshed_ms_);
+    // LOGE("Expires in: %d", expires_in_);
+    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + expires_in_)
     {
         if (refreshToken())
         {
             last_refreshed_ms_ = millis();
-            LOGI("Spotify token refreshed");
+            LOGV(LOG_LEVEL_INFO, "Spotify token refreshed");
             return true;
         }
         else
@@ -460,7 +462,6 @@ int SpotifyApi::sendPutRequest(const String &url, const String &body)
 {
     if (!checkAndRefreshToken())
     {
-        LOGE("Failed to refresh token");
         return -1;
     }
 

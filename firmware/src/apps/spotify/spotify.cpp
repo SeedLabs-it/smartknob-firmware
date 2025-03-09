@@ -41,9 +41,9 @@ SpotifyApp::SpotifyApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_na
     sprintf(friendly_name, "%s", friendly_name_);
     sprintf(entity_id, "%s", entity_id_);
 
-    motor_config = blocked_motor_config;
-    strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
     strncpy(spotify_config_.id, app_id, sizeof(spotify_config_.id) - 1);
+    strncpy(blocked_motor_config.id, app_id, sizeof(blocked_motor_config.id) - 1);
+    motor_config = blocked_motor_config;
 
     LV_IMG_DECLARE(x80_spotify);
     LV_IMG_DECLARE(x40_spotify);

@@ -9,6 +9,7 @@ struct HttpResponseState
     char *resp_buffer = nullptr;
     char *body_start = nullptr;
     size_t resp_size = 0;
+    size_t body_size = 0;
     size_t content_length = 0;
     bool headers_parsed = false;
     bool body_processed = false;
