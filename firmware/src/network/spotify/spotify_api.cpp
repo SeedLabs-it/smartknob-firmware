@@ -306,8 +306,8 @@ bool SpotifyApi::refreshToken()
 
     int httpCode = http_client_.POST(refresh_token_body_);
 
-    // LOGE("Refresh token body: %s", refresh_token_body_);
-    // LOGE("Refresh token header: %s", base64_basic_auth_header_);
+    LOGE("Refresh token body: %s", refresh_token_body_);
+    LOGE("Refresh token header: %s", base64_basic_auth_header_);
 
     if (httpCode == HTTP_CODE_OK)
     {
@@ -382,7 +382,7 @@ bool SpotifyApi::checkAndRefreshToken()
 {
     // LOGE("Last refreshed: %lu", last_refreshed_ms_);
     // LOGE("Expires in: %d", expires_in_);
-    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + expires_in_)
+    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + 30000)
     {
         if (refreshToken())
         {
