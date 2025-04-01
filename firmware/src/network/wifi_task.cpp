@@ -327,6 +327,11 @@ void WifiTask::webHandlerMQTTCredentials()
         snprintf(response, sizeof(response), "{\"redirect\": \"%s\"}", redirect_page);
 
         server_->send(200, "application/json", response);
+
+        if (strcmp(redirect_page, "done") == 0)
+        {
+            WiFi.softAPdisconnect();
+        }
     }
     else
     {
