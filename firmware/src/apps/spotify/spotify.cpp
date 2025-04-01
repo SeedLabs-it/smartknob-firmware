@@ -330,7 +330,7 @@ void SpotifyApp::updateStateFromSystem(AppState state)
         {
             current_position = state.playback_state.device.volume_percent / (100 / motor_config.max_position);
             last_position = current_position;
-            motor_config.position_nonce = current_position;
+            motor_config.position_nonce = current_position + 1;
             motor_config.position = current_position;
             lv_arc_set_value(volume, state.playback_state.device.volume_percent);
 

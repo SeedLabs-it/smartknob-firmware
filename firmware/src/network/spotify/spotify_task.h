@@ -41,7 +41,8 @@ private:
         .progress_ms = 0,
     };
 
-    boolean state_invalidated = false;
+    bool state_invalidated = false;
+    bool first_run = true;
 
     QueueHandle_t shared_events_queue_;
     void publishEvent(WiFiEvent event);

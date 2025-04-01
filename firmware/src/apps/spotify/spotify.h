@@ -35,9 +35,6 @@ protected:
 
 private:
     PB_SmartKnobConfig spotify_config_ = PB_SmartKnobConfig{
-        .position = 0,
-        .sub_position_unit = 0,
-        .position_nonce = 0,
         .min_position = 0,
         .max_position = 50,
         .position_width_radians = 6 * PI / 180,
@@ -71,7 +68,9 @@ private:
 
     bool first_run = true;
     uint8_t current_position = 0;
-    int32_t last_position = 0;
+    int32_t last_position = 255;
+
+    uint8_t last_volume = 255;
 
     bool is_spotify_configured = false; // TODO Replace with actual check!!!!!!
 

@@ -148,10 +148,11 @@ void SpotifyTask::handleEvent(const WiFiEvent &event)
         break;
     case SK_SPOTIFY_VOLUME:
         if (event.body.volume != last_volume &&
-            latest_playback_state_.device.volume_percent != event.body.volume)
+            latest_playback_state_.device.volume_percent != event.body.volume && !first_run)
         {
             last_volume = event.body.volume;
         }
+        first_run = false;
         break;
     default:
         break;
