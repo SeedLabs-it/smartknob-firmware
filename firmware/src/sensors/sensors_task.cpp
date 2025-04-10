@@ -139,6 +139,9 @@ void SensorsTask::run()
 
     uint8_t discarded_strain_reading_count = 0;
 
+    // Add a predefined value for the minimum raw strain reading
+    const float MIN_RAW_STRAIN_READING = 1000.0;
+
     while (1)
     {
         if (millis() - last_system_temperature_check > 1000)
@@ -288,6 +291,15 @@ void SensorsTask::run()
                         last_strain_reading_raw_ = strain_reading_raw;
                         last_press_value_ = sensors_state.strain.press_value;
                         last_strain_check_ms = millis();
+                    }
+
+                    // Add logic to check if the raw strain reading is lower than the predefined value
+                    if (strain_reading_raw < MIN_RAW_STRAIN_READING)
+                    {
+                        // Trigger a user prompt if the raw strain reading is lower than the predefined value
+                        WiFiEvent event;
+                        event.type = SK_STRAIN_SENSOR_ERROR;
+                        publishEvent(event);
                     }
                 }
 

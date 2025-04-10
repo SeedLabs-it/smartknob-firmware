@@ -64,6 +64,11 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
             1,
         };
         break;
+    case SK_STRAIN_SENSOR_ERROR:
+        error_type = LOW_STRAIN_READING_ERROR;
+        send_event.type = SK_STRAIN_SENSOR_ERROR;
+        publishEvent(send_event);
+        break;
     default:
         LOGE("UNKNOWN EVENT");
         break;
@@ -80,6 +85,7 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         break;
     case MQTT_ERROR:
     case WIFI_ERROR:
+    case LOW_STRAIN_READING_ERROR:
         if (error_type == MQTT_ERROR)
         {
             LOGE("MQTT ERROR");
@@ -89,6 +95,11 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
         {
             LOGE("WIFI ERROR");
             error_state.retry_count = event.body.error.body.wifi_error.retry_count;
+        }
+        else if (error_type == LOW_STRAIN_READING_ERROR)
+        {
+            LOGE("LOW STRAIN READING ERROR");
+            error_state.retry_count = event.body.error.body.strain_error.retry_count;
         }
 
         error_page->error_state = error_state;
@@ -120,6 +131,10 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
         {
             publishEvent(send_event);
         }
+        else if (error_type == LOW_STRAIN_READING_ERROR && error_state.latest_event.type == SK_STRAIN_SENSOR_ERROR)
+        {
+            publishEvent(send_event);
+        }
         break;
     case NavigationEvent::LONG:
         send_event.type = SK_DISMISS_ERROR;
@@ -128,6 +143,10 @@ void ErrorHandlingFlow::handleNavigationEvent(NavigationEvent event)
             publishEvent(send_event);
         }
         else if (error_type == WIFI_ERROR && error_state.latest_event.type == SK_WIFI_STA_RETRY_LIMIT_REACHED)
+        {
+            publishEvent(send_event);
+        }
+        else if (error_type == LOW_STRAIN_READING_ERROR && error_state.latest_event.type == SK_STRAIN_SENSOR_ERROR)
         {
             publishEvent(send_event);
         }
