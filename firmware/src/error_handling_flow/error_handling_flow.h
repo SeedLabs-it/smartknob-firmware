@@ -17,6 +17,16 @@ enum ErrorPages
     COUNT
 };
 
+enum ErrorType
+{
+    NO_ERROR,
+    WIFI_ERROR,
+    MQTT_ERROR,
+    RESET,
+    LOW_STRAIN_READING_ERROR, // New error type for low strain reading
+    ERROR_TYPE_COUNT
+};
+
 class ErrorHandlingPageManager : public PageManager<ErrorPages>
 {
 public:

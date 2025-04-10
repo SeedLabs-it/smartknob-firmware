@@ -61,6 +61,9 @@ void ErrorPage::show()
     case ErrorType::WIFI_ERROR:
         lv_label_set_text(error_type_label, "WIFI");
         break;
+    case ErrorType::LOW_STRAIN_READING_ERROR:
+        lv_label_set_text(error_type_label, "STRAIN SENSOR");
+        break;
     default:
         break;
     }
@@ -89,7 +92,16 @@ void ErrorPage::show()
         lv_obj_clear_flag(press_to_retry_label, LV_OBJ_FLAG_HIDDEN);
         lv_label_set_text(error_event_label, "Retry limit reached");
         break;
+    case EventType::SK_STRAIN_SENSOR_ERROR:
+        lv_obj_add_flag(qr_code, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(press_to_retry_label, LV_OBJ_FLAG_HIDDEN);
 
+        lv_label_set_text(error_event_label, "Strain sensor error");
+        if (timer == nullptr)
+        {
+            timer = lv_timer_create(retry_timer, 250, this);
+        }
+        break;
     default:
         break;
     }
