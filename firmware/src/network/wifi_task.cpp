@@ -469,6 +469,8 @@ void WifiTask::run()
 
     unsigned long last_run_ms_ = 0;
 
+    WiFi.setSleep(false);
+
     while (1)
     {
         last_run_ms_ = millis();

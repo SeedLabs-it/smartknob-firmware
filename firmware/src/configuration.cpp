@@ -136,55 +136,62 @@ bool Configuration::setSpotifyConfig(const PB_SpotifyConfig &spotify_config)
         SemaphoreGuard lock(mutex_);
         LOGV(LOG_LEVEL_DEBUG, "Setting Spotify config.");
         if (strcmp(spotify_config.base64_id_and_secret, "") != 0 &&
-            spotify_config_buffer_.base64_id_and_secret !=
-                spotify_config.base64_id_and_secret)
+            strcmp(spotify_config_buffer_.base64_id_and_secret, spotify_config.base64_id_and_secret) != 0)
         {
             strcpy(spotify_config_buffer_.base64_id_and_secret,
                    spotify_config.base64_id_and_secret);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify base64 id and secret changed");
         }
         if (strcmp(spotify_config.access_token, "") != 0 &&
-            spotify_config_buffer_.access_token != spotify_config.access_token)
+            strcmp(spotify_config_buffer_.access_token, spotify_config.access_token) != 0)
         {
             strcpy(spotify_config_buffer_.access_token, spotify_config.access_token);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify access token changed");
         }
         if (strcmp(spotify_config.token_type, "") != 0 &&
-            spotify_config_buffer_.token_type != spotify_config.token_type)
+            strcmp(
+                spotify_config_buffer_.token_type, spotify_config.token_type) != 0)
         {
             strcpy(spotify_config_buffer_.token_type, spotify_config.token_type);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify token type changed");
         }
         if (strcmp(spotify_config.scope, "") != 0 &&
-            spotify_config_buffer_.scope != spotify_config.scope)
+            strcmp(
+                spotify_config_buffer_.scope, spotify_config.scope) != 0)
         {
             strcpy(spotify_config_buffer_.scope, spotify_config.scope);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify scope changed");
         }
         if (spotify_config.expires_in != 0 &&
             spotify_config_buffer_.expires_in != spotify_config.expires_in)
         {
             spotify_config_buffer_.expires_in = spotify_config.expires_in;
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify expires in changed");
         }
         if (strcmp(spotify_config.refresh_token, "") != 0 &&
-            spotify_config_buffer_.refresh_token != spotify_config.refresh_token)
+            strcmp(spotify_config_buffer_.refresh_token, spotify_config.refresh_token) != 0)
         {
             strcpy(spotify_config_buffer_.refresh_token,
                    spotify_config.refresh_token);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify refresh token changed");
         }
         if (strcmp(spotify_config.device_id, "") != 0 &&
-            spotify_config_buffer_.device_id != spotify_config.device_id)
+            strcmp(spotify_config_buffer_.device_id, spotify_config.device_id) != 0)
         {
             strcpy(spotify_config_buffer_.device_id, spotify_config.device_id);
             changed = true;
+            LOGV(LOG_LEVEL_DEBUG, "Spotify device id changed");
         }
     }
 
     if (changed && saveSpotifyConfigToDisk())
     {
-
         publishEvent(WiFiEvent{.type = SK_SPOTIFY_CONFIG_CHANGED});
         return true;
     }

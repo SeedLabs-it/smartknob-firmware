@@ -306,8 +306,8 @@ bool SpotifyApi::refreshToken()
 
     int httpCode = http_client_.POST(refresh_token_body_);
 
-    LOGE("Refresh token body: %s", refresh_token_body_);
-    LOGE("Refresh token header: %s", base64_basic_auth_header_);
+    // LOGE("Refresh token body: %s", refresh_token_body_);
+    // LOGE("Refresh token header: %s", base64_basic_auth_header_);
 
     if (httpCode == HTTP_CODE_OK)
     {
@@ -367,6 +367,8 @@ bool SpotifyApi::refreshToken()
         expires_in_ = spotify_config_->expires_in;
 
         configuration_.setSpotifyConfig(*spotify_config_);
+
+        setConfig(*spotify_config_);
         http_client_.end();
         return true;
     }
@@ -500,11 +502,24 @@ void SpotifyApi::downloadImage(char *path) // TODO
 {
     if (WiFi.status() == WL_CONNECTED)
     {
-        cover_art_http->get(path, "image/png", [this](const char *body, size_t body_size)
+        cover_art_http->get(path, "image/png", [this, path](const char *body, size_t body_size)
                             {
                 imageSize = body_size;
                 imageBuffer = (uint8_t *)heap_caps_aligned_alloc(16, body_size, MALLOC_CAP_SPIRAM);
                 memcpy(imageBuffer, body, body_size);
+
+                if (isValidPng(imageBuffer, body_size))
+                {
+                    LOGD("Valid PNG image");
+                }
+                else
+                {
+                    LOGE("Invalid PNG image");
+                    heap_caps_free(imageBuffer);
+                    imageBuffer = nullptr;
+                    downloadImage(path);
+                    return;
+                }
 
                 lv_img_dsc_t *image_dsc = (lv_img_dsc_t *)heap_caps_malloc(sizeof(lv_img_dsc_t), MALLOC_CAP_SPIRAM);
                 image_dsc->header.always_zero = 0;
@@ -513,6 +528,8 @@ void SpotifyApi::downloadImage(char *path) // TODO
                 image_dsc->header.cf = LV_IMG_CF_TRUE_COLOR_ALPHA;
                 image_dsc->data = imageBuffer;
                 image_dsc->data_size = body_size;
+
+                
 
                 WiFiEvent cover_art_event;
                 cover_art_event.type = SK_SPOTIFY_NEW_COVER_ART;
