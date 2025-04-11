@@ -174,7 +174,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
         if (page_num == HUE_PAGE)
         {
-
             int16_t app_hue_deg = hue_pos * skip_degrees_selectable;
             if (app_hue_deg < 0)
                 hsv_.h = 360 + app_hue_deg % 360;
@@ -190,7 +189,6 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         }
         else if (page_num == TEMP_PAGE)
         {
-
             int16_t app_temp_deg = (temp_pos * skip_degrees_selectable) % 360;
             uint16_t kelvin;
             uint16_t abs_temp_deg = abs(app_temp_deg);
@@ -209,14 +207,15 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         snprintf(new_state.state, sizeof(new_state.state) - 1, "%s", json_str);
 
         cJSON_free(json_str);
+        cJSON_Delete(rgb);
         cJSON_Delete(json);
 
-        snprintf(new_state.app_slug, sizeof(new_state.app_slug) - 1, "%s", APP_SLUG_LIGHT_SWITCH);
+        snprintf(new_state.app_slug, sizeof(new_state.app_slug), "%s", APP_SLUG_LIGHT_SWITCH);
 
-        new_state.changed = true;
+        // new_state.changed = true;
     }
 
-    //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
+    // //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
     last_position = current_position;
     first_run = false;
     return new_state;
