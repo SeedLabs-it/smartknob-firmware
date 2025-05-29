@@ -13,9 +13,9 @@ const generateRandomString = (length) => {
 };
 
 const getSpotifyOAuthUrl = async (clientId) => {
-  var redirectUrl = `http://${window.location.hostname}/?spotify`;
+  var redirectUrl = `https://${window.location.hostname}/?spotify`;
   if (window.location.hostname === 'localhost') {
-    redirectUrl = `http://${window.location.hostname}:5173/?spotify`;
+    redirectUrl = `https://${window.location.hostname}:5173/?spotify`;
   }
   const scope = 'streaming user-modify-playback-state user-read-playback-state';
 
@@ -36,9 +36,9 @@ const getSpotifyOAuthUrl = async (clientId) => {
 };
 
 const getAccessToken = async (code, client_id, client_secret) => {
-  var redirectUrl = `http://${window.location.hostname}/?spotify`;
+  var redirectUrl = `https://${window.location.hostname}/?spotify`;
   if (window.location.hostname === 'localhost') {
-    redirectUrl = `http://${window.location.hostname}:5173/?spotify`;
+    redirectUrl = `https://${window.location.hostname}:5173/?spotify`;
   }
 
   const response = await fetch('https://accounts.spotify.com/api/token', {
@@ -170,8 +170,8 @@ const SpotifyComp = () => {
 
             const response = await fetch(
               window.location.hostname === 'localhost'
-                ? `http://${window.location.hostname}:5173/spotify`
-                : `http://${window.location.hostname}/spotify`,
+                ? `https://${window.location.hostname}:5173/spotify`
+                : `https://${window.location.hostname}/spotify`,
               {
                 method: 'POST',
                 headers: {
