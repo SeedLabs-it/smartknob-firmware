@@ -212,7 +212,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
 
         snprintf(new_state.app_slug, sizeof(new_state.app_slug), "%s", APP_SLUG_LIGHT_SWITCH);
 
-        // new_state.changed = true;
+        new_state.changed = true;
     }
 
     // //! TEMP FIX VALUE, REMOVE WHEN FIRST STATE VALUE THAT IS SENT ISNT THAT OF THE CURRENT POS FROM MENU WHERE USER INTERACTED TO GET TO THIS APP, create new issue?
