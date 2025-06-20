@@ -12,11 +12,14 @@
 #include "notify/os_config_notifier/os_config_notifier.h"
 
 #include "onboarding_flow/submenus/hass_flow.h"
+#include "onboarding_flow/submenus/spotify_flow.h"
+#include "onboarding_flow/submenus/shared/wifi_flow.h"
 
 enum OnboardingFlowPages
 {
     WELCOME_PAGE = 0,
     HASS_PAGE,
+    SPOTIFY_PAGE,
     // WIFI,
     DEMO_PAGE,
     ABOUT_PAGE,
@@ -61,6 +64,30 @@ public:
 
         lv_obj_t *label = lv_label_create(page);
         lv_label_set_text(label, "HOME ASSISTANT\nINTEGRATION");
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, 32);
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+
+        label = lv_label_create(page);
+        lv_label_set_text(label, "PRESS TO CONFIGURE");
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, 74);
+        lv_obj_set_style_text_color(label, LV_COLOR_MAKE(0x80, 0xFF, 0x50), LV_STATE_DEFAULT);
+    }
+};
+
+class SpotifyPage : public BasePage
+{
+public:
+    SpotifyPage(lv_obj_t *parent) : BasePage(parent)
+    {
+        lv_obj_t *img = lv_img_create(page);
+        LV_IMG_DECLARE(x96_spotify_logo_green);
+        lv_img_set_src(img, &x96_spotify_logo_green);
+        lv_obj_set_width(img, x96_spotify_logo_green.header.w);
+        lv_obj_set_height(img, x96_spotify_logo_green.header.h);
+        lv_obj_align(img, LV_ALIGN_CENTER, 0, -50);
+
+        lv_obj_t *label = lv_label_create(page);
+        lv_label_set_text(label, "SPOTIFY\nINTEGRATION");
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 32);
         lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
 
@@ -148,6 +175,7 @@ public:
     {
         add(WELCOME_PAGE, new WelcomePage(parent));
         add(HASS_PAGE, new HassPage(parent));
+        add(SPOTIFY_PAGE, new SpotifyPage(parent));
         add(DEMO_PAGE, new DemoPage(parent));
         add(ABOUT_PAGE, new AboutPage(parent));
 
@@ -207,6 +235,7 @@ enum ActiveSubMenu
 {
     NONE,
     HASS_SUB_MENU,
+    SPOTIFY_SUB_MENU,
     WIFI_SUB_MENU,
     DEMO_SUB_MENU,
     ACTIVE_SUB_MENU_COUNT
@@ -231,10 +260,14 @@ public:
     void triggerMotorConfigUpdate();
     void handleNavigationEvent(NavigationEvent event);
 
+    void setSharedEventsQueue(QueueHandle_t shared_events_queue);
+
 private:
     SemaphoreHandle_t mutex_;
 
     HassOnboardingFlow *hass_flow;
+    SpotifyOnboardingFlow *spotify_flow;
+    WiFiOnboardingFlow *wifi_flow;
 
     ActiveSubMenu active_sub_menu = NONE;
 
@@ -252,4 +285,7 @@ private:
     lv_obj_t *main_screen = lv_obj_create(NULL);
 
     OnboardingPageManager *page_mgr = nullptr;
+
+    QueueHandle_t shared_events_queue_;
+    void publishEvent(WiFiEvent event);
 };

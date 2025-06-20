@@ -2,11 +2,11 @@
 #include "mqtt_task.h"
 
 static const char *MQTT_TAG = "MQTT";
-MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 11, 0, task_core}
+MqttTask::MqttTask(const uint8_t task_core) : Task{"mqtt", 1024 * 9, 1, task_core}
 {
     mutex_app_sync_ = xSemaphoreCreateMutex();
 
-    entity_state_to_send_queue_ = xQueueCreate(50, sizeof(EntityStateUpdate));
+    entity_state_to_send_queue_ = xQueueCreate(10, sizeof(EntityStateUpdate));
     assert(entity_state_to_send_queue_ != NULL);
 
     mqtt_notifier = MqttNotifier();
@@ -87,6 +87,8 @@ void MqttTask::run()
         {
             if (millis() - last_mqtt_state_sent > 1000 && !mqtt_client.connected() && WiFi.isConnected())
             {
+                LOGE("MQTT CLIENT STATE %d", mqtt_client.connected());
+                LOGE("WIFI STATE %d", WiFi.isConnected());
                 disconnected_at = millis();
                 if (has_been_connected || retry_count > 0)
                 {
@@ -136,7 +138,6 @@ void MqttTask::run()
 
             if (xQueueReceive(entity_state_to_send_queue_, &entity_state_to_process_, 0) == pdTRUE)
             {
-
                 if (entity_state_to_process_.changed)
                 {
                     entity_states_to_send[entity_state_to_process_.app_id] = entity_state_to_process_;
@@ -150,7 +151,7 @@ void MqttTask::run()
                 {
                     if (!entity_states_to_send[i.first].sent)
                     {
-
+                        // LOGE("LENGTH %d", entity_states_to_send.size());
                         sprintf(hexbuffer_, "%08lX", micros());
                         cJSON *json = cJSON_CreateObject();
                         cJSON_AddStringToObject(json, "id", hexbuffer_);
@@ -203,11 +204,14 @@ bool MqttTask::setup(MQTTConfiguration config)
 
     config_ = config;
 
-    wifi_client.setTimeout(10);
+    wifi_client.setTimeout(50);
 
     mqtt_client.setClient(wifi_client);
+    mqtt_client.setSocketTimeout(50); // mqtt_client
+    mqtt_client.setKeepAlive(100);
+    // mqtt_client
     mqtt_client.setServer(config_.host, config_.port);
-    mqtt_client.setBufferSize(2048); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setBufferSize(SK_MQTT_BUFFER_SIZE);
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
@@ -232,7 +236,7 @@ bool MqttTask::setupAndConnectNewCredentials(MQTTConfiguration config)
 
     mqtt_client.setClient(wifi_client);
     mqtt_client.setServer(config.host, config.port);
-    mqtt_client.setBufferSize(SK_MQTT_BUFFER_SIZE); // ADD BUFFER SIZE TO CONFIG? NO?
+    mqtt_client.setBufferSize(SK_MQTT_BUFFER_SIZE);
     mqtt_client.setCallback([this](char *topic, byte *payload, unsigned int length)
                             { this->callback(topic, payload, length); });
 
@@ -282,17 +286,14 @@ bool MqttTask::connect()
     }
 
     bool mqtt_connected = false;
-    if (config_.user == "")
+    if (strcmp(config_.user, "") == 0)
     {
         LOGI("Connecting to MQTT without credentials");
-        // TODO: Create and use knob id
-
         mqtt_connected = mqtt_client.connect(config_.knob_id);
     }
     else
     {
         LOGI("Connecting to MQTT with credentials");
-        // TODO: Create and use knob id
         mqtt_connected = mqtt_client.connect(config_.knob_id, config_.user, config_.password);
     }
 

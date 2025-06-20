@@ -111,3 +111,12 @@ lv_color_t kelvinToLvColor(int16_t kelvin)
 
     return LV_COLOR_MAKE(CLAMP<uint8_t>(red, 0, 255), CLAMP<uint8_t>(green, 0, 255), CLAMP<uint8_t>(blue, 0, 255));
 }
+
+const uint8_t PNG_SIGNATURE[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+
+bool isValidPng(const uint8_t *data, size_t size)
+{
+    if (size < 8)
+        return false;
+    return memcmp(data, PNG_SIGNATURE, 8) == 0;
+}

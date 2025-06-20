@@ -10,11 +10,11 @@
 
 static const char *TAG = "sensors_task";
 
-SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 8, 0, task_core}, configuration_(configuration)
+SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) : Task{"Sensors", 1024 * 8, 1, task_core}, configuration_(configuration)
 {
     mutex_ = xSemaphoreCreateMutex();
 
-    sensors_state_queue_ = xQueueCreate(50, sizeof(SensorsState));
+    sensors_state_queue_ = xQueueCreate(20, sizeof(SensorsState));
     assert(sensors_state_queue_ != NULL);
     assert(mutex_ != NULL);
 }
@@ -300,7 +300,7 @@ void SensorsTask::run()
                     LOGV(LOG_LEVEL_DEBUG, "Strain sensor not ready, waiting...");
                     log_ms_strain = millis();
                 }
-                else if (millis() - log_ms_strain > 4000)
+                else if (millis() - log_ms_strain > 20000)
                 {
                     LOGV(LOG_LEVEL_DEBUG, "Strain sensor is disabled. (Might be because of factory calib or its powered off because no engagement of knob)");
                     log_ms_strain = millis();
@@ -326,7 +326,7 @@ void SensorsTask::run()
             last_illumination_check_ms = millis();
         }
 #endif
-
+#if SKDK_SENSOR_LOGGING
         if (millis() - log_ms > 1000)
         {
             LOGV(LOG_LEVEL_DEBUG, "System temp %0.2f °C", last_system_temperature);
@@ -339,6 +339,7 @@ void SensorsTask::run()
 #endif
             log_ms = millis();
         }
+#endif
         delay(1);
     }
 }

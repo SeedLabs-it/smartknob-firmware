@@ -20,12 +20,12 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     case SK_MQTT_RETRY_LIMIT_REACHED:
         if (!WiFi.isConnected())
         {
-            sprintf(ip_data, "%s", "http://192.168.4.1/mqtt"); // always the same
+            sprintf(ip_data, "%s", "http://192.168.4.1/?mqtt"); // always the same
         }
         else
         {
             // TODO: look into how to store and retrieve ip in a better way.
-            sprintf(ip_data, "http://%s/mqtt", WiFi.localIP().toString().c_str());
+            sprintf(ip_data, "http://%s/?mqtt", WiFi.localIP().toString().c_str());
         }
         error_page->setQr(ip_data);
     case SK_MQTT_CONNECTION_FAILED:
@@ -36,12 +36,12 @@ void ErrorHandlingFlow::handleEvent(WiFiEvent event)
     case SK_WIFI_STA_RETRY_LIMIT_REACHED:
         if (!WiFi.isConnected())
         {
-            sprintf(ip_data, "%s", "http://192.168.4.1/"); // always the same
+            sprintf(ip_data, "%s", "http://192.168.4.1/?wifi"); // always the same
         }
         else
         {
             // TODO: look into how to store and retrieve ip in a better way.
-            sprintf(ip_data, "http://%s/", WiFi.localIP().toString().c_str());
+            sprintf(ip_data, "http://%s/?wifi", WiFi.localIP().toString().c_str());
         }
         error_page->setQr(ip_data);
     case SK_WIFI_STA_CONNECTION_FAILED:

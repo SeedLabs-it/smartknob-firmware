@@ -37,3 +37,12 @@ void WiFiNotifier::loopTick()
         callback(recieved_command);
     }
 }
+
+void WiFiNotifier::redirect(RedirectPage page)
+{
+    WiFiCommand command;
+    command.type = RequestRedirect;
+    command.body.redirect_page = page;
+
+    xQueueSendToBack(wifi_notifications_queue, &command, 0);
+}
