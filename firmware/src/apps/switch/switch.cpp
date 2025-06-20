@@ -1,6 +1,6 @@
-#include "light_switch.h"
+#include "switch.h"
 
-LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
+SwitchApp::SwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_, bool is_light_switch_) : App(mutex), is_light_switch(is_light_switch_)
 {
     sprintf(app_id, "%s", app_id_);
     sprintf(friendly_name, "%s", friendly_name_);
@@ -24,18 +24,31 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *fri
     };
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    LV_IMG_DECLARE(x80_lightbulb_outline);
-    LV_IMG_DECLARE(x40_lightbulb_outline);
-    LV_IMG_DECLARE(x80_lightbulb_filled);
+    if (is_light_switch_)
+    {
+        LV_IMG_DECLARE(x80_lightbulb_outline);
+        LV_IMG_DECLARE(x40_lightbulb_outline);
+        LV_IMG_DECLARE(x80_lightbulb_filled);
 
-    big_icon = x80_lightbulb_outline;
-    big_icon_active = x80_lightbulb_filled;
-    small_icon = x40_lightbulb_outline;
+        big_icon = x80_lightbulb_outline;
+        big_icon_active = x80_lightbulb_filled;
+        small_icon = x40_lightbulb_outline;
+    }
+    else
+    {
+        LV_IMG_DECLARE(x80_outlet_outline);
+        LV_IMG_DECLARE(x40_outlet_outline);
+        LV_IMG_DECLARE(x80_outlet_filled);
+
+        big_icon = x80_outlet_outline;
+        big_icon_active = x80_outlet_filled;
+        small_icon = x40_outlet_outline;
+    }
 
     initScreen();
 }
 
-void LightSwitchApp::initScreen()
+void SwitchApp::initScreen()
 {
     SemaphoreGuard lock(mutex_);
 
@@ -78,7 +91,7 @@ void LightSwitchApp::initScreen()
 // Define a global or class-level variable to track the previous sub_position_unit
 float previous_sub_position_unit = 0.0f;
 
-EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
+EntityStateUpdate SwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
     if (state_sent_from_hass)
@@ -158,7 +171,15 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
         last_position = current_position;
         new_state.changed = true;
-        sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
+
+        if (is_light_switch)
+        {
+            sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
+        }
+        else
+        {
+            sprintf(new_state.app_slug, "%s", APP_SLUG_SWITCH);
+        }
     }
 
     last_updated_ms = millis();
@@ -167,7 +188,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
-void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+void SwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
     cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
     cJSON *on = cJSON_GetObjectItem(new_state, "on");
@@ -211,4 +232,4 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 }
 
-void LightSwitchApp::updateStateFromSystem(AppState state) {}
+void SwitchApp::updateStateFromSystem(AppState state) {}

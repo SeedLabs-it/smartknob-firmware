@@ -1,10 +1,10 @@
 #pragma once
 #include "../app.h"
 #include "../util.h"
-class LightSwitchApp : public App
+class SwitchApp : public App
 {
 public:
-    LightSwitchApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id);
+    SwitchApp(SemaphoreHandle_t mutex, char *app_id, char *friendly_name, char *entity_id, bool is_light_switch);
     EntityStateUpdate updateStateFromKnob(PB_SmartKnobState state);
     void updateStateFromHASS(MQTTStateUpdate mqtt_state_update);
     void updateStateFromSystem(AppState state);
@@ -28,4 +28,6 @@ private:
     float old_adjusted_sub_position = 0;
     long last_updated_ms = 0;
     bool first_run = false;
+
+    bool is_light_switch = false;
 };
