@@ -14,7 +14,7 @@ SensorsTask::SensorsTask(const uint8_t task_core, Configuration *configuration) 
 {
     mutex_ = xSemaphoreCreateMutex();
 
-    sensors_state_queue_ = xQueueCreate(50, sizeof(SensorsState));
+    sensors_state_queue_ = xQueueCreate(20, sizeof(SensorsState));
     assert(sensors_state_queue_ != NULL);
     assert(mutex_ != NULL);
 }

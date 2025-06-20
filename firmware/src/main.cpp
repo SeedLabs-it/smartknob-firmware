@@ -102,12 +102,15 @@ void initTempSensor()
 
 void setup()
 {
+
 #if ENABLE_LOGGING
     delay(100); // Delay to allow usb to connect before starting stream
     stream_.begin(MONITOR_SPEED);
 
     Logging::setAdapter(adapter_p);
 #endif
+
+    LOGE("BEFORE ALL TASKS BEGIN MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     LOGI("Starting Seedlabs Smart Knob");
 
@@ -145,6 +148,7 @@ void setup()
 
     if (config.loadSpotifyConfigFromDisk())
     {
+
         PB_SpotifyConfig spotify_config_ = config.getSpotifyConfig();
         if (strcmp(spotify_config_.access_token, "") != 0)
         {
@@ -175,6 +179,8 @@ void setup()
     sensors_task_p->begin();
 
     reset_task_p->begin();
+
+    LOGE("AFTER ALL TASKS BEGIN MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     // Free up the Arduino loop task
     vTaskDelete(NULL);

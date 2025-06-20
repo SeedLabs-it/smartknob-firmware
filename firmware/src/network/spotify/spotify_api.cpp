@@ -30,6 +30,8 @@ SpotifyApi::SpotifyApi(Configuration &configuration)
 
     cover_art_http = new AsyncHttp(cover_art_client, HOST, PORT);
     cover_art_colors_http = new AsyncHttp(cover_art_colors_client, HOST, PORT);
+
+    // http_client_.setReuse(true); // TODO, check if this is needed
 }
 
 SpotifyApi::~SpotifyApi()
@@ -297,6 +299,8 @@ PlaybackState SpotifyApi::getCurrentPlaybackState()
     return playback_state;
 }
 
+#define MIN_TLS_HEAP_SIZE 18000
+
 bool SpotifyApi::refreshToken()
 {
     http_client_.begin("https://accounts.spotify.com/api/token");
@@ -384,7 +388,7 @@ bool SpotifyApi::checkAndRefreshToken()
 {
     // LOGE("Last refreshed: %lu", last_refreshed_ms_);
     // LOGE("Expires in: %d", expires_in_);
-    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + 30000)
+    if (last_refreshed_ms_ == 0 || millis() >= (last_refreshed_ms_ - 1000) + 1800000)
     {
         if (refreshToken())
         {
@@ -449,9 +453,10 @@ bool SpotifyApi::pause(const char *device_id)
 
 bool SpotifyApi::setVolume(uint8_t volume, const char *device_id)
 {
-    int result = sendPutRequest(
-        "https://api.spotify.com/v1/me/player/volume?volume_percent=" +
-        String(volume) + "&device_id=" + String(device_id));
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "https://api.spotify.com/v1/me/player/volume?volume_percent=%d&device_id=%s", volume, device_id);
+    LOGE("URL: %s", buffer);
+    int result = sendPutRequest(buffer);
     if (result == HTTP_CODE_OK || result == HTTP_CODE_NO_CONTENT)
     {
         return true;

@@ -92,7 +92,7 @@ void SpotifyTask::run()
             if (latest_playback_state_.spotify_available)
             {
                 // last_volume != latest_playback_state_.device.vol &&
-                if (millis() - last_volume_change_ms > 500 &&
+                if (millis() - last_volume_change_ms > 200 &&
                     last_volume != 255)
                 {
                     SemaphoreGuard lock(mutex_);

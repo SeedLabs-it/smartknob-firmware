@@ -483,6 +483,12 @@ void WifiTask::run()
 
         if (is_config_set && last_run_ms_ - last_wifi_status > 5000)
         {
+            // LOGE("!!!!!!!! IP ADDRESS: %s", WiFi.localIP().toString().c_str());
+            // LOGE("!!! FREE HEAP: %d", ESP.getFreeHeap());
+            // LOGE("!!! FREE MIN HEAP: %d", ESP.getMinFreeHeap());
+            // LOGE("!!! FREE HEAP MAX ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
+            // LOGE("!!! FREE PSRAM: %d", ESP.getFreePsram());
+            // LOGE("!!! FREE STACK AFTER: %d", uxTaskGetStackHighWaterMark(NULL));
             // LOGE("FREE HEAP: %d", ESP.getFreeHeap());
             // LOGE("FREE MIN HEAP: %d", ESP.getMinFreeHeap());
             // LOGE("FREE PSRAM: %d", ESP.getFreePsram());

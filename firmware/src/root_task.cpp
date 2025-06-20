@@ -22,7 +22,7 @@ RootTask::RootTask(
     SpotifyTask *spotify_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
+    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 18, ESP_TASK_MAIN_PRIO, task_core),
                                                                                                                                                                        configuration_(configuration),
                                                                                                                                                                        motor_task_(motor_task),
                                                                                                                                                                        display_task_(display_task),
@@ -52,7 +52,7 @@ RootTask::RootTask(
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
 
-    sensors_status_queue_ = xQueueCreate(100, sizeof(SensorsState));
+    sensors_status_queue_ = xQueueCreate(20, sizeof(SensorsState));
     assert(sensors_status_queue_ != NULL);
 
     mutex_ = xSemaphoreCreateMutex();
@@ -66,6 +66,7 @@ RootTask::~RootTask()
 
 void RootTask::run()
 {
+    LOGE("BEFORE ALL IN RUN ROOT TASK MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
     uint8_t task_started_at = millis();
 
     motor_task_.addListener(knob_state_queue_);
@@ -165,6 +166,8 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
+    LOGE("BEFORE QUEUES MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
+
     QueueHandle_t shared_events_queue = wifi_task_->getWiFiEventsQueue();
 
     configuration_->setSharedEventsQueue(shared_events_queue);
@@ -172,6 +175,7 @@ void RootTask::run()
     sensors_task_->setSharedEventsQueue(shared_events_queue);
 
     reset_task_->setSharedEventsQueue(shared_events_queue);
+    LOGE("AFTER QUEUES BEFORE NOTIFIER MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
@@ -197,6 +201,8 @@ void RootTask::run()
     display_task_->getHassApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getSpotifyStandalone()->setMotorNotifier(&motor_notifier);
     display_task_->getSpotifyStandalone()->setOSConfigNotifier(&os_config_notifier_);
+
+    LOGE("AFTER NOTIFIER SETUPS MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
@@ -236,6 +242,8 @@ void RootTask::run()
 
     AppState app_state = {};
     app_state.shared_events_queue = shared_events_queue;
+
+    LOGE("BEFORE WHILE LOOP IN ROOT TASK MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     while (1)
     {
