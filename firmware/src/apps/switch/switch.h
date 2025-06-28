@@ -16,7 +16,7 @@ private:
     lv_img_dsc_t big_icon_active;
 
     lv_obj_t *arc_;
-    lv_obj_t *light_bulb;
+    lv_obj_t *status_label;
 
     uint8_t current_position = 0;
     uint8_t last_position = 0;

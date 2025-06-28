@@ -24,7 +24,7 @@ SwitchApp::SwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name
     };
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    if (is_light_switch_)
+    if (is_light_switch)
     {
         LV_IMG_DECLARE(x80_lightbulb_outline);
         LV_IMG_DECLARE(x40_lightbulb_outline);
@@ -36,13 +36,13 @@ SwitchApp::SwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name
     }
     else
     {
-        LV_IMG_DECLARE(x80_outlet_outline);
-        LV_IMG_DECLARE(x40_outlet_outline);
-        LV_IMG_DECLARE(x80_outlet_filled);
+        LV_IMG_DECLARE(x80_toggle_switch_off);
+        LV_IMG_DECLARE(x40_toggle_switch_off);
+        LV_IMG_DECLARE(x80_toggle_switch_on);
 
-        big_icon = x80_outlet_outline;
-        big_icon_active = x80_outlet_filled;
-        small_icon = x40_outlet_outline;
+        big_icon = x80_toggle_switch_off;
+        big_icon_active = x80_toggle_switch_on;
+        small_icon = x40_toggle_switch_off;
     }
 
     initScreen();
@@ -67,12 +67,20 @@ void SwitchApp::initScreen()
     lv_obj_set_style_arc_width(arc_, 24, LV_PART_INDICATOR);
     lv_obj_set_style_pad_all(arc_, -5, LV_PART_KNOB);
 
-    light_bulb = lv_img_create(screen);
-    lv_img_set_src(light_bulb, &big_icon);
-    lv_obj_set_style_img_recolor_opa(light_bulb, LV_OPA_COVER, 0);
-    lv_obj_set_style_img_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
-
-    lv_obj_center(light_bulb);
+    if (is_light_switch)
+    {
+        status_label = lv_img_create(screen);
+        lv_img_set_src(status_label, &big_icon);
+        lv_obj_set_style_img_recolor_opa(status_label, LV_OPA_COVER, 0);
+        lv_obj_set_style_img_recolor(status_label, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
+    }
+    else
+    {
+        status_label = lv_label_create(screen);
+        lv_label_set_text(status_label, "OFF");
+        lv_obj_set_style_text_color(status_label, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
+    }
+    lv_obj_center(status_label);
 
     lv_obj_t *label = lv_label_create(screen);
     lv_label_set_text(label, friendly_name);
@@ -147,15 +155,31 @@ EntityStateUpdate SwitchApp::updateStateFromKnob(PB_SmartKnobState state)
             SemaphoreGuard lock(mutex_);
             if (current_position == 0)
             {
-                lv_img_set_src(light_bulb, &big_icon);
+                if (is_light_switch)
+                {
+                    lv_img_set_src(status_label, &big_icon);
+                }
+                else
+                {
+                    lv_label_set_text(status_label, "OFF");
+                }
                 lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
                 lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
             }
             else
             {
-                lv_img_set_src(light_bulb, &big_icon_active);
-                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
-                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+                if (is_light_switch)
+                {
+                    lv_img_set_src(status_label, &big_icon_active);
+                    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                    lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+                }
+                else
+                {
+                    lv_label_set_text(status_label, "ON");
+                    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x80, 0x00), 0);
+                    lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x00, 0x80, 0x00), 128), LV_PART_MAIN);
+                }
             }
         }
         sprintf(new_state.app_id, "%s", app_id);
@@ -210,15 +234,31 @@ void SwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
         if (current_position == 0)
         {
-            lv_img_set_src(light_bulb, &big_icon);
+            if (is_light_switch)
+            {
+                lv_img_set_src(status_label, &big_icon);
+            }
+            else
+            {
+                lv_label_set_text(status_label, "OFF");
+            }
             lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
             lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
         }
         else
         {
-            lv_img_set_src(light_bulb, &big_icon_active);
-            lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
-            lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+            if (is_light_switch)
+            {
+                lv_img_set_src(status_label, &big_icon_active);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+            }
+            else
+            {
+                lv_label_set_text(status_label, "ON");
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x80, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x00, 0x80, 0x00), 128), LV_PART_MAIN);
+            }
         }
 
         if (current_position == 0)
