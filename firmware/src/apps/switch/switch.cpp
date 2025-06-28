@@ -1,6 +1,6 @@
-#include "light_switch.h"
+#include "switch.h"
 
-LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_) : App(mutex)
+SwitchApp::SwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *friendly_name_, char *entity_id_, bool is_light_switch_) : App(mutex), is_light_switch(is_light_switch_)
 {
     sprintf(app_id, "%s", app_id_);
     sprintf(friendly_name, "%s", friendly_name_);
@@ -24,18 +24,31 @@ LightSwitchApp::LightSwitchApp(SemaphoreHandle_t mutex, char *app_id_, char *fri
     };
     strncpy(motor_config.id, app_id, sizeof(motor_config.id) - 1);
 
-    LV_IMG_DECLARE(x80_lightbulb_outline);
-    LV_IMG_DECLARE(x40_lightbulb_outline);
-    LV_IMG_DECLARE(x80_lightbulb_filled);
+    if (is_light_switch)
+    {
+        LV_IMG_DECLARE(x80_lightbulb_outline);
+        LV_IMG_DECLARE(x40_lightbulb_outline);
+        LV_IMG_DECLARE(x80_lightbulb_filled);
 
-    big_icon = x80_lightbulb_outline;
-    big_icon_active = x80_lightbulb_filled;
-    small_icon = x40_lightbulb_outline;
+        big_icon = x80_lightbulb_outline;
+        big_icon_active = x80_lightbulb_filled;
+        small_icon = x40_lightbulb_outline;
+    }
+    else
+    {
+        LV_IMG_DECLARE(x80_toggle_switch_off);
+        LV_IMG_DECLARE(x40_toggle_switch_off);
+        LV_IMG_DECLARE(x80_toggle_switch_on);
+
+        big_icon = x80_toggle_switch_off;
+        big_icon_active = x80_toggle_switch_on;
+        small_icon = x40_toggle_switch_off;
+    }
 
     initScreen();
 }
 
-void LightSwitchApp::initScreen()
+void SwitchApp::initScreen()
 {
     SemaphoreGuard lock(mutex_);
 
@@ -54,31 +67,28 @@ void LightSwitchApp::initScreen()
     lv_obj_set_style_arc_width(arc_, 24, LV_PART_INDICATOR);
     lv_obj_set_style_pad_all(arc_, -5, LV_PART_KNOB);
 
-    light_bulb = lv_img_create(screen);
-    lv_img_set_src(light_bulb, &big_icon);
-    lv_obj_set_style_img_recolor_opa(light_bulb, LV_OPA_COVER, 0);
-    lv_obj_set_style_img_recolor(light_bulb, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
-
-    lv_obj_center(light_bulb);
+    if (is_light_switch)
+    {
+        status_label = lv_img_create(screen);
+        lv_img_set_src(status_label, &big_icon);
+        lv_obj_set_style_img_recolor_opa(status_label, LV_OPA_COVER, 0);
+        lv_obj_set_style_img_recolor(status_label, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
+    }
+    else
+    {
+        status_label = lv_label_create(screen);
+        lv_label_set_text(status_label, "OFF");
+        lv_obj_set_style_text_color(status_label, LV_COLOR_MAKE(0xFF, 0xFF, 0xFF), 0);
+    }
+    lv_obj_center(status_label);
 
     lv_obj_t *label = lv_label_create(screen);
     lv_label_set_text(label, friendly_name);
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
 }
-
-// float rubberBandEasing(float value, float bound)
-// {
-//     if (abs(value) > bound)
-//     {
-//         return bound + (cbrt(abs(value) - bound)) * (value > 0 ? 1 : -1);
-//     }
-//     return value;
-// }
-
-// Define a global or class-level variable to track the previous sub_position_unit
 float previous_sub_position_unit = 0.0f;
 
-EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
+EntityStateUpdate SwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 {
     EntityStateUpdate new_state;
     if (state_sent_from_hass)
@@ -134,15 +144,31 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
             SemaphoreGuard lock(mutex_);
             if (current_position == 0)
             {
-                lv_img_set_src(light_bulb, &big_icon);
+                if (is_light_switch)
+                {
+                    lv_img_set_src(status_label, &big_icon);
+                }
+                else
+                {
+                    lv_label_set_text(status_label, "OFF");
+                }
                 lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
                 lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
             }
             else
             {
-                lv_img_set_src(light_bulb, &big_icon_active);
-                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
-                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+                if (is_light_switch)
+                {
+                    lv_img_set_src(status_label, &big_icon_active);
+                    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                    lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+                }
+                else
+                {
+                    lv_label_set_text(status_label, "ON");
+                    lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x80, 0x00), 0);
+                    lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x00, 0x80, 0x00), 128), LV_PART_MAIN);
+                }
             }
         }
         sprintf(new_state.app_id, "%s", app_id);
@@ -158,7 +184,15 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
 
         last_position = current_position;
         new_state.changed = true;
-        sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
+
+        if (is_light_switch)
+        {
+            sprintf(new_state.app_slug, "%s", APP_SLUG_LIGHT_SWITCH);
+        }
+        else
+        {
+            sprintf(new_state.app_slug, "%s", APP_SLUG_SWITCH);
+        }
     }
 
     last_updated_ms = millis();
@@ -167,7 +201,7 @@ EntityStateUpdate LightSwitchApp::updateStateFromKnob(PB_SmartKnobState state)
     return new_state;
 }
 
-void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
+void SwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 {
     cJSON *new_state = cJSON_Parse(mqtt_state_update.state);
     cJSON *on = cJSON_GetObjectItem(new_state, "on");
@@ -189,15 +223,31 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
 
         if (current_position == 0)
         {
-            lv_img_set_src(light_bulb, &big_icon);
+            if (is_light_switch)
+            {
+                lv_img_set_src(status_label, &big_icon);
+            }
+            else
+            {
+                lv_label_set_text(status_label, "OFF");
+            }
             lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x00, 0x00), 0);
             lv_obj_set_style_arc_color(arc_, dark_arc_bg, LV_PART_MAIN);
         }
         else
         {
-            lv_img_set_src(light_bulb, &big_icon_active);
-            lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
-            lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+            if (is_light_switch)
+            {
+                lv_img_set_src(status_label, &big_icon_active);
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0xFF, 0x9E, 0x00), 128), LV_PART_MAIN);
+            }
+            else
+            {
+                lv_label_set_text(status_label, "ON");
+                lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0x00, 0x80, 0x00), 0);
+                lv_obj_set_style_arc_color(arc_, lv_color_mix(dark_arc_bg, LV_COLOR_MAKE(0x00, 0x80, 0x00), 128), LV_PART_MAIN);
+            }
         }
 
         if (current_position == 0)
@@ -211,4 +261,4 @@ void LightSwitchApp::updateStateFromHASS(MQTTStateUpdate mqtt_state_update)
     }
 }
 
-void LightSwitchApp::updateStateFromSystem(AppState state) {}
+void SwitchApp::updateStateFromSystem(AppState state) {}
