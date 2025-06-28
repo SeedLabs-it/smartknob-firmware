@@ -86,17 +86,6 @@ void SwitchApp::initScreen()
     lv_label_set_text(label, friendly_name);
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -48);
 }
-
-// float rubberBandEasing(float value, float bound)
-// {
-//     if (abs(value) > bound)
-//     {
-//         return bound + (cbrt(abs(value) - bound)) * (value > 0 ? 1 : -1);
-//     }
-//     return value;
-// }
-
-// Define a global or class-level variable to track the previous sub_position_unit
 float previous_sub_position_unit = 0.0f;
 
 EntityStateUpdate SwitchApp::updateStateFromKnob(PB_SmartKnobState state)
