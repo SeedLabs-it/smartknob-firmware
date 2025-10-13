@@ -210,7 +210,7 @@ EntityStateUpdate LightDimmerApp::updateStateFromKnob(PB_SmartKnobState state)
         cJSON_Delete(rgb);
         cJSON_Delete(json);
 
-        snprintf(new_state.app_slug, sizeof(new_state.app_slug), "%s", APP_SLUG_LIGHT_SWITCH);
+        snprintf(new_state.app_slug, sizeof(new_state.app_slug) - 1, "%s", APP_SLUG_LIGHT_DIMMER);
 
         new_state.changed = true;
     }

@@ -18,6 +18,7 @@ const char APP_SLUG_MUSIC[48] = "music";
 const char APP_SLUG_3D_PRINTER[48] = "3d_printer";
 const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
+const char APP_SLUG_SWITCH[48] = "switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
 const char APP_SLUG_SPOTIFY[48] = "spotify";
 

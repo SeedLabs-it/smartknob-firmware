@@ -98,9 +98,10 @@ App *Apps::loadApp(uint8_t position, std::string app_slug, char *app_id, char *f
         add(position, app);
         return app;
     }
-    else if (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
+    else if (app_slug.compare(APP_SLUG_SWITCH) == 0 || app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0)
     {
-        LightSwitchApp *app = new LightSwitchApp(screen_mutex_, app_id, friendly_name, entity_id);
+        bool is_light_switch = (app_slug.compare(APP_SLUG_LIGHT_SWITCH) == 0);
+        SwitchApp *app = new SwitchApp(screen_mutex_, app_id, friendly_name, entity_id, is_light_switch);
 
         add(position, app);
         return app;

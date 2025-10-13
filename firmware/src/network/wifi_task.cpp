@@ -511,7 +511,7 @@ void WifiTask::run()
             WiFi.begin(wifi_config_.ssid, wifi_config_.passphrase);
             while (WiFi.status() != WL_CONNECTED)
             {
-                if (!has_been_connected || retry_count > 0)
+                if ((!has_been_connected || retry_count > 0 ) && millis() > 5000) // Give 5 seconds to connect at start before displaying errors.
                 {
                     WiFiEvent event;
                     WiFiEventBody wifi_event_body;
