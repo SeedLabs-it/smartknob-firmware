@@ -106,5 +106,9 @@
         "task": "FLASH RELEASE",
         "tooltip": "FLASH RELEASE",
         "description": "FLASH RELEASE",
-      }]
+    }
+],
+"[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
 }

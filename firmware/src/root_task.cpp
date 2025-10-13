@@ -19,15 +19,16 @@ RootTask::RootTask(
     DisplayTask *display_task,
     WifiTask *wifi_task,
     MqttTask *mqtt_task,
+    SpotifyTask *spotify_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 24, ESP_TASK_MAIN_PRIO, task_core),
-                                                                                                                                                                       //  stream_(),
+    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 18, ESP_TASK_MAIN_PRIO, task_core),
                                                                                                                                                                        configuration_(configuration),
                                                                                                                                                                        motor_task_(motor_task),
                                                                                                                                                                        display_task_(display_task),
                                                                                                                                                                        wifi_task_(wifi_task),
                                                                                                                                                                        mqtt_task_(mqtt_task),
+                                                                                                                                                                       spotify_task_(spotify_task),
                                                                                                                                                                        led_ring_task_(led_ring_task),
                                                                                                                                                                        sensors_task_(sensors_task),
                                                                                                                                                                        reset_task_(reset_task),
@@ -51,7 +52,7 @@ RootTask::RootTask(
     connectivity_status_queue_ = xQueueCreate(1, sizeof(ConnectivityState));
     assert(connectivity_status_queue_ != NULL);
 
-    sensors_status_queue_ = xQueueCreate(100, sizeof(SensorsState));
+    sensors_status_queue_ = xQueueCreate(20, sizeof(SensorsState));
     assert(sensors_status_queue_ != NULL);
 
     mutex_ = xSemaphoreCreateMutex();
@@ -65,10 +66,12 @@ RootTask::~RootTask()
 
 void RootTask::run()
 {
+    LOGE("BEFORE ALL IN RUN ROOT TASK MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
     uint8_t task_started_at = millis();
 
     motor_task_.addListener(knob_state_queue_);
 
+#if ENABLE_LOGGING
     serial_protocol_protobuf_->registerTagCallback(PB_ToSmartknob_settings_tag, [this](PB_ToSmartknob to_smartknob)
                                                    { configuration_->setSettings(to_smartknob.payload.settings); });
 
@@ -110,6 +113,7 @@ void RootTask::run()
     { free_rtos_adapter_->setProtocol(serial_protocol_protobuf_); };
     serial_protocol_plaintext_->registerKeyHandler('q', callbackSetProtocol);
     serial_protocol_plaintext_->registerKeyHandler(0, callbackSetProtocol); // Switches to protobuf protocol on protobuf message from configurator
+#endif
 
     MotorNotifier motor_notifier = MotorNotifier([this](PB_SmartKnobConfig config)
                                                  { applyConfig(config, false); });
@@ -142,6 +146,11 @@ void RootTask::run()
             display_task_->enableHass();
             this->configuration_->saveOSConfiguration(*os_config);
             break;
+        case SPOTIFY:
+            display_task_->enableSpotify();
+            this->configuration_->saveOSConfiguration(*os_config);
+            esp_restart();
+            break;
         default:
             break;
         } });
@@ -157,11 +166,16 @@ void RootTask::run()
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
-    configuration_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    LOGE("BEFORE QUEUES MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
-    sensors_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    QueueHandle_t shared_events_queue = wifi_task_->getWiFiEventsQueue();
 
-    reset_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    configuration_->setSharedEventsQueue(shared_events_queue);
+
+    sensors_task_->setSharedEventsQueue(shared_events_queue);
+
+    reset_task_->setSharedEventsQueue(shared_events_queue);
+    LOGE("AFTER QUEUES BEFORE NOTIFIER MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     display_task_->getOnboardingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getOnboardingFlow()->setOSConfigNotifier(&os_config_notifier_);
@@ -169,18 +183,26 @@ void RootTask::run()
     wifi_task_->setConfig(configuration_->getWiFiConfiguration());
     display_task_->getOnboardingFlow()->setWiFiNotifier(wifi_task_->getNotifier());
 
-    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    display_task_->getErrorHandlingFlow()->setSharedEventsQueue(shared_events_queue);
 #if SK_MQTT
     mqtt_task_->setConfig(configuration_->getMQTTConfiguration());
-    mqtt_task_->setSharedEventsQueue(wifi_task_->getWiFiEventsQueue());
+    mqtt_task_->setSharedEventsQueue(shared_events_queue);
 #endif
 #endif
+
+    spotify_task_->setSharedEventsQueue(shared_events_queue);
+
+    display_task_->getOnboardingFlow()->setSharedEventsQueue(shared_events_queue);
 
     display_task_->getErrorHandlingFlow()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setMotorNotifier(&motor_notifier);
     display_task_->getDemoApps()->setOSConfigNotifier(&os_config_notifier_);
     display_task_->getHassApps()->setMotorNotifier(&motor_notifier);
     display_task_->getHassApps()->setOSConfigNotifier(&os_config_notifier_);
+    display_task_->getSpotifyStandalone()->setMotorNotifier(&motor_notifier);
+    display_task_->getSpotifyStandalone()->setOSConfigNotifier(&os_config_notifier_);
+
+    LOGE("AFTER NOTIFIER SETUPS MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     // TODO: move playhaptic to notifier? or other interface to just pass "possible" motor commands not entire object/class.
     reset_task_->setMotorTask(&motor_task_);
@@ -201,7 +223,10 @@ void RootTask::run()
         // os_config_notifier_.setOSMode(HASS);
         display_task_->enableHass();
         break;
-
+    case SPOTIFY:
+        // os_config_notifier_.setOSMode(SPOTIFY);
+        display_task_->enableSpotify();
+        break;
     default:
         break;
     }
@@ -216,6 +241,9 @@ void RootTask::run()
     WiFiEvent wifi_event;
 
     AppState app_state = {};
+    app_state.shared_events_queue = shared_events_queue;
+
+    LOGE("BEFORE WHILE LOOP IN ROOT TASK MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 
     while (1)
     {
@@ -226,7 +254,7 @@ void RootTask::run()
             motor_task_.runCalibration();
         }
 #if SK_WIFI
-        if (xQueueReceive(wifi_task_->getWiFiEventsQueue(), &wifi_event, 0) == pdTRUE)
+        if (xQueueReceive(shared_events_queue, &wifi_event, 0) == pdTRUE)
         {
             switch (configuration_->getOSConfiguration()->mode)
             {
@@ -263,6 +291,9 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    break;
                 default:
                     break;
                 }
@@ -293,6 +324,9 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    break;
                 default:
                     break;
                 }
@@ -319,6 +353,11 @@ void RootTask::run()
                 case HASS:
                     display_task_->enableHass();
                     display_task_->getHassApps()->triggerMotorConfigUpdate();
+                    break;
+                case SPOTIFY:
+                    display_task_->enableSpotify();
+                    display_task_->getSpotifyStandalone()->triggerMotorConfigUpdate();
+                    break;
                 default:
                     break;
                 }
@@ -347,11 +386,13 @@ void RootTask::run()
                 // wifi_task_->getNotifier()->requestRetryMQTT(); //! DOESNT WORK WITH NOTIFIER, NEEDS TO UPDATE BOOL, BUT WIFI_TASK IS IN LOOP WAITING FOR THIS BOOL TO CHANGE
                 break;
             case SK_CONFIGURATION_SAVED:
+#if ENABLE_LOGGING
                 if (free_rtos_adapter_->getProtocol() == serial_protocol_protobuf_)
                 {
                     LOGV(LOG_LEVEL_DEBUG, "Sending knob config state.");
                     callbackGetKnobInfo();
                 }
+#endif
 
                 break;
             case SK_SETTINGS_CHANGED:
@@ -366,6 +407,42 @@ void RootTask::run()
                 //      serial_protocol_protobuf_->sendStrainCalibState(wifi_event.body.strain_calibration.step);
                 //      not needed?
                 // }
+                break;
+            case SK_SPOTIFY_DEVICE_CHANGED:
+            {
+                LOGV(LOG_LEVEL_DEBUG, "Spotify device changed");
+                PB_SpotifyConfig config = configuration_->getSpotifyConfig();
+                strcpy(config.device_id, wifi_event.body.spotify_device_id);
+                configuration_->setSpotifyConfig(config);
+                break;
+            }
+            case SK_SPOTIFY_REFRESH_TOKEN:
+            case SK_SPOTIFY_ACCESS_TOKEN_VALIDATED:
+                if (wifi_event.body.spotify_setup.os)
+                {
+                    os_config_notifier_.setOSMode(SPOTIFY);
+                }
+                break;
+            case SK_SPOTIFY_PLAYBACK_STATE:
+                app_state.playback_state = wifi_event.body.playback_state;
+                break;
+            case SK_SPOTIFY_NEW_COVER_ART:
+                app_state.cover_art = wifi_event.body.cover_art;
+                break;
+            case SK_SPOTIFY_NEW_COVER_ART_COLORS:
+                app_state.cover_art_colors = wifi_event.body.cover_art_colors;
+                break;
+            case SK_SPOTIFY_PLAY:
+            case SK_SPOTIFY_PAUSE:
+            case SK_SPOTIFY_VOLUME:
+                spotify_task_->handleEvent(wifi_event);
+                break;
+            case SK_SPOTIFY_CONFIG_CHANGED:
+                if (spotify_task_->getHandle() == nullptr)
+                {
+                    spotify_task_->begin();
+                }
+                spotify_task_->setConfig(configuration_->getSpotifyConfig());
                 break;
             default:
                 mqtt_task_->handleEvent(wifi_event);
@@ -448,6 +525,9 @@ void RootTask::run()
             case OSMode::HASS:
                 entity_state_update_to_send = display_task_->getHassApps()->update(app_state);
                 break;
+            case OSMode::SPOTIFY:
+                entity_state_update_to_send = display_task_->getSpotifyStandalone()->update(app_state);
+                break;
             default:
                 break;
             }
@@ -515,7 +595,7 @@ void RootTask::run()
 
         if (app_state.screen_state.has_been_engaged == true)
         {
-            if (app_state.screen_state.brightness != settings_.screen.max_bright)
+            if (app_state.screen_state.brightness != settings_.screen.max_bright || (!settings_.screen.dim && !sensors_task_->isStrainPowered()))
             {
                 app_state.screen_state.brightness = settings_.screen.max_bright;
                 sensors_task_->strainPowerUp();
@@ -587,6 +667,10 @@ void RootTask::updateHardware(AppState *app_state)
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                        break;
+                    case SPOTIFY:
+                        display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
+                        break;
                     default:
                         break;
                     }
@@ -614,13 +698,19 @@ void RootTask::updateHardware(AppState *app_state)
                     switch (configuration_->getOSConfiguration()->mode)
                     {
                     case ONBOARDING:
+                        LOGE("Handling short press released for onboarding");
                         display_task_->getOnboardingFlow()->handleNavigationEvent(event);
                         break;
                     case DEMO:
+                        LOGE("Handling short press released for demo");
                         display_task_->getDemoApps()->handleNavigationEvent(event);
                         break;
                     case HASS:
                         display_task_->getHassApps()->handleNavigationEvent(event);
+                        break;
+                    case SPOTIFY:
+                        display_task_->getSpotifyStandalone()->handleNavigationEvent(event);
+                        break;
                     default:
                         break;
                     }
@@ -739,24 +829,29 @@ void RootTask::loadConfiguration()
             settings_ = configuration_->getSettings();
 
             configuration_->loadOSConfiguration();
-
+            OSMode os_mode = configuration_->getOSConfiguration()->mode;
 #if SK_WIFI
-            if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadWiFiConfiguration())
+            if ((os_mode == OSMode::HASS || os_mode == OSMode::SPOTIFY) && configuration_->loadWiFiConfiguration())
             {
-
                 WiFiConfiguration wifi_config = configuration_->getWiFiConfiguration();
                 // TODO: send event to wifi to start STA part with given credentials
                 wifi_task_->getNotifier()->requestSTA(wifi_config);
+            }
+            else
+            {
+                // handle wifi config not loaded.
             }
 #endif
 #if SK_MQTT
             if (configuration_->getOSConfiguration()->mode == HASS && configuration_->loadMQTTConfiguration())
             {
-                // UNECCESARY
-                // MQTTConfiguration mqtt_config = configuration_->getMQTTConfiguration();
-                // LOGD("MQTT_CONFIG: %s", mqtt_config.host);
+            }
+            else
+            {
+                // handle mqtt config not loaded.
             }
 #endif
+
             configuration_loaded_ = true;
         }
     }

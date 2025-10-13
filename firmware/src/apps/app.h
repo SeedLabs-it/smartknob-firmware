@@ -20,6 +20,7 @@ const char APP_SLUG_LIGHT_DIMMER[48] = "light_dimmer";
 const char APP_SLUG_LIGHT_SWITCH[48] = "light_switch";
 const char APP_SLUG_SWITCH[48] = "switch";
 const char APP_SLUG_STOPWATCH[48] = "stopwatch";
+const char APP_SLUG_SPOTIFY[48] = "spotify";
 
 enum SharedAppIds : int8_t
 {
@@ -74,12 +75,15 @@ protected:
     virtual void initScreen() {};
 
     SemaphoreHandle_t mutex_;
-    int8_t next_ = DONT_NAVIGATE;
+    int8_t next_ = DONT_NAVIGATE_UPDATE_MOTOR_CONFIG;
     int8_t back_ = MENU;
     PB_SmartKnobConfig motor_config;
 
     PB_SmartKnobConfig root_level_motor_config;
-    PB_SmartKnobConfig blocked_motor_config;
+    PB_SmartKnobConfig blocked_motor_config = {
+        .endstop_strength_unit = 1,
+        .snap_point = 0.5,
+    };
 
     bool state_sent_from_hass = false;
 

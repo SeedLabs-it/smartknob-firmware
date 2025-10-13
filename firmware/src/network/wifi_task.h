@@ -4,6 +4,8 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
+#include <base64.h>
 #include <WebServer.h>
 #include <vector>
 #include <Preferences.h>
@@ -14,6 +16,8 @@
 
 #include "../events/events.h"
 #include "../notify/wifi_notifier/wifi_notifier.h"
+
+#include "./spotify/spotify_api.h"
 
 #if SK_ELEGANTOTA_PRO
 #include <ElegantOTAPro.h>
@@ -26,7 +30,7 @@ class WifiTask : public Task<WifiTask>
     friend class Task<WifiTask>; // Allow base Task to invoke protected run()
 
 public:
-    WifiTask(const uint8_t task_core);
+    WifiTask(const uint8_t task_core, Configuration &configuration);
     ~WifiTask();
 
     void addStateListener(QueueHandle_t queue);
@@ -46,8 +50,10 @@ protected:
     void run();
 
 private:
-    WiFiConfiguration config_;
+    WiFiConfiguration wifi_config_;
     bool is_config_set;
+
+    Configuration &configuration_;
 
     bool mqtt_connected;
     bool retry_mqtt;
@@ -78,8 +84,11 @@ private:
     void webHandlerMQTTForm();
     void webHandlerWiFiCredentials();
     void webHandlerMQTTCredentials();
+    void webHandlerSpotifyCredentials();
 
     void downloadConfig();
+
+    char redirect_page[32] = "done";
 };
 
 #else

@@ -4,7 +4,7 @@ import { useRef, useState } from 'preact/hooks';
 import './comp.css';
 import { StatusAlertService } from 'react-status-alert';
 
-const WiFiComp = ({ setActiveTab }: { setActiveTab: any }) => {
+const WiFiComp = () => {
   const [disabled, setDisabled] = useState(false);
 
   const [ssid, setSsid] = useState('');
@@ -41,7 +41,16 @@ const WiFiComp = ({ setActiveTab }: { setActiveTab: any }) => {
             autoHideTime: 2500,
           },
         );
-        setActiveTab('mqtt');
+
+        var json = await response.json();
+        if (json.redirect == 'spotify') {
+          console.log(json.data);
+
+          //   window.location.href = '/?' + json.redirect;
+          window.location.href = `http://${json.data}/?spotify`; // SEND URL TO PAGE SOMEHOW OF IP CONNECTED WIFI ????
+        } else {
+          window.location.href = '/?' + json.redirect;
+        }
       } else {
         StatusAlertService.showWarning(
           <div>

@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "configuration.h"
 #include "cJSON.h"
+#include "./network/spotify/structs.h"
 
 // TODO: move it into the app.h
 const uint32_t APP_ID_SETTINGS = 7;
@@ -104,7 +105,10 @@ struct AppState
     MqttState mqtt_state;
     ProximityState proximiti_state;
     ScreenState screen_state;
-    cJSON *apps;
+    QueueHandle_t shared_events_queue = nullptr;
+    PlaybackState playback_state;
+    SpotifyCoverArt cover_art;
+    SpotifyCoverArtColors cover_art_colors;
 };
 
 struct EntityStateUpdate
