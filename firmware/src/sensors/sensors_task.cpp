@@ -67,40 +67,43 @@ void SensorsTask::run()
     const float LUX_ALPHA = 0.005;
 
     float sum = 0.0;
-    float lux_avg;
+    float lux_avg = 0.0;
     float lux = 0.0;
+    MovingAverage lux_filter(10);
 
+    bool veml_initialized = false;
     if (veml.begin())
     {
         veml.setGain(VEML7700_GAIN_2);
         veml.setIntegrationTime(VEML7700_IT_400MS);
+        veml_initialized = true;
+
+        delay(1000); // Wait for VEML7700 to boot 500ms seems to not be enough...
+        lux = veml.readLux();
+        for (uint8_t i = 0; i < 10; i++)
+        {
+            lux_filter.addSample(lux);
+        }
     }
     else
     {
-        LOGE("Failed to boot VEML7700");
-    }
-
-    delay(1000); // Wait for VEML7700 to boot 500ms seems to not be enough...
-    lux = veml.readLux();
-    MovingAverage lux_filter(10);
-    for (uint8_t i = 0; i < 10; i++)
-    {
-        lux_filter.addSample(lux);
+        LOGE("Failed to boot VEML7700 - will not use ambient light sensor");
     }
 #endif
+
+    bool lox_initialized = false;
+    VL53L0X_RangingMeasurementData_t measure;
+
     if (lox.begin())
     {
-        VL53L0X_RangingMeasurementData_t measure;
+        lox_initialized = true;
         lox.rangingTest(&measure, false);
         LOGV(LOG_LEVEL_DEBUG, "Proximity range %d, distance %dmm", measure.RangeStatus, measure.RangeMilliMeter);
     }
     else
     {
-        LOGE("Failed to boot VL53L0X");
+        LOGE("Failed to boot VL53L0X - will not use proximity sensor");
     }
-
-    VL53L0X_RangingMeasurementData_t measure;
-    lox.rangingTest(&measure, false);
     unsigned long last_proximity_check_ms = 0;
     unsigned long last_strain_check_ms = 0;
     unsigned long last_tare_ms = 0;
@@ -152,11 +155,13 @@ void SensorsTask::run()
 
         if (millis() - last_proximity_check_ms > 1000 / proximity_poling_rate_hz)
         {
+            if (lox_initialized)
+            {
+                lox.rangingTest(&measure, false);
 
-            lox.rangingTest(&measure, false);
-
-            sensors_state.proximity.RangeMilliMeter = measure.RangeMilliMeter - PROXIMITY_SENSOR_OFFSET_MM;
-            sensors_state.proximity.RangeStatus = measure.RangeStatus;
+                sensors_state.proximity.RangeMilliMeter = measure.RangeMilliMeter - PROXIMITY_SENSOR_OFFSET_MM;
+                sensors_state.proximity.RangeStatus = measure.RangeStatus;
+            }
             // todo: call this once per tick
             publishState(sensors_state);
             last_proximity_check_ms = millis();
@@ -312,16 +317,18 @@ void SensorsTask::run()
 #if SK_ALS
         if (millis() - last_illumination_check_ms > 1000 / illumination_poling_rate_hz)
         {
+            if (veml_initialized)
+            {
+                lux = veml.readLux();
 
-            lux = veml.readLux();
+                lux_avg = lux_filter.addSample(lux);
 
-            lux_avg = lux_filter.addSample(lux);
+                luminosity_adjustment = min(1.0f, lux_avg);
 
-            luminosity_adjustment = min(1.0f, lux_avg);
-
-            sensors_state.illumination.lux = lux;
-            sensors_state.illumination.lux_avg = lux_avg;
-            sensors_state.illumination.lux_adj = luminosity_adjustment;
+                sensors_state.illumination.lux = lux;
+                sensors_state.illumination.lux_avg = lux_avg;
+                sensors_state.illumination.lux_adj = luminosity_adjustment;
+            }
 
             last_illumination_check_ms = millis();
         }

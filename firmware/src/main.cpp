@@ -11,6 +11,10 @@
 #include "root_task.h"
 #include "sensors/sensors_task.h"
 
+#if SK_I2C_P4
+#include "i2c_p4/i2c_p4_task.h"
+#endif
+
 #include "driver/temp_sensor.h"
 
 #include "proto/serial_protocol_protobuf.h"
@@ -85,9 +89,16 @@ static SensorsTask *sensors_task_p = &sensors_task;
 static ResetTask reset_task(1, config);
 static ResetTask *reset_task_p = &reset_task;
 
+#if SK_I2C_P4
+static I2CP4Task i2c_p4_task(1);  // Run on core 1
+static I2CP4Task *i2c_p4_task_p = &i2c_p4_task;
+#else
+static I2CP4Task *i2c_p4_task_p = nullptr;
+#endif
+
 RootTask root_task(0, &config, motor_task, display_task_p, wifi_task_p,
                    mqtt_task_p, spotify_task_p, led_ring_task_p, sensors_task_p,
-                   reset_task_p, adapter_p, serial_protocol_p,
+                   reset_task_p, i2c_p4_task_p, adapter_p, serial_protocol_p,
                    serial_protocol_protobuf_p);
 
 void initTempSensor()
@@ -179,6 +190,11 @@ void setup()
     sensors_task_p->begin();
 
     reset_task_p->begin();
+
+#if SK_I2C_P4
+    i2c_p4_task_p->begin();
+    LOGI("I2C P4 task started");
+#endif
 
     LOGE("AFTER ALL TASKS BEGIN MAX FREE HEAP ALLOC BLOCK: %d", ESP.getMaxAllocHeap());
 

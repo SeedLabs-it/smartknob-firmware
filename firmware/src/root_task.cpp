@@ -22,19 +22,24 @@ RootTask::RootTask(
     SpotifyTask *spotify_task,
     LedRingTask *led_ring_task,
     SensorsTask *sensors_task,
-    ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 18, ESP_TASK_MAIN_PRIO, task_core),
-                                                                                                                                                                       configuration_(configuration),
-                                                                                                                                                                       motor_task_(motor_task),
-                                                                                                                                                                       display_task_(display_task),
-                                                                                                                                                                       wifi_task_(wifi_task),
-                                                                                                                                                                       mqtt_task_(mqtt_task),
-                                                                                                                                                                       spotify_task_(spotify_task),
-                                                                                                                                                                       led_ring_task_(led_ring_task),
-                                                                                                                                                                       sensors_task_(sensors_task),
-                                                                                                                                                                       reset_task_(reset_task),
-                                                                                                                                                                       free_rtos_adapter_(free_rtos_adapter),
-                                                                                                                                                                       serial_protocol_plaintext_(serial_protocol_plaintext),
-                                                                                                                                                                       serial_protocol_protobuf_(serial_protocol_protobuf)
+    ResetTask *reset_task,
+    I2CP4Task *i2c_p4_task,
+    FreeRTOSAdapter *free_rtos_adapter,
+    SerialProtocolPlaintext *serial_protocol_plaintext,
+    SerialProtocolProtobuf *serial_protocol_protobuf) : Task("RootTask", 1024 * 18, ESP_TASK_MAIN_PRIO, task_core),
+                                                        configuration_(configuration),
+                                                        motor_task_(motor_task),
+                                                        display_task_(display_task),
+                                                        wifi_task_(wifi_task),
+                                                        mqtt_task_(mqtt_task),
+                                                        spotify_task_(spotify_task),
+                                                        led_ring_task_(led_ring_task),
+                                                        sensors_task_(sensors_task),
+                                                        reset_task_(reset_task),
+                                                        i2c_p4_task_(i2c_p4_task),
+                                                        free_rtos_adapter_(free_rtos_adapter),
+                                                        serial_protocol_plaintext_(serial_protocol_plaintext),
+                                                        serial_protocol_protobuf_(serial_protocol_protobuf)
 {
 #if SK_DISPLAY
     assert(display_task != nullptr);
@@ -575,6 +580,17 @@ void RootTask::run()
 
 #if SK_MQTT
             mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
+#endif
+
+#if SK_I2C_P4
+            if (i2c_p4_task_ != nullptr)
+            {
+                i2c_p4_task_->updateMotorState(latest_state_);
+                if (entity_state_update_to_send.changed)
+                {
+                    i2c_p4_task_->updateEntityState(entity_state_update_to_send);
+                }
+            }
 #endif
 
             if (entity_state_update_to_send.play_haptic)

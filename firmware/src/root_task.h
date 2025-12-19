@@ -18,6 +18,7 @@
 #include "led_ring/led_ring_task.h"
 #include "sensors/sensors_task.h"
 #include "error_handling_flow/reset_task.h"
+#include "i2c_p4/i2c_p4_task.h"
 
 #include "notify/motor_notifier/motor_notifier.h"
 #include "notify/os_config_notifier/os_config_notifier.h"
@@ -32,7 +33,7 @@ class RootTask : public Task<RootTask>
     friend class Task<RootTask>; // Allow base Task to invoke protected run()
 
 public:
-    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, SpotifyTask *spotify_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf);
+    RootTask(const uint8_t task_core, Configuration *configuration, MotorTask &motor_task, DisplayTask *display_task, WifiTask *wifi_task, MqttTask *mqtt_task, SpotifyTask *spotify_task, LedRingTask *led_ring_task, SensorsTask *sensors_task, ResetTask *reset_task, I2CP4Task *i2c_p4_task, FreeRTOSAdapter *free_rtos_adapter, SerialProtocolPlaintext *serial_protocol_plaintext, SerialProtocolProtobuf *serial_protocol_protobuf);
     virtual ~RootTask();
     void loadConfiguration();
 
@@ -56,6 +57,7 @@ private:
     LedRingTask *led_ring_task_;
     SensorsTask *sensors_task_;
     ResetTask *reset_task_;
+    I2CP4Task *i2c_p4_task_;
 
     FreeRTOSAdapter *free_rtos_adapter_;
 
