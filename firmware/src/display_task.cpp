@@ -118,9 +118,7 @@ void DisplayTask::setBrightness(uint16_t brightness)
 
 void DisplayTask::enableOnboarding()
 {
-    display_os_mode = ONBOARDING;
-    onboarding_flow->render();
-    onboarding_flow->triggerMotorConfigUpdate();
+    enableDemo();
 }
 
 void DisplayTask::enableDemo()

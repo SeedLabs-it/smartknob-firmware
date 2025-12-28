@@ -1,9 +1,22 @@
 #include "demo_apps.h"
+#include "demo_motor_config_app.h"
 
 DemoApps::DemoApps(SemaphoreHandle_t mutex) : HassApps(mutex)
 {
-    HassApps::sync(cJSON_Parse(R"([{"app_slug": "climate","app_id": "climate.climate","friendly_name": "Climate","area": "Climate","menu_color": "#ffffff","entity_id": "climate"}, {"app_slug": "blinds","app_id": "blinds.blinds","friendly_name": "Blinds","area": "Blinds","menu_color": "#ffffff","entity_id": "blinds"},{"app_slug": "stopwatch","app_id": "light.ceiling1","friendly_name": "Ceiling1","area": "Kitchen1","menu_color": "#ffffff","entity_id": "stopwatch"},{"app_slug": "switch","app_id": "light.ceiling","friendly_name": "Ceiling","area": "Kitchen","menu_color": "#ffffff","entity_id": "ceiling_light_entity_id"},{"app_slug": "light_dimmer","app_id": "light.workbench","friendly_name": "Workbench","area": "Kitchen","menu_color": "#ffffff","entity_id": "workbench_light_entity_id"}])"));
-    menu->setMenuName("Demo");
+    auto *motor_app = new DemoMotorConfigApp(mutex);
+    motor_app->setBack(DONT_NAVIGATE);
+    motor_app->setNext(DONT_NAVIGATE);
+    add(0, motor_app);
+    setActive(0);
+}
+
+void DemoApps::render()
+{
+    if (active_app == nullptr)
+    {
+        return;
+    }
+    Apps::render();
 }
 
 void DemoApps::handleNavigationEvent(NavigationEvent event)

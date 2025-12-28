@@ -1,23 +1,22 @@
 #include "i2c_p4_task.h"
+
 #include "semaphore_guard.h"
-#include <string.h>
+#include "../proto/proto_helpers.h"
+
+#include <pb_encode.h>
 
 I2CP4Task::I2CP4Task(const uint8_t task_core, uint8_t slave_address)
     : Task{"I2CP4", 4096, 1, task_core},
+      has_last_config_(false),
+      pending_config_valid_(false),
+      pending_force_send_(false),
       slave_address_(slave_address),
       slave_available_(false),
       last_write_time_(0),
-      last_motor_position_(0),
-      last_motor_sub_position_(0.0f),
-      last_brightness_(0),
-      last_hue_(0),
-      last_temperature_(0)
+      last_periodic_send_ms_(0)
 {
     mutex_ = xSemaphoreCreateMutex();
     assert(mutex_ != NULL);
-
-    memset(last_app_id_, 0, sizeof(last_app_id_));
-    memset(last_entity_id_, 0, sizeof(last_entity_id_));
 }
 
 I2CP4Task::~I2CP4Task()
@@ -31,9 +30,15 @@ void I2CP4Task::run()
     // Sensors need ~3-4 seconds to boot VL53L0X and VEML7700
     vTaskDelay(pdMS_TO_TICKS(5000));
 
+#if WIRE_HAS_BUFFER_SIZE
+    if (CONFIG_MESSAGE_MAX_SIZE > I2C_BUFFER_LENGTH)
+    {
+        Wire.setBufferSize(CONFIG_MESSAGE_MAX_SIZE);
+    }
+#endif
+
     LOGI("I2C P4 task started - will write to slave device at address 0x%02X", slave_address_);
 
-    // Test if slave device is available
     Wire.beginTransmission(slave_address_);
     uint8_t error = Wire.endTransmission();
 
@@ -45,119 +50,135 @@ void I2CP4Task::run()
     else
     {
         LOGW("I2C slave device not found at 0x%02X (error: %d)", slave_address_, error);
-        LOGW("Will continue trying to write state updates...");
+        LOGW("Will continue trying to send configs...");
     }
 
-    // Main loop - just yield, actual writes happen in update methods
     while (1)
     {
+        const unsigned long now = millis();
+
         // Periodically check if slave is available
-        if (millis() - last_write_time_ > 5000)
+        if (now - last_write_time_ > 5000)
         {
             Wire.beginTransmission(slave_address_);
-            error = Wire.endTransmission();
-            slave_available_ = (error == 0);
+            uint8_t ping_error = Wire.endTransmission();
+            slave_available_ = (ping_error == 0);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        {
+            SemaphoreGuard lock(mutex_);
+            const bool should_queue_periodic =
+                !pending_config_valid_ &&
+                has_last_config_ &&
+                (now - last_periodic_send_ms_ >= CONFIG_RESEND_INTERVAL_MS);
+            if (should_queue_periodic)
+            {
+                pending_config_ = last_sent_config_;
+                pending_config_valid_ = true;
+                pending_force_send_ = true;
+            }
+
+            if (pending_config_valid_)
+            {
+                flushPendingConfigLocked();
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(25));
     }
 }
 
-void I2CP4Task::updateMotorState(const PB_SmartKnobState &state)
+void I2CP4Task::sendConfig(const PB_SmartKnobConfig &config)
 {
     SemaphoreGuard lock(mutex_);
 
-    // Rate limiting: only update every 5ms (200Hz)
-    const unsigned long UPDATE_INTERVAL_MS = 5;
-    unsigned long now = millis();
-
-    if (now - last_write_time_ < UPDATE_INTERVAL_MS)
+    pending_config_ = config;
+    pending_config_valid_ = true;
+    pending_force_send_ = true;
+    if (!flushPendingConfigLocked())
     {
-        return; // Skip update if too soon
-    }
-
-    // Only write if changed
-    if (state.current_position != last_motor_position_ ||
-        state.sub_position_unit != last_motor_sub_position_)
-    {
-        if (writeInt32ToSlave(REG_MOTOR_POSITION, state.current_position))
-        {
-            last_motor_position_ = state.current_position;
-        }
-
-        if (writeFloatToSlave(REG_MOTOR_SUB_POSITION, state.sub_position_unit))
-        {
-            last_motor_sub_position_ = state.sub_position_unit;
-        }
-
-        last_write_time_ = now;
+        LOGW("Queued SmartKnob config for retry over I2C");
     }
 }
 
-void I2CP4Task::updateEntityState(const EntityStateUpdate &state)
+bool I2CP4Task::encodeConfigBuffer(const PB_SmartKnobConfig &config, size_t &encoded_size)
 {
-    SemaphoreGuard lock(mutex_);
-
-    if (!state.changed)
-        return;
-
-    // Write app ID if changed
-    if (strcmp(state.app_id, last_app_id_) != 0)
+    size_t payload_size = 0;
+    if (!pb_get_encoded_size(&payload_size, PB_SmartKnobConfig_fields, &config))
     {
-        if (writeStringToSlave(REG_APP_ID, state.app_id, 64))
-        {
-            strncpy(last_app_id_, state.app_id, sizeof(last_app_id_) - 1);
-        }
+        LOGE("Failed to measure SmartKnob config size");
+        return false;
     }
 
-    // Write entity ID if changed
-    if (strcmp(state.entity_id, last_entity_id_) != 0)
+    if (payload_size > CONFIG_MESSAGE_PAYLOAD_MAX)
     {
-        if (writeStringToSlave(REG_ENTITY_ID, state.entity_id, 64))
-        {
-            strncpy(last_entity_id_, state.entity_id, sizeof(last_entity_id_) - 1);
-        }
+        LOGE("SmartKnob config payload too large (%u bytes > %u)", payload_size, CONFIG_MESSAGE_PAYLOAD_MAX);
+        return false;
     }
 
-    // Write state JSON
-    writeStringToSlave(REG_STATE_JSON, state.state, 96);
+    pb_ostream_t stream = pb_ostream_from_buffer(
+        config_tx_buffer_ + sizeof(uint16_t),
+        CONFIG_MESSAGE_PAYLOAD_MAX);
+
+    if (!pb_encode(&stream, PB_SmartKnobConfig_fields, &config))
+    {
+        const char *error = stream.errmsg ? stream.errmsg : "unknown";
+        LOGE("Failed to encode SmartKnob config: %s", error);
+        return false;
+    }
+
+    if (stream.bytes_written > 0xFFFF)
+    {
+        LOGE("Encoded SmartKnob config too large: %u bytes", stream.bytes_written);
+        return false;
+    }
+
+    const uint16_t encoded_payload_size = static_cast<uint16_t>(stream.bytes_written);
+    config_tx_buffer_[0] = encoded_payload_size & 0xFF;
+    config_tx_buffer_[1] = (encoded_payload_size >> 8) & 0xFF;
+    encoded_size = encoded_payload_size + sizeof(uint16_t);
+    return true;
 }
 
-void I2CP4Task::updateAppPositions(int32_t brightness, int32_t hue, int32_t temp)
+bool I2CP4Task::flushPendingConfigLocked()
 {
-    SemaphoreGuard lock(mutex_);
-
-    if (brightness != last_brightness_)
+    if (!pending_config_valid_)
     {
-        if (writeInt32ToSlave(REG_BRIGHTNESS, brightness))
-        {
-            last_brightness_ = brightness;
-        }
+        return true;
     }
 
-    if (hue != last_hue_)
+    const bool config_matches_last = has_last_config_ && config_eq(last_sent_config_, pending_config_);
+    if (config_matches_last && slave_available_ && !pending_force_send_)
     {
-        if (writeInt32ToSlave(REG_HUE, hue))
-        {
-            last_hue_ = hue;
-        }
+        pending_config_valid_ = false;
+        return true;
     }
 
-    if (temp != last_temperature_)
+    size_t encoded_size = 0;
+    if (!encodeConfigBuffer(pending_config_, encoded_size))
     {
-        if (writeInt32ToSlave(REG_TEMPERATURE, temp))
-        {
-            last_temperature_ = temp;
-        }
+        pending_config_valid_ = false;
+        return false;
     }
+
+    if (!writeToSlave(REG_PROTOBUF_CONFIG, config_tx_buffer_, encoded_size))
+    {
+        return false;
+    }
+
+    last_sent_config_ = pending_config_;
+    has_last_config_ = true;
+    pending_config_valid_ = false;
+    pending_force_send_ = false;
+    last_periodic_send_ms_ = millis();
+    return true;
 }
 
-// Helper methods
 bool I2CP4Task::writeToSlave(uint8_t reg, const uint8_t *data, size_t len)
 {
     Wire.beginTransmission(slave_address_);
-    Wire.write(reg);       // Register address
-    Wire.write(data, len); // Data
+    Wire.write(reg);
+    Wire.write(data, len);
     uint8_t error = Wire.endTransmission();
 
     last_write_time_ = millis();
@@ -176,35 +197,4 @@ bool I2CP4Task::writeToSlave(uint8_t reg, const uint8_t *data, size_t len)
     }
 
     return true;
-}
-
-bool I2CP4Task::writeInt32ToSlave(uint8_t reg, int32_t value)
-{
-    uint8_t data[4];
-    data[0] = (value >> 0) & 0xFF;
-    data[1] = (value >> 8) & 0xFF;
-    data[2] = (value >> 16) & 0xFF;
-    data[3] = (value >> 24) & 0xFF;
-
-    return writeToSlave(reg, data, 4);
-}
-
-bool I2CP4Task::writeFloatToSlave(uint8_t reg, float value)
-{
-    uint32_t *p = (uint32_t *)&value;
-    return writeInt32ToSlave(reg, *p);
-}
-
-bool I2CP4Task::writeStringToSlave(uint8_t reg, const char *str, size_t max_len)
-{
-    size_t len = strlen(str);
-    if (len > max_len)
-        len = max_len;
-
-    // Write length-prefixed string
-    uint8_t data[max_len + 1];
-    data[0] = (uint8_t)len;
-    memcpy(&data[1], str, len);
-
-    return writeToSlave(reg, data, len + 1);
 }

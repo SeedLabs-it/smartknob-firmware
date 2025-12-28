@@ -6,6 +6,7 @@ class DemoApps : public HassApps
 {
 public:
     DemoApps(SemaphoreHandle_t mutex);
+    void render();
     void handleNavigationEvent(NavigationEvent event);
     void setOSConfigNotifier(OSConfigNotifier *os_config_notifier);
 

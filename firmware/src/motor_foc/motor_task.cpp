@@ -188,11 +188,9 @@ void MotorTask::run()
 
                 // Change haptic input mode
                 bool position_updated = false;
-                if (new_config.position != config.position || new_config.sub_position_unit != config.sub_position_unit || new_config.position_nonce != config.position_nonce)
+                if (new_config.position != current_position || new_config.sub_position_unit != latest_sub_position_unit || new_config.position_nonce != config.position_nonce)
                 {
-                    LOGV(LOG_LEVEL_DEBUG, "Applying position change");
-                    current_position = new_config.position;
-                    position_updated = true;
+                    LOGV(LOG_LEVEL_DEBUG, "Ignoring requested position change - maintaining current position");
                 }
 
                 if (new_config.min_position <= new_config.max_position)
@@ -201,11 +199,13 @@ void MotorTask::run()
                     if (current_position < new_config.min_position)
                     {
                         current_position = new_config.min_position;
+                        position_updated = true;
                         LOGV(LOG_LEVEL_DEBUG, "Adjusting position to min");
                     }
                     else if (current_position > new_config.max_position)
                     {
                         current_position = new_config.max_position;
+                        position_updated = true;
                         LOGV(LOG_LEVEL_DEBUG, "Adjusting position to max");
                     }
                 }
@@ -213,7 +213,7 @@ void MotorTask::run()
                 if (position_updated || new_config.position_width_radians != config.position_width_radians)
                 {
                     LOGV(LOG_LEVEL_DEBUG, "Adjusting detent center");
-                    float new_sub_position = position_updated ? new_config.sub_position_unit : latest_sub_position_unit;
+                    float new_sub_position = position_updated ? 0.0f : latest_sub_position_unit;
 #if SK_INVERT_ROTATION
                     float shaft_angle = -motor.shaft_angle;
 #else
@@ -221,6 +221,8 @@ void MotorTask::run()
 #endif
                     current_detent_center = shaft_angle + new_sub_position * new_config.position_width_radians;
                 }
+                new_config.position = current_position;
+                new_config.sub_position_unit = latest_sub_position_unit;
                 config = new_config;
                 LOGV(LOG_LEVEL_DEBUG, "Got new config");
 

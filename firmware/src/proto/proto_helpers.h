@@ -2,10 +2,11 @@
 
 #include "proto_gen/smartknob.pb.h"
 #include <logging.h>
+#include <cstring>
 
 #define PROTOBUF_PROTOCOL_VERSION (1)
 
-inline bool config_eq(PB_SmartKnobConfig &first, PB_SmartKnobConfig &second)
+inline bool config_eq(const PB_SmartKnobConfig &first, const PB_SmartKnobConfig &second)
 {
     return first.detent_strength_unit == second.detent_strength_unit &&
            first.endstop_strength_unit == second.endstop_strength_unit &&
@@ -18,13 +19,14 @@ inline bool config_eq(PB_SmartKnobConfig &first, PB_SmartKnobConfig &second)
            first.sub_position_unit == second.sub_position_unit &&
            strcmp(first.id, second.id) == 0 &&
            first.detent_positions_count == second.detent_positions_count &&
-           memcmp(first.detent_positions, second.detent_positions,
-                  first.detent_positions_count *
-                      sizeof(first.detent_positions[0])) &&
+           (first.detent_positions_count == 0 ||
+            memcmp(first.detent_positions, second.detent_positions,
+                   first.detent_positions_count *
+                       sizeof(first.detent_positions[0])) == 0) &&
            first.snap_point_bias == second.snap_point_bias;
 }
 
-inline bool state_eq(PB_SmartKnobState &first, PB_SmartKnobState &second)
+inline bool state_eq(const PB_SmartKnobState &first, const PB_SmartKnobState &second)
 {
     return first.has_config == second.has_config &&
            (!first.has_config || config_eq(first.config, second.config)) &&

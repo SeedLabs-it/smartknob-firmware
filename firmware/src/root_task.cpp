@@ -1,6 +1,7 @@
 #include "root_task.h"
 #include "semaphore_guard.h"
 #include "util.h"
+#include "proto/proto_helpers.h"
 
 QueueHandle_t trigger_motor_calibration_;
 uint8_t trigger_motor_calibration_event_;
@@ -128,9 +129,16 @@ void RootTask::run()
         this->configuration_->loadOSConfiguration();
         OSConfiguration *os_config = this->configuration_->getOSConfiguration();
 
-        if (os_config->mode == HASS && os_mode == ONBOARDING)
-        { // Going from DEMO mode to HASS mode
-            os_mode = HASS;
+        if (os_mode == ONBOARDING)
+        {
+            if (os_config->mode == HASS)
+            {
+                os_mode = HASS;
+            }
+            else
+            {
+                os_mode = DEMO;
+            }
         }
         
         os_config->mode = os_mode;
@@ -141,11 +149,9 @@ void RootTask::run()
         switch (os_config->mode)
         {
         case ONBOARDING:
-            display_task_->enableOnboarding();
-            this->configuration_->saveOSConfiguration(*os_config);
-            break;
         case DEMO:
             display_task_->enableDemo();
+            this->configuration_->saveOSConfiguration(*os_config);
             break;
         case HASS:
             display_task_->enableHass();
@@ -217,12 +223,9 @@ void RootTask::run()
     switch (configuration_->getOSConfiguration()->mode)
     {
     case ONBOARDING:
-        os_config_notifier_.setOSMode(ONBOARDING);
-        display_task_->enableOnboarding();
-        break;
     case DEMO:
-        os_config_notifier_.setOSMode(ONBOARDING);
-        display_task_->enableOnboarding();
+        os_config_notifier_.setOSMode(DEMO);
+        display_task_->enableDemo();
         break;
     case HASS:
         // os_config_notifier_.setOSMode(HASS);
@@ -582,17 +585,6 @@ void RootTask::run()
             mqtt_task_->enqueueEntityStateToSend(entity_state_update_to_send);
 #endif
 
-#if SK_I2C_P4
-            if (i2c_p4_task_ != nullptr)
-            {
-                i2c_p4_task_->updateMotorState(latest_state_);
-                if (entity_state_update_to_send.changed)
-                {
-                    i2c_p4_task_->updateEntityState(entity_state_update_to_send);
-                }
-            }
-#endif
-
             if (entity_state_update_to_send.play_haptic)
             {
                 motor_task_.playHaptic(true, false);
@@ -600,6 +592,9 @@ void RootTask::run()
 
             publish(app_state);
             publishState();
+#if SK_I2C_P4
+            sendP4ConfigUpdate();
+#endif
         }
 
         // current_protocol_->loop();
@@ -910,7 +905,41 @@ void RootTask::publishState()
 
 void RootTask::applyConfig(PB_SmartKnobConfig config, bool from_remote)
 {
+    if (from_remote)
+    {
+        config.position = latest_state_.current_position;
+        config.sub_position_unit = latest_state_.sub_position_unit;
+        config.position_nonce = latest_config_.position_nonce;
+    }
+    if (config_eq(latest_config_, config))
+    {
+        return;
+    }
     remote_controlled_ = from_remote;
     latest_config_ = config;
     motor_task_.setConfig(config);
+#if SK_I2C_P4
+    sendP4ConfigUpdate();
+#endif
 }
+
+#if SK_I2C_P4
+void RootTask::sendP4ConfigUpdate()
+{
+    if (i2c_p4_task_ == nullptr)
+    {
+        return;
+    }
+
+    PB_SmartKnobConfig config_for_p4 = latest_config_;
+    if (latest_state_.has_config)
+    {
+        config_for_p4 = latest_state_.config;
+    }
+
+    config_for_p4.position = latest_state_.current_position;
+    config_for_p4.sub_position_unit = latest_state_.sub_position_unit;
+
+    i2c_p4_task_->sendConfig(config_for_p4);
+}
+#endif

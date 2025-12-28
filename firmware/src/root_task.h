@@ -116,4 +116,7 @@ private:
     void publishState();
     void applyConfig(PB_SmartKnobConfig config, bool from_remote);
     void publish(const AppState &state);
+#if SK_I2C_P4
+    void sendP4ConfigUpdate();
+#endif
 };
