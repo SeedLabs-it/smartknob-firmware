@@ -261,6 +261,16 @@ void RootTask::run()
             app_state.screen_state.has_been_engaged = true;
             motor_task_.runCalibration();
         }
+#if SK_I2C_P4
+        if (i2c_p4_task_ != nullptr)
+        {
+            PB_SmartKnobConfig incoming_config;
+            while (i2c_p4_task_->getNextReceivedConfig(&incoming_config))
+            {
+                applyConfig(incoming_config, true);
+            }
+        }
+#endif
 #if SK_WIFI
         if (xQueueReceive(shared_events_queue, &wifi_event, 0) == pdTRUE)
         {
